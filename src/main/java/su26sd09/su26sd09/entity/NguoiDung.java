@@ -4,6 +4,7 @@ package su26sd09.su26sd09.entity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
@@ -38,7 +39,8 @@ public class  NguoiDung {
     private String matKhau_hash;
 
     @Column(name = "so_dien_thoai", length = 20, unique = true)
-    @NotBlank(message = "số điện thoại không được trống")
+//    @NotBlank(message = "số điện thoại không được trống")
+    @Pattern(regexp = "^(?:\\+84|0)(3|5|7|8|9)\\d{8}$", message = "số điện thoại sai định dạng")
     private String soDienThoai;
 
     @Column(name = "dia_chi", length = 300)

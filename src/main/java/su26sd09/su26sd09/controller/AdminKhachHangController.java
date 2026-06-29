@@ -7,6 +7,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import su26sd09.su26sd09.entity.NguoiDung;
@@ -58,6 +59,7 @@ public class AdminKhachHangController {
     )
     {
         PasswordEncoder e = new BCryptPasswordEncoder();
+        boolean errByp = false;
 
         if(userService.checkSoDienThoai(nguoiDung.getSoDienThoai(), nguoiDung.getMaNguoiDung()) ||
                 userService.checkEmail(nguoiDung.getEmail(), nguoiDung.getMaNguoiDung())
@@ -68,43 +70,34 @@ public class AdminKhachHangController {
         }
         if(nguoiDung.getMaNguoiDung() != null)
         {
-            nguoiDung.setMatKhau_hash(ndRepo.findById(nguoiDung.getMaNguoiDung()).get().getMatKhau_hash());
-        }
-        if(matKhauMoi != null && !matKhauMoi.isBlank())
-        {
-            nguoiDung.setMatKhau_hash(e.encode(matKhauMoi));
+            if(matKhauMoi != null && !matKhauMoi.isBlank())
+            {
+                nguoiDung.setMatKhau_hash(e.encode(matKhauMoi));
+            } else
+            {
+                nguoiDung.setMatKhau_hash(ndRepo.findById(nguoiDung.getMaNguoiDung()).get().getMatKhau_hash());
+            }
+            errByp = true;
+            for(FieldError fe: r.getFieldErrors())
+            {
+                if(!fe.getField().equals("matKhau_hash"))
+                {
+                    errByp = false;
+                }
+            }
         }
         if(r.hasErrors())
         {
-            redirect.addFlashAttribute("error",r.getFieldError().getDefaultMessage());
-            return "redirect:/admin/khach-hang";
-        }
-//        if(nguoiDung.getMatKhau_hash().isEmpty())
-//        {
-//            redirect.addFlashAttribute("error","mật khẩu không được để trống");
-//            return "redirect:/admin/khach-hang";
-//        }
+            if(!errByp)
+            {
+                redirect.addFlashAttribute("error", r.getFieldError().getDefaultMessage());
+                return "redirect:/admin/khach-hang";
+            }
 
-//        if (nguoiDung.getMaNguoiDung() != null)
-//        {
-//            nguoiDung.setNgayCapNhat(LocalDateTime.now());
-//            for (NguoiDung s : userService.getAll()){
-//                if ((!s.getSoDienThoai().equals(nguoiDung.getSoDienThoai()) && userService.checkSoDienThoai(nguoiDung.getSoDienThoai())) ||
-//                        (!s.getEmail().equals(nguoiDung.getEmail()) && userService.checkEmail(nguoiDung.getEmail())))
-//                {
-//                    redirect.addFlashAttribute("error","số điện thoại hoặc email này đã tồn tại");
-//
-//                    return "redirect:/admin/khach-hang";
-//
-//                }
-//            }
-//
-//            userService.save(nguoiDung);
-//            redirect.addFlashAttribute("success", "Cap nhat nguoi dung thanh cong");
-//        } else {
-            userService.save(nguoiDung);
-            redirect.addFlashAttribute("success", "Luu nguoi dung thanh cong");
-//        }
+        }
+
+        userService.save(nguoiDung);
+        redirect.addFlashAttribute("success", "Luu nguoi dung thanh cong");
 
         return "redirect:/admin/khach-hang";
     }
