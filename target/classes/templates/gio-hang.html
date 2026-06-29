@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Danh Sách Đặt Phòng</title>
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        .cart-wrapper {
+            padding: 44px 5% 70px;
+            background: #fafafa;
+        }
+        .cart-layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 340px;
+            gap: 28px;
+            align-items: start;
+        }
+        .cart-panel {
+            background: var(--white);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+            padding: 24px;
+        }
+        .cart-panel h1,
+        .cart-panel h2 {
+            color: var(--sky-dark);
+            margin-bottom: 18px;
+        }
+        .cart-item {
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            display: grid;
+            grid-template-columns: 96px minmax(0, 1fr) auto;
+            gap: 16px;
+            padding: 16px 0;
+        }
+        .cart-item img {
+            border-radius: 4px;
+            height: 72px;
+            object-fit: cover;
+            width: 96px;
+        }
+        .cart-item strong {
+            color: var(--text-dark);
+            display: block;
+            margin-bottom: 4px;
+        }
+        .cart-meta {
+            color: var(--text-gray);
+            font-size: 13px;
+        }
+        .cart-price {
+            color: var(--sky-primary);
+            font-weight: 700;
+            margin-top: 6px;
+        }
+        .cart-empty {
+            border: 1px dashed var(--border-color);
+            color: var(--text-gray);
+            padding: 34px;
+            text-align: center;
+        }
+        .cart-summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+        }
+        .cart-summary-total {
+            border-top: 1px solid var(--border-color);
+            color: var(--sky-primary);
+            font-size: 20px;
+            font-weight: 700;
+            margin-top: 14px;
+            padding-top: 14px;
+        }
+        .cart-form-grid {
+            display: grid;
+            gap: 14px;
+        }
+        .cart-form-grid label {
+            color: var(--text-gray);
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+        }
+        .cart-form-grid input,
+        .cart-form-grid select {
+            border: 1px solid var(--border-color);
+            border-radius: 2px;
+            font-family: inherit;
+            padding: 10px 12px;
+            width: 100%;
+        }
+        @media (max-width: 900px) {
+            .cart-layout { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 640px) {
+            .cart-wrapper {
+                padding: 30px 16px 52px;
+            }
+            .cart-panel {
+                padding: 18px;
+            }
+            .cart-item {
+                align-items: stretch;
+                grid-template-columns: 80px minmax(0, 1fr);
+            }
+            .cart-item img {
+                height: 64px;
+                width: 80px;
+            }
+            .cart-item .admin-btn {
+                grid-column: 1 / -1;
+                justify-self: stretch;
+                width: 100%;
+            }
+            .cart-summary-row {
+                gap: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+    <div class="topbar-left">
+        <span>+84 123 456 789 &nbsp;|&nbsp; info@hotel.local</span>
+    </div>
+</div>
+
+<header>
+    <a href="/home" class="logo">
+        <img src="/logo.jpg" alt="Hotel Logo">
+    </a>
+    <nav class="nav-menu">
+        <a href="/home">Trang Chủ</a>
+        <a href="/phong">Phòng Nghỉ</a>
+        <a href="/loai-phong">Loại Phòng</a>
+        <a href="/gio-hang" style="color: var(--sky-primary);">Danh Sách Đặt Phòng</a>
+    </nav>
+    <div class="header-actions" sec:authorize="isAnonymous()">
+        <a href="/Login" class="btn btn-outline">Đăng Nhập</a>
+        <a href="/Register" class="btn btn-filled">Đăng Ký</a>
+    </div>
+    <div class="header-actions" sec:authorize="isAuthenticated()">
+        <a href="/profiles" class="btn btn-outline">Thông Tin Tài Khoản</a>
+        <a href="/logout" class="btn btn-filled">Đăng Xuất</a>
+    </div>
+</header>
+
+<main class="cart-wrapper">
+    <div th:if="${bookingSuccess}" class="admin-message success" th:text="${bookingSuccess}"></div>
+    <div th:if="${bookingError}" class="admin-message error" th:text="${bookingError}"></div>
+    <div id="bookingSuccessFlag" th:if="${bookingSuccess}" hidden></div>
+
+    <div class="cart-layout">
+        <section class="cart-panel">
+            <h1>Danh Sách Đặt Phòng</h1>
+            <div id="cartItems"></div>
+            <div id="cartEmpty" class="cart-empty">Chưa có phòng nào trong danh sách đặt phòng.</div>
+        </section>
+
+        <aside class="cart-panel">
+            <h2>Thông Tin Đặt Phòng</h2>
+            <form th:action="@{/gio-hang/checkout}" method="post" id="checkoutForm" class="cart-form-grid">
+                <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                <div id="roomInputs"></div>
+
+                <div>
+                    <label>Ngày nhận phòng</label>
+                    <input type="datetime-local" name="ngayNhan" id="ngayNhan" required>
+                </div>
+                <div>
+                    <label>Ngày trả phòng</label>
+                    <input type="datetime-local" name="ngayTra" id="ngayTra" required>
+                </div>
+                <div>
+                    <label>Người lớn</label>
+                    <select name="nguoiLon">
+                        <option value="1">1</option>
+                        <option value="2" selected>2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Trẻ em</label>
+                    <select name="treEm">
+                        <option value="0" selected>0</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                    </select>
+                </div>
+                <div class="form-field full">
+                    <label>CCCD người đặt (đại diện đơn)</label>
+                    <input type="text" name="ma_cccd" maxlength="12" pattern="[0-9]{12}" required>
+                </div>
+
+                <div id="cccd-tung-phong"></div>
+
+                <div>
+                    <div class="cart-summary-row">
+                        <span>Số phòng</span>
+                        <strong id="roomCount">0</strong>
+                    </div>
+                    <div class="cart-summary-row">
+                        <span>Số đêm</span>
+                        <strong id="nightCount">-</strong>
+                    </div>
+                    <div class="cart-summary-row cart-summary-total">
+                        <span>Tổng tiền</span>
+                        <strong id="cartTotal">0 VND</strong>
+                    </div>
+                </div>
+
+                <button type="submit" class="admin-btn" id="checkoutButton">Xác Nhận Danh Sách Đặt Phòng</button>
+                <button type="button" class="admin-btn outline" onclick="clearCart()">Xóa Danh Sách</button>
+            </form>
+        </aside>
+    </div>
+</main>
+
+<footer>
+    <p>&copy; 2026 Hotel. All rights reserved.</p>
+</footer>
+
+<script>
+    const CART_KEY = 'hotelRoomCart';
+    const cartItemsEl = document.getElementById('cartItems');
+    const cartEmptyEl = document.getElementById('cartEmpty');
+    const roomInputsEl = document.getElementById('roomInputs');
+    const roomCountEl = document.getElementById('roomCount');
+    const nightCountEl = document.getElementById('nightCount');
+    const cartTotalEl = document.getElementById('cartTotal');
+    const checkoutButton = document.getElementById('checkoutButton');
+    const ngayNhanEl = document.getElementById('ngayNhan');
+    const ngayTraEl = document.getElementById('ngayTra');
+
+    if (document.getElementById('bookingSuccessFlag')) {
+        localStorage.removeItem(CART_KEY);
+    }
+
+    function readCart() {
+        try {
+            return JSON.parse(localStorage.getItem(CART_KEY) || '[]');
+        } catch (e) {
+            return [];
+        }
+    }
+
+    function writeCart(items) {
+        localStorage.setItem(CART_KEY, JSON.stringify(items));
+    }
+
+    function formatVND(value) {
+        return Number(value || 0).toLocaleString('vi-VN') + ' VND';
+    }
+
+    function getNightCount() {
+        if (!ngayNhanEl.value || !ngayTraEl.value) {
+            return null;
+        }
+        const start = new Date(ngayNhanEl.value);
+        const end = new Date(ngayTraEl.value);
+        const diff = Math.ceil((end - start) / 86400000);
+        return diff > 0 ? diff : 0;
+    }
+
+    function removeRoom(id) {
+        const items = readCart().filter(item => String(item.id) !== String(id));
+        writeCart(items);
+        renderCart();
+    }
+
+    function clearCart() {
+        writeCart([]);
+        renderCart();
+    }
+
+    function renderCart() {
+        const items = readCart();
+        const nights = getNightCount();
+        const subtotal = items.reduce((sum, item) => sum + Number(item.price || 0), 0);
+        const total = subtotal * (nights || 1);
+
+        cartItemsEl.innerHTML = '';
+        roomInputsEl.innerHTML = '';
+        cartEmptyEl.style.display = items.length ? 'none' : 'block';
+        checkoutButton.disabled = items.length === 0;
+        roomCountEl.textContent = items.length;
+        nightCountEl.textContent = nights === null ? '-' : nights;
+        cartTotalEl.textContent = items.length ? formatVND(total) : '0 VND';
+
+        items.forEach(item => {
+            const row = document.createElement('div');
+            row.className = 'cart-item';
+            row.innerHTML = `
+                <img src="${item.image || 'https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=400&q=80'}" alt="">
+                <div>
+                    <strong>Phòng ${item.roomNumber || item.id}</strong>
+                    <div class="cart-meta">${item.typeName || ''} ${item.floor ? ' - Tầng ' + item.floor : ''}</div>
+                    <div class="cart-price">${formatVND(item.price)} / đêm</div>
+                </div>
+                <button type="button" class="admin-btn small danger" onclick="removeRoom('${item.id}')">Xóa</button>
+            `;
+            cartItemsEl.appendChild(row);
+
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'roomIds';
+            input.value = item.id;
+            roomInputsEl.appendChild(input);
+        });
+
+        const cccdContainer = document.getElementById('cccd-tung-phong');
+        cccdContainer.innerHTML = '';
+        items.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'form-field full';
+            div.style.marginBottom = '10px';
+            div.innerHTML = `
+                <label>CCCD khách ở Phòng ${item.roomNumber || item.id}</label>
+                <input type="text"
+                       name="cccdPhong_${item.id}"
+                       maxlength="12" pattern="[0-9]{12}"
+                       placeholder="12 số CCCD"
+                       required>
+            `;
+            cccdContainer.appendChild(div);
+        });
+    }
+
+    ngayNhanEl.addEventListener('change', renderCart);
+    ngayTraEl.addEventListener('change', renderCart);
+    renderCart();
+</script>
+</body>
+</html>

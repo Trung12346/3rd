@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thống Kê Doanh Thu | Hotel</title>
+    <link rel="stylesheet" href="/style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+    <style>
+        /* ===== STAT CARDS ===== */
+        .stat-cards {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 18px;
+        }
+
+        .stat-card {
+            background: var(--white);
+            border: 1px solid var(--border-color);
+            border-top: 4px solid var(--sky-primary);
+            border-radius: 4px;
+            padding: 20px 22px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+        }
+
+        .stat-card.c-green { border-top-color: #27AE60; }
+        .stat-card.c-amber { border-top-color: #F5B301; }
+        .stat-card.c-purple { border-top-color: #9B59B6; }
+
+        .stat-label {
+            color: var(--text-gray);
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        .stat-value {
+            font-family: 'Playfair Display', serif;
+            font-size: 26px;
+            font-weight: 700;
+            color: var(--sky-dark);
+            line-height: 1.15;
+        }
+
+        .stat-trend {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        .stat-trend.up { color: #246B35; }
+        .stat-trend.down { color: #9F2F25; }
+
+        .stat-period {
+            color: var(--text-gray);
+            font-size: 13px;
+            margin: -10px 0 18px;
+        }
+
+        /* ===== CHARTS ===== */
+        .chart-wrap {
+            position: relative;
+            height: 320px;
+        }
+
+        .chart-wrap.small {
+            height: 260px;
+        }
+
+        .chart-row {
+            display: grid;
+            grid-template-columns: 1.6fr 1fr;
+            gap: 30px;
+            align-items: start;
+        }
+
+        .chart-row h3 {
+            font-family: 'Playfair Display', serif;
+            color: var(--sky-dark);
+            font-size: 19px;
+            margin-bottom: 16px;
+        }
+
+        .chart-legend {
+            display: grid;
+            gap: 10px;
+        }
+
+        .chart-legend-item {
+            display: grid;
+            grid-template-columns: 10px 1fr auto;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            color: var(--text-dark);
+            padding: 9px 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+        }
+
+        .chart-legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .chart-legend-value {
+            color: var(--text-gray);
+            font-size: 12px;
+            white-space: nowrap;
+        }
+
+        /* ===== SHARE BAR (top phong) ===== */
+        .share-cell { min-width: 140px; }
+
+        .share-bar-wrap {
+            background: #eef2f5;
+            border-radius: 999px;
+            height: 6px;
+            width: 100%;
+            overflow: hidden;
+            margin-bottom: 6px;
+        }
+
+        .share-bar {
+            background: var(--sky-primary);
+            height: 100%;
+            border-radius: 999px;
+        }
+
+        .share-pct {
+            color: var(--text-gray);
+            font-size: 12px;
+        }
+
+        @media (max-width: 1100px) {
+            .chart-row { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 900px) {
+            .stat-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+
+        @media (max-width: 640px) {
+            .stat-cards { grid-template-columns: 1fr; }
+            .chart-wrap { height: 260px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+    <div class="topbar-left">
+        <span>+84 123 456 789 &nbsp;|&nbsp; info@hotel.local</span>
+    </div>
+</div>
+
+<header>
+    <a href="/home" class="logo">
+        <img src="/logo.jpg" alt="Hotel Logo">
+    </a>
+    <nav class="nav-menu admin-nav">
+        <a href="/admin/phong">Phòng</a>
+        <a href="/admin/loai-phong">Loại phòng</a>
+        <a href="/admin/dat-phong">Đơn đặt phòng</a>
+        <a href="/admin/hoa-don">Hóa đơn</a>
+        <a href="/admin/thong-ke" class="active">Thống kê</a>
+        <a href="/admin/nhan-vien">Nhân viên</a>
+        <a href="/admin/khuyen-mai">Khuyến mãi</a>
+        <a href="/admin/danh-gia">Đánh giá</a>
+        <a href="/admin/nguoi-dung">Người dùng</a>
+    </nav>
+    <div class="header-actions">
+        <a href="/logout" class="btn btn-outline">Đăng xuất</a>
+    </div>
+</header>
+
+<main class="admin-wrapper">
+    <div class="admin-header">
+        <h1>Thống Kê Doanh Thu</h1>
+        <div class="row-actions">
+            <a th:href="@{/admin/thong-ke}" class="admin-btn outline">Làm Mới</a>
+            <a th:href="@{/admin/thong-ke/xuat-pdf(tuNgay=${tuNgay},denNgay=${denNgay})}" class="admin-btn" target="_blank">Xuất PDF</a>
+        </div>
+    </div>
+
+    <div th:if="${success}" class="admin-message success">
+        <span th:text="${success}"></span>
+    </div>
+    <div th:if="${error}" class="admin-message error">
+        <span th:text="${error}"></span>
+    </div>
+
+    <!-- ===== BO LOC ===== -->
+    <section class="admin-panel">
+        <h2>Bộ Lọc Thống Kê</h2>
+        <form th:action="@{/admin/thong-ke}" method="get">
+            <div class="admin-grid">
+                <div class="admin-field">
+                    <label>Từ ngày</label>
+                    <input type="date" name="tuNgay" th:value="${tuNgay}">
+                </div>
+                <div class="admin-field">
+                    <label>Đến ngày</label>
+                    <input type="date" name="denNgay" th:value="${denNgay}">
+                </div>
+                <div class="admin-field">
+                    <label>Xem theo</label>
+                    <select name="xemTheo">
+                        <option value="ngay" th:selected="${xemTheo == 'ngay'}">Theo ngày</option>
+                        <option value="thang" th:selected="${xemTheo == null or xemTheo == 'thang'}">Theo tháng</option>
+                        <option value="nam" th:selected="${xemTheo == 'nam'}">Theo năm</option>
+                    </select>
+                </div>
+<!--                <div class="admin-field">-->
+<!--                    <label>Loại phòng</label>-->
+<!--                    <select name="maLoaiPhong">-->
+<!--                        <option value="">&#45;&#45; Tất cả &#45;&#45;</option>-->
+<!--                        <option th:each="lp : ${loaiPhongs}"-->
+<!--                                th:value="${lp.id}"-->
+<!--                                th:text="${lp.tenLoai}"-->
+<!--                                th:selected="${maLoaiPhong == lp.id}">-->
+<!--                        </option>-->
+<!--                    </select>-->
+<!--                </div>-->
+            </div>
+
+            <div class="admin-actions">
+                <button type="submit" class="admin-btn outline">Áp Dụng</button>
+                <a th:href="@{/admin/thong-ke}" class="admin-btn outline">Xóa Lọc</a>
+            </div>
+        </form>
+    </section>
+
+    <!-- ===== TONG QUAN ===== -->
+    <section class="admin-panel">
+        <h2>Tổng Quan</h2>
+        <p class="stat-period">
+            Dữ liệu thống kê
+            <strong th:text="${tuNgay != null ? 'từ ' + tuNgay : ''}">từ 01/01/2026</strong>
+            <strong th:text="${denNgay != null ? 'đến ' + denNgay : ''}">đến 30/06/2026</strong>
+        </p>
+
+        <div class="stat-cards">
+            <div class="stat-card">
+                <div class="stat-label">Tổng Doanh Thu</div>
+                <div class="stat-value"
+                     th:text="${tongDoanhThu != null ? #numbers.formatDecimal(tongDoanhThu, 0, 'COMMA', 0, 'POINT') + ' VND' : '0 VND'}">
+                    1.245.000.000 VND
+                </div>
+                <div class="stat-trend" th:classappend="${tyLeTangTruong == null or tyLeTangTruong >= 0} ? 'up' : 'down'">
+                    <span th:if="${tyLeTangTruong != null}"
+                          th:text="(${tyLeTangTruong >= 0} ? '▲ ' : '▼ ') + ${#numbers.formatDecimal(tyLeTangTruong, 1, 1)} + '% so với kỳ trước'">
+                        ▲ 12.4% so với kỳ trước
+                    </span>
+                    <span th:unless="${tyLeTangTruong != null}">--</span>
+                </div>
+            </div>
+
+            <div class="stat-card c-green">
+                <div class="stat-label">Tổng Số Hóa Đơn</div>
+                <div class="stat-value" th:text="${tongHoaDon != null ? tongHoaDon : 0}">186</div>
+                <div class="stat-trend" th:classappend="${soHoaDonChenhLech == null or soHoaDonChenhLech >= 0} ? 'up' : 'down'">
+                    <span th:if="${soHoaDonChenhLech != null}"
+                          th:text="(${soHoaDonChenhLech >= 0} ? '▲ +' : '▼ ') + ${soHoaDonChenhLech} + ' hóa đơn'">
+                        ▲ +8 hóa đơn
+                    </span>
+                    <span th:unless="${soHoaDonChenhLech != null}">--</span>
+                </div>
+            </div>
+
+            <div class="stat-card c-amber">
+                <div class="stat-label">Doanh Thu TB / Hóa Đơn</div>
+                <div class="stat-value"
+                     th:text="${doanhThuTrungBinh != null ? #numbers.formatDecimal(doanhThuTrungBinh, 0, 'COMMA', 0, 'POINT') + ' VND' : '0 VND'}">
+                    6.693.548 VND
+                </div>
+                <div class="stat-trend up">
+                    <span>Trên mỗi hóa đơn đã xuất</span>
+                </div>
+            </div>
+
+            <div class="stat-card c-purple">
+                <div class="stat-label">Tỷ Lệ Lấp Đầy Phòng</div>
+                <div class="stat-value"
+                     th:text="${tyLeLapDay != null ? #numbers.formatDecimal(tyLeLapDay, 1, 1) + '%' : '0%'}">
+                    78.5%
+                </div>
+                <div class="stat-trend up">
+                    <span>Trung bình trong kỳ đã chọn</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== BIEU DO DOANH THU THEO THOI GIAN ===== -->
+    <section class="admin-panel">
+        <h2>Biểu Đồ Doanh Thu Theo Thời Gian</h2>
+        <div class="chart-wrap">
+            <canvas id="myChart"></canvas>
+
+            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+            <script th:inline="javascript">
+                const tuNgay = [[${tuNgay}]];
+                const denNgay = [[${denNgay}]];
+                const xemTheo = [[${xemTheo}]];
+                const palette = [
+                    '#3498DB', // sky blue
+                    '#27AE60', // green
+                    '#F5B301', // amber
+                    '#9B59B6', // purple
+                    '#E74C3C', // red
+                    '#1ABC9C', // teal
+                    '#34495E', // dark slate
+                    '#16A085'  // dark teal
+                ];
+            </script>
+            <script>
+                (async () => {
+                    const ctx = document.getElementById('myChart');
+                    const rsp = await fetch(`/admin/thong-ke/doanh-thu?tuNgay=${tuNgay}&denNgay=${denNgay}&xemTheo=${xemTheo}`).then(response => response.json())
+                    const data = {
+                        labels: rsp.labels,
+
+                        datasets: [
+                            {
+                                label: 'Doanh thu',
+                                data: rsp.revenues,
+                                borderColor: 'rgb(52, 152, 219)',
+                                backgroundColor: 'rgba(52, 152, 219, 0.2)',
+                                fill: true,
+                                tension: 0.3
+                            }
+                        ]
+                    };
+
+                    new Chart(ctx, {
+                        type: 'line',
+                        data: data,
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    position: 'top'
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'Doanh Thu Theo Thời Gian'
+                                }
+                            }
+                        }
+                    });
+                })();
+            </script>
+        </div>
+    </section>
+
+    <!-- ===== DOANH THU THEO LOAI PHONG ===== -->
+    <section class="admin-panel">
+        <div class="chart-row">
+            <div>
+                <h3>Doanh Thu Gộp Theo Loại Phòng</h3>
+                <div class="chart-wrap small">
+                    <canvas id="roomTypeChart"></canvas>
+                    <script>
+                        (async () => {
+                            const ctxPie = document.getElementById('roomTypeChart');
+                            const rspPie = await fetch(`/admin/thong-ke/doanh-thu-theo-loai-phong?tuNgay=${tuNgay}&denNgay=${denNgay}`).then(response => response.json())
+                            const dataPie = {
+                                labels: rspPie.labels,
+
+                                datasets: [
+                                    {
+                                        label: '',
+                                        data: rspPie.revenues,
+                                        backgroundColor: rspPie.labels.map((_, i) => palette[i % palette.length]),
+                                        fill: true,
+                                        tension: 0.3
+                                    }
+                                ]
+                            };
+
+                            new Chart(ctxPie, {
+                                type: 'pie',
+                                data: dataPie,
+                                options: {
+                                    responsive: true,
+                                    maintainAspectRatio: false,
+                                    plugins: {
+                                        legend: {
+                                            position: 'top'
+                                        },
+                                        title: {
+                                            display: true,
+                                            text: 'Doanh Thu Theo Loại Phòng'
+                                        }
+                                    }
+                                }
+                            });
+                        })();
+                    </script>
+                </div>
+            </div>
+            <div>
+                <h3>Chi Tiết Theo Loại Phòng</h3>
+                <div class="chart-legend" id="roomTypeLegend"></div>
+                <script>
+                    (async () => {
+                        const rspDtl = await fetch(`/admin/thong-ke/chi-tiet-doanh-thu-theo-loai-phong?tuNgay=${tuNgay}&denNgay=${denNgay}`).then(response => response.json());
+                        let html = '';
+                        rspDtl.forEach((t) => {
+                            html += `
+                            <div class="chart-legend-item">
+                                <span class="chart-legend-dot"></span>
+                                <span>${t[0]}</span>
+                                <span class="chart-legend-value">${t[1]}VND  ${t[2] == null ? '- -' : t[2]}%</span>
+                            </div>
+                            `
+                        })
+                        const legend = document.getElementById("roomTypeLegend");
+                        legend.innerHTML = html;
+                    })()
+                </script>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== TOP PHONG ===== -->
+<!--    <section class="admin-panel">-->
+<!--        <h2>Top Phòng Đặt Nhiều Nhất</h2>-->
+<!--        <div class="admin-table-wrap">-->
+<!--            <table class="admin-table">-->
+<!--                <thead>-->
+<!--                <tr>-->
+<!--                    <th>Số Phòng</th>-->
+<!--                    <th>Loại Phòng</th>-->
+<!--                    <th>Số Lượt Đặt</th>-->
+<!--                    <th>Doanh Thu</th>-->
+<!--                    <th>Tỷ Trọng</th>-->
+<!--                </tr>-->
+<!--                </thead>-->
+<!--                <tbody>-->
+<!--                <tr th:each="tp : ${topPhongs}">-->
+<!--                    <td><strong th:text="${tp.soPhong}"></strong></td>-->
+<!--                    <td th:text="${tp.tenLoaiPhong}"></td>-->
+<!--                    <td th:text="${tp.soLuotDat} + ' lượt'"></td>-->
+<!--                    <td th:text="${#numbers.formatDecimal(tp.doanhThu, 0, 'COMMA', 0, 'POINT')} + ' VND'"></td>-->
+<!--                    <td class="share-cell">-->
+<!--                        <div class="share-bar-wrap">-->
+<!--                            <div class="share-bar" th:style="'width:' + ${tp.tyLeTren} + '%'"></div>-->
+<!--                        </div>-->
+<!--                        <span class="share-pct" th:text="${#numbers.formatDecimal(tp.tyLeTren, 1, 1)} + '%'"></span>-->
+<!--                    </td>-->
+<!--                </tr>-->
+<!--                <tr th:if="${topPhongs == null or topPhongs.isEmpty()}">-->
+<!--                    <td colspan="5">-->
+<!--                        <div class="empty-state">Chưa có dữ liệu đặt phòng trong khoảng thời gian này.</div>-->
+<!--                    </td>-->
+<!--                </tr>-->
+<!--                </tbody>-->
+<!--            </table>-->
+<!--        </div>-->
+<!--    </section>-->
+</main>
+
+<footer>
+    <p>&copy; 2026 Hotel. All rights reserved.</p>
+</footer>
+
+<!--<script th:inline="javascript">-->
+<!--/*<![CDATA[*/-->
+<!--var revenueLabels = /*[[${nhanThoiGian}]]*/ ["01/2026","02/2026","03/2026","04/2026","05/2026","06/2026"];-->
+<!--var revenueData = /*[[${doanhThuTheoThoiGian}]]*/ [185000000, 210000000, 198000000, 240000000, 265000000, 245000000];-->
+<!--var roomTypeLabels = /*[[${tenLoaiPhongs}]]*/ ["Deluxe","Standard","Suite","Family"];-->
+<!--var roomTypeData = /*[[${doanhThuTheoLoaiPhongData}]]*/ [520000000, 310000000, 280000000, 135000000];-->
+<!--/*]]>*/-->
+
+<!--document.addEventListener('DOMContentLoaded', function () {-->
+<!--    var skyPrimary = '#3498DB';-->
+<!--    var palette = ['#3498DB', '#27AE60', '#F5B301', '#9B59B6', '#E74C3C', '#1ABC9C', '#34495E', '#16A085'];-->
+
+<!--    function formatVND(value) {-->
+<!--        return new Intl.NumberFormat('vi-VN').format(Math.round(value)) + ' VND';-->
+<!--    }-->
+
+<!--    var revenueCtx = document.getElementById('revenueChart');-->
+<!--    if (revenueCtx && window.Chart) {-->
+<!--        new Chart(revenueCtx, {-->
+<!--            type: 'line',-->
+<!--            data: {-->
+<!--                labels: revenueLabels,-->
+<!--                datasets: [{-->
+<!--                    label: 'Doanh thu',-->
+<!--                    data: revenueData,-->
+<!--                    borderColor: skyPrimary,-->
+<!--                    backgroundColor: 'rgba(52,152,219,0.12)',-->
+<!--                    fill: true,-->
+<!--                    tension: 0.35,-->
+<!--                    pointBackgroundColor: skyPrimary,-->
+<!--                    pointRadius: 4,-->
+<!--                    borderWidth: 2-->
+<!--                }]-->
+<!--            },-->
+<!--            options: {-->
+<!--                responsive: true,-->
+<!--                maintainAspectRatio: false,-->
+<!--                plugins: {-->
+<!--                    legend: { display: false },-->
+<!--                    tooltip: {-->
+<!--                        callbacks: {-->
+<!--                            label: function (ctx) { return formatVND(ctx.parsed.y); }-->
+<!--                        }-->
+<!--                    }-->
+<!--                },-->
+<!--                scales: {-->
+<!--                    y: {-->
+<!--                        ticks: {-->
+<!--                            callback: function (value) { return new Intl.NumberFormat('vi-VN').format(value); }-->
+<!--                        },-->
+<!--                        grid: { color: '#f0f0f0' }-->
+<!--                    },-->
+<!--                    x: { grid: { display: false } }-->
+<!--                }-->
+<!--            }-->
+<!--        });-->
+<!--    }-->
+
+<!--    var roomTypeCtx = document.getElementById('roomTypeChart');-->
+<!--    var total = roomTypeData.reduce(function (a, b) { return a + b; }, 0);-->
+<!--    if (roomTypeCtx && window.Chart) {-->
+<!--        new Chart(roomTypeCtx, {-->
+<!--            type: 'doughnut',-->
+<!--            data: {-->
+<!--                labels: roomTypeLabels,-->
+<!--                datasets: [{-->
+<!--                    data: roomTypeData,-->
+<!--                    backgroundColor: palette,-->
+<!--                    borderWidth: 0-->
+<!--                }]-->
+<!--            },-->
+<!--            options: {-->
+<!--                responsive: true,-->
+<!--                maintainAspectRatio: false,-->
+<!--                cutout: '65%',-->
+<!--                plugins: {-->
+<!--                    legend: { display: false },-->
+<!--                    tooltip: {-->
+<!--                        callbacks: {-->
+<!--                            label: function (ctx) { return ctx.label + ': ' + formatVND(ctx.parsed); }-->
+<!--                        }-->
+<!--                    }-->
+<!--                }-->
+<!--            }-->
+<!--        });-->
+<!--    }-->
+
+<!--    var legendEl = document.getElementById('roomTypeLegend');-->
+<!--    if (legendEl) {-->
+<!--        roomTypeLabels.forEach(function (label, i) {-->
+<!--            var pct = total ? (roomTypeData[i] / total * 100).toFixed(1) : 0;-->
+<!--            var item = document.createElement('div');-->
+<!--            item.className = 'chart-legend-item';-->
+<!--            item.innerHTML =-->
+<!--                '<span class="chart-legend-dot" style="background:' + palette[i % palette.length] + '"></span>' +-->
+<!--                '<span>' + label + '</span>' +-->
+<!--                '<span class="chart-legend-value">' + formatVND(roomTypeData[i]) + ' (' + pct + '%)</span>';-->
+<!--            legendEl.appendChild(item);-->
+<!--        });-->
+<!--    }-->
+<!--});-->
+<!--</script>-->
+
+</body>
+</html>

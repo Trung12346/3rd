@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thanh toan</title>
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        body { background: #fafafa; }
+        .booking-shell { margin: 0 auto; max-width: 1120px; padding: 42px 5% 70px; }
+        .booking-stepper {
+            align-items: center;
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            display: grid;
+            gap: 14px;
+            grid-template-columns: max-content 1fr max-content 1fr max-content;
+            margin-bottom: 24px;
+            padding: 14px 18px;
+        }
+        .step-item { color: #6b7280; font-size: 13px; font-weight: 700; text-transform: uppercase; }
+        .step-item.active, .step-item.done { color: var(--sky-primary); }
+        .step-line { background: #e5e7eb; height: 2px; }
+        .booking-layout { display: grid; gap: 24px; grid-template-columns: minmax(0, 1fr) 330px; }
+        .info-panel, .payment-panel, .summary-panel {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+            padding: 24px;
+        }
+        .info-panel h1, .payment-panel h2, .summary-panel h2 { color: var(--sky-dark); margin-bottom: 18px; }
+
+        .info-grid { display: grid; gap: 16px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .info-item label {
+            color: #6b7280; display: block; font-size: 11px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: .04em; margin-bottom: 4px;
+        }
+        .info-item .info-value { color: var(--text-dark); font-size: 14px; font-weight: 600; }
+        .info-item.full { grid-column: 1 / -1; }
+
+        .payment-panel { margin-top: 24px; }
+        .payment-method-display {
+            align-items: center;
+            border: 1px solid var(--sky-primary);
+            background: #f5fbfe;
+            border-radius: 4px;
+            display: flex;
+            gap: 14px;
+            padding: 18px 16px;
+        }
+        .payment-icon { font-size: 28px; }
+        .payment-label { font-size: 14px; font-weight: 700; color: var(--text-dark); }
+        .payment-desc { font-size: 12px; color: #6b7280; margin-top: 2px; }
+
+        .payment-note {
+            background: #f5fbfe;
+            border-radius: 4px;
+            padding: 12px 14px;
+            margin-top: 16px;
+            font-size: 13px;
+            color: #555;
+        }
+
+        .summary-line, .summary-total { display: flex; justify-content: space-between; margin-bottom: 12px; }
+        .summary-total { border-top: 1px solid #e5e7eb; color: var(--sky-primary); font-size: 18px; font-weight: 700; padding-top: 14px; margin-top: 4px; }
+
+        .booking-actions { display: grid; gap: 10px; grid-template-columns: 120px 1fr; margin-top: 22px; }
+        .back-btn, .continue-btn {
+            align-items: center;
+            border-radius: 2px;
+            display: inline-flex;
+            font-weight: 700;
+            justify-content: center;
+            min-height: 42px;
+            padding: 10px 14px;
+            text-decoration: none;
+            text-transform: uppercase;
+        }
+        .back-btn { background: #fff; border: 1px solid var(--sky-primary); color: var(--sky-primary); }
+        .continue-btn { background: var(--sky-primary); border: 1px solid var(--sky-primary); color: #fff; cursor: pointer; }
+        .continue-btn:disabled { background: #c9c9c9; border-color: #c9c9c9; cursor: not-allowed; }
+        .booking-message.error { background: #fff1f1; color: #b42318; font-weight: 600; margin-bottom: 18px; padding: 12px 14px; }
+
+        @media (max-width: 900px) {
+            .booking-stepper, .booking-layout, .booking-actions, .info-grid { grid-template-columns: 1fr; }
+            .step-line { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+    <div class="topbar-left">
+        <span>+84 123 456 789 &nbsp;|&nbsp; info@hotel.local</span>
+    </div>
+</div>
+
+<header>
+    <a href="/home" class="logo">
+        <img src="/logo.jpg" alt="Hotel Logo">
+    </a>
+    <nav class="nav-menu">
+        <a href="/home">Trang Chu</a>
+        <a href="/phong">Phong Nghi</a>
+        <a href="/loai-phong">Loai Phong</a>
+        <a href="/gio-hang">Danh Sach Dat Phong</a>
+    </nav>
+    <div class="header-actions" sec:authorize="isAnonymous()">
+        <a href="/Login" class="btn btn-outline">Dang Nhap</a>
+        <a href="/Register" class="btn btn-filled">Dang Ky</a>
+    </div>
+    <div class="header-actions" sec:authorize="isAuthenticated()">
+        <a href="/profiles" class="btn btn-outline">Thong Tin Tai Khoan</a>
+        <a href="/logout" class="btn btn-filled">Dang Xuat</a>
+    </div>
+</header>
+
+<main class="booking-shell">
+
+    <div class="booking-stepper">
+        <div class="step-item done">1. Xac nhan phong</div>
+        <div class="step-line"></div>
+        <div class="step-item done">2. Thong tin khach</div>
+        <div class="step-line"></div>
+        <div class="step-item active">3. Thanh toan</div>
+    </div>
+
+    <div th:if="${bookingError}" class="booking-message error" th:text="${bookingError}"></div>
+
+    <div class="booking-layout">
+        <section>
+            <div class="info-panel">
+                <h1>Thong tin khach hang</h1>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <label>Ho ten</label>
+                        <div class="info-value" th:text="${datPhong.hoten}">Nguyen Van A</div>
+                    </div>
+                    <div class="info-item">
+                        <label>Email</label>
+                        <div class="info-value" th:text="${datPhong.email}">email@example.com</div>
+                    </div>
+                    <div class="info-item">
+                        <label>So dien thoai</label>
+                        <div class="info-value" th:text="${datPhong.sdt}">0900000000</div>
+                    </div>
+                    <div class="info-item">
+                        <label>CCCD</label>
+                        <div class="info-value" th:text="${datPhong.ma_cccd}">000000000000</div>
+                    </div>
+                    <div class="info-item">
+                        <label>Ngay nhan phong</label>
+                        <div class="info-value"
+                             th:text="${datPhong.ngaydatPhong != null ? #temporals.format(datPhong.ngaydatPhong, 'dd/MM/yyyy HH:mm') : '--'}">--</div>
+                    </div>
+                    <div class="info-item">
+                        <label>Ngay tra phong</label>
+                        <div class="info-value"
+                             th:text="${datPhong.ngaytraPhong != null ? #temporals.format(datPhong.ngaytraPhong, 'dd/MM/yyyy HH:mm') : '--'}">--</div>
+                    </div>
+                    <div class="info-item full" th:if="${datPhong.yeuCauThem != null and !datPhong.yeuCauThem.isEmpty()}">
+                        <label>Yeu cau them</label>
+                        <div class="info-value" th:text="${datPhong.yeuCauThem}">--</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="payment-panel">
+                <h2>Phuong thuc thanh toan</h2>
+                <div class="payment-method-display">
+                    <div class="payment-icon">#</div>
+                    <div>
+                        <div class="payment-label">Chuyen khoan qua VNPay</div>
+                        <div class="payment-desc">Thanh toan truc tuyen an toan, nhanh chong</div>
+                    </div>
+                </div>
+
+                <div class="payment-note">
+                    Ban se duoc chuyen den cong thanh toan VNPay de hoan tat giao dich ngay bay gio.
+                </div>
+            </div>
+        </section>
+
+        <aside class="summary-panel">
+            <h2>Tom Tat Dat Phong</h2>
+
+            <div class="summary-line">
+                <span>Tien phong</span>
+                <strong th:text="${'d ' + #numbers.formatDecimal(TongTien, 0, 'COMMA', 0, 'POINT')}">d 0</strong>
+            </div>
+            <div class="summary-line">
+                <span>Tien dich vu</span>
+                <strong th:text="${'d ' + (TienDv != null ? #numbers.formatDecimal(TienDv, 0, 'COMMA', 0, 'POINT') : '0')}">d 0</strong>
+            </div>
+            <div class="summary-line">
+                <span>Tien VAT</span>
+                <strong th:text="${'d ' + (TienVat != null ? #numbers.formatDecimal(TienVat, 0, 'COMMA', 0, 'POINT') : '0')}">d 0</strong>
+            </div>
+
+            <div class="summary-total">
+                <span>Tong cong</span>
+                <strong th:text="${'d ' + #numbers.formatDecimal(TongCong != null ? TongCong : TongTien, 0, 'COMMA', 0, 'POINT')}">d 0</strong>
+            </div>
+            <div style="color:#9ca3af; font-size:12px; margin-top:-8px;">Gia da bao gom thue va phi</div>
+        </aside>
+    </div>
+
+    <form th:action="@{/thanh-toan/vnpay/{id}(id=${datPhong.id})}" method="post" id="payment-form-vnpay">
+        <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+        <input type="hidden" name="maDatPhong" th:value="${datPhong.id}">
+
+        <div class="booking-actions">
+            <a th:href="@{/phong/dat-phong/thong-tin-khach/{id}(id=${datPhong.id})}" class="back-btn">Tro ve</a>
+            <button type="submit" class="continue-btn">Thanh toan qua VNPay</button>
+        </div>
+    </form>
+
+</main>
+
+<footer>
+    <p>&copy; 2026 Hotel. All rights reserved.</p>
+</footer>
+
+</body>
+</html>

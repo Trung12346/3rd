@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản Lý Loại Phòng | Hotel</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<div class="topbar">
+    <div class="topbar-left">
+        <span>+84 123 456 789 &nbsp;|&nbsp; info@hotel.local</span>
+    </div>
+</div>
+
+<header>
+    <a href="/home" class="logo">
+        <img src="/logo.jpg" alt="Hotel Logo">
+    </a>
+    <nav class="nav-menu admin-nav">
+        <a href="/admin/phong">Phòng</a>
+        <a href="/admin/loai-phong" class="active">Loại Phòng</a>
+        <a href="/admin/dat-phong">Đơn Đặt Phòng</a>
+        <a href="/admin/hoa-don">Hóa Đơn</a>
+        <a href="/admin/nhan-vien">Nhân Viên</a>
+        <a href="/admin/khuyen-mai">Khuyến Mãi</a>
+        <a href="/admin/danh-gia">Đánh Giá</a>
+        <a href="/admin/nguoi-dung">Người Dùng</a>
+    </nav>
+    <div class="header-actions">
+        <a href="/logout" class="btn btn-outline">Đăng Xuất</a>
+    </div>
+</header>
+
+<main class="admin-wrapper">
+    <div class="admin-header">
+        <h1>Quản Lý Loại Phòng</h1>
+        <a th:href="@{/admin/loai-phong}" class="admin-btn outline">Làm Mới Form</a>
+    </div>
+
+    <div th:if="${success}" class="admin-message success">
+        <span th:text="${success}"></span>
+    </div>
+    <div th:if="${error}" class="admin-message error">
+        <span th:text="${error}"></span>
+    </div>
+
+    <section class="admin-panel">
+        <h2 th:text="${title}">Thêm loại phòng</h2>
+
+        <form th:action="@{/admin/loai-phong/save}" th:object="${loaiPhong}" method="post">
+            <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+            <input type="hidden" th:field="*{id}">
+
+            <div class="admin-grid">
+                <div class="admin-field">
+                    <label>Ten loại phòng</label>
+                    <input type="text" th:field="*{tenLoai}" placeholder="VD: Deluxe" required>
+                </div>
+                <div class="admin-field">
+                    <label>Sức chứa tối đa</label>
+                    <input type="number" th:field="*{sucChuaToiDa}" min="1" placeholder="VD: 2" required>
+                </div>
+                <div class="admin-field">
+                    <label>Giá cơ bản (VND)</label>
+                    <input type="number" th:field="*{giaCoBan}" min="0" step="1000" placeholder="VD: 1200000" required>
+                </div>
+                <div class="admin-field full">
+                    <label>Mô tả</label>
+                    <textarea th:field="*{mota}" placeholder="Nhập mô tả loại phòng..."></textarea>
+                </div>
+            </div>
+
+            <div class="admin-actions">
+                <button type="submit" class="admin-btn">Lưu Loại Phòng</button>
+                <a th:href="@{/admin/loai-phong}" class="admin-btn outline">Hủy</a>
+            </div>
+        </form>
+    </section>
+
+    <section class="admin-panel">
+        <h2>Danh Sách Loại Phòng</h2>
+
+        <form th:action="@{/admin/loai-phong/tim-kiem}" method="get" class="search-row">
+            <input type="text" name="keyword" placeholder="Tìm theo tên.." th:value="${keyword}">
+            <button type="submit" class="admin-btn outline">Tìm Kiếm</button>
+        </form>
+
+        <div class="admin-table-wrap">
+            <table class="admin-table">
+                <thead>
+                <tr>
+                    <th>Ma</th>
+                    <th>Ten loai</th>
+                    <th>Sức chứa</th>
+                    <th>Giá cơ bản</th>
+                    <th>Mô tả</th>
+                    <th>Thao tac</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="lp : ${loaiPhongs}">
+                    <td th:text="${lp.id}"></td>
+                    <td><strong th:text="${lp.tenLoai}"></strong></td>
+                    <td th:text="${lp.sucChuaToiDa} + ' người'"></td>
+                    <td th:text="${#numbers.formatDecimal(lp.giaCoBan, 0, 'COMMA', 0, 'POINT')} + ' VND'"></td>
+                    <td th:text="${lp.mota != null ? lp.mota : ''}"></td>
+                    <td>
+                        <div class="row-actions">
+                            <a class="admin-btn small outline"
+                               th:href="@{/admin/loai-phong/edit/{id}(id=${lp.id})}">Sửa</a>
+                            <form th:action="@{/admin/loai-phong/delete/{id}(id=${lp.id})}"
+                                  method="post"
+                                  onsubmit="return confirm('Bạn có chắc muốn xóa loại phòng này?')">
+                                <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                                <button type="submit" class="admin-btn small danger">Xóa</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                <tr th:if="${loaiPhongs.isEmpty()}">
+                    <td colspan="6">
+                        <div class="empty-state">Không tìm thấy loại phòng phù hợp.</div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+
+<footer>
+    <p>&copy; 2026 Hotel. All rights reserved.</p>
+</footer>
+
+</body>
+</html>

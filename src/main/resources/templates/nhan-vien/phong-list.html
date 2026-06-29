@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quan ly phong | Nhan vien</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<div class="topbar">
+    <div class="topbar-left">
+        <span>+84 123 456 789 &nbsp;|&nbsp; info@hotel.local</span>
+    </div>
+</div>
+
+<header>
+    <a href="/home" class="logo">
+        <img src="/logo.jpg" alt="Hotel Logo">
+    </a>
+    <nav class="nav-menu admin-nav">
+        <a href="/nhan-vien/dat-phong">Don dat phong</a>
+        <a href="/nhan-vien/danh-gia">Danh gia</a>
+        <a href="/nhan-vien/khach-hang">Khach hang</a>
+        <a href="/nhan-vien/phong" class="active">Phong</a>
+        <a href="/nhan-vien/khuyen-mai">Khuyen mai</a>
+    </nav>
+    <div class="header-actions">
+        <a href="/logout" class="btn btn-outline">Dang xuat</a>
+    </div>
+</header>
+
+<main class="admin-wrapper">
+    <div class="admin-header">
+        <h1>Quan ly phong</h1>
+        <a th:href="@{/nhan-vien/phong}" class="admin-btn outline">Lam moi form</a>
+    </div>
+
+    <div th:if="${success}" class="admin-message success">
+        <span th:text="${success}"></span>
+    </div>
+    <div th:if="${error}" class="admin-message error">
+        <span th:text="${error}"></span>
+    </div>
+
+    <section class="admin-panel">
+        <h2 th:text="${title}">Them phong</h2>
+
+        <form th:action="@{/nhan-vien/phong/save}" th:object="${phong}" method="post">
+            <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+            <input type="hidden" th:field="*{maPhong}">
+
+            <div class="admin-grid">
+                <div class="admin-field">
+                    <label>So phong</label>
+                    <input type="text" th:field="*{soPhong}" placeholder="VD: 101" required>
+                </div>
+                <div class="admin-field">
+                    <label>Loai phong</label>
+                    <select name="loaiPhongId" required>
+                        <option value="">-- Chon loai phong --</option>
+                        <option th:each="lp : ${loaiPhongs}"
+                                th:value="${lp.id}"
+                                th:text="${lp.tenLoai}"
+                                th:selected="${phong.loaiPhong != null and phong.loaiPhong.id == lp.id}">
+                        </option>
+                    </select>
+                </div>
+                <div class="admin-field">
+                    <label>So tang</label>
+                    <input type="number" th:field="*{soTang}" min="1" placeholder="VD: 2" required>
+                </div>
+                <div class="admin-field">
+                    <label>Gia moi dem (VND)</label>
+                    <input type="number" th:field="*{giaMoiDem}" min="0" step="1000" placeholder="VD: 500000" required>
+                </div>
+                <div class="admin-field">
+                    <label>Trang thai</label>
+                    <select th:field="*{trangThai}" required>
+                        <option value="Trong">Trong</option>
+                        <option value="Dang su dung">Dang su dung</option>
+                        <option value="Dang don dep">Dang don dep</option>
+                        <option value="Bao tri">Bao tri</option>
+                    </select>
+                </div>
+                <div class="admin-field">
+                    <label>Hoat dong</label>
+                    <select th:field="*{hoatDong}">
+                        <option th:value="true">Co</option>
+                        <option th:value="false">Khong</option>
+                    </select>
+                </div>
+                <div class="admin-field full">
+                    <label>Tien nghi phong</label>
+                    <div class="amenity-checkbox-grid">
+                        <label class="amenity-checkbox-item" th:each="tn : ${tienNghis}">
+                            <input type="checkbox"
+                                   name="tienNghiIds"
+                                   th:value="${tn.maTienNghi}"
+                                   th:checked="${selectedTienNghiIds.contains(tn.maTienNghi)}">
+                            <span th:text="${tn.tenTienNghi}"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="admin-field full">
+                    <label>Mo ta</label>
+                    <textarea th:field="*{moTa}" placeholder="Nhap mo ta phong..."></textarea>
+                </div>
+            </div>
+
+            <div class="admin-actions">
+                <button type="submit" class="admin-btn">Luu phong</button>
+                <a th:href="@{/nhan-vien/phong}" class="admin-btn outline">Huy</a>
+            </div>
+        </form>
+    </section>
+
+    <section class="admin-panel">
+        <h2>Danh sach phong</h2>
+
+        <form th:action="@{/nhan-vien/phong}" method="get" class="search-row">
+            <input type="text" name="keyword" placeholder="Tim theo so phong, trang thai, loai phong..." th:value="${keyword}">
+            <button type="submit" class="admin-btn outline">Tim kiem</button>
+        </form>
+
+        <div class="admin-table-wrap">
+            <table class="admin-table">
+                <thead>
+                <tr>
+                    <th>Ma</th>
+                    <th>So phong</th>
+                    <th>Loai phong</th>
+                    <th>Tang</th>
+                    <th>Gia / dem</th>
+                    <th>Trang thai</th>
+                    <th>Tien nghi</th>
+                    <th>Hoat dong</th>
+                    <th>Thao tac</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="p : ${phongs}">
+                    <td th:text="${p.maPhong}"></td>
+                    <td><strong th:text="${p.soPhong}"></strong></td>
+                    <td th:text="${p.loaiPhong != null ? p.loaiPhong.tenLoai : '-'}"></td>
+                    <td th:text="${p.soTang}"></td>
+                    <td th:text="${#numbers.formatDecimal(p.giaMoiDem, 0, 'COMMA', 0, 'POINT')} + ' VND'"></td>
+                    <td>
+                        <span th:with="tt=${p.trangThai}"
+                              th:classappend="${tt == 'Trong'} ? 'trong' : (${tt == 'Dang su dung'} ? 'dang-su-dung' : (${tt == 'Dang don dep'} ? 'dang-don-dep' : 'bao-tri'))"
+                              class="trang-thai-badge"
+                              th:text="${tt}">
+                        </span>
+                    </td>
+                    <td>
+                        <div class="amenity-tags" th:if="${tienNghiTheoPhong[p.maPhong] != null and !tienNghiTheoPhong[p.maPhong].isEmpty()}">
+                            <span class="amenity-tag"
+                                  th:each="tenTienNghi : ${tienNghiTheoPhong[p.maPhong]}"
+                                  th:text="${tenTienNghi}">
+                            </span>
+                        </div>
+                        <span class="no-amenity" th:if="${tienNghiTheoPhong[p.maPhong] == null or tienNghiTheoPhong[p.maPhong].isEmpty()}">-</span>
+                    </td>
+                    <td>
+                        <span th:if="${p.hoatDong}" class="status-badge active">Co</span>
+                        <span th:unless="${p.hoatDong}" class="status-badge inactive">Khong</span>
+                    </td>
+                    <td>
+                        <div class="row-actions">
+                            <a class="admin-btn small outline"
+                               th:href="@{/nhan-vien/phong/edit/{id}(id=${p.maPhong}, keyword=${keyword})}">Sua</a>
+                            <form th:action="@{/nhan-vien/phong/delete/{id}(id=${p.maPhong})}"
+                                  method="post"
+                                  onsubmit="return confirm('Ban co chac muon xoa phong nay?')">
+                                <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                                <button type="submit" class="admin-btn small danger">Xoa</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                <tr th:if="${phongs.isEmpty()}">
+                    <td colspan="9">
+                        <div class="empty-state">Khong tim thay phong phu hop.</div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+
+<footer>
+    <p>&copy; 2026 Hotel. All rights reserved.</p>
+</footer>
+
+</body>
+</html>

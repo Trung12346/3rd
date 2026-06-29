@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: su26sd09.su26sd09.Su26sd09ApplicationTests
+-------------------------------------------------------------------------------
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 14.85 s -- in su26sd09.su26sd09.Su26sd09ApplicationTests

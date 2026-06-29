@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="vi"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Danh Sách Phòng | Hotel</title>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Dropdown menu styles */
+        .nav-menu {
+            position: relative;
+        }
+        .nav-item {
+            position: relative;
+            display: inline-block;
+        }
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background: white;
+            min-width: 220px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            border-radius: 4px;
+            padding: 8px 0;
+            z-index: 1000;
+            margin-top: 5px;
+        }
+        .nav-item:hover .dropdown-menu {
+            display: block;
+        }
+        .dropdown-menu a {
+            display: block;
+            padding: 10px 20px;
+            color: var(--text-dark);
+            text-decoration: none;
+            font-size: 14px;
+            transition: background 0.2s, color 0.2s;
+        }
+        .dropdown-menu a:hover {
+            background: var(--sky-light);
+            color: var(--sky-primary);
+        }
+        .dropdown-menu a i {
+            margin-right: 8px;
+            color: var(--sky-primary);
+        }
+        
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .btn-logout {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-gray);
+            padding: 8px 15px;
+            border-radius: 2px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            transition: all 0.3s;
+        }
+        .btn-logout:hover {
+            border-color: #E74C3C;
+            color: #E74C3C;
+            background: #FDEDEC;
+        }
+        .rooms-container {
+            align-items: stretch;
+            gap: 28px;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            padding: 46px 5% 72px;
+        }
+        .room-card {
+            border-radius: 6px;
+            box-shadow: 0 6px 22px rgba(0,0,0,0.06);
+            min-height: 100%;
+        }
+        .room-img {
+            height: 210px;
+        }
+        .room-info {
+            gap: 10px;
+            padding: 22px;
+        }
+        .room-info h3 {
+            font-size: 20px;
+            line-height: 1.3;
+            margin-bottom: 0;
+        }
+        .room-type {
+            color: var(--text-gray);
+            display: block;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            margin-top: 4px;
+        }
+        .room-price {
+            margin-bottom: 0;
+        }
+        .room-night {
+            color: var(--text-gray);
+            font-size: 12px;
+            margin-top: -8px;
+        }
+        .room-meta {
+            flex-wrap: wrap;
+            gap: 10px 16px;
+            margin-bottom: 0;
+        }
+        .room-amenities {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin: 4px 0;
+        }
+        .room-amenity {
+            background: var(--sky-light);
+            border-radius: 12px;
+            color: var(--sky-primary);
+            font-size: 11px;
+            font-weight: 500;
+            padding: 3px 8px;
+        }
+        .room-description {
+            color: var(--text-gray);
+            display: -webkit-box;
+            font-size: 13px;
+            line-height: 1.5;
+            margin: 0;
+            min-height: 40px;
+            overflow: hidden;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 2;
+        }
+        .room-actions {
+            display: grid;
+            gap: 10px;
+            margin-top: auto;
+        }
+        .room-info .btn-view,
+        .room-save-btn {
+            align-items: center;
+            border-radius: 2px;
+            display: inline-flex;
+            font-size: 13px;
+            font-weight: 700;
+            justify-content: center;
+            min-height: 42px;
+            padding: 11px 14px;
+            text-align: center;
+            text-decoration: none;
+            text-transform: uppercase;
+            width: 100%;
+        }
+        .room-save-btn {
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .room-save-btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.55;
+        }
+        @media (max-width: 640px) {
+            .page-banner {
+                height: 28vh;
+            }
+            .page-banner h1 {
+                font-size: 2rem;
+                padding: 0 20px;
+                text-align: center;
+            }
+            .rooms-container {
+                gap: 22px;
+                padding: 34px 20px 56px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="topbar">
+    <div class="topbar-left">
+        <span>Tel: +84 123 456 789 &nbsp; | &nbsp; Email: info@hotel.local</span>
+    </div>
+    <div class="topbar-right">
+        <a href="#">VN</a> | <a href="#">EN</a>
+    </div>
+</div>
+
+<header>
+    <a href="/home" class="logo">
+        <img src="/logo.jpg" alt="Hotel Logo">
+    </a>
+    <nav class="nav-menu">
+        <a href="/home">Trang Chủ</a>
+        <div class="nav-item has-dropdown">
+            <a href="/phong" class="room-nav-toggle" aria-haspopup="true" aria-expanded="false" style="color: var(--sky-primary);">Phòng Nghỉ</a>
+            <div class="dropdown-menu">
+                <a href="/phong"><i class="fa-solid fa-bed"></i>Tất Cả Phòng</a>
+                <a href="/loai-phong"><i class="fa-solid fa-list"></i>Theo Loại Phòng</a>
+                <div style="border-top: 1px solid var(--border-color); margin: 8px 0;"></div>
+                <div th:each="lp : ${loaiPhongs}">
+                    <a th:href="@{'/loai-phong/' + ${lp.id}}">
+                        <i class="fa-solid fa-door-open"></i>
+                        <span th:text="${lp.tenLoai}">Phòng Deluxe</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+        <a href="#">Khuyến Mãi</a>
+        <a href="/gio-hang">Danh Sách Đặt Phòng</a>
+    </nav>
+
+    <div class="header-actions" sec:authorize="isAnonymous()">
+        <a href="/Login" class="btn btn-outline">Đăng Nhập</a>
+        <a href="/Register" class="btn btn-filled">Đăng Ký</a>
+    </div>
+    <div sec:authorize="isAuthenticated()">
+        <div class="user-menu">
+            <span style="font-size:14px; color:var(--text-dark); font-weight:500;">Xin chào,</span>
+            <span sec:authentication="name" style="font-size:14px; color:var(--sky-primary); font-weight:600;"></span>
+            <a href="/profiles" class="btn btn-outline" style="padding:8px 15px; font-size:13px;">Hồ Sơ</a>
+            <button onclick="confirmLogout()" class="btn-logout">Đăng Xuất</button>
+        </div>
+    </div>
+</header>
+
+<section class="page-banner">
+    <h1>Khám Phá Không Gian Nghỉ Dưỡng</h1>
+</section>
+
+<main class="rooms-container">
+    <div class="room-card" th:each="p : ${phongs}">
+        <div class="room-img">
+            <img src="https://images.unsplash.com/photo-1611892440504-42a792e24d32?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
+                 th:alt="${p.soPhong}">
+            <span class="room-status-badge"
+                  th:classappend="${p.trangThai == 'Trong'} ? 'status-trong' : (${p.trangThai == 'Da dat'} ? 'status-da-dat' : 'status-bao-tri')"
+                  th:text="${p.trangThai}">Trong</span>
+        </div>
+        <div class="room-info">
+            <h3>
+                Phòng <span th:text="${p.soPhong}">101</span>
+                <span class="room-type">
+                    (<span th:text="${tenLoaiTheoPhong[p.maPhong]}">Deluxe</span>)
+                </span>
+            </h3>
+            <div class="room-price" th:text="${#numbers.formatDecimal(p.giaMoiDem, 0, 'COMMA', 0, 'POINT')} + ' VND'">1,200,000 VND</div>
+            <span class="room-night">/ Đêm</span>
+            <div class="room-meta">
+                <span><i class="fa-solid fa-layer-group"></i> Tầng <span th:text="${p.soTang}">1</span></span>
+                <span th:if="${tenLoaiTheoPhong[p.maPhong]}">
+                    <i class="fa-solid fa-tag"></i> <span th:text="${tenLoaiTheoPhong[p.maPhong]}">Deluxe</span>
+                </span>
+            </div>
+            
+            <!-- Tien nghi -->
+            <div class="room-amenities" th:if="${tienNghiTheoPhong[p.maPhong] != null and !tienNghiTheoPhong[p.maPhong].isEmpty()}">
+                <span th:each="tn, iterStat : ${tienNghiTheoPhong[p.maPhong]}" 
+                      th:if="${iterStat.index < 4}"
+                      class="room-amenity"
+                      th:text="${tn}">WiFi</span>
+            </div>
+            
+            <p class="room-description" th:text="${p.moTa}">
+                Trai nghiem không gian sang trong voi ban cong rieng ngam toan canh bien tho mong.
+            </p>
+            <div class="room-actions">
+                <a th:href="@{'/phong/' + ${p.maPhong}}" class="btn btn-outline btn-view">
+                    Xem Chi Tiết
+                </a>
+                <button type="button"
+                        class="btn btn-filled room-save-btn"
+                        th:disabled="${p.trangThai != 'Trong'}"
+                        th:data-ma-phong="${p.maPhong}"
+                        th:data-so-phong="${p.soPhong}"
+                        th:data-tang="${p.soTang}"
+                        th:data-gia="${p.giaMoiDem}"
+                        th:data-loai="${tenLoaiTheoPhong[p.maPhong]}"
+                        onclick="luuPhongVaoGio(event, this)"
+                        th:text="${p.trangThai == 'Trong'} ? 'Thêm Vào Danh Sách' : 'Không Khả Dụng'">
+                    Thêm Vào Danh Sách
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div th:if="${phongs == null or phongs.isEmpty()}" 
+         style="width: 100%; padding: 40px 20px; text-align: center; color: var(--text-gray); border: 1px dashed var(--border-color); border-radius: 8px; background: #f8fbff;">
+        <i class="fa-solid fa-bed" style="font-size: 48px; color: var(--sky-primary); opacity: 0.3; margin-bottom: 16px;"></i>
+        <p>Chưa có phòng nào trong hệ thống.</p>
+    </div>
+</main>
+
+<footer>
+    <p>&copy; 2026 Hotel. All rights reserved.</p>
+</footer>
+
+<script src="/header-dropdown.js"></script>
+<script>
+    function readRoomCart() {
+        try {
+            return JSON.parse(localStorage.getItem('hotelRoomCart') || '[]');
+        } catch (e) {
+            return [];
+        }
+    }
+
+    function luuPhongVaoGio(event, button) {
+        event.preventDefault();
+        if (button.disabled) {
+            return;
+        }
+
+        const item = {
+            id: button.dataset.maPhong,
+            roomNumber: button.dataset.soPhong,
+            floor: button.dataset.tang,
+            price: Number(button.dataset.gia || 0),
+            typeName: button.dataset.loai || '',
+            image: 'https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=400&q=80'
+        };
+        const cart = readRoomCart();
+        const exists = cart.some(room => String(room.id) === String(item.id));
+        if (!exists) {
+            cart.push(item);
+            localStorage.setItem('hotelRoomCart', JSON.stringify(cart));
+        }
+        button.textContent = exists ? 'Đã Có Trong Danh Sách' : 'Đã Thêm';
+        setTimeout(() => button.textContent = 'Thêm Vào Danh Sách', 1200);
+    }
+
+    function confirmLogout() {
+        if (confirm('Bạn có chắc chắn muốn đăng xuất không?')) {
+            window.location.href = '/logout';
+        }
+    }
+</script>
+</body>
+</html>

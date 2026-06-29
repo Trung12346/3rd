@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng Nhập | Hotel</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <div class="topbar">
+        <div class="topbar-left">
+            <span>Tel: +84 123 456 789 &nbsp; | &nbsp; Email: info@hotel.local</span>
+        </div>
+    </div>
+
+    <header>
+        <a href="/home" class="logo">
+            <img src="/logo.jpg">
+        </a>
+        <div class="header-actions">
+            <a href="/home" class="btn btn-outline">Trang Chủ</a>
+            <a href="/Register" class="btn btn-filled">Đăng Ký</a>
+        </div>
+    </header>
+
+    <main class="auth-wrapper">
+        <div class="auth-card">
+            <h2>Đăng Nhập</h2>
+            <p class="subtitle">Vui lòng đăng nhập để quản lý đặt phòng của bạn</p>
+            
+            <form id="loginForm" method="post" th:action="@{/login}">
+                <div class="form-group full-width" style="margin-bottom: 20px;">
+                    <label for="email">Tên tài khoản</label>
+                    <input type="email" id="email" name="username" placeholder="Nhập tên đăng nhập" required>
+                </div>
+                <div class="form-group full-width">
+                    <label for="mat_khau_hash">Mật khẩu</label>
+                    <input type="password" id="mat_khau_hash" name="password" placeholder="Nhập mật khẩu" required>
+                </div>
+                
+                <button type="submit" class="btn-submit">Đăng Nhập</button>
+            </form>
+
+            <div class="auth-footer">
+                <p>Chưa có tài khoản? <a th:href="@{/Register}">Tạo tài khoản mới</a></p>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2026 Hotel. All rights reserved.</p>
+    </footer>
+</body>
+</html>

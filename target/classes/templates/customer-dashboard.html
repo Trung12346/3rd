@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:sec="http://www.thymeleaf.org/extras/spring-security" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hotel | Trang chủ của bạn</title>
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        /* CSS danh rieng cho menu người dùng da đăng nhập */
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .user-greeting {
+            font-size: 14px;
+            color: var(--text-dark);
+            font-weight: 500;
+        }
+        .user-greeting b {
+            color: var(--sky-primary);
+        }
+        /* Nut đăng xuất style nhu mot lien ket hoac nut outline gon gang */
+        .btn-logout {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-gray);
+            padding: 8px 15px;
+            border-radius: 2px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            transition: all 0.3s;
+        }
+        .btn-logout:hover {
+            border-color: #E74C3C;
+            color: #E74C3C;
+            background: #FDEDEC;
+        }
+    </style>
+</head>
+<body>
+<div class="topbar">
+    <div class="topbar-left">
+        <span>Tel: +84 123 456 789 &nbsp; | &nbsp; Email: info@hotel.local</span>
+    </div>
+    <div class="topbar-right">
+        <a href="#">VN</a> | <a href="#">EN</a>
+    </div>
+</div>
+
+<header>
+    <a href="/home" class="logo">
+        <img src="/logo.jpg" alt="Hotel Logo">
+    </a>
+
+    <nav class="nav-menu">
+        <a href="customer-dashboard.html" style="color: var(--sky-primary);">Trang Chủ</a>
+        <a href="rooms.html">Phòng Nghỉ</a>
+        <a href="#">Khuyến Mãi</a>
+    </nav>
+    <div class="header-actions" sec:authorize="isAnonymous()">
+        <a href="/login" class="btn btn-outline">Đăng Nhập</a>
+        <a href="/Register" class="btn btn-filled">Đăng Ký</a>
+    </div>
+
+       <div sec:authorize="isAuthenticated()">
+           <div class="user-menu">
+           <span class="user-greeting">Xin chào,</span><span sec:authentication="name"></span>
+           <a href="#" class="btn btn-outline" style="padding: 8px 15px; font-size: 13px;">Hồ Sơ</a>
+           <button onclick="logout()" class="btn-logout"><a>Đăng xuất</a></p></button>
+       </div>
+    </div>
+
+
+</header>
+
+<section class="hero">
+    <div class="hero-text">
+        <h1>Đẳng Cấp & Tinh Tế</h1>
+        <p>Khởi nguồn cho những trải nghiệm nghỉ dưỡng hoàn hảo</p>
+    </div>
+</section>
+
+<section class="booking-section">
+    <form class="booking-form">
+        <div class="booking-item">
+            <label>Ngày nhận phòng</label>
+            <input type="date">
+        </div>
+        <div class="booking-item">
+            <label>Ngày trả phòng</label>
+            <input type="date">
+        </div>
+        <div class="booking-item">
+            <label>Người lớn</label>
+            <select>
+                <option value="1">1</option>
+                <option value="2" selected>2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+            </select>
+        </div>
+        <div class="booking-item">
+            <label>Trẻ em</label>
+            <select>
+                <option value="0">0</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+            </select>
+        </div>
+        <button type="button" class="btn-book">Kiểm tra phòng</button>
+    </form>
+</section>
+
+<div style="height: 400px; padding: 100px 5%; text-align: center; background-color: var(--white);">
+    <h2 style="color: var(--sky-primary); margin-bottom: 25px; font-size: 36px;">
+        Chào Mừng Trở Lại, <span id="welcome-user-name">Quý Khách</span>!
+    </h2>
+    <p style="color: var(--text-gray); max-width: 750px; margin: 0 auto; line-height: 1.8; font-size: 15px;">
+        Rất vui được đón tiếp bạn quay trở lại Hotel. La thanh vien cua chung toi, ban se luon nhan duoc nhung uu dai dac biet va muc gia tot nhat khi dat phòng truc tiep. Hay de chung toi mang lai cam giac thu thai va binh yen tuyet doi cho ky nghi tiep theo cua ban.
+    </p>
+</div>
+
+<footer>
+    <p>&copy; 2026 Hotel. All rights reserved.</p>
+</footer>
+
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        // Gia lap viec lay thong tin người dùng tu LocalStorage (sau khi đăng nhập thanh cong)
+        // Trong thuc te, luc login xong ban se setItem: localStorage.setItem("userFullName", "Ten tu API");
+        const userName = localStorage.getItem("userFullName") || "Nguyen Van A";
+
+        // Cập nhat ten len Header va phan Welcome
+        document.getElementById("header-user-name").innerText = userName;
+        document.getElementById("welcome-user-name").innerText = userName;
+    });
+
+    function logout() {
+        if(confirm("Bạn có chắc chắn muốn đăng xuất không?")) {
+            // Xóa du lieu phien đăng nhập
+            localStorage.removeItem("userFullName");
+            localStorage.removeItem("token");
+
+            // Chuyen huong ve trang chu mac dinh (chua đăng nhập)
+            window.location.href = "/logout";
+        }
+    }
+</script>
+</body>
+</html>
+

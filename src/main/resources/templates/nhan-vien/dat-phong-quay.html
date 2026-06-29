@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đặt Phòng Tại Quầy | Hotel</title>
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; }
+        body { background: #f0f4f8; font-family: 'Montserrat', sans-serif; }
+
+        .quay-shell { margin: 0 auto; max-width: 1400px; padding: 32px 32px 80px; }
+        .quay-header { margin-bottom: 28px; }
+        .quay-header h1 { color: var(--sky-dark); font-size: 26px; font-weight: 700; margin-bottom: 4px; }
+        .quay-header p { color: #6b7280; font-size: 14px; }
+
+        .quay-layout { display: grid; gap: 24px; grid-template-columns: minmax(0, 1fr) 380px; align-items: start; }
+
+        .quay-panel {
+            background: #fff; border: 1px solid #e2e8f0; border-radius: 8px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06); padding: 28px; margin-bottom: 20px;
+        }
+        .quay-panel:last-child { margin-bottom: 0; }
+        .panel-title {
+            color: var(--sky-dark); font-size: 15px; font-weight: 700;
+            margin-bottom: 20px; padding-bottom: 12px; border-bottom: 2px solid #e2e8f0;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .badge-count {
+            background: var(--sky-primary); color: #fff; border-radius: 10px;
+            font-size: 11px; font-weight: 700; padding: 1px 7px; display: none;
+        }
+        .badge-count.show { display: inline; }
+
+        .form-grid { display: grid; gap: 16px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        .form-field.full { grid-column: 1 / -1; }
+        .form-field label {
+            color: #64748b; display: block; font-size: 11px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: .05em; margin-bottom: 5px;
+        }
+        .form-field input, .form-field select, .form-field textarea {
+            width: 100%; padding: 10px 12px; border: 1px solid #d1d5db;
+            border-radius: 6px; font-size: 14px; font-family: 'Montserrat', sans-serif;
+            transition: border-color .15s, box-shadow .15s; background: #fff;
+        }
+        .form-field input:focus, .form-field select:focus, .form-field textarea:focus {
+            outline: none; border-color: var(--sky-primary);
+            box-shadow: 0 0 0 3px rgba(33,150,196,0.12);
+        }
+        .form-field textarea { resize: vertical; min-height: 70px; }
+
+        /* Room grid — dùng div thay label để tránh double-toggle */
+        .room-grid {
+            display: grid; gap: 12px; grid-template-columns: repeat(3, minmax(0, 1fr));
+            max-height: 440px; overflow-y: auto; padding-right: 4px;
+        }
+        .room-card {
+            border: 2px solid #e2e8f0; border-radius: 8px; padding: 14px;
+            cursor: pointer; transition: border-color .15s, background .15s, box-shadow .15s;
+            user-select: none; position: relative;
+        }
+        .room-card:hover { border-color: var(--sky-primary); background: #f0f9ff; }
+        .room-card.selected {
+            border-color: var(--sky-primary); background: #e0f2fe;
+            box-shadow: 0 0 0 1px var(--sky-primary);
+        }
+        .room-card.selected::after {
+            content: '✓'; position: absolute; top: 8px; right: 10px;
+            background: var(--sky-primary); color: #fff; border-radius: 50%;
+            width: 20px; height: 20px; font-size: 11px; font-weight: 700;
+            display: flex; align-items: center; justify-content: center;
+        }
+        /* checkbox ẩn hoàn toàn */
+        .room-card input[type="checkbox"] {
+            position: absolute; opacity: 0; pointer-events: none; width: 0; height: 0;
+        }
+        .room-number { font-size: 16px; font-weight: 700; color: var(--sky-dark); margin-bottom: 4px; }
+        .room-loai   { font-size: 12px; color: var(--sky-primary); font-weight: 600; margin-bottom: 6px; }
+        .room-meta   { font-size: 11px; color: #888; line-height: 1.6; }
+        .room-price  { font-size: 13px; font-weight: 700; color: #0f766e; margin-top: 8px; }
+        .room-empty  { color: #999; font-size: 13px; grid-column: 1/-1; padding: 20px; text-align: center; }
+
+        .room-grid::-webkit-scrollbar { width: 5px; }
+        .room-grid::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 3px; }
+        .room-grid::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+
+        /* CCCD theo phòng — THÊM MỚI */
+        #cccd-tung-phong {
+            margin-top: 20px;
+            padding-top: 18px;
+            border-top: 1px dashed #e2e8f0;
+        }
+        #cccd-tung-phong .sum-section-label {
+            font-size: 11px; font-weight: 700; color: #94a3b8;
+            text-transform: uppercase; letter-spacing: .06em; margin-bottom: 12px;
+        }
+
+        /* Addon */
+        .addon-grid { display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .addon-card {
+            border: 2px solid #e2e8f0; border-radius: 8px; padding: 14px 16px;
+            display: flex; align-items: flex-start; gap: 10px; cursor: pointer;
+            transition: border-color .15s, background .15s;
+        }
+        .addon-card:hover { border-color: var(--sky-primary); background: #f0f9ff; }
+        .addon-card.checked { border-color: var(--sky-primary); background: #e0f2fe; }
+        .addon-card input[type="checkbox"] {
+            margin-top: 2px; width: 17px; height: 17px;
+            cursor: pointer; flex-shrink: 0; accent-color: var(--sky-primary);
+        }
+        .addon-name  { font-weight: 700; font-size: 13px; color: var(--text-dark); margin-bottom: 3px; }
+        .addon-price { color: var(--sky-primary); font-weight: 600; font-size: 12px; }
+        .addon-extra { margin-top: 10px; display: none; }
+        .addon-extra label {
+            font-size: 11px; color: #6b7280; font-weight: 700; display: block; margin-bottom: 4px;
+        }
+        .addon-extra input {
+            border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px;
+            padding: 6px 10px; width: 100%;
+        }
+        .addon-extra input[type="number"] { width: 90px; }
+
+        /* Promo */
+        .promo-select {
+            width: 100%; padding: 10px 12px; border: 1px solid #d1d5db;
+            border-radius: 6px; font-size: 14px; font-family: 'Montserrat', sans-serif; background: #fff;
+        }
+        .promo-info {
+            margin-top: 10px; padding: 10px 14px; background: #f0fdf4;
+            border: 1px solid #bbf7d0; border-radius: 6px; font-size: 13px;
+            color: #15803d; display: none;
+        }
+
+        /* Summary */
+        .summary-panel {
+            background: #fff; border: 1px solid #e2e8f0; border-radius: 8px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06); padding: 24px;
+            position: sticky; top: 20px;
+        }
+        .summary-panel h2 { color: var(--sky-dark); font-size: 16px; font-weight: 700; margin-bottom: 18px; }
+        .sum-section { margin-bottom: 16px; }
+        .sum-section-label {
+            font-size: 10px; font-weight: 700; color: #94a3b8;
+            text-transform: uppercase; letter-spacing: .06em; margin-bottom: 8px;
+        }
+        .sum-item {
+            display: flex; justify-content: space-between; align-items: flex-start;
+            font-size: 13px; padding: 6px 0; border-bottom: 1px dashed #f1f5f9; gap: 8px;
+        }
+        .sum-item:last-child { border-bottom: none; }
+        .sum-item-name  { color: #374151; flex: 1; }
+        .sum-item-price { color: var(--sky-dark); font-weight: 600; white-space: nowrap; }
+        .sum-empty { color: #cbd5e1; font-size: 12px; font-style: italic; }
+        .sum-divider { border: none; border-top: 1px solid #e2e8f0; margin: 14px 0; }
+        .sum-row { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 8px; }
+        .sum-row span:first-child { color: #6b7280; }
+        .sum-row span:last-child  { font-weight: 600; color: #374151; }
+        .sum-row.discount span:last-child { color: #16a34a; }
+        .sum-total {
+            display: flex; justify-content: space-between; align-items: center;
+            background: var(--sky-dark); border-radius: 6px; padding: 14px 16px; margin-top: 14px;
+        }
+        .sum-total-label  { color: rgba(255,255,255,0.8); font-size: 13px; }
+        .sum-total-amount { color: #fff; font-size: 22px; font-weight: 700; }
+
+        .submit-btn {
+            width: 100%; background: var(--sky-primary); border: none; color: #fff;
+            padding: 14px; border-radius: 6px; font-weight: 700; font-size: 15px;
+            text-transform: uppercase; cursor: pointer; margin-top: 16px;
+            letter-spacing: .05em; transition: background .15s;
+        }
+        .submit-btn:hover { background: #1565c0; }
+        .submit-btn:disabled { background: #94a3b8; cursor: not-allowed; }
+
+        .admin-message.error {
+            background: #fff1f1; color: #b42318; font-weight: 600;
+            margin-bottom: 18px; padding: 12px 16px; border-radius: 6px; border: 1px solid #fecaca;
+        }
+        .admin-message.success {
+            background: #f0fdf4; color: #15803d; font-weight: 600;
+            margin-bottom: 18px; padding: 12px 16px; border-radius: 6px; border: 1px solid #bbf7d0;
+        }
+
+        @media (max-width: 1100px) {
+            .quay-layout { grid-template-columns: 1fr; }
+            .summary-panel { position: static; }
+            .room-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+        @media (max-width: 700px) {
+            .quay-shell { padding: 20px 16px 60px; }
+            .form-grid { grid-template-columns: 1fr; }
+            .room-grid, .addon-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+    <div class="topbar-left">
+        <span>Tel: +84 123 456 789 &nbsp;|&nbsp; Email: info@hotel.local</span>
+    </div>
+</div>
+
+<header>
+    <a href="/home" class="logo"><img src="/logo.jpg" alt="Hotel Logo"></a>
+    <nav class="nav-menu admin-nav">
+        <a href="/nhan-vien/dat-phong" class="active">Đơn đặt phòng</a>
+        <a href="/nhan-vien/danh-gia">Đánh giá</a>
+        <a href="/nhan-vien/khach-hang">Khách hàng</a>
+        <a href="/nhan-vien/phong">Phòng</a>
+        <a href="/nhan-vien/khuyen-mai">Khuyến mãi</a>
+        <a href="/nhan-vien/dat-phong-quay">Đặt phòng tại quầy</a>
+    </nav>
+    <div class="header-actions">
+        <a href="/logout" class="btn btn-outline">Đăng Xuất</a>
+    </div>
+</header>
+
+<main class="quay-shell">
+    <div class="quay-header">
+        <h1>Đặt Phòng Tại Quầy</h1>
+        <p>Tạo đơn đặt phòng cho khách đến trực tiếp và thu tiền mặt ngay tại quầy.</p>
+    </div>
+
+    <div th:if="${error}"   class="admin-message error"   th:text="${error}"></div>
+    <div th:if="${success}" class="admin-message success" th:text="${success}"></div>
+
+    <form th:action="@{/nhan-vien/dat-phong-quay/submit}" method="post" id="quayForm">
+        <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+        <input type="hidden" name="tongTienPhong"  id="h-tien-phong"  value="0">
+        <input type="hidden" name="tongTienDichVu" id="h-tien-dv"     value="0">
+        <input type="hidden" name="tongTienVat"    id="h-tien-vat"    value="0">
+        <input type="hidden" name="tongCong"       id="h-tong-cong"   value="0">
+
+        <div class="quay-layout">
+            <section>
+
+                <!-- ① THÔNG TIN KHÁCH -->
+                <div class="quay-panel">
+                    <div class="panel-title">Thông Tin Khách</div>
+                    <div class="form-grid">
+                        <div class="form-field">
+                            <label>Họ tên khách <span style="color:red">*</span></label>
+                            <input type="text" name="hoten" maxlength="150" required placeholder="Nguyễn Văn A">
+                        </div>
+                        <div class="form-field">
+                            <label>Số điện thoại <span style="color:red">*</span></label>
+                            <input type="tel" name="sdt" maxlength="20" required placeholder="0900 000 000">
+                        </div>
+                        <div class="form-field">
+                            <label>Email</label>
+                            <input type="email" name="email" maxlength="150" placeholder="email@example.com">
+                        </div>
+                        <div class="form-field">
+                            <label>CCCD <span style="color:red">*</span></label>
+                            <input type="text" name="ma_cccd" maxlength="12" pattern="[0-9]{12}" inputmode="numeric" required placeholder="12 số CCCD">
+                        </div>
+                        <div class="form-field">
+                            <label>Ngày nhận phòng <span style="color:red">*</span></label>
+                            <input type="date" name="ngaydatPhong" id="ngay-nhan" required>
+                        </div>
+                        <div class="form-field">
+                            <label>Ngày trả phòng <span style="color:red">*</span></label>
+                            <input type="date" name="ngaytraPhong" id="ngay-tra" required>
+                        </div>
+                        <div class="form-field">
+                            <label>Số người lớn</label>
+                            <input type="number" name="songuoiLon" min="1" value="1" id="inp-nguoi-lon">
+                        </div>
+                        <div class="form-field">
+                            <label>Số trẻ em</label>
+                            <input type="number" name="sotreEm" min="0" value="0" id="inp-tre-em">
+                        </div>
+                        <div class="form-field full">
+                            <label>Yêu cầu thêm</label>
+                            <textarea name="yeuCauThem" placeholder="Ví dụ: phòng tầng cao, giường đôi..."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ② CHỌN PHÒNG — dùng div thay label -->
+                <div class="quay-panel">
+                    <div class="panel-title">
+                        Chọn Phòng
+                        <span class="badge-count" id="room-badge">0</span>
+                        <span style="margin-left:auto;font-size:12px;font-weight:400;color:#888;" id="room-count-label"></span>
+                    </div>
+                    <div class="room-grid" id="roomGrid">
+                        <div th:each="p : ${phongTrongList}"
+                             class="room-card"
+                             th:attr="data-ma-phong=${p.maPhong},
+                                      data-so-phong=${p.soPhong},
+                                      data-gia=${p.giaMoiDem},
+                                      data-loai=${p.loaiPhong != null ? p.loaiPhong.tenLoai : ''},
+                                      data-tang=${p.soTang},
+                                      data-suc-chua=${p.sucChua != null ? p.sucChua : ''},
+                                      data-mo-ta=${p.moTa != null ? p.moTa : ''}">
+                            <!-- checkbox ẩn, chỉ để form submit -->
+                            <input type="checkbox" name="maPhongList" th:value="${p.maPhong}">
+                            <div class="room-number" th:text="'Phòng ' + ${p.soPhong}">Phòng 101</div>
+                            <div class="room-loai"   th:text="${p.loaiPhong != null ? p.loaiPhong.tenLoai : 'Standard'}">Standard</div>
+                            <div class="room-meta">
+                                <span th:text="'Tầng ' + ${p.soTang}">Tầng 1</span>
+                                <span th:if="${p.sucChua != null}" th:text="' · ' + ${p.sucChua} + ' khách'"> · 2 khách</span>
+                            </div>
+                            <div class="room-meta"
+                                 th:if="${p.moTa != null and !p.moTa.isEmpty()}"
+                                 style="margin-top:4px;color:#aaa;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
+                                 th:text="${p.moTa}">Mô tả</div>
+                            <div class="room-price"
+                                 th:text="${#numbers.formatDecimal(p.giaMoiDem,0,'COMMA',0,'POINT') + ' VND/đêm'}">
+                                500.000 VND/đêm
+                            </div>
+                        </div>
+                        <div th:if="${phongTrongList == null or phongTrongList.isEmpty()}" class="room-empty">
+                            Không có phòng trống.
+                        </div>
+                    </div>
+
+                    <!-- ========== THÊM MỚI: CCCD theo từng phòng đã chọn ========== -->
+                    <div id="cccd-tung-phong" style="display:none;">
+                        <div class="sum-section-label">CCCD khách lưu trú theo phòng</div>
+                        <div class="form-grid" id="cccdGrid"></div>
+                    </div>
+                    <!-- ========== HẾT PHẦN THÊM MỚI ========== -->
+
+                </div>
+
+                <!-- ③ DỊCH VỤ BỔ SUNG -->
+                <div class="quay-panel">
+                    <div class="panel-title">
+                        ③ Dịch Vụ Bổ Sung
+                        <span class="badge-count" id="dv-badge">0</span>
+                    </div>
+                    <div class="addon-grid">
+                        <label class="addon-card" th:each="dv : ${dichVuList}">
+                            <input type="checkbox" name="dichVuIds" th:value="${dv.id}"
+                                   th:attr="data-gia=${dv.gia},data-id=${dv.id},data-ten=${dv.ten_dich_vu},data-donvi=${dv.donVi}">
+                            <div style="width:100%">
+                                <div class="addon-name"  th:text="${dv.ten_dich_vu}">Bữa sáng</div>
+                                <div class="addon-price"
+                                     th:text="${#numbers.formatDecimal(dv.gia,0,'COMMA',0,'POINT') + ' VND / ' + dv.donVi}">
+                                    150.000 VND / người
+                                </div>
+                                <!-- Số lượng + ngày sử dụng: hiện khi tick -->
+                                <div class="addon-extra">
+                                    <label>Số lượng (<span th:text="${dv.donVi}">đơn vị</span>)</label>
+                                    <input type="number"
+                                           th:name="${'soLuong_' + dv.id}"
+                                           th:attr="data-id=${dv.id}"
+                                           min="1" value="1"
+                                           onclick="event.stopPropagation()">
+
+                                    <label style="margin-top:8px;">Ngày sử dụng</label>
+                                    <input type="datetime-local"
+                                           th:name="${'ngaySuDung_' + dv.id}"
+                                           th:attr="data-id=${dv.id}"
+                                           onclick="event.stopPropagation()">
+                                </div>
+                            </div>
+                        </label>
+                        <div th:if="${dichVuList == null or dichVuList.isEmpty()}" class="room-empty">
+                            Không có dịch vụ nào.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ④ KHUYẾN MÃI -->
+                <div class="quay-panel">
+                    <div class="panel-title">④ Khuyến Mãi</div>
+                    <div class="form-field">
+                        <label>Mã khuyến mãi</label>
+                        <select name="maKhuyenMai" class="promo-select" id="promoSelect">
+                            <option value="">-- Không áp dụng --</option>
+                            <option th:each="km : ${khuyenMaiList}"
+                                    th:value="${km.id}"
+                                    th:attr="data-loai=${km.loaiGiam},data-giatri=${km.giatriGiam}"
+                                    th:text="${km.promoCode + ' — ' + km.moTa}">
+                                SUMMER2026 — Giảm 15%
+                            </option>
+                        </select>
+                    </div>
+                    <div class="promo-info" id="promoInfo"></div>
+                </div>
+
+            </section>
+
+            <!-- TÓM TẮT -->
+            <aside>
+                <div class="summary-panel">
+                    <h2>Tóm Tắt Đơn</h2>
+
+                    <div class="sum-section">
+                        <div class="sum-section-label">Lưu trú</div>
+                        <div class="sum-item">
+                            <span class="sum-item-name">Ngày nhận</span>
+                            <span class="sum-item-price" id="sum-ngay-nhan">--</span>
+                        </div>
+                        <div class="sum-item">
+                            <span class="sum-item-name">Ngày trả</span>
+                            <span class="sum-item-price" id="sum-ngay-tra">--</span>
+                        </div>
+                        <div class="sum-item">
+                            <span class="sum-item-name">Số đêm</span>
+                            <span class="sum-item-price" id="sum-so-dem">--</span>
+                        </div>
+                        <div class="sum-item">
+                            <span class="sum-item-name">Khách</span>
+                            <span class="sum-item-price" id="sum-khach">--</span>
+                        </div>
+                    </div>
+
+                    <hr class="sum-divider">
+
+                    <div class="sum-section">
+                        <div class="sum-section-label">Phòng đã chọn</div>
+                        <div id="sum-room-list">
+                            <div class="sum-empty">Chưa chọn phòng nào</div>
+                        </div>
+                    </div>
+
+                    <hr class="sum-divider">
+
+                    <div class="sum-section" id="sum-dv-section" style="display:none;">
+                        <div class="sum-section-label">Dịch vụ bổ sung</div>
+                        <div id="sum-dv-list"></div>
+                    </div>
+
+                    <div class="sum-row">
+                        <span>Tiền phòng</span>
+                        <span id="sum-tien-phong">đ 0</span>
+                    </div>
+                    <div class="sum-row">
+                        <span>Tiền dịch vụ</span>
+                        <span id="sum-tien-dv">đ 0</span>
+                    </div>
+                    <div class="sum-row discount" id="sum-row-giam" style="display:none;">
+                        <span>Giảm giá</span>
+                        <span id="sum-tien-giam">đ 0</span>
+                    </div>
+                    <div class="sum-row">
+                        <span>Thuế VAT (10%)</span>
+                        <span id="sum-tien-vat">đ 0</span>
+                    </div>
+
+                    <div class="sum-total">
+                        <div class="sum-total-label">Tổng thu</div>
+                        <div class="sum-total-amount" id="sum-tong-cong">đ 0</div>
+                    </div>
+
+                    <button type="submit" class="submit-btn" id="submitBtn" disabled>
+                        Tạo Đơn &amp; Thu Tiền
+                    </button>
+                    <div style="text-align:center;font-size:11px;color:#94a3b8;margin-top:8px;">
+                        Cần chọn ít nhất 1 phòng để tiếp tục
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </form>
+</main>
+
+<footer>
+    <p>&copy; 2026 Hotel. All rights reserved.</p>
+</footer>
+
+<script>
+    function fmt(n) { return 'đ ' + Math.round(n).toLocaleString('vi-VN'); }
+    function fmtDate(str) {
+        if (!str) return '--';
+        const [y,m,d] = str.split('-');
+        return d+'/'+m+'/'+y;
+    }
+    function soNgay(tu, den) {
+        if (!tu || !den) return 0;
+        const diff = (new Date(den) - new Date(tu)) / 86400000;
+        return diff > 0 ? Math.ceil(diff) : 0;
+    }
+
+    /* ========== THÊM MỚI: sinh input CCCD theo từng phòng đã chọn ========== */
+    function renderCccdInputs() {
+        const container = document.getElementById('cccd-tung-phong');
+        const grid = document.getElementById('cccdGrid');
+        const selectedCards = document.querySelectorAll('.room-card.selected');
+
+        // Giữ lại giá trị đã nhập trước khi render lại (tránh mất dữ liệu khi tick thêm/bớt phòng)
+        const savedValues = {};
+        grid.querySelectorAll('input[type="text"]').forEach(function(inp) {
+            savedValues[inp.name] = inp.value;
+        });
+
+        if (selectedCards.length === 0) {
+            container.style.display = 'none';
+            grid.innerHTML = '';
+            return;
+        }
+
+        container.style.display = 'block';
+        grid.innerHTML = '';
+
+        selectedCards.forEach(function(card) {
+            const maPhong  = card.dataset.maPhong;
+            const soPhong  = card.dataset.soPhong;
+            const fieldName = 'cccdPhong_' + maPhong;
+
+            const div = document.createElement('div');
+            div.className = 'form-field';
+            div.innerHTML =
+                '<label>CCCD khách ở Phòng ' + soPhong + ' <span style="color:red">*</span></label>' +
+                '<input type="text" name="' + fieldName + '" maxlength="12" pattern="[0-9]{12}" ' +
+                'inputmode="numeric" required placeholder="12 số CCCD">';
+
+            grid.appendChild(div);
+
+            if (savedValues[fieldName]) {
+                div.querySelector('input').value = savedValues[fieldName];
+            }
+        });
+    }
+    /* ========== HẾT PHẦN THÊM MỚI ========== */
+
+    function tinhTong() {
+        const ngayNhan = document.getElementById('ngay-nhan').value;
+        const ngayTra  = document.getElementById('ngay-tra').value;
+        const dem      = soNgay(ngayNhan, ngayTra);
+        const nguoiLon = parseInt(document.getElementById('inp-nguoi-lon').value) || 0;
+        const treEm    = parseInt(document.getElementById('inp-tre-em').value) || 0;
+
+        document.getElementById('sum-ngay-nhan').textContent = fmtDate(ngayNhan);
+        document.getElementById('sum-ngay-tra').textContent  = fmtDate(ngayTra);
+        document.getElementById('sum-so-dem').textContent    = dem > 0 ? dem + ' đêm' : '--';
+        document.getElementById('sum-khach').textContent     = nguoiLon + ' NL, ' + treEm + ' TE';
+
+        const promoSel = document.getElementById('promoSelect');
+        const promoOpt = promoSel.options[promoSel.selectedIndex];
+        const loaiGiam = promoOpt.dataset.loai || '';
+        const giaGiam  = parseFloat(promoOpt.dataset.giatri) || 0;
+
+        let tienPhongGoc = 0;
+        const selectedRooms = [];
+        document.querySelectorAll('.room-card.selected').forEach(function(card) {
+            const gia = parseFloat(card.dataset.gia) || 0;
+            selectedRooms.push({ soPhong: card.dataset.soPhong, loai: card.dataset.loai, gia });
+            tienPhongGoc += gia;
+        });
+        tienPhongGoc *= (dem > 0 ? dem : 1);
+
+        let tienGiam = 0, tienPhong = tienPhongGoc;
+        if (promoSel.value && giaGiam > 0) {
+            tienGiam = loaiGiam === 'PERCENT'
+                ? tienPhongGoc * giaGiam / 100
+                : Math.min(giaGiam, tienPhongGoc);
+            tienPhong = tienPhongGoc - tienGiam;
+        }
+
+        let tienDv = 0;
+        const selectedDvs = [];
+        document.querySelectorAll('.addon-card input[type="checkbox"]:checked').forEach(function(cb) {
+            const gia   = parseFloat(cb.dataset.gia) || 0;
+            const id    = cb.dataset.id;
+            const ten   = cb.dataset.ten;
+            const donVi = cb.dataset.donvi;
+            const slInp = document.querySelector('input[name="soLuong_' + id + '"]');
+            const sl    = slInp ? (parseInt(slInp.value) || 1) : 1;
+            const thanh = gia * sl;
+            tienDv += thanh;
+            selectedDvs.push({ ten, sl, donVi, thanh });
+        });
+
+        const vat      = (tienPhong + tienDv) * 0.10;
+        const tongCong = tienPhong + tienDv + vat;
+
+        /* Cập nhật phòng trong tóm tắt */
+        const roomListEl = document.getElementById('sum-room-list');
+        roomListEl.innerHTML = selectedRooms.length === 0
+            ? '<div class="sum-empty">Chưa chọn phòng nào</div>'
+            : selectedRooms.map(function(r) {
+                return '<div class="sum-item">'
+                    + '<span class="sum-item-name">Phòng ' + r.soPhong
+                    + (r.loai ? ' <span style="color:#94a3b8;font-size:11px;">(' + r.loai + ')</span>' : '') + '</span>'
+                    + '<span class="sum-item-price">' + fmt(r.gia * (dem > 0 ? dem : 1)) + '</span>'
+                    + '</div>';
+              }).join('');
+
+        /* Cập nhật dịch vụ trong tóm tắt */
+        const dvSection = document.getElementById('sum-dv-section');
+        const dvListEl  = document.getElementById('sum-dv-list');
+        if (selectedDvs.length > 0) {
+            dvSection.style.display = 'block';
+            dvListEl.innerHTML = selectedDvs.map(function(d) {
+                return '<div class="sum-item">'
+                    + '<span class="sum-item-name">' + d.ten + ' × ' + d.sl + ' ' + d.donVi + '</span>'
+                    + '<span class="sum-item-price">' + fmt(d.thanh) + '</span>'
+                    + '</div>';
+            }).join('');
+        } else {
+            dvSection.style.display = 'none';
+        }
+
+        /* Giảm giá */
+        const rowGiam = document.getElementById('sum-row-giam');
+        if (tienGiam > 0) {
+            rowGiam.style.display = 'flex';
+            document.getElementById('sum-tien-giam').textContent = '− ' + fmt(tienGiam);
+        } else {
+            rowGiam.style.display = 'none';
+        }
+
+        document.getElementById('sum-tien-phong').textContent = fmt(tienPhong);
+        document.getElementById('sum-tien-dv').textContent    = fmt(tienDv);
+        document.getElementById('sum-tien-vat').textContent   = fmt(vat);
+        document.getElementById('sum-tong-cong').textContent  = fmt(tongCong);
+
+        document.getElementById('h-tien-phong').value = Math.round(tienPhong);
+        document.getElementById('h-tien-dv').value    = Math.round(tienDv);
+        document.getElementById('h-tien-vat').value   = Math.round(vat);
+        document.getElementById('h-tong-cong').value  = Math.round(tongCong);
+
+        const roomBadge = document.getElementById('room-badge');
+        roomBadge.textContent = selectedRooms.length;
+        roomBadge.classList.toggle('show', selectedRooms.length > 0);
+        document.getElementById('room-count-label').textContent
+            = selectedRooms.length > 0 ? selectedRooms.length + ' phòng đã chọn' : '';
+
+        const dvBadge = document.getElementById('dv-badge');
+        dvBadge.textContent = selectedDvs.length;
+        dvBadge.classList.toggle('show', selectedDvs.length > 0);
+
+        document.getElementById('submitBtn').disabled = selectedRooms.length === 0;
+
+        const promoInfo = document.getElementById('promoInfo');
+        if (promoSel.value && tienGiam > 0) {
+            promoInfo.style.display = 'block';
+            promoInfo.textContent   = '✓ Đã áp dụng: giảm ' + fmt(tienGiam);
+        } else {
+            promoInfo.style.display = 'none';
+        }
+    }
+
+    /* ===== ROOM CARDS — dùng div, không dùng label ===== */
+    document.querySelectorAll('.room-card').forEach(function(card) {
+        card.addEventListener('click', function() {
+            this.classList.toggle('selected');
+            const cb = this.querySelector('input[type="checkbox"]');
+            if (cb) cb.checked = !cb.checked;
+            renderCccdInputs();   /* THÊM MỚI */
+            tinhTong();
+        });
+    });
+
+    /* ===== ADDON ===== */
+    document.querySelectorAll('.addon-card input[type="checkbox"]').forEach(function(cb) {
+        cb.addEventListener('change', function() {
+            const card  = this.closest('.addon-card');
+            const extra = card.querySelector('.addon-extra');
+            if (this.checked) {
+                extra.style.display = 'block';
+                card.classList.add('checked');
+            } else {
+                extra.style.display = 'none';
+                card.classList.remove('checked');
+            }
+            tinhTong();
+        });
+    });
+
+    document.querySelectorAll('.addon-extra input[type="number"]').forEach(function(inp) {
+        inp.addEventListener('input', tinhTong);
+    });
+
+    ['ngay-nhan','ngay-tra','inp-nguoi-lon','inp-tre-em'].forEach(function(id) {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('change', tinhTong);
+    });
+
+    document.getElementById('promoSelect').addEventListener('change', tinhTong);
+
+    tinhTong();
+</script>
+</body>
+</html>

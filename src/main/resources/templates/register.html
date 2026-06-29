@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng Ký Thành Viên | Hotel</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<div class="topbar">
+    <div class="topbar-left">
+        <span>Tel: +84 123 456 789 &nbsp; | &nbsp; Email: info@hotel.local</span>
+    </div>
+</div>
+
+<header>
+    <a href="/home" th:href="@{/home}" class="logo">
+        <img src="/logo.jpg" alt="Hotel Logo">
+    </a>
+    <div class="header-actions">
+        <a href="/home" class="btn btn-outline">Trang Chủ</a>
+        <a href="/Login" class="btn btn-filled">Đăng Nhập</a>
+    </div>
+</header>
+
+<main class="auth-wrapper">
+    <div class="auth-card register">
+        <h2>Đăng Ký <span>Thành Viên</span></h2>
+        <p class="subtitle">Đăng ký ngay để nhận ưu đãi đặc quyền từ Hotel</p>
+
+        <form id="registerForm" th:action="@{/Register}" method="post">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="ho_ten">Họ và Tên</label>
+                    <input type="text" id="ho_ten" name="ho_ten" placeholder="Nguyễn Văn A" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" placeholder="example@gmail.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="mat_khau_hash">Mật khẩu</label>
+                    <input type="password" id="mat_khau_hash" name="mat_khau_hash" placeholder="Tối thiểu 7 ký tự" required minlength="6">
+                </div>
+
+                <div class="form-group">
+                    <label for="so_dien_thoai">Số điện thoại</label>
+                    <input type="tel" id="so_dien_thoai" name="so_dien_thoai" placeholder="09xxxxxxxx" required pattern="[0-9]{10}">
+                </div>
+
+                <div class="form-group">
+                    <label for="dia_chi">Địa chỉ liên hệ</label>
+                    <input type="text" id="dia_chi" name="dia_chi" placeholder="Số nhà, đường, tỉnh/TP" required>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-submit" style="margin-top: 30px;">Tạo Tài Khoản</button>
+        </form>
+
+        <div class="auth-footer">
+            <p>Đã là thành viên? <a href="/Login" th:href="@{/Login}">Đăng nhập ngay</a></p>
+        </div>
+    </div>
+</main>
+
+<footer>
+    <p>&copy; 2026 Hotel. All rights reserved.</p>
+</footer>
+
+
+</body>
+</html>

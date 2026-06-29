@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quan ly khach hang | Nhan vien</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<div class="topbar">
+    <div class="topbar-left">
+        <span>+84 123 456 789 &nbsp;|&nbsp; info@hotel.local</span>
+    </div>
+</div>
+
+<header>
+    <a href="/home" class="logo">
+        <img src="/logo.jpg" alt="Hotel Logo">
+    </a>
+    <nav class="nav-menu admin-nav">
+        <a href="/nhan-vien/dat-phong">Don dat phong</a>
+        <a href="/nhan-vien/danh-gia">Danh gia</a>
+        <a href="/nhan-vien/khach-hang" class="active">Khach hang</a>
+        <a href="/nhan-vien/phong">Phong</a>
+        <a href="/nhan-vien/khuyen-mai">Khuyen mai</a>
+    </nav>
+    <div class="header-actions">
+        <a href="/logout" class="btn btn-outline">Dang xuat</a>
+    </div>
+</header>
+
+<main class="admin-wrapper">
+    <div class="admin-header">
+        <h1>Quan ly khach hang</h1>
+        <a th:href="@{/nhan-vien/khach-hang}" class="admin-btn outline">Lam moi</a>
+    </div>
+
+    <div th:if="${success}" class="admin-message success">
+        <span th:text="${success}"></span>
+    </div>
+    <div th:if="${error}" class="admin-message error">
+        <span th:text="${error}"></span>
+    </div>
+
+    <section class="admin-panel">
+        <h2>Danh sach khach hang</h2>
+
+        <form th:action="@{/nhan-vien/khach-hang}" method="get" class="search-row">
+            <input type="text" name="keyword" placeholder="Tim theo ten, email, so dien thoai..." th:value="${keyword}">
+            <button type="submit" class="admin-btn outline">Tim kiem</button>
+        </form>
+
+        <div class="admin-table-wrap">
+            <table class="admin-table">
+                <thead>
+                <tr>
+                    <th>Ma</th>
+                    <th>Ho ten</th>
+                    <th>Email</th>
+                    <th>So dien thoai</th>
+                    <th>Trang thai</th>
+                    <th>Ngay tao</th>
+                    <th>Thao tac</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="nd : ${nguoiDungs}">
+                    <td th:text="${nd.maNguoiDung}"></td>
+                    <td><strong th:text="${nd.hoTen}"></strong></td>
+                    <td th:text="${nd.email}"></td>
+                    <td th:text="${nd.soDienThoai != null ? nd.soDienThoai : ''}"></td>
+                    <td>
+                        <select class="admin-inline-input"
+                                name="trangThai"
+                                th:attr="form=${'customer-update-' + nd.maNguoiDung}">
+                            <option th:value="true" th:selected="${nd.trangThai}">Hoat dong</option>
+                            <option th:value="false" th:selected="${!nd.trangThai}">Khoa</option>
+                        </select>
+                    </td>
+                    <td th:text="${nd.ngayTao != null ? #temporals.format(nd.ngayTao, 'dd/MM/yyyy') : ''}"></td>
+                    <td>
+                        <form th:id="${'customer-update-' + nd.maNguoiDung}"
+                              th:action="@{/nhan-vien/khach-hang/update/{id}(id=${nd.maNguoiDung})}"
+                              method="post">
+                            <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                            <button type="submit" class="admin-btn small">Luu</button>
+                        </form>
+                    </td>
+                </tr>
+                <tr th:if="${nguoiDungs.isEmpty()}">
+                    <td colspan="7">
+                        <div class="empty-state">Khong tim thay khach hang phu hop.</div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+
+<footer>
+    <p>&copy; 2026 Hotel. All rights reserved.</p>
+</footer>
+
+</body>
+</html>

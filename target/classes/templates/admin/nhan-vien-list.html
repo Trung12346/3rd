@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản Lý Nhân Viên | Hotel</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<div class="topbar">
+    <div class="topbar-left">
+        <span>+84 123 456 789 &nbsp;|&nbsp; info@hotel.local</span>
+    </div>
+</div>
+
+<header>
+    <a href="/home" class="logo">
+        <img src="/logo.jpg" alt="Hotel Logo">
+    </a>
+    <nav class="nav-menu admin-nav">
+        <a href="/admin/phong">Phòng</a>
+        <a href="/admin/loai-phong">Loại Phòng</a>
+        <a href="/admin/dat-phong">Đơn Đặt Phòng</a>
+        <a href="/admin/hoa-don">Hóa Đơn</a>
+        <a href="/admin/nhan-vien" class="active">Nhân Viên</a>
+        <a href="/admin/khuyen-mai">Khuyến Mãi</a>
+        <a href="/admin/danh-gia">Đánh Giá</a>
+        <a href="/admin/nguoi-dung">Người Dùng</a>
+    </nav>
+    <div class="header-actions">
+        <a href="/logout" class="btn btn-outline">Đăng Xuất</a>
+    </div>
+</header>
+
+<main class="admin-wrapper">
+    <div class="admin-header">
+        <h1>Quản Lý Nhân Viên</h1>
+        <a th:href="@{/admin/nhan-vien}" class="admin-btn outline">Làm Mới Form</a>
+    </div>
+
+    <div th:if="${success}" class="admin-message success">
+        <span th:text="${success}"></span>
+    </div>
+    <div th:if="${error}" class="admin-message error">
+        <span th:text="${error}"></span>
+    </div>
+
+    <section class="admin-panel">
+        <h2 th:text="${title}">Thêm nhân viên</h2>
+
+        <form th:action="@{/admin/nhan-vien/save}" th:object="${nhanVien}" method="post">
+            <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+            <input type="hidden" th:field="*{id}">
+
+            <div class="admin-grid">
+                <div class="admin-field">
+                    <label>Người dùng</label>
+                    <select name="maNguoiDung" >
+                        <option value="">-- Chọn người dùng --</option>
+                        <option th:each="nd : ${nguoiDungs}"
+                                th:value="${nd.n.maNguoiDung}"
+                                th:text="${nd.n.hoTen + ' - ' + nd.n.email + ' - ' + nd.n.vaiTro.tenVaiTro}"
+                                th:selected="${nhanVien.n != null and nhanVien.n.maNguoiDung == nd.n.maNguoiDung}">
+                        </option>
+                    </select >
+                </div>
+
+
+                <div class="admin-field">
+                    <label>Ho ten</label>
+                    <input type="text" th:field="*{n.hoTen}" placeholder="VD: Nguyen Van A" >
+                </div>
+
+                <div class="admin-field">
+                    <label>Email</label>
+                    <input type="email" th:field="*{n.email}" placeholder="example@gmail.com" >
+                </div>
+
+                <div class="admin-field" th:if="${nhanVien.n.maNguoiDung == null}">
+                    <label>Mat khau</label>
+                    <input type="password"
+                           th:field="*{n.matKhau_hash}"
+                           placeholder="Nhap khi them moi" >
+                </div>
+
+
+                <div class="admin-field" th:if="${nhanVien.n.maNguoiDung != null}">
+                    <label>Mat khau</label>
+                    <input type="password"
+                           name="matKhaumoi"
+                           placeholder="Nhap khi neu muon doi" >
+                    <input
+                            th:field="*{n.matKhau_hash}"
+                            th:type="hidden" >
+                </div>
+
+
+                <div class="admin-field">
+                    <label>So dien thoai</label>
+                    <input type="tel" th:field="*{n.soDienThoai}" placeholder="09xxxxxxxx" pattern="[0-9]{10}">
+                </div>
+
+                <div class="admin-field">
+                    <label>Vai tro</label>
+                    <select th:field="*{n.vaiTro}" >
+                        <option value="">-- Chon vai tro --</option>
+                        <option th:each="vt : ${vaiTros}"
+                                th:value="${vt.id}"
+                                th:text="${vt.tenVaiTro}"
+                                th:selected="${nhanVien.n.vaiTro != null and nhanVien.n.vaiTro.id == vt.id}">
+                        </option>
+                    </select>
+                </div>
+
+                <div class="admin-field">
+                    <label>Trang thai</label>
+                    <select th:field="*{n.trangThai}">
+                        <option th:value="true">Hoat dong</option>
+                        <option th:value="false">Khoa</option>
+                    </select>
+                </div>
+
+                <div class="admin-field full">
+                    <label>Dia chi</label>
+                    <textarea th:field="*{n.diaChi}" placeholder="So nha, duong, tinh/TP..."></textarea>
+                </div>
+                <div class="admin-field">
+                    <label>Bộ phận</label>
+                    <input type="text" th:field="*{boPhan}" placeholder="VD: Lễ tân">
+                </div>
+            </div>
+
+            <div class="admin-actions">
+                <button type="submit" class="admin-btn">Lưu Nhân Viên</button>
+                <a th:href="@{/admin/nhan-vien}" class="admin-btn outline">Hủy</a>
+            </div>
+        </form>
+    </section>
+
+    <section class="admin-panel">
+        <h2>Danh Sách Nhân Viên</h2>
+
+        <form th:action="@{/admin/nhan-vien/search}" method="get" class="search-row">
+            <input type="text" name="keyword" placeholder="Tìm theo tên" th:value="${keyword}">
+            <button type="submit" class="admin-btn outline">Tìm Kiếm</button>
+        </form>
+
+        <div class="admin-table-wrap">
+            <table class="admin-table">
+                <thead>
+                <tr>
+                    <th>Mã</th>
+                    <th>Nhân viên</th>
+                    <th>Email</th>
+                    <th>Số điện thoại</th>
+                    <th>địa chỉ</th>
+                    <th>vai trò</th>
+                    <th>trạng thái</th>
+                    <th>Bộ phận</th>
+                    <th>Thao tác</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="nv : ${nhanViens}">
+                    <td th:text="${nv.id}"></td>
+                    <td><strong th:text="${nv.n != null ? nv.n.hoTen : ''}"></strong></td>
+                    <td th:text="${nv.n != null ? nv.n.email : ''}"></td>
+                    <td th:text="${nv.n != null ? nv.n.soDienThoai : ''}"></td>
+                    <td th:text="${nv.n != null ? nv.n.diaChi : ''}"></td>
+                    <td th:text="${nv.n != null ? nv.n.vaiTro.tenVaiTro : ''}"></td>
+                    <td th:text="${nv.n.trangThai == true ? 'mở khóa' : 'khóa'}"></td>
+                    <td th:text="${nv.boPhan}"></td>
+                    <td>
+                        <div class="row-actions">
+                            <a class="admin-btn small outline"
+                               th:href="@{/admin/nhan-vien/edit/{id}(id=${nv.id})}">Sửa</a>
+                            <form th:action="@{/admin/nhan-vien/lock/{id}(id=${nv.id})}"
+                                  method="post"
+                                  onsubmit="return confirm('Bạn có chắc muốn khóa nhân viên này?')">
+                                <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                                <button type="submit" class="admin-btn small danger">khóa</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                <tr th:if="${nhanViens.isEmpty()}">
+                    <td colspan="9"><div class="empty-state">Không tìm thấy nhân viên phù hợp.</div></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+
+<footer>
+    <p>&copy; 2026 Hotel. All rights reserved.</p>
+</footer>
+
+</body>
+
+</html>

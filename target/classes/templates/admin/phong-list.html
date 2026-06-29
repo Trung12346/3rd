@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản Lý Phòng | Hotel</title>
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        .admin-wrapper {
+            padding: 36px 5% 60px;
+            background: #fafafa;
+        }
+
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .admin-header h1 {
+            color: var(--sky-dark);
+            font-size: 32px;
+        }
+
+        .admin-panel {
+            background: var(--white);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+            padding: 24px;
+            margin-bottom: 28px;
+        }
+
+        .admin-panel h2 {
+            color: var(--sky-dark);
+            font-size: 24px;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .admin-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 18px;
+        }
+
+        .admin-field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .admin-field.full {
+            grid-column: 1 / -1;
+        }
+
+        .admin-field label {
+            color: var(--text-gray);
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .admin-field input,
+        .admin-field select,
+        .admin-field textarea {
+            width: 100%;
+            border: 1px solid var(--border-color);
+            border-radius: 2px;
+            background: #fcfcfc;
+            color: var(--text-dark);
+            font-family: 'Montserrat', sans-serif;
+            font-size: 14px;
+            padding: 10px 12px;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .admin-field textarea {
+            resize: vertical;
+            min-height: 78px;
+        }
+
+        .admin-field input:focus,
+        .admin-field select:focus,
+        .admin-field textarea:focus {
+            border-color: var(--sky-primary);
+            background: var(--white);
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.12);
+        }
+
+        /* ===== TIEN NGHI CHECKBOX GRID ===== */
+        .amenity-checkbox-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 8px 12px;
+            padding: 14px;
+            background: #f8fbfe;
+            border: 1px solid #d6eaf8;
+            border-radius: 4px;
+        }
+
+        .amenity-checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.15s;
+            font-size: 13px;
+            color: var(--text-dark);
+            user-select: none;
+        }
+
+        .amenity-checkbox-item:hover {
+            background: #ebf5fb;
+        }
+
+        .amenity-checkbox-item input[type="checkbox"] {
+            width: 15px;
+            height: 15px;
+            accent-color: var(--sky-primary);
+            cursor: pointer;
+            flex-shrink: 0;
+            margin: 0;
+            padding: 0;
+        }
+
+        .amenity-checkbox-item span {
+            line-height: 1.3;
+        }
+
+        /* ===== ACTIONS ===== */
+        .admin-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .admin-btn {
+            border-radius: 2px;
+            border: 1px solid var(--sky-primary);
+            background: var(--sky-primary);
+            color: var(--white);
+            cursor: pointer;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            padding: 10px 20px;
+            text-decoration: none;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: background 0.2s, border-color 0.2s;
+        }
+
+        .admin-btn:hover {
+            background: var(--sky-dark);
+            border-color: var(--sky-dark);
+        }
+
+        .admin-btn.outline {
+            background: var(--white);
+            color: var(--sky-primary);
+        }
+
+        .admin-btn.outline:hover {
+            background: var(--sky-primary);
+            color: var(--white);
+        }
+
+        .admin-btn.danger {
+            background: #E74C3C;
+            border-color: #E74C3C;
+            color: var(--white);
+        }
+
+        .admin-btn.danger:hover {
+            background: #c0392b;
+            border-color: #c0392b;
+        }
+
+        .admin-btn.small {
+            padding: 7px 12px;
+            font-size: 11px;
+        }
+
+        /* ===== MESSAGES ===== */
+        .admin-message {
+            border-radius: 4px;
+            margin-bottom: 18px;
+            padding: 12px 16px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .admin-message.success {
+            background: #EAF7EE;
+            border: 1px solid #B7E2C1;
+            color: #246B35;
+        }
+
+        .admin-message.error {
+            background: #FDEDEC;
+            border: 1px solid #F2B8B5;
+            color: #9F2F25;
+        }
+
+        /* ===== SEARCH ===== */
+        .search-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .search-row input {
+            flex: 1;
+            border: 1px solid var(--border-color);
+            border-radius: 2px;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 14px;
+            padding: 10px 12px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .search-row input:focus {
+            border-color: var(--sky-primary);
+        }
+
+        /* ===== TABLE ===== */
+        .admin-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--white);
+            font-size: 14px;
+        }
+
+        .admin-table th,
+        .admin-table td {
+            border-bottom: 1px solid var(--border-color);
+            padding: 12px 14px;
+            text-align: left;
+            vertical-align: middle;
+        }
+
+        .admin-table th {
+            background: var(--sky-light);
+            color: var(--sky-dark);
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        .admin-table tbody tr:hover {
+            background: #f8fbfe;
+        }
+
+        /* ===== BADGES ===== */
+        .status-badge {
+            border-radius: 999px;
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 4px 10px;
+            white-space: nowrap;
+        }
+
+        .status-badge.active {
+            background: #EAF7EE;
+            color: #246B35;
+        }
+
+        .status-badge.inactive {
+            background: #F2F2F2;
+            color: #666;
+        }
+
+        .trang-thai-badge {
+            border-radius: 999px;
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 4px 10px;
+            white-space: nowrap;
+        }
+
+        .trang-thai-badge.trong          { background: #EAF3DE; color: #27500A; }
+.trang-thai-badge.dang-su-dung    { background: #FAECE7; color: #712B13; }
+.trang-thai-badge.cho-xac-nhan    { background: #FAEEDA; color: #633806; }
+.trang-thai-badge.bao-tri         { background: #FCEBEB; color: #791F1F; }
+
+        /* ===== TIEN NGHI TAGS TRONG BANG ===== */
+        .amenity-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+
+        .amenity-tag {
+            background: var(--sky-light);
+            border: 1px solid #D6EAF8;
+            border-radius: 999px;
+            color: var(--sky-dark);
+            font-size: 11px;
+            font-weight: 500;
+            padding: 3px 8px;
+            white-space: nowrap;
+        }
+
+        .no-amenity {
+            color: #bbb;
+            font-size: 12px;
+            font-style: italic;
+        }
+
+        /* ===== ROW ACTIONS ===== */
+        .row-actions {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        /* ===== EMPTY STATE ===== */
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-gray);
+        }
+
+        .empty-state p {
+            font-size: 14px;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 900px) {
+            .admin-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .amenity-checkbox-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+
+        @media (max-width: 640px) {
+            .admin-header,
+            .search-row,
+            .row-actions { flex-direction: column; align-items: stretch; }
+            .admin-grid { grid-template-columns: 1fr; }
+            .amenity-checkbox-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+    <div class="topbar-left">
+        <span>Tel: +84 123 456 789 &nbsp;|&nbsp; Email: info@hotel.local</span>
+    </div>
+</div>
+
+<header>
+    <a href="/home" class="logo">
+        <img src="/logo.jpg" alt="Hotel Logo">
+    </a>
+    <nav class="nav-menu">
+        <a href="/home">Trang Chủ</a>
+        <a href="/admin/phong" style="color: var(--sky-primary);">Phòng</a>
+        <a href="/admin/loai-phong">Loại Phòng</a>
+        <a href="/admin/dat-phong">Đơn Đặt Phòng</a>
+        <a href="/admin/hoa-don">Hóa Đơn</a>
+        <a href="/admin/nhan-vien">Nhân Viên</a>
+        <a href="/admin/khuyen-mai">Khuyến Mãi</a>
+        <a href="/admin/danh-gia">Đánh Giá</a>
+        <a href="/admin/nguoi-dung">Người Dùng</a>
+        <a href="/admin/dat-phong-quay">Đặt Phòng quầy</a>
+    </nav>
+    <div class="header-actions">
+        <a href="/logout" class="btn btn-outline">Đăng Xuất</a>
+    </div>
+</header>
+
+<main class="admin-wrapper">
+
+    <div class="admin-header">
+        <h1>Quản Lý Phòng</h1>
+        <a th:href="@{/admin/phong}" class="admin-btn outline"> Làm Mới Form</a>
+    </div>
+
+    <div th:if="${success}" class="admin-message success">
+         <span th:text="${success}"></span>
+    </div>
+    <div th:if="${error}" class="admin-message error">
+         <span th:text="${error}"></span>
+    </div>
+
+    <!-- ===== FORM THEM / SUA PHONG ===== -->
+    <section class="admin-panel">
+        <h2 th:text="${title}">Thêm Phòng</h2>
+
+        <form th:action="@{/admin/phong/save}" th:object="${phong}" method="post">
+            <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+            <input type="hidden" th:field="*{maPhong}">
+
+            <div class="admin-grid">
+
+                <div class="admin-field">
+                    <label>So Phòng</label>
+                    <input type="text" th:field="*{soPhong}" placeholder="VD: 101" required>
+                </div>
+
+                <div class="admin-field">
+                    <label>Loại Phòng</label>
+                    <select name="loaiPhongId" required>
+                        <option value="">-- Chon loại phòng --</option>
+                        <option th:each="lp : ${loaiPhongs}"
+                                th:value="${lp.id}"
+                                th:text="${lp.tenLoai}"
+                                th:selected="${phong.loaiPhong != null and phong.loaiPhong.id == lp.id}">
+                        </option>
+                    </select>
+                </div>
+
+                <div class="admin-field">
+                    <label>So Tang</label>
+                    <input type="number" th:field="*{soTang}" min="1" placeholder="VD: 2" required>
+                </div>
+
+                <div class="admin-field">
+                    <label>Giá Mỗi Đêm (VND)</label>
+                    <input type="number" th:field="*{giaMoiDem}" min="0" step="1000" placeholder="VD: 500000" required>
+                </div>
+
+                <div class="admin-field">
+                    <label>Trạng Thái</label>
+                    <select th:field="*{trangThai}" required>
+                        <option value="Trong">Trong</option>
+                        <option value="Dang su dung">Đang sử dụng</option>
+                        <option value="Cho xac nhan">Chờ xác nhận</option>
+                        <option value="Bao tri">Bảo trì</option>
+                    </select>
+                </div>
+
+                <div class="admin-field">
+                    <label>Hoạt Động</label>
+                    <select th:field="*{hoatDong}">
+                        <option th:value="true">Có</option>
+                        <option th:value="false">Không</option>
+                    </select>
+                </div>
+
+                <div class="admin-field full">
+                    <label>Tiện Nghi Phòng</label>
+                    <div class="amenity-checkbox-grid">
+                        <label class="amenity-checkbox-item" th:each="tn : ${tienNghis}">
+                            <input type="checkbox"
+                                   name="tienNghiIds"
+                                   th:value="${tn.maTienNghi}"
+                                   th:checked="${selectedTienNghiIds.contains(tn.maTienNghi)}">
+                            <span th:text="${tn.tenTienNghi}"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="admin-field full">
+                    <label>Mo Ta</label>
+                    <textarea th:field="*{moTa}" placeholder="Nhập mô tả phòng..."></textarea>
+                </div>
+
+            </div>
+
+            <div class="admin-actions">
+                <button type="submit" class="admin-btn"> Lưu Phòng</button>
+                <a th:href="@{/admin/phong}" class="admin-btn outline"> Hủy</a>
+            </div>
+        </form>
+    </section>
+
+    <!-- ===== DANH SACH PHONG ===== -->
+    <section class="admin-panel">
+        <h2>Danh Sách Phòng</h2>
+
+        <form th:action="@{/admin/phong}" method="get" class="search-row">
+            <input type="text"
+                   name="keyword"
+                   placeholder=" Tìm theo số phòng, trạng thái, loại phòng..."
+                   th:value="${keyword}">
+            <button type="submit" class="admin-btn outline">Tìm Kiếm</button>
+        </form>
+
+        <div class="admin-table-wrap">
+            <table class="admin-table">
+                <thead>
+                <tr>
+                    <th>Ma</th>
+                    <th>So Phòng</th>
+                    <th>Loại Phòng</th>
+                    <th>Tang</th>
+                    <th>Giá / Đêm</th>
+                    <th>Trạng Thái</th>
+                    <th>Tiện Nghi</th>
+                    <th>Hoạt Động</th>
+                    <th>Thao Tac</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="p : ${phongs}">
+                    <td th:text="${p.maPhong}"></td>
+                    <td><strong th:text="${p.soPhong}"></strong></td>
+                    <td th:text="${p.loaiPhong != null ? p.loaiPhong.tenLoai : '-'}"></td>
+                    <td th:text="${p.soTang}"></td>
+                    <td th:text="${#numbers.formatDecimal(p.giaMoiDem, 0, 'COMMA', 0, 'POINT')} + ' VND'"></td>
+                    <td>
+    <span th:with="tt=${p.trangThai}"
+          th:classappend="${tt == 'Trong'} ? 'trong' : (${tt == 'Dang su dung'} ? 'dang-su-dung' : (${tt == 'Cho xac nhan'} ? 'cho-xac-nhan' : 'bao-tri'))"
+          class="trang-thai-badge"
+          th:text="${tt == 'Trong'} ? 'Trống' : (${tt == 'Dang su dung'} ? 'Đang sử dụng' : (${tt == 'Cho xac nhan'} ? 'Chờ xác nhận' : 'Bảo trì'))">
+    </span>
+                    </td>
+                    <td>
+                        <div class="amenity-tags" th:if="${tienNghiTheoPhong[p.maPhong] != null and !tienNghiTheoPhong[p.maPhong].isEmpty()}">
+                            <span class="amenity-tag"
+                                  th:each="tenTienNghi : ${tienNghiTheoPhong[p.maPhong]}"
+                                  th:text="${tenTienNghi}">
+                            </span>
+                        </div>
+                        <span class="no-amenity" th:if="${tienNghiTheoPhong[p.maPhong] == null or tienNghiTheoPhong[p.maPhong].isEmpty()}">-</span>
+                    </td>
+                    <td>
+                        <span th:if="${p.hoatDong}" class="status-badge active">Có</span>
+                        <span th:unless="${p.hoatDong}" class="status-badge inactive">Không</span>
+                    </td>
+                    <td>
+                        <div class="row-actions">
+                            <a class="admin-btn small outline"
+                               th:href="@{/admin/phong/edit/{id}(id=${p.maPhong}, keyword=${keyword})}">
+                                 Sửa
+                            </a>
+                            <form th:action="@{/admin/phong/delete/{id}(id=${p.maPhong})}"
+                                  method="post"
+                                  onsubmit="return confirm('Bạn có chắc muốn xóa phòng này?')">
+                                <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                                <button type="submit" class="admin-btn small danger"> Xóa</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                <tr th:if="${phongs.isEmpty()}">
+                    <td colspan="9">
+                        <div class="empty-state">
+                            <p>Không tìm thấy phòng nao phù hợp.</p>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+</main>
+
+<footer>
+    <p>&copy; 2026 Hotel. All rights reserved.</p>
+</footer>
+
+</body>
+</html>

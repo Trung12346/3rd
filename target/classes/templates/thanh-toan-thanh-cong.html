@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đặt phòng thành công</title>
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        body { background: #fafafa; }
+        .booking-shell { margin: 0 auto; max-width: 760px; padding: 42px 5% 70px; }
+        .booking-stepper {
+            align-items: center;
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            display: grid;
+            gap: 14px;
+            grid-template-columns: max-content 1fr max-content 1fr max-content;
+            margin-bottom: 24px;
+            padding: 14px 18px;
+        }
+        .step-item { color: #6b7280; font-size: 13px; font-weight: 700; text-transform: uppercase; }
+        .step-item.done { color: var(--sky-primary); }
+        .step-line { background: #e5e7eb; height: 2px; }
+
+        .success-card {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+            padding: 40px 32px;
+            text-align: center;
+        }
+        .success-icon {
+            width: 64px; height: 64px;
+            background: #e6f6ec;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 18px;
+            font-size: 32px;
+            color: #2e9e54;
+        }
+        .success-title { color: var(--sky-dark); font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+        .success-desc { color: #6b7280; font-size: 14px; margin-bottom: 28px; }
+
+        .receipt-box {
+            background: #f5fbfe;
+            border-radius: 4px;
+            padding: 20px 22px;
+            text-align: left;
+            margin-bottom: 28px;
+        }
+        .receipt-row {
+            display: flex; justify-content: space-between;
+            font-size: 14px; padding: 8px 0;
+            border-bottom: 1px dashed #d6e8f0;
+        }
+        .receipt-row:last-child { border-bottom: none; }
+        .receipt-row span:first-child { color: #6b7280; }
+        .receipt-row span:last-child { color: var(--text-dark); font-weight: 600; }
+        .receipt-total {
+            display: flex; justify-content: space-between;
+            font-size: 17px; font-weight: 700; color: var(--sky-primary);
+            padding-top: 14px; margin-top: 10px; border-top: 1px solid #d6e8f0;
+        }
+
+        .action-buttons { display: grid; gap: 10px; grid-template-columns: 1fr 1fr; }
+        .btn-outline-action, .btn-filled-action {
+            align-items: center;
+            border-radius: 2px;
+            display: inline-flex;
+            font-weight: 700;
+            justify-content: center;
+            min-height: 44px;
+            padding: 10px 14px;
+            text-decoration: none;
+            text-transform: uppercase;
+        }
+        .btn-outline-action { background: #fff; border: 1px solid var(--sky-primary); color: var(--sky-primary); }
+        .btn-filled-action { background: var(--sky-primary); border: 1px solid var(--sky-primary); color: #fff; }
+
+        @media (max-width: 600px) {
+            .booking-stepper { grid-template-columns: 1fr; }
+            .step-line { display: none; }
+            .action-buttons { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <a href="/home" class="logo">
+        <img src="/logo.jpg" alt="Hotel Logo">
+    </a>
+    <nav class="nav-menu">
+        <a href="/home">Trang Chủ</a>
+        <a href="/phong">Phòng Nghỉ</a>
+        <a href="/loai-phong">Loại Phòng</a>
+        <a href="/gio-hang">Danh Sách Đặt Phòng</a>
+    </nav>
+    <div class="header-actions" sec:authorize="isAnonymous()">
+        <a href="/Login" class="btn btn-outline">Đăng Nhập</a>
+        <a href="/Register" class="btn btn-filled">Đăng Ký</a>
+    </div>
+    <div class="header-actions" sec:authorize="isAuthenticated()">
+        <a href="/profiles" class="btn btn-outline">Thông Tin Tài Khoản</a>
+        <a href="/logout" class="btn btn-filled">Đăng Xuất</a>
+    </div>
+</header>
+
+<main class="booking-shell">
+
+    <div class="booking-stepper">
+        <div class="step-item done">1. Xác nhận phòng</div>
+        <div class="step-line"></div>
+        <div class="step-item done">2. Thông tin khách</div>
+        <div class="step-line"></div>
+        <div class="step-item done">3. Hoàn tất</div>
+    </div>
+
+    <div class="success-card">
+        <div class="success-icon">✓</div>
+        <div class="success-title">Đặt phòng thành công!</div>
+        <div class="success-desc">
+            Cảm ơn <strong th:text="${datPhong.hoten}">Quý khách</strong> đã đặt phòng.
+            Email xác nhận đã được gửi tới <strong th:text="${datPhong.email}">--</strong>.
+        </div>
+
+        <div class="receipt-box">
+            <div class="receipt-row">
+                <span>Mã đặt phòng</span>
+                <span th:text="${'#' + datPhong.id}">#0</span>
+            </div>
+            <div class="receipt-row">
+                <span>Mã giao dịch VNPay</span>
+                <span th:text="${transactionId}">--</span>
+            </div>
+            <div class="receipt-row">
+                <span>Thời gian thanh toán</span>
+                <span th:text="${paymentTime}">--</span>
+            </div>
+            <div class="receipt-row">
+                <span>Ngày nhận phòng</span>
+                <span th:text="${datPhong.ngaydatPhong != null ? #temporals.format(datPhong.ngaydatPhong, 'dd/MM/yyyy HH:mm') : '--'}">--</span>
+            </div>
+            <div class="receipt-row">
+                <span>Ngày trả phòng</span>
+                <span th:text="${datPhong.ngaytraPhong != null ? #temporals.format(datPhong.ngaytraPhong, 'dd/MM/yyyy HH:mm') : '--'}">--</span>
+            </div>
+            <div class="receipt-row">
+                <span>Tiền phòng</span>
+                <span th:text="${'đ ' + #numbers.formatDecimal(TongTien, 0, 'COMMA', 0, 'POINT')}">đ 0</span>
+            </div>
+            <div class="receipt-row">
+                <span>Tiền dịch vụ</span>
+                <span th:text="${'đ ' + (TienDv != null ? #numbers.formatDecimal(TienDv, 0, 'COMMA', 0, 'POINT') : '0')}">đ 0</span>
+            </div>
+            <div class="receipt-total">
+                <span>Tổng đã thanh toán</span>
+                <span th:text="${'đ ' + #numbers.formatDecimal(TongCong, 0, 'COMMA', 0, 'POINT')}">đ 0</span>
+            </div>
+        </div>
+
+        <div class="action-buttons">
+            <a href="/gio-hang" class="btn-outline-action">Xem đơn đặt phòng</a>
+            <a href="/home" class="btn-filled-action">Về trang chủ</a>
+        </div>
+    </div>
+
+</main>
+
+<footer>
+    <p>&copy; 2026 Hotel. All rights reserved.</p>
+</footer>
+
+</body>
+</html>

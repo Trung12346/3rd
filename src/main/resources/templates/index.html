@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="vi"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hotel | Trang Chủ</title>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+   <style>
+       /* Dropdown menu styles */
+       .nav-menu {
+           position: relative;
+       }
+       .nav-item {
+           position: relative;
+           display: inline-block;
+       }
+       .dropdown-menu {
+           display: none;
+           position: absolute;
+           top: 100%;
+           left: 0;
+           background: white;
+           min-width: 220px;
+           box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+           border-radius: 4px;
+           padding: 8px 0;
+           z-index: 1000;
+           margin-top: 5px;
+       }
+       .nav-item:hover .dropdown-menu {
+           display: block;
+       }
+       .dropdown-menu a {
+           display: block;
+           padding: 10px 20px;
+           color: var(--text-dark);
+           text-decoration: none;
+           font-size: 14px;
+           transition: background 0.2s, color 0.2s;
+       }
+       .dropdown-menu a:hover {
+           background: var(--sky-light);
+           color: var(--sky-primary);
+       }
+       .dropdown-menu a i {
+           margin-right: 8px;
+           color: var(--sky-primary);
+       }
+       
+       /* Carousel styles */
+       .loai-phong-card:hover {
+           transform: translateY(-6px);
+           box-shadow: 0 12px 40px rgba(33, 150, 243, 0.15);
+       }
+       .loai-phong-card:hover .card-img-wrap img {
+           transform: scale(1.06);
+       }
+       .carousel-btn:hover {
+           background: var(--sky-primary);
+           color: #fff;
+       }
+       .carousel-btn:disabled {
+           opacity: 0.35;
+           cursor: default;
+           pointer-events: none;
+       }
+       .dot {
+           width: 8px;
+           height: 8px;
+           border-radius: 50%;
+           background: var(--border-color);
+           cursor: pointer;
+           transition: background 0.2s, transform 0.2s;
+       }
+       .dot.active {
+           background: var(--sky-primary);
+           transform: scale(1.3);
+       }
+       .btn-view-detail:hover {
+           background: #1565c0;
+       }
+       
+       .user-menu {
+           display: flex;
+           align-items: center;
+           gap: 15px;
+       }
+       .user-greeting {
+           font-size: 14px;
+           color: var(--text-dark);
+           font-weight: 500;
+       }
+       .user-greeting b {
+           color: var(--sky-primary);
+       }
+       /* Nut đăng xuất style nhu mot lien ket hoac nut outline gon gang */
+       .btn-logout {
+           background: transparent;
+           border: 1px solid var(--border-color);
+           color: var(--text-gray);
+           padding: 8px 15px;
+           border-radius: 2px;
+           cursor: pointer;
+           font-family: inherit;
+           font-size: 13px;
+           font-weight: 600;
+           text-transform: uppercase;
+           transition: all 0.3s;
+       }
+       .btn-logout:hover {
+           border-color: #E74C3C;
+           color: #E74C3C;
+           background: #FDEDEC;
+       }
+   </style>
+</head>
+<body>
+    <div class="topbar">
+        <div class="topbar-left">
+            <span>Tel: +84 123 456 789 &nbsp; | &nbsp; Email: info@hotel.local</span>
+        </div>
+        <div class="topbar-right">
+            <a href="#">VN</a> | <a href="#">EN</a>
+        </div>
+    </div>
+
+    <header>
+        <a href="/home" class="logo">
+            <img src="/logo.jpg" alt="Hotel Logo">
+        </a>
+        
+        <nav class="nav-menu">
+            <a href="/home">Trang Chủ</a>
+            <div class="nav-item has-dropdown">
+                <a href="/phong" class="room-nav-toggle" aria-haspopup="true" aria-expanded="false">Phòng Nghỉ</a>
+                <div class="dropdown-menu">
+                    <a href="/phong"><i class="fa-solid fa-bed"></i>Tất Cả Phòng</a>
+                    <a href="/loai-phong"><i class="fa-solid fa-list"></i>Theo Loại Phòng</a>
+                    <div style="border-top: 1px solid var(--border-color); margin: 8px 0;"></div>
+                    <div th:each="loai : ${loaiPhongs}">
+                        <a th:href="@{'/loai-phong/' + ${loai.id}}">
+                            <i class="fa-solid fa-door-open"></i>
+                            <span th:text="${loai.tenLoai}">Phòng Deluxe</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <a href="#">Khuyến Mãi</a>
+            <a href="/gio-hang">Danh Sách Đặt Phòng</a>
+        </nav>
+
+        <div class="header-actions" sec:authorize="isAnonymous()">
+            <a href="/Login" th:href="@{/Login}" class="btn btn-outline">Đăng Nhập</a>
+            <a href="/Register" th:href="@{/Register}" class="btn btn-filled">Đăng Ký</a>
+        </div>
+
+        <div sec:authorize="isAuthenticated()">
+            <div class="user-menu">
+                <span class="user-greeting">Xin chào,<b sec:authentication="name"></b></span>
+                <a href="/profiles" class="btn btn-outline" style="padding: 8px 15px; font-size: 13px;">Hồ Sơ</a>
+                <button onclick="logout()" class="btn-logout">Đăng Xuất</button>
+            </div>
+        </div>
+
+    </header>
+
+    <section class="hero">
+        <div class="hero-text">
+            <h1>Đẳng Cấp & Tinh Tế</h1>
+            <p>Khởi nguồn cho những trải nghiệm nghỉ dưỡng hoàn hảo</p>
+        </div>
+    </section>
+
+    <section class="booking-section">
+        <form class="booking-form">
+            <div class="booking-item">
+                <label>Ngày nhận phòng</label>
+                <input type="date">
+            </div>
+            <div class="booking-item">
+                <label>Ngày trả phòng</label>
+                <input type="date">
+            </div>
+            <div class="booking-item">
+                <label>Người lớn</label>
+                <select>
+                    <option value="1">1</option>
+                    <option value="2" selected>2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                </select>
+            </div>
+            <div class="booking-item">
+                <label>Trẻ em</label>
+                <select>
+                    <option value="0">0</option>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                </select>
+            </div>
+            <button type="button" class="btn-book">Kiểm tra phòng</button>
+        </form>
+    </section>
+
+    <!-- CAROUSEL: DANH SACH LOAI PHONG -->
+    <section class="carousel-section" style="padding: 60px 5% 40px; background: var(--white);">
+        <div class="section-heading" style="text-align: center; margin-bottom: 40px;">
+            <h2 style="font-family: 'Georgia', serif; font-size: 30px; color: var(--text-dark); margin-bottom: 10px;">Các Loại Phòng</h2>
+            <span style="display: inline-block; width: 60px; height: 3px; background: var(--sky-primary); border-radius: 2px;"></span>
+            <p style="color: var(--text-gray); margin-top: 12px; font-size: 15px;">Di chuyển trái phải để khám phá tất cả loại phòng</p>
+        </div>
+
+        <div class="carousel-wrapper" style="position: relative; overflow: hidden;">
+            <div class="carousel-track" id="carouselTrack" style="display: flex; gap: 24px; transition: transform 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94); will-change: transform;">
+
+                <div class="loai-phong-card" th:each="loai : ${loaiPhongs}" style="min-width: calc(33.333% - 16px); background: var(--white); border-radius: 8px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.08); border: 1px solid var(--border-color); cursor: pointer; transition: transform 0.3s ease, box-shadow 0.3s ease; flex-shrink: 0;">
+                    <div class="card-img-wrap" style="position: relative; height: 220px; overflow: hidden;">
+                        <img th:src="${anhLoaiPhong != null and anhLoaiPhong[loai.id] != null} ? ${anhLoaiPhong[loai.id]} : 'https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=800&q=80'"
+                             th:alt="${loai.tenLoai}" style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s ease;">
+                        <div class="card-badge" th:text="${loai.tenLoai}" style="position: absolute; top: 16px; left: 16px; background: var(--sky-primary); color: #fff; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; padding: 5px 12px; border-radius: 2px;">Deluxe</div>
+                    </div>
+                    <div class="card-body" style="padding: 22px 24px 24px;">
+                        <h3 class="card-title" th:text="${loai.tenLoai}" style="font-family: 'Georgia', serif; font-size: 20px; color: var(--text-dark); margin-bottom: 8px;">Phòng Deluxe</h3>
+                        <div class="card-meta" style="display: flex; gap: 16px; margin-bottom: 12px; flex-wrap: wrap;">
+                            <span style="font-size: 13px; color: var(--text-gray); display: flex; align-items: center; gap: 5px;"><i class="fa-solid fa-users" style="color: var(--sky-primary); font-size: 12px;"></i> Tối đa <span th:text="${loai.sucChuaToiDa}">2</span> người</span>
+                            <span style="font-size: 13px; color: var(--text-gray); display: flex; align-items: center; gap: 5px;"><i class="fa-solid fa-check-circle" style="color: var(--sky-primary); font-size: 12px;"></i> <span th:text="${soPhongTrongTheoLoai[loai.id]} + ' phòng trống'">Còn phòng</span></span>
+                        </div>
+                        <p class="card-desc" th:text="${loai.mota}" style="font-size: 14px; color: var(--text-gray); line-height: 1.6; margin-bottom: 18px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+            Không gian sang trọng với đầy đủ tiện nghi hiện đại mang đến kỳ nghỉ tuyệt vời.
+                        </p>
+                        <div class="card-footer" style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 16px;">
+                            <div class="card-price" style="font-size: 13px; color: var(--text-gray);">
+                                Từ <strong th:text="${#numbers.formatDecimal(loai.giaCoBan, 0, 'COMMA', 0, 'POINT')}" style="font-size: 20px; color: var(--sky-primary); font-weight: 700;">1.200.000</strong>
+                                <span style="font-size: 12px; color: var(--text-gray);"> VND/đêm</span>
+                            </div>
+                            <a th:href="@{'/loai-phong/' + ${loai.id}}" class="btn-view-detail" style="display: inline-block; padding: 9px 20px; background: var(--sky-primary); color: #fff; border: none; border-radius: 2px; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; text-decoration: none; transition: background 0.2s;">Xem Phòng</a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="empty-state" th:if="${loaiPhongs == null or loaiPhongs.isEmpty()}" style="width: 100%; padding: 34px 18px; border: 1px dashed var(--border-color); border-radius: 8px; color: var(--text-gray); text-align: center; background: #f8fbff;">
+                    Chưa có loại phòng phù hợp trong cơ sở dữ liệu.
+                </div>
+
+            </div><!-- /carousel-track -->
+        </div><!-- /carousel-wrapper -->
+
+        <!-- Dieu huong carousel -->
+        <div class="carousel-nav" style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 32px;">
+            <button class="carousel-btn" id="prevBtn" onclick="moveCarousel(-1)" disabled style="width: 44px; height: 44px; border: 2px solid var(--sky-primary); background: transparent; color: var(--sky-primary); border-radius: 50%; cursor: pointer; font-size: 16px; transition: all 0.2s; display: flex; align-items: center; justify-content: center;">
+                <i class="fa-solid fa-chevron-left"></i>
+            </button>
+            <div class="carousel-dots" id="carouselDots" style="display: flex; gap: 8px;"></div>
+            <button class="carousel-btn" id="nextBtn" onclick="moveCarousel(1)" style="width: 44px; height: 44px; border: 2px solid var(--sky-primary); background: transparent; color: var(--sky-primary); border-radius: 50%; cursor: pointer; font-size: 16px; transition: all 0.2s; display: flex; align-items: center; justify-content: center;">
+                <i class="fa-solid fa-chevron-right"></i>
+            </button>
+        </div>
+    </section>
+
+    <footer>
+        <p>&copy; 2026 Hotel. All rights reserved.</p>
+    </footer>
+    <script src="/header-dropdown.js"></script>
+</body>
+<script>
+    // ===== CAROUSEL LOGIC =====
+    const track = document.getElementById('carouselTrack');
+    const dotsContainer = document.getElementById('carouselDots');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+
+    let currentIndex = 0;
+    let cardsPerView = 3;
+
+    function getCardsPerView() {
+        if (window.innerWidth <= 640) return 1;
+        if (window.innerWidth <= 1024) return 2;
+        return 3;
+    }
+
+    function getCards() {
+        return track.querySelectorAll('.loai-phong-card');
+    }
+
+    function initCarousel() {
+        const cards = getCards();
+        if (cards.length === 0) return;
+        
+        cardsPerView = getCardsPerView();
+        const totalSlides = Math.max(1, Math.ceil(cards.length / cardsPerView));
+
+        // Tao dots
+        dotsContainer.innerHTML = '';
+        for (let i = 0; i < totalSlides; i++) {
+            const dot = document.createElement('div');
+            dot.className = 'dot' + (i === 0 ? ' active' : '');
+            dot.onclick = () => goToSlide(i);
+            dotsContainer.appendChild(dot);
+        }
+
+        // Dat chieu rong tung card
+        const gap = 24;
+        const containerWidth = track.parentElement.offsetWidth;
+        const cardWidth = (containerWidth - gap * (cardsPerView - 1)) / cardsPerView;
+        cards.forEach(c => {
+            c.style.minWidth = cardWidth + 'px';
+            c.style.width = cardWidth + 'px';
+        });
+
+        goToSlide(0);
+    }
+
+    function goToSlide(index) {
+        const cards = getCards();
+        if (cards.length === 0) return;
+        
+        cardsPerView = getCardsPerView();
+        const totalSlides = Math.ceil(cards.length / cardsPerView);
+        currentIndex = Math.max(0, Math.min(index, totalSlides - 1));
+
+        const gap = 24;
+        const containerWidth = track.parentElement.offsetWidth;
+        const cardWidth = (containerWidth - gap * (cardsPerView - 1)) / cardsPerView;
+        const offset = currentIndex * (cardWidth + gap) * cardsPerView;
+        track.style.transform = `translateX(-${offset}px)`;
+
+        // Cập nhat dots
+        document.querySelectorAll('.dot').forEach((d, i) => {
+            d.classList.toggle('active', i === currentIndex);
+        });
+
+        // Cập nhat nut
+        prevBtn.disabled = currentIndex === 0;
+        nextBtn.disabled = currentIndex >= totalSlides - 1;
+    }
+
+    function moveCarousel(dir) {
+        goToSlide(currentIndex + dir);
+    }
+
+    // Khoi tao carousel khi DOM ready
+    if (track) {
+        initCarousel();
+        window.addEventListener('resize', initCarousel);
+
+        // Touch / Swipe
+        let startX = 0;
+        track.addEventListener('touchstart', e => { startX = e.touches[0].clientX; });
+        track.addEventListener('touchend', e => {
+            const diff = startX - e.changedTouches[0].clientX;
+            if (Math.abs(diff) > 50) moveCarousel(diff > 0 ? 1 : -1);
+        });
+    }
+
+    function logout() {
+        if(confirm("Bạn có chắc chắn muốn đăng xuất không?")) {
+            localStorage.removeItem("userFullName");
+            localStorage.removeItem("token");
+            window.location.href = "/logout";
+        }
+    }
+</script>
+</html>

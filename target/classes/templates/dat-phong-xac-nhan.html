@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xác nhận dịch vụ</title>
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        body { background: #fafafa; }
+        .booking-shell { margin: 0 auto; max-width: 1120px; padding: 42px 5% 70px; }
+        .booking-stepper {
+            align-items: center;
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            display: grid;
+            gap: 14px;
+            grid-template-columns: max-content 1fr max-content 1fr max-content;
+            margin-bottom: 24px;
+            padding: 14px 18px;
+        }
+        .step-item { color: #6b7280; font-size: 13px; font-weight: 700; text-transform: uppercase; }
+        .step-item.active, .step-item.done { color: var(--sky-primary); }
+        .step-line { background: #e5e7eb; height: 2px; }
+        .booking-layout { display: grid; gap: 24px; grid-template-columns: minmax(0, 1fr) 330px; }
+        .booking-panel, .summary-panel {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+            padding: 24px;
+        }
+        .booking-panel h1, .summary-panel h2 { color: var(--sky-dark); margin-bottom: 18px; }
+
+        /* Phòng đã chọn */
+        .room-row {
+            border-bottom: 1px solid #e5e7eb;
+            display: grid;
+            gap: 16px;
+            grid-template-columns: minmax(0, 1fr) auto;
+            padding: 16px 0;
+        }
+        .room-row:first-of-type { padding-top: 0; }
+        .room-row:last-of-type { border-bottom: none; }
+        .room-title { color: var(--text-dark); font-weight: 700; margin-bottom: 6px; }
+        .room-feature { color: #555; font-size: 13px; margin-bottom: 3px; }
+        .room-meta { color: var(--text-gray); font-size: 13px; margin-top: 6px; }
+        .room-price { color: var(--sky-primary); font-weight: 700; text-align: right; white-space: nowrap; }
+
+        /* Dịch vụ bổ sung */
+        .addon-section { margin-top: 28px; }
+        .addon-section h2 { color: var(--sky-dark); margin-bottom: 6px; font-size: 20px; }
+        .addon-desc { color: #6b7280; font-size: 13px; margin-bottom: 16px; }
+        .addon-grid { display: grid; gap: 14px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .addon-card {
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            padding: 14px 16px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            cursor: pointer;
+            transition: border-color .15s, background .15s;
+        }
+        .addon-card.checked { border-color: var(--sky-primary); background: #f5fbfe; }
+        .addon-card:hover { border-color: var(--sky-primary); background: #f5fbfe; }
+        .addon-card input[type="checkbox"] { margin-top: 3px; width: 16px; height: 16px; accent-color: var(--sky-primary); cursor: pointer; flex-shrink: 0; }
+        .addon-name { color: var(--text-dark); font-weight: 700; font-size: 14px; margin-bottom: 4px; }
+        .addon-price { color: var(--sky-primary); font-weight: 600; font-size: 13px; }
+        .addon-unit { color: #9ca3af; font-size: 12px; }
+
+        /* Input số lượng */
+        .addon-soluong { margin-top: 10px; display: none; }
+        .addon-soluong label { font-size: 12px; color: #6b7280; font-weight: 700; display: block; margin-bottom: 4px; }
+        .addon-soluong input[type="number"] {
+            border: 1px solid #d1d5db;
+            border-radius: 2px;
+            font-size: 14px;
+            padding: 6px 10px;
+            width: 100px;
+            display: block;
+        }
+        .addon-soluong input[type="number"]:focus { border-color: var(--sky-primary); outline: none; }
+
+        /* Tóm tắt */
+        .summary-line, .summary-total { display: flex; justify-content: space-between; margin-bottom: 12px; }
+        .summary-total { border-top: 1px solid #e5e7eb; color: var(--sky-primary); font-size: 18px; font-weight: 700; padding-top: 14px; margin-top: 4px; }
+        .summary-roomlist {
+            background: #f5fbfe;
+            border-radius: 4px;
+            margin: 12px 0;
+            padding: 12px 14px;
+        }
+        .summary-roomlist .room-line { font-size: 13px; color: var(--text-dark); font-weight: 600; }
+        .summary-roomlist .room-sub { font-size: 12px; color: #6b7280; margin-bottom: 8px; }
+
+        /* Dịch vụ đã chọn trong tóm tắt */
+        .summary-dv-list { margin-top: 10px; }
+        .summary-dv-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            padding: 4px 0;
+            border-bottom: 1px dashed #e5e7eb;
+        }
+        .summary-dv-item:last-child { border-bottom: none; }
+        .summary-dv-item .dv-name { color: var(--text-dark); }
+        .summary-dv-item .dv-price { color: var(--sky-primary); font-weight: 600; white-space: nowrap; }
+        .summary-dv-empty { font-size: 13px; color: #9ca3af; font-style: italic; }
+
+        .booking-actions { display: grid; gap: 10px; grid-template-columns: 120px 1fr; margin-top: 22px; }
+        .back-btn, .continue-btn {
+            align-items: center;
+            border-radius: 2px;
+            display: inline-flex;
+            font-weight: 700;
+            justify-content: center;
+            min-height: 42px;
+            padding: 10px 14px;
+            text-decoration: none;
+            text-transform: uppercase;
+        }
+        .back-btn { background: #fff; border: 1px solid var(--sky-primary); color: var(--sky-primary); }
+        .continue-btn { background: var(--sky-primary); border: 1px solid var(--sky-primary); color: #fff; cursor: pointer; }
+        .booking-message.error { background: #fff1f1; color: #b42318; font-weight: 600; margin-bottom: 18px; padding: 12px 14px; }
+
+        @media (max-width: 900px) {
+            .booking-stepper, .booking-layout, .booking-actions, .addon-grid { grid-template-columns: 1fr; }
+            .step-line { display: none; }
+            .room-row { grid-template-columns: 1fr; }
+            .room-price { text-align: left; }
+        }
+    </style>
+</head>
+<body>
+<header>
+    <a href="/home" class="logo">
+        <img src="/logo.jpg" alt="Hotel Logo">
+    </a>
+    <nav class="nav-menu">
+        <a href="/home">Trang Chủ</a>
+        <a href="/phong">Phòng Nghỉ</a>
+        <a href="/loai-phong">Loại Phòng</a>
+        <a href="/gio-hang" style="color: var(--sky-primary);">Danh Sách Đặt Phòng</a>
+    </nav>
+    <div class="header-actions" sec:authorize="isAnonymous()">
+        <a href="/Login" class="btn btn-outline">Đăng Nhập</a>
+        <a href="/Register" class="btn btn-filled">Đăng Ký</a>
+    </div>
+    <div class="header-actions" sec:authorize="isAuthenticated()">
+        <a href="/profiles" class="btn btn-outline">Thông Tin Tài Khoản</a>
+        <a href="/logout" class="btn btn-filled">Đăng Xuất</a>
+    </div>
+</header>
+
+<main class="booking-shell">
+    <div class="booking-stepper">
+        <div class="step-item active">1. Xác nhận dịch vụ</div>
+        <div class="step-line"></div>
+        <div class="step-item">2. Thông tin khách</div>
+        <div class="step-line"></div>
+        <div class="step-item">3. Hoàn tất</div>
+    </div>
+
+    <div th:if="${bookingError}" class="booking-message error" th:text="${bookingError}"></div>
+
+    <form th:action="@{/phong/dat-phong/xac-nhan/{id}(id=${datPhong.id})}" method="post">
+        <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+        <input type="hidden" name="maDatPhong" th:value="${datPhong.id}">
+        <input type="hidden" name="tongTienPhong" id="hidden-tien-phong" th:value="${TongTien}">
+        <input type="hidden" name="tongTienDichVu" id="hidden-tien-dich-vu" value="0">
+        <input type="hidden" name="tongCong" id="hidden-tong-cong" th:value="${TongTien}">
+
+        <div class="booking-layout">
+            <section>
+                <!-- Phòng đã chọn -->
+                <div class="booking-panel">
+                    <h1>Phòng đã chọn</h1>
+                    <div th:each="chiTiet : ${chiTietDatPhongList}" class="room-row">
+                        <div>
+                            <div class="room-title"
+                                 th:text="${'1 × ' + chiTiet.p.soPhong + ' - ' + (chiTiet.p.loaiPhong != null ? chiTiet.p.loaiPhong.tenLoai : '')}">
+                                1 × Deluxe 201
+                            </div>
+                            <div class="room-feature">Huy mien phi truoc ngay nhan phong</div>
+                            <div class="room-feature">BASIC DEAL</div>
+                            <div class="room-feature">Bua sang da bao gom</div>
+                            <div class="room-meta"
+                                 th:text="${'1 phòng, ' + nightCount + ' đêm, ' + (datPhong.songuoiLon + datPhong.sotreEm) + ' khách'}">
+                                1 phòng, 1 đêm, 2 khách
+                            </div>
+                        </div>
+                        <div class="room-price"
+                             th:text="${'đ ' + #numbers.formatDecimal(chiTiet.p.giaMoiDem, 0, 'COMMA', 0, 'POINT')}">
+                            đ 1.000.000
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dịch vụ bổ sung -->
+                <div class="addon-section">
+                    <h2>Dịch vụ bổ sung</h2>
+                    <p class="addon-desc">Chọn dịch vụ bổ sung. Mỗi dịch vụ được chọn sẽ cộng thêm vào tổng tiền đơn.</p>
+
+                    <div class="addon-grid">
+                        <label class="addon-card" th:each="dv : ${dichVuList}">
+                            <input type="checkbox"
+                                   name="dichVuIds"
+                                   th:value="${dv.id}"
+                                   th:attr="data-gia=${dv.gia},data-id=${dv.id},data-ten=${dv.ten_dich_vu},data-donvi=${dv.donVi}"
+                                   th:checked="${dichVuDaChonIds != null and dichVuDaChonIds.contains(dv.id)}">
+                            <div style="width:100%">
+                                <div class="addon-name" th:text="${dv.ten_dich_vu}">Bữa sáng</div>
+                                <div class="addon-price">
+                                    <span th:text="${#numbers.formatDecimal(dv.gia, 0, 'COMMA', 0, 'POINT')}">150.000</span>
+                                    <span class="addon-unit" th:text="${'VNĐ / ' + dv.donVi}">VNĐ / người</span>
+                                </div>
+                                <div class="addon-soluong">
+                                    <label>Số lượng (<span th:text="${dv.donVi}">đơn vị</span>)</label>
+                                    <input type="number" th:name="${'soLuong_' + dv.id}" min="1" value="1">
+                                    <label style="margin-top:8px; display:block;">Ngày sử dụng</label>
+                                    <input type="datetime-local" th:name="${'ngaySuDung_' + dv.id}">
+
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tóm tắt -->
+            <aside class="summary-panel">
+                <h2>Tóm Tắt Đặt Phòng</h2>
+
+                <div class="summary-line">
+                    <span th:text="${datPhong.ngaydatPhong != null ? #temporals.format(datPhong.ngaydatPhong, 'EEEE, dd MMM yyyy') : '--'}">--</span>
+                    <span>→</span>
+                    <span th:text="${datPhong.ngaytraPhong != null ? #temporals.format(datPhong.ngaytraPhong, 'EEEE, dd MMM yyyy') : '--'}">--</span>
+                </div>
+                <div class="summary-line" style="color:#6b7280; font-size:13px;">
+                    <span th:text="${nightCount + ' đêm | ' + #lists.size(chiTietDatPhongList) + ' phòng | ' + datPhong.songuoiLon + ' người lớn'}">
+                        1 đêm | 1 phòng | 2 người lớn
+                    </span>
+                </div>
+
+                <!-- Tiền phòng -->
+                <div class="summary-line" style="margin-top:14px;">
+                    <span>Phòng</span>
+                    <strong id="summary-tien-phong"
+                            th:text="${'đ ' + #numbers.formatDecimal(TienPhong, 0, 'COMMA', 0, 'POINT')}">đ 0</strong>
+                </div>
+
+                <!-- Tiền dịch vụ -->
+                <div class="summary-line">
+                    <span>Dịch vụ</span>
+                    <strong id="summary-tien-dich-vu"
+                            th:text="${'đ ' + #numbers.formatDecimal(TienDv, 0, 'COMMA', 0, 'POINT')}">đ 0</strong>
+                </div>
+
+                <!-- Danh sách phòng -->
+                <div class="summary-roomlist">
+                    <div th:each="chiTiet : ${chiTietDatPhongList}">
+                        <div class="room-line"
+                             th:text="${'1 × ' + chiTiet.p.soPhong + ' - ' + (chiTiet.p.loaiPhong != null ? chiTiet.p.loaiPhong.tenLoai : '')}">
+                            1 × Deluxe 201
+                        </div>
+                        <div class="room-sub"
+                             th:text="${(datPhong.songuoiLon + datPhong.sotreEm) + ' khách'}">2 khách</div>
+                    </div>
+                </div>
+
+                <div id="summary-dv-list" class="summary-dv-list" style="display:none;">
+                    <div style="font-size:12px; color:#6b7280; font-weight:700; text-transform:uppercase; margin-bottom:8px;">
+                        Dịch vụ đã chọn
+                    </div>
+                    <div id="summary-dv-items"></div>
+                </div>
+
+                <div class="summary-total">
+                    <span>Tổng cộng</span>
+                    <strong id="summary-tong-cong" th:text="${'đ ' + #numbers.formatDecimal(TongTien, 0, 'COMMA', 0, 'POINT')}">đ 0</strong>
+                </div>
+                <div style="color:#9ca3af; font-size:12px; margin-top:-8px;">Giá bao gồm tất cả các loại thuế và phí</div>
+            </aside>
+        </div>
+
+        <div class="booking-actions">
+            <a href="/gio-hang" class="back-btn">Trở về</a>
+            <button type="submit" class="continue-btn">Tiếp tục</button>
+        </div>
+    </form>
+</main>
+
+<script th:inline="javascript">
+    const tienPhong = /*[[${TongTien}]]*/ 0;
+
+    function formatTien(soTien) {
+        return Number(soTien).toLocaleString('vi-VN');
+    }
+
+    function tinhLaiTongTien() {
+        let tongDichVu = 0;
+        const dvItems = [];
+
+        document.querySelectorAll('.addon-card input[type="checkbox"]:checked').forEach(function (cb) {
+            const gia     = parseFloat(cb.dataset.gia)  || 0;
+            const id      = cb.dataset.id;
+            const ten     = cb.dataset.ten;
+            const donVi   = cb.dataset.donvi;
+            const slInput = document.querySelector(`.addon-soluong input[data-id="${id}"]`);
+            const soLuong = slInput ? (parseInt(slInput.value) || 1) : 1;
+            const thanh   = gia * soLuong;
+
+            tongDichVu += thanh;
+            dvItems.push({ ten, soLuong, donVi, thanh });
+        });
+
+        const tongCong = tienPhong + tongDichVu;
+
+        document.getElementById('summary-tien-dich-vu').textContent = 'đ ' + formatTien(tongDichVu);
+        document.getElementById('summary-tong-cong').textContent    = 'đ ' + formatTien(tongCong);
+        document.getElementById('hidden-tien-dich-vu').value        = tongDichVu;
+        document.getElementById('hidden-tong-cong').value           = tongCong;
+
+        const listEl  = document.getElementById('summary-dv-list');
+        const itemsEl = document.getElementById('summary-dv-items');
+        itemsEl.innerHTML = '';
+
+        if (dvItems.length === 0) {
+            listEl.style.display = 'none';
+        } else {
+            listEl.style.display = 'block';
+            dvItems.forEach(function (dv) {
+                const row = document.createElement('div');
+                row.className = 'summary-dv-item';
+                row.innerHTML =
+                    '<span class="dv-name">' + dv.ten + ' × ' + dv.soLuong + ' ' + dv.donVi + '</span>' +
+                    '<span class="dv-price">đ ' + formatTien(dv.thanh) + '</span>';
+                itemsEl.appendChild(row);
+            });
+        }
+    }
+
+    document.querySelectorAll('.addon-card input[type="checkbox"]').forEach(function (cb) {
+        cb.addEventListener('change', function () {
+            const card      = this.closest('.addon-card');
+            const soLuongDiv = card.querySelector('.addon-soluong');
+            const slInput   = soLuongDiv.querySelector('input[type="number"]');
+
+            if (this.checked) {
+                soLuongDiv.style.display = 'block';
+                card.classList.add('checked');
+            } else {
+                soLuongDiv.style.display = 'none';
+                slInput.value = 1;
+                card.classList.remove('checked');
+            }
+            tinhLaiTongTien();
+        });
+
+        if (cb.checked) {
+            cb.closest('.addon-card').querySelector('.addon-soluong').style.display = 'block';
+            cb.closest('.addon-card').classList.add('checked');
+        }
+    });
+
+    document.querySelectorAll('.addon-soluong input[type="number"]').forEach(function (input) {
+        input.addEventListener('input', tinhLaiTongTien);
+    });
+
+    tinhLaiTongTien();
+</script>
+</body>
+</html>

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quan ly danh gia | Nhan vien</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<div class="topbar">
+    <div class="topbar-left">
+        <span>+84 123 456 789 &nbsp;|&nbsp; info@hotel.local</span>
+    </div>
+</div>
+
+<header>
+    <a href="/home" class="logo">
+        <img src="/logo.jpg" alt="Hotel Logo">
+    </a>
+    <nav class="nav-menu admin-nav">
+        <a href="/nhan-vien/dat-phong">Don dat phong</a>
+        <a href="/nhan-vien/danh-gia" class="active">Danh gia</a>
+        <a href="/nhan-vien/khach-hang">Khach hang</a>
+        <a href="/nhan-vien/phong">Phong</a>
+        <a href="/nhan-vien/khuyen-mai">Khuyen mai</a>
+    </nav>
+    <div class="header-actions">
+        <a href="/logout" class="btn btn-outline">Dang xuat</a>
+    </div>
+</header>
+
+<main class="admin-wrapper">
+    <div class="admin-header">
+        <h1>Quan ly danh gia</h1>
+        <a th:href="@{/nhan-vien/danh-gia}" class="admin-btn outline">Lam moi</a>
+    </div>
+
+    <div th:if="${success}" class="admin-message success">
+        <span th:text="${success}"></span>
+    </div>
+    <div th:if="${error}" class="admin-message error">
+        <span th:text="${error}"></span>
+    </div>
+
+    <section class="admin-panel">
+        <h2>Danh sach danh gia</h2>
+
+        <form th:action="@{/nhan-vien/danh-gia}" method="get" class="search-row">
+            <input type="text" name="keyword" placeholder="Tim theo khach hang, ma dat phong, noi dung..." th:value="${keyword}">
+            <button type="submit" class="admin-btn outline">Tim kiem</button>
+        </form>
+
+        <div class="admin-table-wrap">
+            <table class="admin-table">
+                <thead>
+                <tr>
+                    <th>Ma</th>
+                    <th>Khach hang</th>
+                    <th>Ma dat phong</th>
+                    <th>Diem</th>
+                    <th>Noi dung</th>
+                    <th>Trang thai</th>
+                    <th>Phan hoi</th>
+                    <th>Thao tac</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="dg : ${danhGias}">
+                    <td th:text="${dg.id}"></td>
+                    <td>
+                        <strong th:text="${dg.n != null ? dg.n.hoTen : 'Khach hang'}"></strong>
+                        <div style="font-size:12px; color:var(--text-gray);" th:text="${dg.n != null ? dg.n.email : ''}"></div>
+                    </td>
+                    <td th:text="${dg.d != null ? dg.d.id : ''}"></td>
+                    <td><strong th:text="${dg.diemDanhGia} + '/5'"></strong></td>
+                    <td th:text="${dg.noiDung != null ? dg.noiDung : ''}"></td>
+                    <td>
+                        <span th:if="${dg.daDuyet}" class="status-badge active">Da duyet</span>
+                        <span th:unless="${dg.daDuyet}" class="status-badge warning">Cho duyet</span>
+                    </td>
+                    <td>
+                        <form class="admin-reply-form" th:action="@{/nhan-vien/danh-gia/reply/{id}(id=${dg.id})}" method="post">
+                            <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                            <textarea class="admin-inline-input" name="phanHoi" rows="2" th:text="${dg.phanHoi}"></textarea>
+                            <button type="submit" class="admin-btn small outline">Luu phan hoi</button>
+                        </form>
+                    </td>
+                    <td>
+                        <div class="row-actions">
+                            <form th:if="${!dg.daDuyet}" th:action="@{/nhan-vien/danh-gia/approve/{id}(id=${dg.id})}" method="post">
+                                <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                                <button type="submit" class="admin-btn small">Duyet</button>
+                            </form>
+                            <form th:if="${dg.daDuyet}" th:action="@{/nhan-vien/danh-gia/hide/{id}(id=${dg.id})}" method="post">
+                                <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                                <button type="submit" class="admin-btn small outline">An</button>
+                            </form>
+                            <form th:action="@{/nhan-vien/danh-gia/delete/{id}(id=${dg.id})}"
+                                  method="post"
+                                  onsubmit="return confirm('Ban co chac muon xoa danh gia nay?')">
+                                <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                                <button type="submit" class="admin-btn small danger">Xoa</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                <tr th:if="${danhGias.isEmpty()}">
+                    <td colspan="8">
+                        <div class="empty-state">Khong tim thay danh gia phu hop.</div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+
+<footer>
+    <p>&copy; 2026 Hotel. All rights reserved.</p>
+</footer>
+
+</body>
+</html>
