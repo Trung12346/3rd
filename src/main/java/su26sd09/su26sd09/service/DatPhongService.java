@@ -83,7 +83,7 @@ public class DatPhongService {
             }
 
             if (maNhanVien != null && (dp.getNv() == null || !maNhanVien.equals(dp.getNv().getId()))) return false;
-            if (ma_cccd != null && !ma_cccd.isEmpty() && !ma_cccd.equals(dp.getMa_cccd())) return false;
+//            if (ma_cccd != null && !ma_cccd.isEmpty() && !ma_cccd.equals(dp.getMa_cccd())) return false;
             if (soNguoiLon != null && !soNguoiLon.equals(dp.getSonguoiLon())) return false;
             if (soTreEm != null && !soTreEm.equals(dp.getSotreEm())) return false;
             if (trangThai != null && !trangThai.isEmpty() && !trangThai.equals(dp.getTrangThai())) return false;
