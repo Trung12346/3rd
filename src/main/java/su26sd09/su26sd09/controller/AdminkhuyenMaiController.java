@@ -1,4 +1,5 @@
 package su26sd09.su26sd09.controller;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -71,10 +72,10 @@ public class AdminkhuyenMaiController {
 
 
     @PostMapping("/save")
-    public String saveKhuyenMai(RedirectAttributes redirect,Model model, Principal p, @ModelAttribute("khuyenMai") KhuyenMai m, BindingResult r){
+    public String saveKhuyenMai(RedirectAttributes redirect, Model model, Principal p, @Valid @ModelAttribute("khuyenMai") KhuyenMai m, BindingResult r){
         if(CheckRole(p.getName())){
-            if(r.hasErrors() || m.ngayBatDau == null || m.ngayKetThuc == null ){
-                redirect.addFlashAttribute("error","vui lòng xem lại trường dữ liệu");
+            if(r.hasErrors() ){
+                redirect.addFlashAttribute("error",r.getFieldError().getDefaultMessage());
                 return "redirect:/admin/khuyen-mai";
             }
 
@@ -84,6 +85,10 @@ public class AdminkhuyenMaiController {
             }
             if(m.giatriGiam.compareTo(BigDecimal.ZERO) <= 0){
                 redirect.addFlashAttribute("error","giá trị giảm phải lớn hơn 0");
+                return "redirect:/admin/khuyen-mai";
+            }
+            if (repo.IsThoaManDieuKienGiam(m.giatriGiam,m.dieuKienGiamToiThieu,m.loaiGiam)){
+                redirect.addFlashAttribute("error","giá trị giảm không được quá 50%");
                 return "redirect:/admin/khuyen-mai";
             }
             for (NguoiDung ng : nguoiDungRepo.getAll()){

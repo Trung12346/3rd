@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import su26sd09.su26sd09.entity.KhuyenMai;
 import su26sd09.su26sd09.repository.khuyenMaiRepo;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -40,5 +41,14 @@ public class khuyenMaiService {
 
     public List<KhuyenMai> findbyNameVoucher(String name){
         return repo.findbyPromoCode(name);
+    }
+
+    public boolean IsThoaManDieuKienGiam(BigDecimal giatriGiam,BigDecimal dieuKienGiamToiThieu,String loaiGiam){
+        if (giatriGiam.floatValue() > dieuKienGiamToiThieu.floatValue() * 50/100 && loaiGiam.equals("AMOUNT")){
+            return true;
+        }if (giatriGiam.floatValue() > 50.0 && loaiGiam.equals("PERCENT")){
+            return true;
+        }
+        return false;
     }
 }
