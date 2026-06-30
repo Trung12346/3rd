@@ -33,7 +33,7 @@ public interface DanhGiaRepo extends JpaRepository<DanhGia,Integer> {
 
      @Query(value = """
              SELECT dg.ma_dat_phong, ma_danh_gia, ma_nguoi_dung, diem_danh_gia, noi_dung, phan_hoi, da_duyet, ngay_tao FROM
-             (SELECT ctdp.ma_dat_phong FROM (SELECT ma_phong FROM phong WHERE ma_loai_phong = :id AND (noi_dung IS NULL OR LOWER(noi_dung) LIKE CONCAT('%', LOWER(:noiDung), '%'))) p JOIN chi_tiet_dat_phong ctdp ON ctdp.ma_phong = p.ma_phong) dp
+             (SELECT ctdp.ma_dat_phong FROM (SELECT ma_phong FROM phong WHERE ma_loai_phong = :id AND (:noi_dung IS NULL OR LOWER(noi_dung) LIKE CONCAT('%', LOWER(:noiDung), '%'))) p JOIN chi_tiet_dat_phong ctdp ON ctdp.ma_phong = p.ma_phong) dp
              JOIN danh_gia dg ON dp.ma_dat_phong = dg.ma_dat_phong
              """, nativeQuery = true)
      public List<DanhGia> findByLoaiPhong(@Param("id") Integer id, @Param("noiDung") String noiDung);

@@ -49,36 +49,36 @@ public class DanhGiaController {
         this.reviewService = reviewService;
     }
 
-    @GetMapping("/admin/loai-phong/{id}/danh-gia")
-    public String adminDanhGiaList(
-            Model model,
-            @PathVariable("id") Integer id,
-            @RequestParam(value = "noi-dung", required = false) String noiDung
-    ) {
-        model.addAttribute("danhGias", danhGiaRepo.findByLoaiPhong(id, noiDung));
-        return "admin/danh-gia-list";
-    }
-
-    @PostMapping("/admin/loai-phong/{id}/danh-gia/{dg-id}")
-    public String adminSavePhanHoi(
-            @PathVariable("dg-id") Integer dgId,
-            @PathVariable("id") Integer id,
-            @RequestParam("phanHoi") String phanHoi,
-            RedirectAttributes redirect
-    ) {
-        DanhGia dg = danhGiaRepo.findById(dgId)
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đánh giá #" + dgId));
-
-        if (phanHoi == null || phanHoi.isBlank()) {
-            redirect.addFlashAttribute("phError", "phản hồi trống");
-            return String.format("redirect:/admin/loai-phong/%d/danh-gia", id);
-        }
-        dg.phanHoi = phanHoi;
-        danhGiaRepo.save(dg);
-        redirect.addFlashAttribute("id", id);
-        redirect.addFlashAttribute("phSuccess", "lưu thành công");
-        return String.format("redirect:/admin/loai-phong/%d/danh-gia", id);
-    }
+//    @GetMapping("/admin/loai-phong/{id}/danh-gia")
+//    public String adminDanhGiaList(
+//            Model model,
+//            @PathVariable("id") Integer id,
+//            @RequestParam(value = "noi-dung", required = false) String noiDung
+//    ) {
+//        model.addAttribute("danhGias", danhGiaRepo.findByLoaiPhong(id, noiDung));
+//        return "admin/danh-gia-list";
+//    }
+//
+//    @PostMapping("/admin/loai-phong/{id}/danh-gia/{dg-id}")
+//    public String adminSavePhanHoi(
+//            @PathVariable("dg-id") Integer dgId,
+//            @PathVariable("id") Integer id,
+//            @RequestParam("phanHoi") String phanHoi,
+//            RedirectAttributes redirect
+//    ) {
+//        DanhGia dg = danhGiaRepo.findById(dgId)
+//                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đánh giá #" + dgId));
+//
+//        if (phanHoi == null || phanHoi.isBlank()) {
+//            redirect.addFlashAttribute("phError", "phản hồi trống");
+//            return String.format("redirect:/admin/loai-phong/%d/danh-gia", id);
+//        }
+//        dg.phanHoi = phanHoi;
+//        danhGiaRepo.save(dg);
+//        redirect.addFlashAttribute("id", id);
+//        redirect.addFlashAttribute("phSuccess", "lưu thành công");
+//        return String.format("redirect:/admin/loai-phong/%d/danh-gia", id);
+//    }
 
     @GetMapping("/home/reviews")
     public String customerReviewPage(Model model) {
