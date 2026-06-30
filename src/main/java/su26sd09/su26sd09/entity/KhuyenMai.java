@@ -51,15 +51,22 @@ public class KhuyenMai {
 
     @Column(name = "ngay_bat_dau")
     @DateTimeFormat(pattern = "yyyy-MM-dd")
+    @NotNull(message = "ngày bắt đầu không được để trống")
     public LocalDate ngayBatDau;
 
     @Column(name = "ngay_ket_thuc")
     @DateTimeFormat(pattern = "yyyy-MM-dd")
+    @NotNull(message = "ngày kết thúc không được để trống")
     public LocalDate ngayKetThuc;
 
     @Column(name = "hoat_dong")
     @NotNull(message = "hoạt động không được để trống")
     public boolean hoatDong;
+
+
+    @Column(name = "dieu_kien_giam_toi_thieu")
+    @NotNull(message = "điều kiện giảm tối thiểu không được để trống")
+    public BigDecimal dieuKienGiamToiThieu;
 
     @Column(name = "ngay_tao",updatable = false,insertable = false)
     public LocalDateTime ngayTao;
