@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="vi"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<body>
+<section th:fragment="roomReviews"
+         id="roomReviews"
+         class="room-reviews-module"
+         th:with="roomId=${maPhong != null ? maPhong : (phong != null ? phong.maPhong : null)}"
+         th:attr="data-room-id=${roomId},
+                  data-reviews-url=@{/phong/reviews/rooms/{maPhong}/data(maPhong=${roomId})},
+                  data-reply-base=@{/phong/reviews}">
+    <style>
+        .room-reviews-module {
+            background: var(--white, #fff);
+            border: 1px solid var(--border-color, #e0e0e0);
+            border-radius: 6px;
+            padding: 24px;
+            margin: 28px 0;
+        }
+
+        .room-reviews-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 18px;
+            margin-bottom: 20px;
+        }
+
+        .room-reviews-head h2 {
+            color: var(--text-dark, #333);
+            font-size: 26px;
+            margin-bottom: 6px;
+        }
+
+        .room-reviews-head p,
+        .room-review-muted {
+            color: var(--text-gray, #666);
+            font-size: 14px;
+            line-height: 1.6;
+            margin: 0;
+        }
+
+        .room-review-alert {
+            border-radius: 4px;
+            padding: 12px 14px;
+            font-size: 14px;
+            margin-bottom: 16px;
+        }
+
+        .room-review-alert.success {
+            background: #EAF7EF;
+            color: #247A42;
+            border: 1px solid #BFE7CB;
+        }
+
+        .room-review-alert.error {
+            background: #FDEDEC;
+            color: #B03A2E;
+            border: 1px solid #F5C6CB;
+        }
+
+        .room-review-form-alert {
+            margin: 14px 0 18px;
+        }
+
+        .room-review-form-alert strong {
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        .room-review-form-alert p {
+            margin: 0;
+            line-height: 1.55;
+        }
+
+        .room-review-layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.75fr);
+            gap: 22px;
+            align-items: start;
+        }
+
+        .room-review-list {
+            display: grid;
+            gap: 16px;
+        }
+
+        .room-review-card,
+        .room-review-form-box {
+            border: 1px solid var(--border-color, #e0e0e0);
+            background: #fff;
+            border-radius: 6px;
+            box-shadow: 0 6px 22px rgba(0, 0, 0, 0.04);
+        }
+
+        .room-review-card {
+            padding: 18px;
+        }
+
+        .room-review-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 14px;
+            margin-bottom: 12px;
+        }
+
+        .room-review-author {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 0;
+        }
+
+        .room-review-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--sky-light, #EBF5FB);
+            color: var(--sky-primary, #3498DB);
+            border: 1px solid var(--border-color, #e0e0e0);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            flex: 0 0 auto;
+        }
+
+        .room-review-author strong {
+            display: block;
+            color: var(--text-dark, #333);
+            font-size: 15px;
+            margin-bottom: 4px;
+            overflow-wrap: anywhere;
+        }
+
+        .room-review-author time {
+            color: var(--text-gray, #666);
+            font-size: 12px;
+        }
+
+        .room-review-stars {
+            color: #d7dce2;
+            font-size: 18px;
+            white-space: nowrap;
+            letter-spacing: 1px;
+        }
+
+        .room-review-stars .active {
+            color: #f5b301;
+        }
+
+        .room-review-content {
+            color: var(--text-dark, #333);
+            font-size: 15px;
+            line-height: 1.75;
+            margin: 0;
+            overflow-wrap: anywhere;
+        }
+
+        .room-review-reply {
+            margin-top: 14px;
+            padding: 12px 14px;
+            background: var(--sky-light, #EBF5FB);
+            border-left: 3px solid var(--sky-primary, #3498DB);
+            color: var(--text-dark, #333);
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .room-review-reply p {
+            margin: 6px 0 0;
+        }
+
+        .room-review-staff-reply {
+            margin-top: 14px;
+            display: grid;
+            gap: 10px;
+        }
+
+        .room-review-form-box {
+            padding: 20px;
+            position: sticky;
+            top: 96px;
+        }
+
+        .room-review-form-box h3 {
+            font-family: 'Montserrat', sans-serif;
+            color: var(--text-dark, #333);
+            font-size: 20px;
+            margin-bottom: 10px;
+        }
+
+        .room-review-field {
+            margin-bottom: 15px;
+        }
+
+        .room-review-field label {
+            display: block;
+            color: var(--text-dark, #333);
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .room-review-field input,
+        .room-review-field textarea,
+        .room-review-staff-reply textarea {
+            width: 100%;
+            border: 1px solid var(--border-color, #e0e0e0);
+            border-radius: 3px;
+            padding: 12px;
+            font-family: inherit;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .room-review-field textarea,
+        .room-review-staff-reply textarea {
+            min-height: 96px;
+            resize: vertical;
+        }
+
+        .room-review-field input:focus,
+        .room-review-field textarea:focus,
+        .room-review-staff-reply textarea:focus {
+            border-color: var(--sky-primary, #3498DB);
+        }
+
+        .room-rating-input {
+            display: flex;
+            flex-direction: row-reverse;
+            justify-content: flex-end;
+            gap: 5px;
+            position: relative;
+        }
+
+        .room-rating-input input {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            margin: 0;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .room-rating-input label {
+            color: #d7dce2;
+            cursor: pointer;
+            font-size: 28px;
+            line-height: 1;
+            transition: color 0.15s, transform 0.15s;
+        }
+
+        .room-rating-input label:hover,
+        .room-rating-input label:hover ~ label,
+        .room-rating-input input:checked ~ label {
+            color: #f5b301;
+        }
+
+        .room-rating-input input:focus-visible + label {
+            outline: 2px solid var(--sky-primary, #3498DB);
+            outline-offset: 4px;
+            border-radius: 2px;
+        }
+
+        .room-review-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 42px;
+            border-radius: 3px;
+            border: 1px solid var(--sky-primary, #3498DB);
+            background: var(--sky-primary, #3498DB);
+            color: #fff;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 13px;
+            text-decoration: none;
+            cursor: pointer;
+            padding: 0 18px;
+            transition: background 0.2s;
+        }
+
+        .room-review-button:hover {
+            background: var(--sky-dark, #2980B9);
+        }
+
+        .room-review-empty {
+            border: 1px dashed var(--border-color, #e0e0e0);
+            border-radius: 6px;
+            padding: 18px;
+            color: var(--text-gray, #666);
+            background: #fafafa;
+        }
+
+        @media (max-width: 900px) {
+            .room-review-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .room-review-form-box {
+                position: static;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .room-reviews-module {
+                padding: 18px;
+            }
+
+            .room-reviews-head,
+            .room-review-meta {
+                flex-direction: column;
+            }
+        }
+    </style>
+
+    <div th:if="${_csrf != null}"
+         data-room-review-csrf
+         th:attr="data-name=${_csrf.parameterName},data-token=${_csrf.token}"
+         hidden></div>
+    <div sec:authorize="hasAnyAuthority('ROLE_STAFF','ROLE_ADMIN','ROLE_EMPLOYEE')" data-room-review-can-reply hidden></div>
+    <div th:if="${roomReviewDenied}"
+         data-room-review-denied
+         th:attr="data-message=${roomReviewError}"
+         hidden></div>
+
+    <div class="room-reviews-head">
+        <div>
+            <h2>Đánh giá phòng</h2>
+            <p>Nhận xét của khách hàng đã từng đặt phòng và phần phản hồi từ nhân viên nếu có.</p>
+        </div>
+    </div>
+
+    <div class="room-review-alert success" th:if="${roomReviewSuccess}" th:text="${roomReviewSuccess}"></div>
+    <div class="room-review-alert error" th:if="${roomReviewError}" th:text="${roomReviewError}" role="alert"></div>
+
+    <div class="room-review-layout">
+        <div class="room-review-list" data-room-review-list>
+            <article class="room-review-card" th:if="${roomReviews != null}" th:each="review : ${roomReviews}" th:attr="data-review-id=${review.id}">
+                <div class="room-review-meta">
+                    <div class="room-review-author">
+                        <span class="room-review-avatar" aria-hidden="true">KH</span>
+                        <div>
+                            <strong th:text="${review.tenNguoiDung}">Khách hàng</strong>
+                            <time th:text="${review.ngayTao}">26/06/2026</time>
+                        </div>
+                    </div>
+                    <div class="room-review-stars" aria-label="Số sao đánh giá">
+                        <span th:each="i : ${#numbers.sequence(1, 5)}"
+                              th:class="${i <= review.diemDanhGia} ? 'active' : ''">★</span>
+                    </div>
+                </div>
+                <p class="room-review-content" th:text="${review.noiDung}">Nội dung đánh giá.</p>
+                <div class="room-review-reply" th:if="${review.phanHoi != null && !review.phanHoi.isBlank()}">
+                    <strong>Phản hồi của nhân viên</strong>
+                    <p th:text="${review.phanHoi}">Cảm ơn quý khách đã chia sẻ trải nghiệm.</p>
+                </div>
+
+                <form class="room-review-staff-reply"
+                      sec:authorize="hasAnyAuthority('ROLE_STAFF','ROLE_ADMIN','ROLE_EMPLOYEE')"
+                      th:action="@{/phong/reviews/{reviewId}/reply(reviewId=${review.id})}"
+                      method="post">
+                    <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                    <input type="hidden" name="maPhong" th:value="${roomId}">
+                    <textarea name="phanHoi" maxlength="1000" placeholder="Nhập phản hồi cho khách hàng..." required></textarea>
+                    <button type="submit" class="room-review-button">Gửi phản hồi</button>
+                </form>
+            </article>
+
+            <div class="room-review-empty" th:if="${roomReviews != null && #lists.isEmpty(roomReviews)}" data-room-review-empty>
+                Phòng này chưa có đánh giá.
+            </div>
+            <div class="room-review-empty" th:if="${roomReviews == null}" data-room-review-empty>
+                Đang tải đánh giá...
+            </div>
+        </div>
+
+        <aside class="room-review-form-box">
+            <div sec:authorize="isAuthenticated()">
+                <h3>Gửi đánh giá</h3>
+                <p class="room-review-muted">Hệ thống sẽ tự kiểm tra mã đặt phòng liên quan với tài khoản của bạn trước khi nhận đánh giá.</p>
+
+                <div class="room-review-alert error room-review-form-alert" th:if="${roomReviewDenied}" role="alert">
+                    <strong>Không thể gửi đánh giá</strong>
+                    <p th:text="${roomReviewError}">Tài khoản này chưa có mã đặt phòng liên quan với phòng này nên không thể đánh giá.</p>
+                </div>
+
+                <form th:action="@{/phong/reviews/rooms/{maPhong}(maPhong=${roomId})}" method="post" data-review-form>
+                    <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+
+                    <div class="room-review-field">
+                        <label>Chọn số sao</label>
+                        <div class="room-rating-input" aria-label="Chọn số sao đánh giá" role="radiogroup">
+                            <input type="radio" id="roomStar5" name="diemDanhGia" value="5" required
+                                   data-rating-required data-rating-message="Vui lòng chọn số sao đánh giá.">
+                            <label for="roomStar5" title="5 sao">★</label>
+                            <input type="radio" id="roomStar4" name="diemDanhGia" value="4">
+                            <label for="roomStar4" title="4 sao">★</label>
+                            <input type="radio" id="roomStar3" name="diemDanhGia" value="3">
+                            <label for="roomStar3" title="3 sao">★</label>
+                            <input type="radio" id="roomStar2" name="diemDanhGia" value="2">
+                            <label for="roomStar2" title="2 sao">★</label>
+                            <input type="radio" id="roomStar1" name="diemDanhGia" value="1">
+                            <label for="roomStar1" title="1 sao">★</label>
+                        </div>
+                    </div>
+
+                    <div class="room-review-field">
+                        <label for="roomReviewContent">Nội dung</label>
+                        <textarea id="roomReviewContent" name="noiDung" maxlength="1000" placeholder="Chia sẻ trải nghiệm của bạn..." required></textarea>
+                    </div>
+
+                    <button type="submit" class="room-review-button">Gửi đánh giá</button>
+                </form>
+            </div>
+
+            <div sec:authorize="isAnonymous()">
+                <h3>Gửi đánh giá</h3>
+                <p class="room-review-muted">Vui lòng đăng nhập để viết đánh giá cho phòng này.</p>
+                <a th:href="@{/Login}" class="room-review-button">Đăng nhập</a>
+            </div>
+        </aside>
+    </div>
+
+    <script th:inline="javascript">
+        (function () {
+            const section = document.getElementById('roomReviews');
+            if (!section) {
+                return;
+            }
+
+            const deniedReview = section.querySelector('[data-room-review-denied]');
+            if (deniedReview && deniedReview.dataset.message) {
+                alert(deniedReview.dataset.message);
+            }
+
+            bindRequiredRatingValidation(section);
+
+            if (section.dataset.hydrated === 'true') {
+                return;
+            }
+
+            const list = section.querySelector('[data-room-review-list]');
+            const empty = section.querySelector('[data-room-review-empty]');
+            const hasServerCards = list && list.querySelector('.room-review-card');
+            if (!list || hasServerCards) {
+                return;
+            }
+
+            const reviewsUrl = section.dataset.reviewsUrl;
+            if (!reviewsUrl) {
+                if (empty) {
+                    empty.textContent = 'Không xác định được phòng cần tải đánh giá.';
+                }
+                return;
+            }
+
+            section.dataset.hydrated = 'true';
+            fetch(reviewsUrl, {headers: {'Accept': 'application/json'}})
+                .then(function (response) {
+                    if (!response.ok) {
+                        throw new Error('Cannot load room reviews');
+                    }
+                    return response.json();
+                })
+                .then(function (reviews) {
+                    if (empty) {
+                        empty.remove();
+                    }
+
+                    if (!Array.isArray(reviews) || reviews.length === 0) {
+                        const emptyState = document.createElement('div');
+                        emptyState.className = 'room-review-empty';
+                        emptyState.textContent = 'Phòng này chưa có đánh giá.';
+                        list.appendChild(emptyState);
+                        return;
+                    }
+
+                    reviews.forEach(function (review) {
+                        list.appendChild(createReviewCard(review));
+                    });
+                })
+                .catch(function () {
+                    if (empty) {
+                        empty.textContent = 'Chưa thể tải danh sách đánh giá.';
+                    }
+                });
+
+            function createReviewCard(review) {
+                const canReply = Boolean(section.querySelector('[data-room-review-can-reply]'));
+                const card = document.createElement('article');
+                card.className = 'room-review-card';
+
+                const stars = Array.from({length: 5}, function (_, index) {
+                    return '<span class="' + (index < Number(review.diemDanhGia || 0) ? 'active' : '') + '">★</span>';
+                }).join('');
+
+                const reply = review.phanHoi
+                    ? '<div class="room-review-reply"><strong>Phản hồi của nhân viên</strong><p>' + escapeHtml(review.phanHoi) + '</p></div>'
+                    : '';
+
+                card.innerHTML =
+                    '<div class="room-review-meta">' +
+                    '<div class="room-review-author">' +
+                    '<span class="room-review-avatar" aria-hidden="true">KH</span>' +
+                    '<div><strong>' + escapeHtml(review.tenNguoiDung || 'Khách hàng') + '</strong>' +
+                    '<time>' + escapeHtml(review.ngayTao || '') + '</time></div>' +
+                    '</div>' +
+                    '<div class="room-review-stars" aria-label="Số sao đánh giá">' + stars + '</div>' +
+                    '</div>' +
+                    '<p class="room-review-content">' + escapeHtml(review.noiDung || 'Khách hàng chưa để lại nội dung đánh giá.') + '</p>' +
+                    reply;
+
+                if (canReply) {
+                    card.insertAdjacentHTML('beforeend', createReplyForm(review));
+                }
+
+                return card;
+            }
+
+            function createReplyForm(review) {
+                const csrf = section.querySelector('[data-room-review-csrf]');
+                const csrfInput = csrf
+                    ? '<input type="hidden" name="' + escapeHtml(csrf.dataset.name) + '" value="' + escapeHtml(csrf.dataset.token) + '">'
+                    : '';
+
+                return '<form class="room-review-staff-reply" action="' + escapeHtml(section.dataset.replyBase) + '/' + encodeURIComponent(review.id) + '/reply" method="post">' +
+                    csrfInput +
+                    '<input type="hidden" name="maPhong" value="' + escapeHtml(section.dataset.roomId || review.maPhong || '') + '">' +
+                    '<textarea name="phanHoi" maxlength="1000" placeholder="Nhập phản hồi cho khách hàng..." required></textarea>' +
+                    '<button type="submit" class="room-review-button">Gửi phản hồi</button>' +
+                    '</form>';
+            }
+
+            function bindRequiredRatingValidation(root) {
+                root.querySelectorAll('form[data-review-form]').forEach(function (form) {
+                    if (form.dataset.ratingValidationBound === 'true') {
+                        return;
+                    }
+
+                    const radios = Array.from(form.querySelectorAll('input[name="diemDanhGia"]'));
+                    const requiredRadio = form.querySelector('[data-rating-required]') || radios[0];
+                    if (!requiredRadio || radios.length === 0) {
+                        return;
+                    }
+
+                    const message = requiredRadio.dataset.ratingMessage || 'Vui lòng chọn số sao đánh giá.';
+
+                    function hasRating() {
+                        return radios.some(function (radio) {
+                            return radio.checked;
+                        });
+                    }
+
+                    function clearRatingError() {
+                        requiredRadio.setCustomValidity('');
+                    }
+
+                    radios.forEach(function (radio) {
+                        radio.addEventListener('change', clearRatingError);
+                    });
+
+                    requiredRadio.addEventListener('invalid', function () {
+                        if (hasRating()) {
+                            clearRatingError();
+                            return;
+                        }
+
+                        requiredRadio.setCustomValidity(message);
+                    });
+
+                    form.addEventListener('submit', function (event) {
+                        if (hasRating()) {
+                            clearRatingError();
+                            return;
+                        }
+
+                        event.preventDefault();
+                        requiredRadio.setCustomValidity(message);
+                        requiredRadio.reportValidity();
+                    });
+
+                    form.dataset.ratingValidationBound = 'true';
+                });
+            }
+
+            function escapeHtml(value) {
+                return String(value)
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#039;');
+            }
+        })();
+    </script>
+</section>
+</body>
+</html>

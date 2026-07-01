@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thêm Dịch Vụ Bổ Sung | Hotel</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<div class="topbar">
+    <div class="topbar-left">
+        <span>+84 123 456 789 &nbsp;|&nbsp; info@hotel.local</span>
+    </div>
+</div>
+
+<header>
+    <a href="/home" class="logo">
+        <img src="/logo.jpg" alt="Hotel Logo">
+    </a>
+    <nav class="nav-menu admin-nav">
+        <a href="/nhan-vien/dat-phong" class="active">Đơn đặt phòng</a>
+        <a href="/nhan-vien/danh-gia">Đánh giá</a>
+        <a href="/nhan-vien/khach-hang">Khách hàng</a>
+        <a href="/nhan-vien/phong">Phòng</a>
+        <a href="/nhan-vien/khuyen-mai">Khuyến mãi</a>
+        <a href="/nhan-vien/dat-phong/them-dich-vu">Thêm dịch vụ</a>
+        <a href="/nhan-vien/hoa-don">Hóa Đơn</a>
+    </nav>
+    <div class="header-actions">
+        <a href="/logout" class="btn btn-outline">Đăng Xuất</a>
+    </div>
+</header>
+
+<main class="admin-wrapper">
+    <div class="admin-header">
+        <h1 th:text="${datPhong != null} ? 'Dịch vụ bổ sung — Đơn #' + ${datPhong.id} : 'Thêm dịch vụ bổ sung'">
+            Thêm dịch vụ bổ sung
+        </h1>
+        <a th:href="@{/nhan-vien/dat-phong(page=${currentPage}, size=${pageSize})}" class="admin-btn outline">
+            &laquo; Về danh sách đơn
+        </a>
+    </div>
+
+    <!-- Thông báo -->
+    <div th:if="${success}" class="admin-message success">
+        <span th:text="${success}"></span>
+    </div>
+    <div th:if="${error}" class="admin-message error">
+        <span th:text="${error}"></span>
+    </div>
+
+    <!-- Form tìm kiếm đơn (luôn hiển thị) -->
+    <section class="admin-panel">
+        <h2>Tìm đơn đặt phòng</h2>
+        <form method="get" th:action="@{/nhan-vien/dat-phong/them-dich-vu}"
+              style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+            <input type="hidden" name="page" th:value="${currentPage}">
+            <input type="hidden" name="size" th:value="${pageSize}">
+            <input type="number" name="id"
+                   placeholder="Nhập mã đơn đặt phòng..."
+                   th:value="${searchId}"
+                   min="1"
+                   style="padding: 8px 14px; border: 1px solid #ccc; border-radius: 6px;
+                          width: 280px; font-size: 14px;">
+            <button type="submit" class="admin-btn">Tìm đơn</button>
+        </form>
+    </section>
+
+    <!-- Chỉ hiển thị khi tìm thấy đơn -->
+    <div th:if="${datPhong != null}">
+
+        <!-- Thông tin đơn -->
+        <section class="admin-panel">
+            <h2>Thông tin đơn</h2>
+            <p>
+                Khách:
+                <strong th:text="${datPhong.hoten != null ? datPhong.hoten : (datPhong.n != null ? datPhong.n.hoTen : '')}"></strong>
+                &nbsp;|&nbsp; Trạng thái: <strong th:text="${datPhong.trangThai}"></strong>
+            </p>
+        </section>
+
+        <!-- Form thêm dịch vụ — chỉ hiện khi đơn đang ở trạng thái Đã nhận phòng -->
+        <section class="admin-panel" th:if="${dangO}">
+            <h2>Thêm dịch vụ mới</h2>
+
+            <form th:action="@{/nhan-vien/dat-phong/them-dich-vu}" method="post">
+                <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                <input type="hidden" name="id" th:value="${datPhong.id}">
+                <input type="hidden" name="page" th:value="${currentPage}">
+                <input type="hidden" name="size" th:value="${pageSize}">
+
+                <table class="admin-table">
+                    <thead>
+                    <tr>
+                        <th></th>
+                        <th>Dịch vụ</th>
+                        <th>Đơn giá</th>
+                        <th>Đơn vị</th>
+                        <th>Số lượng</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="dv : ${dichVuList}" th:if="${dv.hoat_dong == null or dv.hoat_dong}">
+                        <td>
+                            <input type="checkbox" name="dichVuIds" th:value="${dv.id}">
+                        </td>
+                        <td th:text="${dv.ten_dich_vu}"></td>
+                        <td th:text="${#numbers.formatDecimal(dv.gia, 0, 'COMMA', 0, 'POINT')} + ' đ'"></td>
+                        <td th:text="${dv.donVi}"></td>
+                        <td>
+                            <input type="number" th:name="'soLuong_' + ${dv.id}" value="1" min="1" style="width: 80px;">
+                        </td>
+                    </tr>
+                    <tr th:if="${dichVuList.isEmpty()}">
+                        <td colspan="5">
+                            <div class="empty-state">Chưa có dịch vụ nào trong hệ thống.</div>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+
+                <div class="admin-actions">
+                    <button type="submit" class="admin-btn">Ghi nhận dịch vụ đã dùng</button>
+                </div>
+                <p style="color:#6b6b6b; font-size: 13px; margin-top: 8px;">
+                    Tích chọn dịch vụ khách đã dùng và nhập số lượng, sau đó bấm "Ghi nhận".
+                    Tiền dịch vụ sẽ được gộp chung vào hóa đơn của đơn này, khách chỉ thanh toán
+                    1 lần khi trả phòng — không cần xuất hóa đơn riêng cho từng lần phát sinh.
+                </p>
+            </form>
+        </section>
+
+        <!-- Cảnh báo khi đơn không ở trạng thái phù hợp -->
+        <section class="admin-panel" th:if="${!dangO}">
+            <div class="admin-message error" style="margin: 0;">
+                Chỉ có thể thêm dịch vụ bổ sung khi đơn đang ở trạng thái
+                <strong>Đã nhận phòng</strong>.
+                Trạng thái hiện tại: <strong th:text="${datPhong.trangThai}"></strong>.
+            </div>
+        </section>
+
+        <!-- Danh sách dịch vụ đã ghi nhận -->
+        <section class="admin-panel">
+            <h2>Dịch vụ đã ghi nhận cho đơn này</h2>
+
+            <table class="admin-table">
+                <thead>
+                <tr>
+                    <th>Dịch vụ</th>
+                    <th>Số lượng</th>
+                    <th>Thời gian dùng</th>
+                    <th>Thành tiền</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="ctdv : ${daSuDung}">
+                    <td th:text="${ctdv.dv != null ? ctdv.dv.ten_dich_vu : ''}"></td>
+                    <td th:text="${ctdv.soluong}"></td>
+                    <td th:text="${ctdv.ngay_su_dung != null ? #temporals.format(ctdv.ngay_su_dung, 'dd/MM/yyyy HH:mm') : ''}"></td>
+                    <td th:text="${#numbers.formatDecimal(ctdv.donGia, 0, 'COMMA', 0, 'POINT')} + ' đ'"></td>
+                </tr>
+                <tr th:if="${daSuDung.isEmpty()}">
+                    <td colspan="4">
+                        <div class="empty-state">Đơn này chưa dùng dịch vụ bổ sung nào.</div>
+                    </td>
+                </tr>
+                </tbody>
+                <tfoot th:if="${!daSuDung.isEmpty()}">
+                <tr>
+                    <td colspan="3" style="text-align:right; font-weight:600;">Tổng tiền dịch vụ:</td>
+                    <td style="font-weight:600;"
+                        th:text="${#numbers.formatDecimal(tienDichVu, 0, 'COMMA', 0, 'POINT')} + ' đ'"></td>
+                </tr>
+                </tfoot>
+            </table>
+        </section>
+
+    </div>
+</main>
+
+<footer>
+    <p>&copy; 2026 Hotel. All rights reserved.</p>
+</footer>
+
+</body>
+</html>

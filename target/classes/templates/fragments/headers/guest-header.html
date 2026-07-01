@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="vi"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<body>
+<div th:fragment="guestHeader" class="hb-header-shell">
+    <th:block th:replace="~{fragments/headers/_header-style :: headerStyle}"></th:block>
+
+    <header class="hb-header" aria-label="Guest header">
+        <a th:href="@{/home}" class="hb-logo" aria-label="Hotel home">
+            <img th:src="@{/logo.jpg}" src="/logo.jpg" alt="Hotel Logo">
+        </a>
+
+        <nav class="hb-nav" aria-label="Guest navigation">
+            <a th:href="@{/home}">Trang chủ</a>
+            <div class="hb-nav-item">
+                <a th:href="@{/phong}" class="hb-nav-link" aria-haspopup="true">
+                    Phòng nghỉ <span class="hb-nav-caret" aria-hidden="true">▾</span>
+                </a>
+                <div class="hb-dropdown-menu">
+                    <a th:href="@{/phong}">Tất cả phòng</a>
+                    <a th:href="@{/loai-phong}">Theo loại phòng</a>
+                    <div class="hb-dropdown-divider" th:if="${loaiPhongs != null}"></div>
+                    <th:block th:if="${loaiPhongs != null}" th:each="loai : ${loaiPhongs}">
+                        <a th:href="@{'/loai-phong/' + ${loai.id}}" th:text="${loai.tenLoai}">Phòng Deluxe</a>
+                    </th:block>
+                </div>
+            </div>
+            <a href="#">Khuyến mãi</a>
+            <a th:href="@{/gio-hang}">Danh sách đặt phòng</a>
+        </nav>
+
+        <div class="hb-actions" aria-label="Guest account actions">
+            <a th:href="@{/Login}" class="hb-auth-button outline">Đăng nhập</a>
+            <a th:href="@{/Register}" class="hb-auth-button filled">Đăng ký</a>
+        </div>
+    </header>
+</div>
+</body>
+</html>

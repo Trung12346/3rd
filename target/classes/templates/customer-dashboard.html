@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="vi" xmlns:sec="http://www.thymeleaf.org/extras/spring-security" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
@@ -42,40 +42,7 @@
     </style>
 </head>
 <body>
-<div class="topbar">
-    <div class="topbar-left">
-        <span>Tel: +84 123 456 789 &nbsp; | &nbsp; Email: info@hotel.local</span>
-    </div>
-    <div class="topbar-right">
-        <a href="#">VN</a> | <a href="#">EN</a>
-    </div>
-</div>
-
-<header>
-    <a href="/home" class="logo">
-        <img src="/logo.jpg" alt="Hotel Logo">
-    </a>
-
-    <nav class="nav-menu">
-        <a href="customer-dashboard.html" style="color: var(--sky-primary);">Trang Chủ</a>
-        <a href="rooms.html">Phòng Nghỉ</a>
-        <a href="#">Khuyến Mãi</a>
-    </nav>
-    <div class="header-actions" sec:authorize="isAnonymous()">
-        <a href="/login" class="btn btn-outline">Đăng Nhập</a>
-        <a href="/Register" class="btn btn-filled">Đăng Ký</a>
-    </div>
-
-       <div sec:authorize="isAuthenticated()">
-           <div class="user-menu">
-           <span class="user-greeting">Xin chào,</span><span sec:authentication="name"></span>
-           <a href="#" class="btn btn-outline" style="padding: 8px 15px; font-size: 13px;">Hồ Sơ</a>
-           <button onclick="logout()" class="btn-logout"><a>Đăng xuất</a></p></button>
-       </div>
-    </div>
-
-
-</header>
+<div th:replace="~{fragments/headers/app-header :: appHeader}"></div>
 
 <section class="hero">
     <div class="hero-text">

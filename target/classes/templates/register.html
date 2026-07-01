@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
@@ -7,21 +7,7 @@
     <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-<div class="topbar">
-    <div class="topbar-left">
-        <span>Tel: +84 123 456 789 &nbsp; | &nbsp; Email: info@hotel.local</span>
-    </div>
-</div>
-
-<header>
-    <a href="/home" th:href="@{/home}" class="logo">
-        <img src="/logo.jpg" alt="Hotel Logo">
-    </a>
-    <div class="header-actions">
-        <a href="/home" class="btn btn-outline">Trang Chủ</a>
-        <a href="/Login" class="btn btn-filled">Đăng Nhập</a>
-    </div>
-</header>
+<div th:replace="~{fragments/headers/app-header :: appHeader}"></div>
 
 <main class="auth-wrapper">
     <div class="auth-card register">

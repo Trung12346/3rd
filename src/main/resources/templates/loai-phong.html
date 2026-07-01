@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="vi"
       xmlns:th="http://www.thymeleaf.org"
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
@@ -438,53 +438,7 @@
 <body>
 
 <!-- TOPBAR -->
-<div class="topbar">
-    <div class="topbar-left">
-        <span>Tel: +84 123 456 789 &nbsp;|&nbsp; Email: info@hotel.local</span>
-    </div>
-    <div class="topbar-right">
-        <a href="#">VN</a> | <a href="#">EN</a>
-    </div>
-</div>
-
-<!-- HEADER -->
-<header>
-    <a href="/home" class="logo">
-        <img src="/logo.jpg" alt="Hotel Logo">
-    </a>
-    <nav class="nav-menu">
-        <a href="/home">Trang Chủ</a>
-        <div class="nav-item has-dropdown">
-            <a href="/phong" class="room-nav-toggle" aria-haspopup="true" aria-expanded="false">Phòng Nghỉ</a>
-            <div class="dropdown-menu">
-                <a href="/phong"><i class="fa-solid fa-bed"></i>Tất Cả Phòng</a>
-                <a href="/loai-phong" style="color: var(--sky-primary);"><i class="fa-solid fa-list"></i>Theo Loại Phòng</a>
-                <div style="border-top: 1px solid var(--border-color); margin: 8px 0;"></div>
-                <div th:each="lp : ${loaiPhongs}">
-                    <a th:href="@{'/loai-phong/' + ${lp.id}}">
-                        <i class="fa-solid fa-door-open"></i>
-                        <span th:text="${lp.tenLoai}">Phòng Deluxe</span>
-                    </a>
-                </div>
-            </div>
-        </div>
-        <a href="#">Khuyến Mãi</a>
-        <a href="/gio-hang">Danh Sách Đặt Phòng</a>
-    </nav>
-
-    <div class="header-actions" sec:authorize="isAnonymous()">
-        <a href="/Login" class="btn btn-outline">Đăng Nhập</a>
-        <a href="/Register" class="btn btn-filled">Đăng Ký</a>
-    </div>
-    <div sec:authorize="isAuthenticated()">
-        <div class="user-menu">
-            <span style="font-size:14px; color:var(--text-dark); font-weight:500;">Xin chào,</span>
-            <span sec:authentication="name" style="font-size:14px; color:var(--sky-primary); font-weight:600;"></span>
-            <a href="/profiles" class="btn btn-outline" style="padding:8px 15px; font-size:13px;">Hồ Sơ</a>
-            <button onclick="confirmLogout()" class="btn-logout">Đăng Xuất</button>
-        </div>
-    </div>
-</header>
+<div th:replace="~{fragments/headers/app-header :: appHeader}"></div>
 
 <!-- BANNER -->
 <section class="page-banner">
@@ -494,50 +448,50 @@
     </div>
 </section>
 
-<!-- FILTER / BOOKING BAR -->
-<section class="filter-section">
-    <h3><i class="fa-solid fa-sliders" style="color:var(--sky-primary); margin-right:8px;"></i>Tìm Phòng Theo Nhu Cầu</h3>
-    <form class="filter-form" th:action="@{/loai-phong/tim-kiem}" method="get">
-        <div class="filter-item">
-            <label>Ngày nhận phòng</label>
-            <input type="date" name="ngayNhan" th:value="${ngayNhan}" th:min="${#dates.format(#dates.createNow(), 'yyyy-MM-dd')}">
-        </div>
-        <div class="filter-item">
-            <label>Ngày trả phòng</label>
-            <input type="date" name="ngayTra" th:value="${ngayTra}">
-        </div>
-        <div class="filter-item">
-            <label>Người lớn</label>
-            <select name="nguoiLon">
-                <option value="1" th:selected="${nguoiLon != null and nguoiLon == 1}">1 người</option>
-                <option value="2" th:selected="${nguoiLon == null or nguoiLon == 2}">2 người</option>
-                <option value="3" th:selected="${nguoiLon != null and nguoiLon == 3}">3 người</option>
-                <option value="4" th:selected="${nguoiLon != null and nguoiLon == 4}">4 người</option>
-            </select>
-        </div>
-        <div class="filter-item">
-            <label>Trẻ em</label>
-            <select name="treEm">
-                <option value="0" th:selected="${treEm == null or treEm == 0}">0</option>
-                <option value="1" th:selected="${treEm != null and treEm == 1}">1</option>
-                <option value="2" th:selected="${treEm != null and treEm == 2}">2</option>
-            </select>
-        </div>
-        <div class="filter-item">
-                <label>Mức giá (VND/đêm)</label>
-            <select name="mucGia">
-                <option value="" th:selected="${mucGia == null or mucGia == ''}">Tất cả mức giá</option>
-                <option value="duoi1tr" th:selected="${mucGia == 'duoi1tr'}">Dưới 1.000.000</option>
-                <option value="1tr-2tr" th:selected="${mucGia == '1tr-2tr'}">1.000.000 - 2.000.000</option>
-                <option value="tren2tr" th:selected="${mucGia == 'tren2tr'}">Trên 2.000.000</option>
-            </select>
-        </div>
+<!--FILTER / BOOKING BAR-->
+<!--<section class="filter-section">-->
+<!--    <h3><i class="fa-solid fa-sliders" style="color:var(&#45;&#45;sky-primary); margin-right:8px;"></i>Tìm Phòng Theo Nhu Cầu</h3>-->
+<!--    <form class="filter-form" th:action="@{/loai-phong/tim-kiem}" method="get">-->
+<!--        <div class="filter-item">-->
+<!--            <label>Ngày nhận phòng</label>-->
+<!--            <input type="date" name="ngayNhan" th:value="${ngayNhan}" th:min="${#dates.format(#dates.createNow(), 'yyyy-MM-dd')}">-->
+<!--        </div>-->
+<!--        <div class="filter-item">-->
+<!--            <label>Ngày trả phòng</label>-->
+<!--            <input type="date" name="ngayTra" th:value="${ngayTra}">-->
+<!--        </div>-->
+<!--        <div class="filter-item">-->
+<!--            <label>Người lớn</label>-->
+<!--            <select name="nguoiLon">-->
+<!--                <option value="1" th:selected="${nguoiLon != null and nguoiLon == 1}">1 người</option>-->
+<!--                <option value="2" th:selected="${nguoiLon == null or nguoiLon == 2}">2 người</option>-->
+<!--                <option value="3" th:selected="${nguoiLon != null and nguoiLon == 3}">3 người</option>-->
+<!--                <option value="4" th:selected="${nguoiLon != null and nguoiLon == 4}">4 người</option>-->
+<!--            </select>-->
+<!--        </div>-->
+<!--        <div class="filter-item">-->
+<!--            <label>Trẻ em</label>-->
+<!--            <select name="treEm">-->
+<!--                <option value="0" th:selected="${treEm == null or treEm == 0}">0</option>-->
+<!--                <option value="1" th:selected="${treEm != null and treEm == 1}">1</option>-->
+<!--                <option value="2" th:selected="${treEm != null and treEm == 2}">2</option>-->
+<!--            </select>-->
+<!--        </div>-->
+<!--        <div class="filter-item">-->
+<!--                <label>Mức giá (VND/đêm)</label>-->
+<!--            <select name="mucGia">-->
+<!--                <option value="" th:selected="${mucGia == null or mucGia == ''}">Tất cả mức giá</option>-->
+<!--                <option value="duoi1tr" th:selected="${mucGia == 'duoi1tr'}">Dưới 1.000.000</option>-->
+<!--                <option value="1tr-2tr" th:selected="${mucGia == '1tr-2tr'}">1.000.000 - 2.000.000</option>-->
+<!--                <option value="tren2tr" th:selected="${mucGia == 'tren2tr'}">Trên 2.000.000</option>-->
+<!--            </select>-->
+<!--        </div>-->
 
-        <button type="submit" class="btn-search">
-            <i class="fa-solid fa-magnifying-glass" style="margin-right:6px;"></i>Tìm Kiếm
-        </button>
-    </form>
-</section>
+<!--        <button type="submit" class="btn-search">-->
+<!--            <i class="fa-solid fa-magnifying-glass" style="margin-right:6px;"></i>Tìm Kiếm-->
+<!--        </button>-->
+<!--    </form>-->
+<!--</section>-->
 
 <!-- CAROUSEL: DANH SACH LOAI PHONG -->
 <section class="carousel-section">

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
@@ -193,28 +193,7 @@
     .cccd-room-value { color: #0C447C; font-weight: 600; }
     .cccd-room-empty { color: #999; font-style: italic; font-size: 13px; }
 </style>
-<div class="topbar">
-    <div class="topbar-left">
-        <span>+84 123 456 789 &nbsp;|&nbsp; info@hotel.local</span>
-    </div>
-</div>
-
-<header>
-    <a href="/home" class="logo">
-        <img src="/logo.jpg" alt="Hotel Logo">
-    </a>
-    <nav class="nav-menu admin-nav">
-        <a href="/nhan-vien/dat-phong" class="active">Đơn đặt phòng</a>
-        <a href="/nhan-vien/danh-gia">Đánh giá</a>
-        <a href="/nhan-vien/khach-hang">Khách hàng</a>
-        <a href="/nhan-vien/phong">Phòng</a>
-        <a href="/nhan-vien/khuyen-mai">Khuyến mãi</a>
-        <a href="/nhan-vien/dat-phong-quay">Đặt phòng tại quầy</a>
-    </nav>
-    <div class="header-actions">
-        <a href="/logout" class="btn btn-outline">Đăng Xuất</a>
-    </div>
-</header>
+<div th:replace="~{fragments/headers/app-header :: appHeader}"></div>
 
 <main class="admin-wrapper">
     <div class="admin-header">

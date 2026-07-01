@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
     <meta charset="UTF-8">
@@ -133,25 +133,7 @@
     </style>
 </head>
 <body>
-<header>
-    <a href="/home" class="logo">
-        <img src="/logo.jpg" alt="Hotel Logo">
-    </a>
-    <nav class="nav-menu">
-        <a href="/home">Trang Chủ</a>
-        <a href="/phong">Phòng Nghỉ</a>
-        <a href="/loai-phong">Loại Phòng</a>
-        <a href="/gio-hang" style="color: var(--sky-primary);">Danh Sách Đặt Phòng</a>
-    </nav>
-    <div class="header-actions" sec:authorize="isAnonymous()">
-        <a href="/Login" class="btn btn-outline">Đăng Nhập</a>
-        <a href="/Register" class="btn btn-filled">Đăng Ký</a>
-    </div>
-    <div class="header-actions" sec:authorize="isAuthenticated()">
-        <a href="/profiles" class="btn btn-outline">Thông Tin Tài Khoản</a>
-        <a href="/logout" class="btn btn-filled">Đăng Xuất</a>
-    </div>
-</header>
+<div th:replace="~{fragments/headers/app-header :: appHeader}"></div>
 
 <main class="booking-shell">
     <div class="booking-stepper">

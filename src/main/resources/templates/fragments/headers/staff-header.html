@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="vi"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<body>
+<div th:fragment="staffHeader" class="hb-header-shell">
+    <th:block th:replace="~{fragments/headers/_header-style :: headerStyle}"></th:block>
+
+    <header class="hb-header hb-header-compact" aria-label="Staff header">
+        <a th:href="@{/nhan-vien/dat-phong}" class="hb-logo" aria-label="Staff bookings">
+            <img th:src="@{/logo.jpg}" src="/logo.jpg" alt="Hotel Logo">
+        </a>
+
+        <nav class="hb-nav hb-nav-dense" aria-label="Staff navigation">
+            <a th:href="@{/home}">Trang chủ</a>
+            <div class="hb-nav-item">
+                <a th:href="@{/phong}" class="hb-nav-link" aria-haspopup="true">
+                    Phòng nghỉ <span class="hb-nav-caret" aria-hidden="true">▾</span>
+                </a>
+                <div class="hb-dropdown-menu">
+                    <a th:href="@{/phong}">Tất cả phòng</a>
+                    <a th:href="@{/loai-phong}">Theo loại phòng</a>
+                    <div class="hb-dropdown-divider" th:if="${loaiPhongs != null}"></div>
+                    <th:block th:if="${loaiPhongs != null}" th:each="loai : ${loaiPhongs}">
+                        <a th:href="@{'/loai-phong/' + ${loai.id}}" th:text="${loai.tenLoai}">Phòng Deluxe</a>
+                    </th:block>
+                </div>
+            </div>
+            <div class="hb-nav-item">
+                <a th:href="@{/nhan-vien/dat-phong}" class="hb-nav-link" aria-haspopup="true">
+                    Nghiệp vụ <span class="hb-nav-caret" aria-hidden="true">▾</span>
+                </a>
+                <div class="hb-dropdown-menu">
+                    <a th:href="@{/nhan-vien/dat-phong}">Đơn đặt phòng</a>
+                    <a th:href="@{/nhan-vien/dat-phong-quay}">Đặt phòng tại quầy</a>
+                </div>
+            </div>
+            <a th:href="@{/gio-hang}">Danh sách đặt phòng</a>
+        </nav>
+
+        <div class="hb-account" aria-label="Staff account">
+            <span class="hb-avatar" aria-hidden="true">NV</span>
+            <span class="hb-account-text">
+                <span class="hb-account-label">Nhân viên</span>
+                <strong class="hb-account-name" sec:authentication="name">staff@email.com</strong>
+            </span>
+            <a th:href="@{/logout}" class="hb-logout-link">Đăng xuất</a>
+        </div>
+    </header>
+</div>
+</body>
+</html>

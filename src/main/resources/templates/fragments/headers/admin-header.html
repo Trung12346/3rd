@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="vi"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<body>
+<div th:fragment="adminHeader" class="hb-header-shell">
+    <th:block th:replace="~{fragments/headers/_header-style :: headerStyle}"></th:block>
+
+    <header class="hb-header hb-header-compact" aria-label="Admin header">
+        <a th:href="@{/admin/phong}" class="hb-logo" aria-label="Admin rooms">
+            <img th:src="@{/logo.jpg}" src="/logo.jpg" alt="Hotel Logo">
+        </a>
+
+        <nav class="hb-nav hb-nav-dense" aria-label="Admin navigation">
+            <a th:href="@{/home}">Trang chủ</a>
+            <div class="hb-nav-item">
+                <a th:href="@{/phong}" class="hb-nav-link" aria-haspopup="true">
+                    Phòng nghỉ <span class="hb-nav-caret" aria-hidden="true">▾</span>
+                </a>
+                <div class="hb-dropdown-menu">
+                    <a th:href="@{/phong}">Tất cả phòng</a>
+                    <a th:href="@{/loai-phong}">Theo loại phòng</a>
+                    <div class="hb-dropdown-divider" th:if="${loaiPhongs != null}"></div>
+                    <th:block th:if="${loaiPhongs != null}" th:each="loai : ${loaiPhongs}">
+                        <a th:href="@{'/loai-phong/' + ${loai.id}}" th:text="${loai.tenLoai}">Phòng Deluxe</a>
+                    </th:block>
+                </div>
+            </div>
+            <div class="hb-nav-item">
+                <a th:href="@{/admin/phong}" class="hb-nav-link" aria-haspopup="true">
+                    Quản trị <span class="hb-nav-caret" aria-hidden="true">▾</span>
+                </a>
+                <div class="hb-dropdown-menu">
+                    <a th:href="@{/admin/phong}">Phòng</a>
+                    <a th:href="@{/admin/loai-phong}">Loại phòng</a>
+                    <a th:href="@{/admin/dat-phong}">Đơn đặt phòng</a>
+                    <a th:href="@{/admin/hoa-don}">Hóa đơn</a>
+                    <a th:href="@{/admin/khach-hang}">Khách hàng</a>
+                    <a th:href="@{/admin/nhan-vien}">Nhân viên</a>
+                    <a th:href="@{/admin/khuyen-mai}">Khuyến mãi</a>
+                    <a th:href="@{/admin/nguoi-dung}">Người dùng</a>
+                    <a th:href="@{/admin/thong-ke}">Thống kê</a>
+                </div>
+            </div>
+            <a th:href="@{/nhan-vien/dat-phong-quay}">Đặt tại quầy</a>
+            <a th:href="@{/gio-hang}">Danh sách đặt phòng</a>
+        </nav>
+
+        <div class="hb-account" aria-label="Admin account">
+            <span class="hb-avatar" aria-hidden="true">AD</span>
+            <span class="hb-account-text">
+                <span class="hb-account-label">Quản trị</span>
+                <strong class="hb-account-name" sec:authentication="name">admin@email.com</strong>
+            </span>
+            <a th:href="@{/logout}" class="hb-logout-link">Đăng xuất</a>
+        </div>
+    </header>
+</div>
+</body>
+</html>

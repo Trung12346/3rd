@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; font-size: 13px; background: #f0f4f7; }
+        .wrapper { background: #fff; max-width: 680px; margin: 0 auto; border: 1px solid #d0dce6; }
+
+        /* ── HEADER ── */
+        .header { background: #1a5276; padding: 1.4rem 2rem; display: table; width: 100%; }
+        .header-left  { display: table-cell; vertical-align: middle; }
+        .header-right { display: table-cell; vertical-align: middle; text-align: right; }
+        .hotel-name  { color: #fff; font-size: 21px; font-weight: bold; letter-spacing: 1.5px; }
+        .hotel-info  { color: rgba(255,255,255,0.70); font-size: 11px; margin-top: 5px; line-height: 1.6; }
+        .invoice-title { color: #fff; font-size: 22px; font-weight: bold; letter-spacing: 3px; }
+        .invoice-meta  { color: rgba(255,255,255,0.75); font-size: 12px; margin-top: 4px; line-height: 1.7; }
+
+        /* ── DIVIDER LABEL ── */
+        .section-bar {
+            background: #1a5276;
+            color: #fff;
+            font-size: 10px;
+            font-weight: bold;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+            padding: 5px 20px;
+        }
+
+        /* ── INFO GRID (2 cột) ── */
+        .info-grid { display: table; width: 100%; border-bottom: 1px solid #d0dce6; }
+        .info-col  { display: table-cell; padding: 14px 20px; width: 50%; vertical-align: top; }
+        .info-col-left { border-right: 1px solid #d0dce6; }
+
+        .info-row { display: table; width: 100%; margin-bottom: 5px; }
+        .info-key { display: table-cell; color: #777; width: 46%; font-size: 12px; padding-top: 1px; }
+        .info-val      { display: table-cell; color: #111; font-weight: bold; font-size: 13px; }
+        .info-val-null { display: table-cell; color: #bbb; font-style: italic; font-size: 12px; }
+
+        /* ── ITEMS TABLE ── */
+        .items-wrap { padding: 0 20px 4px; }
+        .items-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .items-table thead tr { border-bottom: 2px solid #1a5276; }
+        .items-table th {
+            padding: 11px 0 8px;
+            color: #1a5276;
+            font-weight: bold;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .items-table th.right { text-align: right; }
+        .items-table td { padding: 9px 0; }
+        .items-table td.right { text-align: right; color: #111; font-weight: bold; }
+        .items-table tr.row-normal { border-bottom: 1px solid #eef2f5; }
+        .items-table tr.row-normal td { color: #333; }
+        .items-table tr.row-sub td { color: #555; font-size: 12px; padding: 6px 0 6px 16px; border-bottom: 1px dashed #eef2f5; }
+        .items-table tr.row-sub td.right { color: #333; }
+        .items-table tr.row-discount td { color: #c0392b; border-bottom: 1px solid #eef2f5; }
+        .items-table tr.row-discount td.right { color: #c0392b; }
+
+        /* ── TOTALS ── */
+        .totals { margin: 0 20px; border-top: 2px solid #1a5276; padding: 12px 0 6px; }
+        .total-row { display: table; width: 100%; margin-bottom: 7px; }
+        .total-label { display: table-cell; font-size: 13px; color: #555; }
+        .total-val   { display: table-cell; text-align: right; font-size: 14px; font-weight: bold; color: #111; }
+        .total-val-blue { display: table-cell; text-align: right; font-size: 14px; font-weight: bold; color: #1a5276; }
+        .total-val-red  { display: table-cell; text-align: right; font-size: 14px; font-weight: bold; color: #c0392b; }
+
+        .grand-box { background: #1a5276; display: table; width: 100%; padding: 12px 20px; margin-top: 4px; }
+        .grand-label  { display: table-cell; font-size: 14px; font-weight: bold; color: #fff; }
+        .grand-right  { display: table-cell; text-align: right; }
+        .grand-amount { font-size: 17px; font-weight: bold; color: #fff; margin-right: 12px; }
+        .badge-paid   { background: #27ae60; color: #fff; font-size: 11px; font-weight: bold; padding: 3px 10px; letter-spacing: 0.5px; }
+        .badge-partial{ background: #e67e22; color: #fff; font-size: 11px; font-weight: bold; padding: 3px 10px; letter-spacing: 0.5px; }
+        .badge-unpaid { background: #e74c3c; color: #fff; font-size: 11px; font-weight: bold; padding: 3px 10px; letter-spacing: 0.5px; }
+
+        /* ── NOTE ── */
+        .note-box { margin: 14px 20px; padding: 10px 14px; border-left: 3px solid #1a5276; background: #f7fafc; }
+        .note-label { font-size: 10px; font-weight: bold; color: #1a5276; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px; }
+        .note-text  { font-size: 12px; color: #444; line-height: 1.5; }
+
+        /* ── SIGNATURE ROW ── */
+        .sign-row { display: table; width: 100%; padding: 16px 20px 20px; }
+        .sign-cell { display: table-cell; text-align: center; font-size: 12px; color: #555; width: 33%; }
+        .sign-title { font-weight: bold; margin-bottom: 40px; }
+        .sign-line  { border-top: 1px solid #ccc; padding-top: 4px; font-style: italic; color: #999; }
+
+        /* ── FOOTER ── */
+        .footer { background: #f0f4f7; border-top: 1px solid #d0dce6; padding: 10px 20px; display: table; width: 100%; }
+        .footer-left  { display: table-cell; font-size: 11px; color: #999; }
+        .footer-right { display: table-cell; text-align: right; font-size: 11px; color: #999; }
+    </style>
+</head>
+<body>
+<div class="wrapper">
+
+    <!-- ══ HEADER ══ -->
+    <div class="header">
+        <div class="header-left">
+            <div class="hotel-name">KHÁCH SẠN SUNRISE</div>
+            <div class="hotel-info">
+                123 Đường Lê Lợi, Hà Nội<br/>
+                info@hotel.local &#160;|&#160; +84 123 456 789
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="invoice-title">HÓA ĐƠN</div>
+            <div class="invoice-meta">
+                Số HD: <strong th:text="${hoaDon.id}">0042</strong><br/>
+                Ngày xuất:
+                <span th:if="${hoaDon.ngayXuat != null}"
+                      th:text="${#temporals.format(hoaDon.ngayXuat, 'dd/MM/yyyy HH:mm')}">10/06/2026</span>
+                <span th:unless="${hoaDon.ngayXuat != null}">—</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ THÔNG TIN KHÁCH ══ -->
+    <div class="section-bar">Thông tin khách hàng</div>
+    <div class="info-grid">
+        <div class="info-col info-col-left">
+            <div class="info-row">
+                <span class="info-key">Họ tên khách</span>
+                <!-- Khách vãng lai (hoten) hoặc khách có tài khoản (n.hoTen) -->
+                <span class="info-val"
+                      th:if="${hoaDon.d != null and hoaDon.d.hoten != null and !hoaDon.d.hoten.isEmpty()}"
+                      th:text="${hoaDon.d.hoten}">Nguyễn Văn A</span>
+                <span class="info-val"
+                      th:if="${hoaDon.d != null and (hoaDon.d.hoten == null or hoaDon.d.hoten.isEmpty()) and hoaDon.d.n != null}"
+                      th:text="${hoaDon.d.n.hoTen}">Nguyễn Văn A</span>
+                <span class="info-val-null"
+                      th:if="${hoaDon.d == null or ((hoaDon.d.hoten == null or hoaDon.d.hoten.isEmpty()) and hoaDon.d.n == null)}">
+                    Không có
+                </span>
+            </div>
+            <div class="info-row">
+                <span class="info-key">Số điện thoại</span>
+                <span class="info-val"
+                      th:if="${hoaDon.d != null and hoaDon.d.sdt != null and !hoaDon.d.sdt.isEmpty()}"
+                      th:text="${hoaDon.d.sdt}">0901 234 567</span>
+                <span class="info-val-null"
+                      th:unless="${hoaDon.d != null and hoaDon.d.sdt != null and !hoaDon.d.sdt.isEmpty()}">
+                    Không có
+                </span>
+            </div>
+            <div class="info-row">
+                <span class="info-key">Email</span>
+                <span class="info-val"
+                      th:if="${hoaDon.d != null and hoaDon.d.email != null and !hoaDon.d.email.isEmpty()}"
+                      th:text="${hoaDon.d.email}">guest@email.com</span>
+                <span class="info-val-null"
+                      th:unless="${hoaDon.d != null and hoaDon.d.email != null and !hoaDon.d.email.isEmpty()}">
+                    Không có
+                </span>
+            </div>
+            <div class="info-row">
+                <span class="info-key">CCCD</span>
+                <span class="info-val"
+                      th:if="${hoaDon.d != null and hoaDon.d.ma_cccd != null and !hoaDon.d.ma_cccd.isEmpty()}"
+                      th:text="${hoaDon.d.ma_cccd}">001234567890</span>
+                <span class="info-val-null"
+                      th:unless="${hoaDon.d != null and hoaDon.d.ma_cccd != null and !hoaDon.d.ma_cccd.isEmpty()}">
+                    Không có
+                </span>
+            </div>
+        </div>
+        <div class="info-col">
+            <div class="info-row">
+                <span class="info-key">Mã đặt phòng</span>
+                <span class="info-val"
+                      th:if="${hoaDon.d != null}"
+                      th:text="${'#' + hoaDon.d.id}">DP-0021</span>
+                <span class="info-val-null" th:unless="${hoaDon.d != null}">Không có</span>
+            </div>
+            <div class="info-row">
+                <span class="info-key">Ngày nhận phòng</span>
+                <span class="info-val"
+                      th:if="${hoaDon.d != null and hoaDon.d.ngaydatPhong != null}"
+                      th:text="${#temporals.format(hoaDon.d.ngaydatPhong, 'dd/MM/yyyy')}">10/06/2026</span>
+                <span class="info-val-null"
+                      th:unless="${hoaDon.d != null and hoaDon.d.ngaydatPhong != null}">—</span>
+            </div>
+            <div class="info-row">
+                <span class="info-key">Ngày trả phòng</span>
+                <span class="info-val"
+                      th:if="${hoaDon.d != null and hoaDon.d.ngaytraPhong != null}"
+                      th:text="${#temporals.format(hoaDon.d.ngaytraPhong, 'dd/MM/yyyy')}">12/06/2026</span>
+                <span class="info-val-null"
+                      th:unless="${hoaDon.d != null and hoaDon.d.ngaytraPhong != null}">—</span>
+            </div>
+            <div class="info-row">
+                <span class="info-key">Số khách</span>
+                <span class="info-val"
+                      th:if="${hoaDon.d != null}"
+                      th:text="${(hoaDon.d.songuoiLon != null ? hoaDon.d.songuoiLon : 0) + ' NL, ' + (hoaDon.d.sotreEm != null ? hoaDon.d.sotreEm : 0) + ' TE'}">
+                    2 NL, 0 TE
+                </span>
+                <span class="info-val-null" th:unless="${hoaDon.d != null}">—</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ THÔNG TIN HÓA ĐƠN ══ -->
+    <div class="section-bar">Thông tin hóa đơn</div>
+    <div class="info-grid">
+        <div class="info-col info-col-left">
+            <div class="info-row">
+                <span class="info-key">Nhân viên xuất</span>
+                <span class="info-val"
+                      th:if="${hoaDon.n != null}"
+                      th:text="${hoaDon.n.hoTen}">Trần Thị B</span>
+                <span class="info-val-null" th:unless="${hoaDon.n != null}">Không có</span>
+            </div>
+            <div class="info-row">
+                <span class="info-key">Khuyến mãi</span>
+                <span class="info-val"
+                      th:if="${hoaDon.k != null}"
+                      th:text="${hoaDon.k.promoCode}">KM2026</span>
+                <span class="info-val-null" th:unless="${hoaDon.k != null}">Không sử dụng</span>
+            </div>
+        </div>
+        <div class="info-col">
+            <div class="info-row">
+                <span class="info-key">Ngày xuất HD</span>
+                <span class="info-val"
+                      th:if="${hoaDon.ngayXuat != null}"
+                      th:text="${#temporals.format(hoaDon.ngayXuat, 'dd/MM/yyyy HH:mm')}">10/06/2026 09:30</span>
+                <span class="info-val-null" th:unless="${hoaDon.ngayXuat != null}">—</span>
+            </div>
+            <div class="info-row">
+                <span class="info-key">Cập nhật</span>
+                <span class="info-val"
+                      th:if="${hoaDon.ngayCapNhat != null}"
+                      th:text="${#temporals.format(hoaDon.ngayCapNhat, 'dd/MM/yyyy HH:mm')}">10/06/2026 10:00</span>
+                <span class="info-val-null" th:unless="${hoaDon.ngayCapNhat != null}">Chưa cập nhật</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ CHI TIẾT CÁC KHOẢN ══ -->
+    <div class="section-bar">Chi tiết thanh toán</div>
+    <div class="items-wrap">
+        <table class="items-table">
+            <thead>
+            <tr>
+                <th>Khoản mục</th>
+                <th class="right">Số tiền (VNĐ)</th>
+            </tr>
+            </thead>
+            <tbody>
+            <!-- Tiền phòng -->
+            <tr class="row-normal">
+                <td>Tiền phòng</td>
+                <td class="right"
+                    th:text="${hoaDon.tienPhong != null
+                        ? #numbers.formatDecimal(hoaDon.tienPhong, 0, 'COMMA', 0, 'POINT')
+                        : '0'}">
+                    2.400.000
+                </td>
+            </tr>
+
+            <!-- Tiền dịch vụ -->
+            <tr class="row-normal">
+                <td>Tiền dịch vụ bổ sung</td>
+                <td class="right"
+                    th:text="${hoaDon.tienDichVu != null
+                        ? #numbers.formatDecimal(hoaDon.tienDichVu, 0, 'COMMA', 0, 'POINT')
+                        : '0'}">
+                    350.000
+                </td>
+            </tr>
+
+            <!-- VAT -->
+            <tr class="row-normal">
+                <td>Thuế VAT (10%)</td>
+                <td class="right"
+                    th:text="${hoaDon.tienVat != null
+                        ? #numbers.formatDecimal(hoaDon.tienVat, 0, 'COMMA', 0, 'POINT')
+                        : '0'}">
+                    275.000
+                </td>
+            </tr>
+
+            <!-- Giảm giá — chỉ hiện nếu > 0 -->
+            <tr class="row-discount"
+                th:if="${hoaDon.tienGiam != null and hoaDon.tienGiam.compareTo(T(java.math.BigDecimal).ZERO) > 0}">
+                <td>Giảm giá
+                    <span th:if="${hoaDon.k != null}"
+                          th:text="${'(' + hoaDon.k.promoCode + ')'}"></span>
+                </td>
+                <td class="right"
+                    th:text="${'- ' + #numbers.formatDecimal(hoaDon.tienGiam, 0, 'COMMA', 0, 'POINT')}">
+                    - 100.000
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- ══ TỔNG KẾT ══ -->
+    <div class="totals">
+        <div class="total-row">
+            <span class="total-label">Tổng tiền</span>
+            <span class="total-val"
+                  th:text="${hoaDon.tongTien != null
+                      ? #numbers.formatDecimal(hoaDon.tongTien, 0, 'COMMA', 0, 'POINT') + ' VNĐ'
+                      : '0 VNĐ'}">
+                3.025.000 VNĐ
+            </span>
+        </div>
+        <div class="total-row">
+            <span class="total-label">Đã thanh toán</span>
+            <span class="total-val-blue"
+                  th:text="${hoaDon.daThanhToan != null
+                      ? #numbers.formatDecimal(hoaDon.daThanhToan, 0, 'COMMA', 0, 'POINT') + ' VNĐ'
+                      : '0 VNĐ'}">
+                3.025.000 VNĐ
+            </span>
+        </div>
+    </div>
+
+    <!-- Còn lại + badge -->
+    <div class="grand-box"
+         th:with="conLai = ${hoaDon.tongTien != null and hoaDon.daThanhToan != null
+             ? hoaDon.tongTien.subtract(hoaDon.daThanhToan)
+             : null}">
+        <span class="grand-label">Còn lại phải thu</span>
+        <span class="grand-right">
+            <span class="grand-amount"
+                  th:text="${conLai != null
+                      ? #numbers.formatDecimal(conLai, 0, 'COMMA', 0, 'POINT') + ' VNĐ'
+                      : '--- VNĐ'}">
+                0 VNĐ
+            </span>
+            <!-- Đã thanh toán đủ -->
+            <span class="badge-paid"
+                  th:if="${conLai != null and conLai.compareTo(T(java.math.BigDecimal).ZERO) &lt;= 0}">
+                ĐÃ THANH TOÁN ĐỦ
+            </span>
+            <!-- Còn nợ một phần -->
+            <span class="badge-partial"
+                  th:if="${conLai != null
+                      and conLai.compareTo(T(java.math.BigDecimal).ZERO) > 0
+                      and hoaDon.daThanhToan != null
+                      and hoaDon.daThanhToan.compareTo(T(java.math.BigDecimal).ZERO) > 0}">
+                CÒN NỢ
+            </span>
+            <!-- Chưa thanh toán gì -->
+            <span class="badge-unpaid"
+                  th:if="${conLai != null
+                      and conLai.compareTo(T(java.math.BigDecimal).ZERO) > 0
+                      and (hoaDon.daThanhToan == null
+                           or hoaDon.daThanhToan.compareTo(T(java.math.BigDecimal).ZERO) == 0)}">
+                CHƯA THANH TOÁN
+            </span>
+        </span>
+    </div>
+
+    <!-- ══ GHI CHÚ ══ -->
+    <div class="note-box" th:if="${hoaDon.ghiChu != null and !hoaDon.ghiChu.isEmpty()}">
+        <div class="note-label">Ghi chú</div>
+        <div class="note-text" th:text="${hoaDon.ghiChu}">
+            Khách yêu cầu phòng tầng cao, hướng nhìn ra hồ.
+        </div>
+    </div>
+
+    <!-- ══ CHỮ KÝ ══ -->
+    <div class="sign-row">
+        <div class="sign-cell">
+            <div class="sign-title">Khách hàng</div>
+            <div class="sign-line">(Ký và ghi rõ họ tên)</div>
+        </div>
+        <div class="sign-cell">
+            <div class="sign-title">Thu ngân</div>
+            <div class="sign-line">(Ký và ghi rõ họ tên)</div>
+        </div>
+        <div class="sign-cell">
+            <div class="sign-title">Quản lý khách sạn</div>
+            <div class="sign-line">(Ký và đóng dấu)</div>
+        </div>
+    </div>
+
+    <!-- ══ FOOTER ══ -->
+    <div class="footer">
+        <span class="footer-left">Tài liệu này có giá trị như hóa đơn chính thức.</span>
+        <span class="footer-right">sunrise-hotel.vn</span>
+    </div>
+
+</div>
+</body>
+</html>

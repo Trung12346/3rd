@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hóa Đơn | Hotel</title>
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        .dv-modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.45);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+        .dv-modal-overlay.show { display: flex; }
+        .dv-modal-box {
+            background: #fff;
+            border-radius: 4px;
+            max-width: 480px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .dv-modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            border-bottom: 1px solid #e5e5e5;
+        }
+        .dv-modal-header h3 { font-size: 16px; margin: 0; }
+        .dv-modal-close {
+            font-size: 22px;
+            color: #888;
+            cursor: pointer;
+            line-height: 1;
+        }
+        .dv-modal-close:hover { color: #333; }
+        .dv-modal-body { padding: 14px 20px; }
+        .dv-modal-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            padding: 8px 0;
+            border-bottom: 1px dashed #e5e5e5;
+        }
+        .dv-modal-item:last-child { border-bottom: none; }
+        .dv-modal-price {
+            color: #2563eb;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .dv-modal-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 20px;
+            border-top: 1px solid #e5e5e5;
+            font-size: 14px;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+    <div class="topbar-left">
+        <span>+84 123 456 789 &nbsp;|&nbsp; info@hotel.local</span>
+    </div>
+</div>
+
+<header>
+    <a href="/home" class="logo">
+        <img src="/logo.jpg" alt="Hotel Logo">
+    </a>
+    <nav class="nav-menu admin-nav">
+        <a href="/nhan-vien/dat-phong" class="active">Đơn đặt phòng</a>
+        <a href="/nhan-vien/danh-gia">Đánh giá</a>
+        <a href="/nhan-vien/khach-hang">Khách hàng</a>
+        <a href="/nhan-vien/phong">Phòng</a>
+        <a href="/nhan-vien/khuyen-mai">Khuyến mãi</a>
+        <a href="/nhan-vien/dat-phong/them-dich-vu">Thêm dịch vụ</a>
+        <a href="/nhan-vien/hoa-don">Hóa Đơn</a>
+    </nav>
+    <div class="header-actions">
+        <a href="/logout" class="btn btn-outline">Đăng Xuất</a>
+    </div>
+</header>
+
+<main class="admin-wrapper">
+    <div class="admin-header">
+        <h1>Quản Lý Hóa Đơn</h1>
+        <a th:href="@{/nhan-vien/hoa-don}" class="admin-btn outline">Làm Mới</a>
+    </div>
+
+    <div th:if="${success}" class="admin-message success">
+        <span th:text="${success}"></span>
+    </div>
+    <div th:if="${error}" class="admin-message error">
+        <span th:text="${error}"></span>
+    </div>
+
+    <section class="admin-panel">
+        <h2>Danh Sách Hóa Đơn</h2>
+
+        <!-- Tìm kiếm -->
+        <section class="admin-panel">
+            <h2>Tìm Kiếm Hóa Đơn</h2>
+            <form th:action="@{/nhan-vien/hoa-don}" method="get">
+                <div class="admin-grid">
+                    <div class="admin-field">
+                        <label>Mã hóa đơn</label>
+                        <input type="number" name="maHoaDon" min="1" th:value="${maHoaDon}">
+                    </div>
+                    <div class="admin-field">
+                        <label>Mã đơn đặt phòng</label>
+                        <input type="number" name="maDatPhong" min="1" th:value="${maDatPhong}">
+                    </div>
+                    <div class="admin-field">
+                        <label>Tên khách hàng</label>
+                        <input type="text" name="tenKhach"
+                               placeholder="Nhập tên khách..." th:value="${tenKhach}">
+                    </div>
+                    <div class="admin-field">
+                        <label>Mã khuyến mãi</label>
+                        <input type="text" name="maKhuyenMai"
+                               placeholder="Nhập mã KM..." th:value="${maKhuyenMai}">
+                    </div>
+                    <div class="admin-field">
+                        <label>Ngày xuất từ</label>
+                        <input type="date" name="ngayXuatTu" th:value="${ngayXuatTu}">
+                    </div>
+                    <div class="admin-field">
+                        <label>Ngày xuất đến</label>
+                        <input type="date" name="ngayXuatDen" th:value="${ngayXuatDen}">
+                    </div>
+                    <div class="admin-field">
+                        <label>Tổng tiền từ</label>
+                        <input type="number" name="tongTienTu"
+                               min="0" step="1000" th:value="${tongTienTu}">
+                    </div>
+                    <div class="admin-field">
+                        <label>Tổng tiền đến</label>
+                        <input type="number" name="tongTienDen"
+                               min="0" step="1000" th:value="${tongTienDen}">
+                    </div>
+                    <div class="admin-field">
+                        <label>Trạng thái thanh toán</label>
+                        <select name="trangThaiThanhToan">
+                            <option value="">-- Tất cả --</option>
+                            <option value="chua"
+                                    th:selected="${trangThaiThanhToan == 'chua'}">Chưa thanh toán</option>
+                            <option value="mot_phan"
+                                    th:selected="${trangThaiThanhToan == 'mot_phan'}">Còn nợ</option>
+                            <option value="du"
+                                    th:selected="${trangThaiThanhToan == 'du'}">Đã thanh toán đủ</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="admin-actions">
+                    <button type="submit" class="admin-btn outline">Tìm Kiếm</button>
+                    <a th:href="@{/nhan-vien/hoa-don}" class="admin-btn outline">Xóa Lọc</a>
+                </div>
+            </form>
+        </section>
+
+        <!-- Bảng -->
+        <div class="admin-table-wrap">
+            <table class="admin-table">
+                <thead>
+                <tr>
+                    <th>Mã Hóa Đơn</th>
+                    <th>Mã Đơn Phòng</th>
+                    <th>Khách hàng</th>
+                    <th>Khuyến mãi</th>
+                    <th>Tiền dịch vụ</th>
+                    <th>Chi tiết DV</th>
+                    <th>Tổng tiền</th>
+                    <th>Đã thanh toán</th>
+                    <th>Ngày xuất</th>
+                    <th>Thao tác</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="hd : ${hoaDons}">
+
+                    <td th:text="${hd.id}"></td>
+
+                    <td th:text="${hd.d != null ? hd.d.id : ''}"></td>
+
+                    <td th:text="${hd.d != null
+                        ? (hd.d.hoten != null and !hd.d.hoten.isEmpty()
+                            ? hd.d.hoten + ' (Vãng lai)'
+                            : (hd.d.n != null ? hd.d.n.hoTen : 'Không có'))
+                        : ''}">
+                    </td>
+
+                    <td th:text="${hd.k != null ? hd.k.promoCode : '-'}"></td>
+
+                    <td th:text="${hd.tienDichVu != null
+                        ? #numbers.formatDecimal(hd.tienDichVu, 0, 'COMMA', 0, 'POINT') + ' VND'
+                        : '0 VND'}">
+                    </td>
+
+                    <td>
+                        <a th:if="${dvMap.get(hd.id) != null and !dvMap.get(hd.id).isEmpty()}"
+                           href="#"
+                           class="admin-btn small outline"
+                           th:onclick="|openDvModal(${hd.id}); return false;|">
+                            Xem (<span th:text="${dvMap.get(hd.id).size()}"></span>)
+                        </a>
+                        <span th:if="${dvMap.get(hd.id) == null or dvMap.get(hd.id).isEmpty()}"
+                              style="color:#bbb; font-size:12px;">-</span>
+                    </td>
+
+                    <td th:text="${hd.tongTien != null
+                        ? #numbers.formatDecimal(hd.tongTien, 0, 'COMMA', 0, 'POINT') + ' VND'
+                        : '0 VND'}">
+                    </td>
+
+                    <td th:text="${hd.daThanhToan != null
+                        ? #numbers.formatDecimal(hd.daThanhToan, 0, 'COMMA', 0, 'POINT') + ' VND'
+                        : '0 VND'}">
+                    </td>
+
+                    <td th:text="${hd.ngayXuat != null
+                        ? #temporals.format(hd.ngayXuat, 'dd/MM/yyyy HH:mm')
+                        : ''}">
+                    </td>
+
+                    <td>
+                        <div class="row-actions">
+                            <a class="admin-btn small pdf-btn"
+                               th:href="@{/nhan-vien/hoa-don/xuat-pdf/{id}(id=${hd.id})}"
+                               target="_blank">
+                                Xuất PDF
+                            </a>
+                        </div>
+                    </td>
+
+                </tr>
+                <tr th:if="${hoaDons == null or hoaDons.isEmpty()}">
+                    <td colspan="10">
+                        <div class="empty-state">Không tìm thấy hóa đơn phù hợp.</div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- ===== MODAL CHI TIẾT DỊCH VỤ ===== -->
+    <div th:each="hd : ${hoaDons}"
+         th:if="${dvMap.get(hd.id) != null and !dvMap.get(hd.id).isEmpty()}"
+         th:id="${'dvModal' + hd.id}"
+         class="dv-modal-overlay">
+        <div class="dv-modal-box">
+            <div class="dv-modal-header">
+                <h3 th:text="${'Dịch vụ — Hóa đơn #' + hd.id}"></h3>
+                <span class="dv-modal-close"
+                      th:onclick="|closeDvModal(${hd.id})|">&times;</span>
+            </div>
+            <div class="dv-modal-body">
+                <div class="dv-modal-item" th:each="ct : ${dvMap.get(hd.id)}">
+                    <span th:text="${ct.dv != null
+                        ? ct.dv.ten_dich_vu + ' × ' + ct.soluong
+                        : '—'}">
+                    </span>
+                    <span class="dv-modal-price"
+                          th:text="${'đ ' + #numbers.formatDecimal(ct.donGia, 0, 'COMMA', 0, 'POINT')}">
+                    </span>
+                </div>
+            </div>
+            <div class="dv-modal-footer">
+                <span>Tổng tiền dịch vụ</span>
+                <strong th:text="${'đ ' + #numbers.formatDecimal(hd.tienDichVu, 0, 'COMMA', 0, 'POINT')}"></strong>
+            </div>
+        </div>
+    </div>
+
+</main>
+
+<footer>
+    <p>&copy; 2026 Hotel. All rights reserved.</p>
+</footer>
+
+<script>
+    function openDvModal(id) {
+        document.getElementById('dvModal' + id).classList.add('show');
+    }
+    function closeDvModal(id) {
+        document.getElementById('dvModal' + id).classList.remove('show');
+    }
+    document.querySelectorAll('.dv-modal-overlay').forEach(function(overlay) {
+        overlay.addEventListener('click', function(e) {
+            if (e.target === overlay) overlay.classList.remove('show');
+        });
+    });
+</script>
+</body>
+</html>

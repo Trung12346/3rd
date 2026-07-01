@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
@@ -89,31 +89,7 @@
 </style>
 <body>
 
-<div class="topbar">
-    <div class="topbar-left">
-        <span>+84 123 456 789 &nbsp;|&nbsp; info@hotel.local</span>
-    </div>
-</div>
-
-<header>
-    <a href="/home" class="logo">
-        <img src="/logo.jpg" alt="Hotel Logo">
-    </a>
-    <nav class="nav-menu admin-nav">
-        <a href="/admin/phong">Phòng</a>
-        <a href="/admin/loai-phong">Loại Phòng</a>
-        <a href="/admin/dat-phong">Đơn Đặt Phòng</a>
-        <a href="/admin/hoa-don" class="active">Hóa Đơn</a>
-        <a href="/admin/nhan-vien">Nhân Viên</a>
-        <a href="/admin/khuyen-mai">Khuyến Mãi</a>
-        <a href="/admin/danh-gia">Đánh Giá</a>
-        <a href="/admin/nguoi-dung">Người Dùng</a>
-        <a href="/admin/dat-phong-quay">Đặt Phòng tại quầy</a>
-    </nav>
-    <div class="header-actions">
-        <a href="/logout" class="btn btn-outline">Đăng Xuất</a>
-    </div>
-</header>
+<div th:replace="~{fragments/headers/app-header :: appHeader}"></div>
 
 <main class="admin-wrapper">
     <div class="admin-header">

@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="vi"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<body>
+<section th:fragment="customerReviews" class="customer-reviews-section" id="customerReviewsSection">
+    <style>
+        .customer-reviews-section {
+            padding: 56px 5%;
+            background: var(--white, #fff);
+        }
+
+        .customer-reviews-inner {
+            max-width: 1180px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: minmax(0, 1.35fr) minmax(300px, 0.65fr);
+            gap: 28px;
+            align-items: start;
+        }
+
+        .customer-reviews-heading {
+            margin-bottom: 24px;
+        }
+
+        .customer-reviews-heading h2 {
+            color: var(--text-dark, #333);
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+
+        .customer-reviews-heading p {
+            color: var(--text-gray, #666);
+            font-size: 15px;
+            line-height: 1.7;
+            margin: 0;
+        }
+
+        .customer-review-list {
+            display: grid;
+            gap: 16px;
+        }
+
+        .customer-review-card,
+        .customer-review-form-wrap {
+            border: 1px solid var(--border-color, #e0e0e0);
+            border-radius: 6px;
+            background: var(--white, #fff);
+            box-shadow: 0 6px 22px rgba(0, 0, 0, 0.05);
+        }
+
+        .customer-review-card {
+            padding: 20px;
+        }
+
+        .customer-review-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 14px;
+            margin-bottom: 12px;
+        }
+
+        .customer-review-author {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 0;
+        }
+
+        .customer-review-avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: var(--sky-light, #EBF5FB);
+            color: var(--sky-primary, #3498DB);
+            border: 1px solid var(--border-color, #e0e0e0);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            flex: 0 0 auto;
+        }
+
+        .customer-review-author strong {
+            display: block;
+            color: var(--text-dark, #333);
+            font-size: 15px;
+            margin-bottom: 4px;
+            overflow-wrap: anywhere;
+        }
+
+        .customer-review-author time {
+            color: var(--text-gray, #666);
+            font-size: 12px;
+        }
+
+        .customer-review-stars {
+            color: #d7dce2;
+            font-size: 18px;
+            white-space: nowrap;
+            letter-spacing: 1px;
+        }
+
+        .customer-review-stars .active {
+            color: #f5b301;
+        }
+
+        .customer-review-content {
+            color: var(--text-dark, #333);
+            font-size: 15px;
+            line-height: 1.75;
+            margin: 0;
+            overflow-wrap: anywhere;
+        }
+
+        .customer-review-reply {
+            margin-top: 14px;
+            padding: 12px 14px;
+            background: var(--sky-light, #EBF5FB);
+            border-left: 3px solid var(--sky-primary, #3498DB);
+            color: var(--text-dark, #333);
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .customer-review-form-wrap {
+            padding: 22px;
+            position: sticky;
+            top: 96px;
+        }
+
+        .customer-review-form-wrap h3 {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 20px;
+            color: var(--text-dark, #333);
+            margin-bottom: 10px;
+        }
+
+        .customer-review-form-wrap p {
+            color: var(--text-gray, #666);
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 18px;
+        }
+
+        .customer-review-form-group {
+            margin-bottom: 16px;
+        }
+
+        .customer-review-form-group label {
+            display: block;
+            color: var(--text-dark, #333);
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .customer-review-form-group input,
+        .customer-review-form-group textarea {
+            width: 100%;
+            border: 1px solid var(--border-color, #e0e0e0);
+            border-radius: 3px;
+            padding: 12px;
+            font-family: inherit;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .customer-review-form-group textarea {
+            min-height: 116px;
+            resize: vertical;
+        }
+
+        .customer-review-form-group input:focus,
+        .customer-review-form-group textarea:focus {
+            border-color: var(--sky-primary, #3498DB);
+        }
+
+        .customer-rating-input {
+            display: flex;
+            flex-direction: row-reverse;
+            justify-content: flex-end;
+            gap: 5px;
+            position: relative;
+        }
+
+        .customer-rating-input input {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            margin: 0;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .customer-rating-input label {
+            color: #d7dce2;
+            cursor: pointer;
+            font-size: 28px;
+            line-height: 1;
+            transition: color 0.15s, transform 0.15s;
+        }
+
+        .customer-rating-input label:hover,
+        .customer-rating-input label:hover ~ label,
+        .customer-rating-input input:checked ~ label {
+            color: #f5b301;
+        }
+
+        .customer-rating-input label:hover {
+            transform: translateY(-1px);
+        }
+
+        .customer-rating-input input:focus-visible + label {
+            outline: 2px solid var(--sky-primary, #3498DB);
+            outline-offset: 4px;
+            border-radius: 2px;
+        }
+
+        .customer-review-submit,
+        .customer-review-login {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            min-height: 44px;
+            border-radius: 3px;
+            border: 1px solid var(--sky-primary, #3498DB);
+            background: var(--sky-primary, #3498DB);
+            color: var(--white, #fff);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 14px;
+            text-decoration: none;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .customer-review-submit:hover,
+        .customer-review-login:hover {
+            background: var(--sky-dark, #2980B9);
+        }
+
+        .customer-review-alert {
+            border-radius: 4px;
+            padding: 12px 14px;
+            font-size: 14px;
+            margin-bottom: 16px;
+        }
+
+        .customer-review-alert.success {
+            background: #EAF7EF;
+            color: #247A42;
+            border: 1px solid #BFE7CB;
+        }
+
+        .customer-review-alert.error {
+            background: #FDEDEC;
+            color: #B03A2E;
+            border: 1px solid #F5C6CB;
+        }
+
+        .customer-review-empty {
+            border: 1px dashed var(--border-color, #e0e0e0);
+            border-radius: 6px;
+            padding: 22px;
+            color: var(--text-gray, #666);
+            background: #fafafa;
+        }
+
+        @media (max-width: 900px) {
+            .customer-reviews-inner {
+                grid-template-columns: 1fr;
+            }
+
+            .customer-review-form-wrap {
+                position: static;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .customer-reviews-section {
+                padding: 36px 18px;
+            }
+
+            .customer-review-meta {
+                flex-direction: column;
+            }
+        }
+    </style>
+
+    <div class="customer-reviews-inner">
+        <div>
+            <div class="customer-reviews-heading">
+                <h2>Đánh giá của khách hàng</h2>
+                <p>Những chia sẻ đã được duyệt từ khách hàng sau khi trải nghiệm dịch vụ tại khách sạn.</p>
+            </div>
+
+            <div class="customer-review-list" data-review-list>
+                <article class="customer-review-card" th:each="review : ${customerReviews}">
+                    <div class="customer-review-meta">
+                        <div class="customer-review-author">
+                            <span class="customer-review-avatar" aria-hidden="true">KH</span>
+                            <div>
+                                <strong th:text="${review.tenNguoiDung}">Khách hàng</strong>
+                                <time th:text="${review.ngayTao}">26/06/2026</time>
+                            </div>
+                        </div>
+                        <div class="customer-review-stars" aria-label="Số sao đánh giá">
+                            <span th:each="i : ${#numbers.sequence(1, 5)}"
+                                  th:class="${i <= review.diemDanhGia} ? 'active' : ''">★</span>
+                        </div>
+                    </div>
+                    <p class="customer-review-content" th:text="${review.noiDung}">Nội dung đánh giá của khách hàng.</p>
+                    <div class="customer-review-reply" th:if="${review.phanHoi != null && !review.phanHoi.isBlank()}">
+                        <strong>Phản hồi từ Hotel</strong>
+                        <p th:text="${review.phanHoi}">Cảm ơn quý khách đã chia sẻ trải nghiệm.</p>
+                    </div>
+                </article>
+
+                <div class="customer-review-empty" th:if="${#lists.isEmpty(customerReviews)}" data-review-empty>
+                    Chưa có đánh giá nào được duyệt.
+                </div>
+            </div>
+        </div>
+
+        <aside class="customer-review-form-wrap">
+            <div class="customer-review-alert success" th:if="${reviewSuccess}" th:text="${reviewSuccess}"></div>
+            <div class="customer-review-alert error" th:if="${reviewError}" th:text="${reviewError}"></div>
+
+            <div sec:authorize="isAuthenticated()">
+                <h3>Gửi đánh giá</h3>
+                <p>Đánh giá của bạn sẽ được lưu ở trạng thái chờ duyệt trước khi hiển thị công khai.</p>
+
+                <form th:action="@{/home/reviews}" method="post" data-review-form>
+                    <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+
+                    <div class="customer-review-form-group">
+                        <label for="customerReviewBooking">Mã đặt phòng</label>
+                        <input id="customerReviewBooking" type="number" name="maDatPhong" min="1"
+                               th:value="${maDatPhong != null ? maDatPhong : ''}"
+                               placeholder="Nhập nếu muốn gắn với đơn đặt phòng">
+                    </div>
+
+                    <div class="customer-review-form-group">
+                        <label>Chọn số sao</label>
+                        <div class="customer-rating-input" aria-label="Chọn số sao đánh giá" role="radiogroup">
+                            <input type="radio" id="customerStar5" name="diemDanhGia" value="5" required
+                                   data-rating-required data-rating-message="Vui lòng chọn số sao đánh giá.">
+                            <label for="customerStar5" title="5 sao">★</label>
+                            <input type="radio" id="customerStar4" name="diemDanhGia" value="4">
+                            <label for="customerStar4" title="4 sao">★</label>
+                            <input type="radio" id="customerStar3" name="diemDanhGia" value="3">
+                            <label for="customerStar3" title="3 sao">★</label>
+                            <input type="radio" id="customerStar2" name="diemDanhGia" value="2">
+                            <label for="customerStar2" title="2 sao">★</label>
+                            <input type="radio" id="customerStar1" name="diemDanhGia" value="1">
+                            <label for="customerStar1" title="1 sao">★</label>
+                        </div>
+                    </div>
+
+                    <div class="customer-review-form-group">
+                        <label for="customerReviewContent">Nội dung</label>
+                        <textarea id="customerReviewContent" name="noiDung"
+                                  placeholder="Chia sẻ trải nghiệm của bạn..." required maxlength="1000"></textarea>
+                    </div>
+
+                    <button type="submit" class="customer-review-submit">Gửi đánh giá</button>
+                </form>
+            </div>
+
+            <div sec:authorize="isAnonymous()">
+                <h3>Gửi đánh giá</h3>
+                <p>Vui lòng đăng nhập để viết và gửi đánh giá của bạn.</p>
+                <a th:href="@{/Login}" class="customer-review-login">Đăng nhập</a>
+            </div>
+        </aside>
+    </div>
+
+    <script th:inline="javascript">
+        (function () {
+            const section = document.getElementById('customerReviewsSection');
+            if (!section || section.dataset.reviewHydrated === 'true') {
+                return;
+            }
+
+            bindRequiredRatingValidation(section);
+
+            const list = section.querySelector('[data-review-list]');
+            const empty = section.querySelector('[data-review-empty]');
+            const hasServerItems = list && list.querySelector('.customer-review-card');
+            if (!list || hasServerItems) {
+                return;
+            }
+
+            section.dataset.reviewHydrated = 'true';
+            fetch(/*[[@{/home/reviews/data}]]*/ '/home/reviews/data', {headers: {'Accept': 'application/json'}})
+                .then(function (response) {
+                    if (!response.ok) {
+                        throw new Error('Cannot load reviews');
+                    }
+                    return response.json();
+                })
+                .then(function (reviews) {
+                    if (!Array.isArray(reviews) || reviews.length === 0) {
+                        return;
+                    }
+
+                    if (empty) {
+                        empty.remove();
+                    }
+
+                    reviews.forEach(function (review) {
+                        list.appendChild(createReviewCard(review));
+                    });
+                })
+                .catch(function () {
+                    // Fragment remains usable with the server-rendered empty state.
+                });
+
+            function createReviewCard(review) {
+                const card = document.createElement('article');
+                card.className = 'customer-review-card';
+
+                const stars = Array.from({length: 5}, function (_, index) {
+                    return '<span class="' + (index < Number(review.diemDanhGia || 0) ? 'active' : '') + '">★</span>';
+                }).join('');
+
+                const reply = review.phanHoi
+                    ? '<div class="customer-review-reply"><strong>Phản hồi từ Hotel</strong><p>' + escapeHtml(review.phanHoi) + '</p></div>'
+                    : '';
+
+                card.innerHTML =
+                    '<div class="customer-review-meta">' +
+                    '<div class="customer-review-author">' +
+                    '<span class="customer-review-avatar" aria-hidden="true">KH</span>' +
+                    '<div><strong>' + escapeHtml(review.tenNguoiDung || 'Khách hàng') + '</strong>' +
+                    '<time>' + escapeHtml(review.ngayTao || '') + '</time></div>' +
+                    '</div>' +
+                    '<div class="customer-review-stars" aria-label="Số sao đánh giá">' + stars + '</div>' +
+                    '</div>' +
+                    '<p class="customer-review-content">' + escapeHtml(review.noiDung || 'Khách hàng chưa để lại nội dung đánh giá.') + '</p>' +
+                    reply;
+
+                return card;
+            }
+
+            function bindRequiredRatingValidation(root) {
+                root.querySelectorAll('form[data-review-form]').forEach(function (form) {
+                    if (form.dataset.ratingValidationBound === 'true') {
+                        return;
+                    }
+
+                    const radios = Array.from(form.querySelectorAll('input[name="diemDanhGia"]'));
+                    const requiredRadio = form.querySelector('[data-rating-required]') || radios[0];
+                    if (!requiredRadio || radios.length === 0) {
+                        return;
+                    }
+
+                    const message = requiredRadio.dataset.ratingMessage || 'Vui lòng chọn số sao đánh giá.';
+
+                    function hasRating() {
+                        return radios.some(function (radio) {
+                            return radio.checked;
+                        });
+                    }
+
+                    function clearRatingError() {
+                        requiredRadio.setCustomValidity('');
+                    }
+
+                    radios.forEach(function (radio) {
+                        radio.addEventListener('change', clearRatingError);
+                    });
+
+                    requiredRadio.addEventListener('invalid', function () {
+                        if (hasRating()) {
+                            clearRatingError();
+                            return;
+                        }
+
+                        requiredRadio.setCustomValidity(message);
+                    });
+
+                    form.addEventListener('submit', function (event) {
+                        if (hasRating()) {
+                            clearRatingError();
+                            return;
+                        }
+
+                        event.preventDefault();
+                        requiredRadio.setCustomValidity(message);
+                        requiredRadio.reportValidity();
+                    });
+
+                    form.dataset.ratingValidationBound = 'true';
+                });
+            }
+
+            function escapeHtml(value) {
+                return String(value)
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#039;');
+            }
+        })();
+    </script>
+</section>
+</body>
+</html>
