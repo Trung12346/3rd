@@ -44,7 +44,6 @@ public class  NguoiDung {
     private String soDienThoai;
 
     @Column(name = "dia_chi", length = 300)
-    @NotBlank(message = "địa chỉ không được trống")
     private String diaChi;
 
     @Column(name = "trang_thai")

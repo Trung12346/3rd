@@ -53,7 +53,6 @@ public class AdminkhuyenMaiController {
     public String index(Model model){
         model.addAttribute("khuyenMais",repo.findAll());
         model.addAttribute("khuyenMai",new KhuyenMai());
-        model.addAttribute("nguoiDungs", nvRepo.ListAdd());
         return "admin/khuyen-mai-list";
     }
 
@@ -124,7 +123,6 @@ public class AdminkhuyenMaiController {
             model.addAttribute("khuyenMai",repo.findbyId(id));
             model.addAttribute("khuyenMais",repo.findAll());
 
-            model.addAttribute("nguoiDungs", nvRepo.ListAdd());
             return "admin/khuyen-mai-list";
         }
         return "redirect:/admin/khuyen-mai";
@@ -136,7 +134,6 @@ public class AdminkhuyenMaiController {
             model.addAttribute("khuyenMais", repo.findbyNameVoucher(keyword));
             model.addAttribute("khuyenMai",new KhuyenMai());
 
-            model.addAttribute("nguoiDungs", nvRepo.ListAdd());
             return "admin/khuyen-mai-list";
         }
 

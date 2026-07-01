@@ -7,6 +7,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -35,38 +36,20 @@ public class AdminNguoiDungController {
     @Autowired
     private DatPhongService datPhongrepo;
 
-    public Boolean CheckRole(String email){
-        String role = "";
 
-        for (NguoiDung n : userService.getAll()){
-            if(n.getEmail().equals(email)) {
-                if (n.getVaiTro().getTenVaiTro().equals("ROLE_ADMIN")) {
-                    role = n.getVaiTro().getTenVaiTro();
-                }
-            }
-        }
-
-        if(role == null || role.isEmpty() || !role.equals("ROLE_ADMIN")){
-            return false;
-        }
-        if(role.equals("ROLE_ADMIN")){
-            return true;
-        }
-        return false;
-    }
 
     @GetMapping
     public String index(
             Principal p, @RequestParam(name = "keyword", defaultValue = "") String keyword,
             Model model
     ) {
-        if (CheckRole(p.getName())) {
+
 
             NguoiDung nguoiDung = new NguoiDung();
             model.addAttribute("nguoiDung",nguoiDung);
             model.addAttribute("nguoiDungs",userService.getAll());
             model.addAttribute("vaiTros",repo.findAll());
-    }
+
         return "admin/nguoi-dung-list";
     }
     @GetMapping("/edit/{id}")
@@ -76,7 +59,6 @@ public class AdminNguoiDungController {
             Model model,
             RedirectAttributes redirectAttributes, Principal p
     ) {
-       if(CheckRole(p.getName())){
            NguoiDung nguoiDung = userService.Getbyid(id);
            model.addAttribute("nguoiDung",nguoiDung);
            model.addAttribute("nguoiDungs",userService.getAll());
@@ -87,7 +69,7 @@ public class AdminNguoiDungController {
                }
 
 
-       }
+
         return "admin/nguoi-dung-list";
     }
 
@@ -95,33 +77,34 @@ public class AdminNguoiDungController {
     public String save(
             @Valid NguoiDung nguoiDung, BindingResult r,
             RedirectAttributes redirect
-    , Principal p,@RequestParam("matKhaumoi") String matKhaumoi) {
+            ,Principal p,@RequestParam(value = "matKhaumoi",required = false) String matKhaumoi) {
          PasswordEncoder e = new BCryptPasswordEncoder();
-        if (CheckRole(p.getName())){
 
             if (nguoiDung.getMaNguoiDung() == null){
                 for (NguoiDung s : userService.getAll()){
 
 
-                        if (!s.getEmail().equals(nguoiDung.getEmail() ) && userService.checkEmail(nguoiDung.getEmail(),nguoiDung.getMaNguoiDung())){
+                        if (  userService.checkEmail(nguoiDung.getEmail() , nguoiDung.getMaNguoiDung())){
                             redirect.addFlashAttribute("error"," email này đã tồn tại");
                             return "redirect:/admin/nguoi-dung";
-                        
+
                     }
 
                 }
             }
-            if (!matKhaumoi.isEmpty()){
+            if (matKhaumoi != null && !matKhaumoi.isBlank()){
                 nguoiDung.setMatKhau_hash(e.encode(matKhaumoi));
             }
-            if(nguoiDung.getMatKhau_hash() == null || nguoiDung.getMatKhau_hash().isBlank()){
-                redirect.addFlashAttribute("error","mật khẩu không được để trống");
-                return "redirect:/admin/nguoi-dung";
+                for (FieldError fe : r.getFieldErrors()){
+                    if (fe.getField().equals("matKhau_hash") && matKhaumoi != null && !matKhaumoi.isBlank()){
+                        nguoiDung.setMatKhau_hash(e.encode(matKhaumoi));
+                    }else{
+                        redirect.addFlashAttribute("error",fe.getDefaultMessage());
+                        return "redirect:/admin/nguoi-dung";
+                    }
+
             }
-            if(r.hasErrors()){
-                redirect.addFlashAttribute("error",r.getFieldError().getDefaultMessage());
-                return "redirect:/admin/nguoi-dung";
-            }
+        System.out.println("ABC"+nguoiDung.getMatKhau_hash());
 
 
             if ( nguoiDung.getMaNguoiDung() != null){
@@ -142,6 +125,12 @@ public class AdminNguoiDungController {
                                  redirect.addFlashAttribute("error"," email này đã tồn tại");
                                  return "redirect:/admin/nguoi-dung";
                               }
+
+                          }
+                          if ((s.getVaiTro().getTenVaiTro().equalsIgnoreCase("ROLE_STAFF") &&  s.getSoDienThoai().equals(nguoiDung.getSoDienThoai()) )
+                                  && (!s.getMaNguoiDung().equals(nguoiDung.getMaNguoiDung()) && nguoiDung.getVaiTro().getTenVaiTro().equalsIgnoreCase("ROLE_STAFF"))){
+                              redirect.addFlashAttribute("error","số điện thoại của nhân viên này đã được sử dụng bởi nhân viên khác (thông tin liên lạc của nhân viên không được trùng nhau)");
+                              return "redirect:/admin/nguoi-dung";
                           }
                 }
                 userService.save(nguoiDung);
@@ -150,23 +139,21 @@ public class AdminNguoiDungController {
                 userService.save(nguoiDung);
                 redirect.addFlashAttribute("success", "luu nguoi dung thanh cong");
             }
-        }
+
 
         return "redirect:/admin/nguoi-dung";
     }
 
     @PostMapping("/lock/{id}")
     public String delete(Principal p,@PathVariable("id") int id, RedirectAttributes redirectAttributes) {
-        if (CheckRole(p.getName())){
             userService.setTrangThai(id, false);
             redirectAttributes.addFlashAttribute("success", "Khoa nguoi dung thanh cong");
-        }
+
         return "redirect:/admin/nguoi-dung";
     }
 
     @GetMapping("/search")
     public String search(RedirectAttributes r,@RequestParam("keyword") String keyword,Principal p,Model model){
-        if (CheckRole(p.getName())){
         if(userService.TimKiemTheoTen(keyword).size() >= 0){
             model.addAttribute("nguoiDung",new NguoiDung());
             model.addAttribute("nguoiDungs",userService.search(keyword));
@@ -178,7 +165,7 @@ public class AdminNguoiDungController {
             model.addAttribute("vaiTros",repo.findAll());
             r.addFlashAttribute("error","không tìm thấy tên trên yêu cầu");
         }
-        }
+
         return "admin/nguoi-dung-list";
     }
 }

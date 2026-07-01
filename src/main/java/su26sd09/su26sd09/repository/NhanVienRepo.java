@@ -3,6 +3,7 @@ package su26sd09.su26sd09.repository;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.web.bind.annotation.PathVariable;
+import su26sd09.su26sd09.entity.NguoiDung;
 import su26sd09.su26sd09.entity.Nhanvien;
 
 import java.util.List;
@@ -14,5 +15,13 @@ public interface NhanVienRepo extends JpaRepository<Nhanvien,Integer> {
 
     Nhanvien findByN_MaNguoiDung(Integer maNguoiDung);
 
+    boolean existsByMaCCCDAndIdNot(String maCCCD, int id);
+
+   List<Nhanvien> findByN_VaiTro_TenVaiTro(String tenVaiTro);
+
+    boolean existsByN_MaNguoiDung(int id);
+
+
+    boolean existsByN_MaNguoiDungAndIdNot(Integer maNguoidung,int id);
 
 }

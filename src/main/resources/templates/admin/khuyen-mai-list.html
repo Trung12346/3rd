@@ -47,6 +47,10 @@
                     <input type="number" th:field="*{giatriGiam}" min="1" step="any"  required>
                 </div>
                 <div class="admin-field">
+                    <label>điều kiện giảm tối thiểu</label>
+                    <input type="number" th:field="*{dieuKienGiamToiThieu}" min="1" step="any"  required>
+                </div>
+                <div class="admin-field">
                     <label>Ngày bắt đầu</label>
                     <input type="date" th:field="*{ngayBatDau}">
                 </div>
@@ -90,6 +94,7 @@
                     <th>Códe</th>
                     <th>Loai</th>
                     <th>Gia tri</th>
+                    <th>điều kiện giảm tối thiểu</th>
                     <th>Thời gian</th>
                     <th>Người tạo</th>
                     <th>Trạng thái</th>
@@ -102,6 +107,7 @@
                     <td><strong th:text="${km.promoCode}"></strong></td>
                     <td th:text="${km.loaiGiam}"></td>
                     <td th:text="${km.giatriGiam != null ? #numbers.formatDecimal(km.giatriGiam, 0, 'COMMA', 0, 'POINT') : ''}"></td>
+                    <td th:text="${km.dieuKienGiamToiThieu != null ? #numbers.formatDecimal(km.dieuKienGiamToiThieu, 0, 'COMMA', 0, 'POINT') : ''}"></td>
                     <td>
                         <span th:text="${km.ngayBatDau != null ? #temporals.format(km.ngayBatDau, 'dd/MM/yyyy') : ''}"></span>
                         -

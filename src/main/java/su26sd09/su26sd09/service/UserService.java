@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import su26sd09.su26sd09.entity.NguoiDung;
+import su26sd09.su26sd09.entity.Nhanvien;
 import su26sd09.su26sd09.entity.VaiTro;
 import su26sd09.su26sd09.repository.NguoiDungRepository;
 import su26sd09.su26sd09.repository.VaiTroRepo;
@@ -128,7 +129,11 @@ public class UserService {
 
     public boolean checkSoDienThoai(String sodienthoai, Integer id){
         id = id == null ? 0 : id;
-           return repo.findOthers(id).stream().anyMatch(x -> x.getSoDienThoai().equals(sodienthoai));
+           return repo.findOthers(id).stream().anyMatch(x -> x.getSoDienThoai().equals(sodienthoai) );
+    }
+
+    public boolean checkSoDienThoainv(String sdt, Integer id){
+        return repo.existsBySoDienThoaiAndVaiTro_TenVaiTroAndMaNguoiDungNot(sdt, "ROLE_STAFF", id == null ? 0 : id);
     }
 
     public boolean checkEmail(String email, Integer id){
@@ -139,5 +144,13 @@ public class UserService {
       public List<NguoiDung> TimKiemTheoTen(String name){
         return repo.search(name);
       }
+
+    public boolean existsByEmailAndVaiTro_TenVaiTro(String email, String roleAdmin) {
+            return repo.existsByEmailAndVaiTro_TenVaiTro(email, "ROLE_ADMIN");
+
+    }
+
+
+
 
 }

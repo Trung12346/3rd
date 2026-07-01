@@ -1,13 +1,17 @@
 package su26sd09.su26sd09.service;
 
 import jakarta.transaction.Transactional;
+import org.springframework.cglib.core.Local;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Autowired;
 import su26sd09.su26sd09.entity.NguoiDung;
 import su26sd09.su26sd09.entity.Nhanvien;
 import su26sd09.su26sd09.repository.NhanVienRepo;
 
+import java.time.LocalDate;
+import java.time.Period;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 @Service
@@ -41,10 +45,6 @@ public class NhanVienService {
     }
 
     public void save(Nhanvien n){
-        if (n.n.getVaiTro().getTenVaiTro().equals("ROLE_ADMIN") || n.n.getVaiTro().getTenVaiTro().equals("ROLE_EMPLOYEE")){
-            NguoiDungRepo.save(n.n);
-            return ;
-        }
 
         repo.save(n);
     }
@@ -91,5 +91,17 @@ public class NhanVienService {
     public void lock(Nhanvien nv) {
      nv.n.setTrangThai(false);
 
+    }
+
+    public boolean checkTrungCccd(String maCCCD, int id) {
+        return repo.existsByMaCCCDAndIdNot(maCCCD, id);
+    }
+
+    public Boolean CheckAge(LocalDate ngaysinh){
+        int tuoi = Period.between(ngaysinh, LocalDate.now()).getYears();
+        if (tuoi >= 18){
+            return true;
+        }
+        return false;
     }
 }

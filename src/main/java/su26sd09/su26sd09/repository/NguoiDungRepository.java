@@ -27,4 +27,14 @@ public interface NguoiDungRepository extends JpaRepository<NguoiDung, Integer> {
 
     public NguoiDung findByHoTen(String name);
 
+    boolean existsByEmailAndVaiTro_TenVaiTro(String email, String roleAdmin);
+
+
+
+
+
+    boolean existsBySoDienThoaiAndVaiTro_TenVaiTroAndMaNguoiDungNot(String sodienthoai, String tenVaiTro, Integer id);
+
+
+
 }

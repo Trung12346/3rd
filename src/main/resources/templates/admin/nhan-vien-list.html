@@ -77,6 +77,10 @@
                     <label>So dien thoai</label>
                     <input type="tel" th:field="*{n.soDienThoai}" placeholder="09xxxxxxxx" pattern="[0-9]{10}">
                 </div>
+                <div class="admin-field">
+                    <label>mã căn cước công dân</label>
+                    <input type="text" inputmode="numeric" th:field="*{maCCCD}" placeholder="0012xxxxxxxx" pattern="[0-9]{12}">
+                </div>
 
                 <div class="admin-field">
                     <label>Trang thai</label>
@@ -85,7 +89,10 @@
                         <option th:value="false">Khoa</option>
                     </select>
                 </div>
-
+                <div class="admin-field">
+                    <label>Ngày sinh</label>
+                    <input type="date" th:field="*{ngaySinh}">
+                </div>
                 <div class="admin-field full">
                     <label>Dia chi</label>
                     <textarea th:field="*{n.diaChi}" placeholder="So nha, duong, tinh/TP..."></textarea>
@@ -119,6 +126,8 @@
                     <th>Nhân viên</th>
                     <th>Email</th>
                     <th>Số điện thoại</th>
+                    <th>mã căn cước công dân</th>
+                    <th>ngày sinh</th>
                     <th>địa chỉ</th>
                     <th>vai trò</th>
                     <th>trạng thái</th>
@@ -132,6 +141,8 @@
                     <td><strong th:text="${nv.n != null ? nv.n.hoTen : ''}"></strong></td>
                     <td th:text="${nv.n != null ? nv.n.email : ''}"></td>
                     <td th:text="${nv.n != null ? nv.n.soDienThoai : ''}"></td>
+                    <td th:text="${nv.n != null ? nv.maCCCD : ''}"></td>
+                    <td th:text="${nv.n != null ? #temporals.format(nv.ngaySinh, 'dd/MM/yyyy') : ''}"></td>
                     <td th:text="${nv.n != null ? nv.n.diaChi : ''}"></td>
                     <td th:text="${nv.n != null ? nv.n.vaiTro.tenVaiTro : ''}"></td>
                     <td th:text="${nv.n.trangThai == true ? 'mở khóa' : 'khóa'}"></td>
