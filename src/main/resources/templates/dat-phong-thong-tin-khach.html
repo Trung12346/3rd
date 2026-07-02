@@ -187,6 +187,10 @@
           <strong
                   th:text="${'đ ' + (TienVat != null ? #numbers.formatDecimal(TienVat, 0, 'COMMA', 0, 'POINT') : '0')}">đ 0</strong>
         </div>
+        <div class="summary-line" th:if="${TienGiam != null and TienGiam.compareTo(T(java.math.BigDecimal).ZERO) > 0}">
+          <span>Giảm giá</span>
+          <strong th:text="${'- đ ' + #numbers.formatDecimal(TienGiam, 0, 'COMMA', 0, 'POINT')}">- đ 0</strong>
+        </div>
 
         <!-- Danh sách phòng đã chọn -->
         <div class="summary-roomlist">
@@ -205,7 +209,7 @@
           <div class="summary-dv-title">Dịch vụ đã chọn</div>
           <div th:each="dv : ${chiTietDichVuList}" class="summary-dv-item">
             <span class="dv-name"
-                  th:text="${dv.dichVu.ten_dich_vu + ' × ' + dv.soluong + ' ' + dv.dichVu.donVi}">
+                  th:text="${dv.dv.ten_dich_vu + ' × ' + dv.soluong + ' ' + dv.dv.donVi}">
               Tên dịch vụ × 1 đơn vị
             </span>
             <span class="dv-price"

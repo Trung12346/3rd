@@ -14,6 +14,10 @@ public class NguoiDungService {
     @Autowired
     NguoiDungRepository nguoiDungRepository;
 
+    public NguoiDung save(NguoiDung n){
+        return nguoiDungRepository.save(n);
+    }
+
     public List<NguoiDung> findAll(){
         return nguoiDungRepository.findAll();
     }

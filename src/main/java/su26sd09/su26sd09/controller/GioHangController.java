@@ -67,7 +67,7 @@ public class GioHangController {
     ) {
         authentication = SecurityContextHolder.getContext().getAuthentication();
         String email;
-        if (authentication !=null && authentication.isAuthenticated()) {
+        if (authentication != null && authentication.isAuthenticated() && !isNhanVienOrAdmin(authentication)) {
             email = authentication.getName();
         }else{
             email = null;
@@ -132,6 +132,13 @@ public class GioHangController {
             chiTietDatPhongService.save(chiTietDatPhong);
         }
         return "redirect:/phong/dat-phong/xac-nhan/"+datPhong.getId();
+    }
+
+    private boolean isNhanVienOrAdmin(Authentication authentication) {
+        return authentication != null
+                && authentication.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority())
+                        || "ROLE_STAFF".equals(a.getAuthority()));
     }
 
 }
