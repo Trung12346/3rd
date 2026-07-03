@@ -29,11 +29,11 @@ public class VerificationToken {
     private Boolean used = false;
 
     @ManyToOne
-    @JoinColumn(name = "ma_nguoi_dung",referencedColumnName = "ma_nguoi_dung")
+    @JoinColumn(name = "ma_khach_hang",referencedColumnName = "ma_khach_hang")
     @JsonIgnore
-    private NguoiDung nguoiDung;
+    private KhachHang nguoiDung;
 
-    public VerificationToken(String token ,NguoiDung nguoiDung){
+    public VerificationToken(String token , KhachHang nguoiDung){
     this.nguoiDung = nguoiDung;
     this.token = token;
     this.expiry_date = LocalDateTime.now().plusMinutes(11);

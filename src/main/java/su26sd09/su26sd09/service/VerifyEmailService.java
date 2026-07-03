@@ -2,10 +2,10 @@ package su26sd09.su26sd09.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import su26sd09.su26sd09.entity.NguoiDung;
+import su26sd09.su26sd09.entity.KhachHang;
 import su26sd09.su26sd09.entity.VaiTro;
 import su26sd09.su26sd09.entity.VerificationToken;
-import su26sd09.su26sd09.repository.NguoiDungRepository;
+import su26sd09.su26sd09.repository.KhachHangRepository;
 import su26sd09.su26sd09.repository.VaiTroRepo;
 import su26sd09.su26sd09.repository.VerificationTokenRepo;
 
@@ -16,7 +16,7 @@ public class VerifyEmailService {
     VerificationTokenRepo tokenRepo;
 
     @Autowired
-    NguoiDungRepository nguoiDungRepository;
+    KhachHangRepository nguoiDungRepository;
 
     @Autowired
     VaiTroRepo vaiTroRepo;
@@ -40,7 +40,7 @@ public class VerifyEmailService {
         }
         VaiTro vaiTro = vaiTroRepo.findById(3).
                 orElseThrow(() ->new RuntimeException("not found"));
-        NguoiDung nguoiDung = verificationToken.getNguoiDung();
+        KhachHang nguoiDung = verificationToken.getNguoiDung();
         nguoiDung.setTrangThai(true);
         nguoiDung.setVaiTro(vaiTro);
         nguoiDungRepository.save(nguoiDung);

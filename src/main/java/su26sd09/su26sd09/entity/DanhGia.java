@@ -22,8 +22,8 @@ public class DanhGia {
     public int id;
 
     @ManyToOne
-    @JoinColumn(name = "ma_nguoi_dung")
-    public NguoiDung n;
+    @JoinColumn(name = "ma_khach_hang")
+    public KhachHang n;
 
     @ManyToOne
     @JoinColumn(name = "ma_dat_phong")

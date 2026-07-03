@@ -10,19 +10,18 @@ import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-import su26sd09.su26sd09.entity.NguoiDung;
-import su26sd09.su26sd09.repository.NguoiDungRepository;
+import su26sd09.su26sd09.entity.KhachHang;
+import su26sd09.su26sd09.repository.KhachHangRepository;
 import su26sd09.su26sd09.repository.VaiTroRepo;
 import su26sd09.su26sd09.service.UserService;
 
 import java.security.Principal;
-import java.time.LocalDateTime;
 
 @Controller
 @RequestMapping("/admin/khach-hang")
 public class AdminKhachHangController {
     @Autowired
-    private NguoiDungRepository ndRepo;
+    private KhachHangRepository ndRepo;
     @Autowired
     private VaiTroRepo vtRepo;
     @Autowired
@@ -34,7 +33,7 @@ public class AdminKhachHangController {
     {
         model.addAttribute("keyword", ten);
         model.addAttribute("khachHangs", ndRepo.findAllKhach(ten));
-        model.addAttribute("khachHang", new NguoiDung());
+        model.addAttribute("khachHang", new KhachHang());
         model.addAttribute("vaiTros", vtRepo.findAll());
 
         return "admin/khach-hang-list";
@@ -52,7 +51,7 @@ public class AdminKhachHangController {
 
     @PostMapping("/save")
     public String post_0(
-            @Valid NguoiDung nguoiDung,
+            @Valid KhachHang nguoiDung,
             BindingResult r,
             RedirectAttributes redirect,
             @RequestParam(value = "matKhauMoi", required = false) String matKhauMoi
@@ -61,21 +60,21 @@ public class AdminKhachHangController {
         PasswordEncoder e = new BCryptPasswordEncoder();
         boolean errByp = false;
 
-        if(userService.checkSoDienThoai(nguoiDung.getSoDienThoai(), nguoiDung.getMaNguoiDung()) ||
-                userService.checkEmail(nguoiDung.getEmail(), nguoiDung.getMaNguoiDung())
+        if(userService.checkSoDienThoai(nguoiDung.getSoDienThoai(), nguoiDung.getMa_khach_hang()) ||
+                userService.checkEmail(nguoiDung.getEmail(), nguoiDung.getMa_khach_hang())
         )
         {
             redirect.addFlashAttribute("error","số điện thoại hoặc email này đã tốn tại");
             return "redirect:/admin/khach-hang";
         }
-        if(nguoiDung.getMaNguoiDung() != null)
+        if(nguoiDung.getMa_khach_hang() != null)
         {
             if(matKhauMoi != null && !matKhauMoi.isBlank())
             {
                 nguoiDung.setMatKhau_hash(e.encode(matKhauMoi));
             } else
             {
-                nguoiDung.setMatKhau_hash(ndRepo.findById(nguoiDung.getMaNguoiDung()).get().getMatKhau_hash());
+                nguoiDung.setMatKhau_hash(ndRepo.findById(nguoiDung.getMa_khach_hang()).get().getMatKhau_hash());
             }
             errByp = true;
             for(FieldError fe: r.getFieldErrors())

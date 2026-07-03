@@ -3,10 +3,10 @@ package su26sd09.su26sd09.service;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.transaction.annotation.Transactional;
 import su26sd09.su26sd09.dto.RegisterDTO;
-import su26sd09.su26sd09.entity.NguoiDung;
+import su26sd09.su26sd09.entity.KhachHang;
 import su26sd09.su26sd09.entity.VaiTro;
 import su26sd09.su26sd09.entity.VerificationToken;
-import su26sd09.su26sd09.repository.NguoiDungRepository;
+import su26sd09.su26sd09.repository.KhachHangRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -20,7 +20,7 @@ import java.util.UUID;
 public class RegisterService {
 
     @Autowired
-    private NguoiDungRepository nguoiDungRepository;
+    private KhachHangRepository nguoiDungRepository;
 
     @Autowired
     private VerificationTokenRepo verificationTokenRepo;
@@ -38,7 +38,7 @@ public class RegisterService {
     public String register(RegisterDTO registerDto) throws Exception {
         try {
 
-        NguoiDung userExisting = nguoiDungRepository.findByEmail(registerDto.getEmail());
+        KhachHang userExisting = nguoiDungRepository.findByEmail(registerDto.getEmail()).orElse(null);
 
         if(userExisting!=null){
             if(userExisting.isTrangThai()){
@@ -57,7 +57,7 @@ public class RegisterService {
             return "password must not null and must have over 7 characters";
         }
         VaiTro vaiTro = vaiTroRepo.findById(3).orElseThrow(()->new RuntimeException("not found"));
-        NguoiDung nguoiDung = new NguoiDung();
+        KhachHang nguoiDung = new KhachHang();
         nguoiDung.setHoTen(registerDto.getHo_ten());
         nguoiDung.setEmail(registerDto.getEmail());
         nguoiDung.setMatKhau_hash(passwordEncoder.encode(registerDto.getMat_khau_hash()));

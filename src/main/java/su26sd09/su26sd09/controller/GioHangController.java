@@ -1,6 +1,5 @@
 package su26sd09.su26sd09.controller;
 
-import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.core.Authentication;
@@ -13,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import su26sd09.su26sd09.entity.ChiTietDatPhong;
 import su26sd09.su26sd09.entity.DatPhong;
-import su26sd09.su26sd09.entity.NguoiDung;
+import su26sd09.su26sd09.entity.KhachHang;
 import su26sd09.su26sd09.entity.Phong;
 import su26sd09.su26sd09.service.ChiTietDatPhongService;
 import su26sd09.su26sd09.service.DatPhongService;
@@ -23,11 +22,8 @@ import su26sd09.su26sd09.service.PhongService;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
-import java.security.Principal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -72,7 +68,7 @@ public class GioHangController {
         }else{
             email = null;
         }
-        NguoiDung n = nguoiDungService.findByEmail(email);
+        KhachHang n = nguoiDungService.findByEmail(email);
         Map<Integer, String> cccdTheoPhong = allParamsCCCD.entrySet().stream().
                 filter(e -> e.getKey().startsWith("cccdPhong_")).
                 collect(Collectors.toMap(

@@ -12,8 +12,6 @@ import lombok.Setter;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.Date;
 import java.util.List;
 
 @Entity
@@ -26,16 +24,34 @@ public class Nhanvien {
     @Id
     @Column(name = "ma_nhan_vien")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    public int id;
+    public Integer id;
 
-    @ManyToOne
-    @JoinColumn(name = "ma_nguoi_dung",referencedColumnName = "ma_nguoi_dung")
-    @NotNull(message = "vui lòng chọn tài khoản tương ứng")
-    @Valid
-    public NguoiDung n;
+
+
+    @Column(name = "ho_ten")
+    private String hoten;
+
+    @Column(name = "dia_chi")
+    private String dia_chi;
+
+    @Column(name = "email")
+    private String email;
+
+    @Column(name = "so_dien_thoai")
+    private String sdt;
+
+    @Column(name = "mat_khau_hash")
+    private String mat_khau_hash;
+
+    @Column(name = "trang_thai")
+    private boolean trang_thai;
 
     @OneToMany(mappedBy = "nv",cascade = CascadeType.ALL)
     private List<ThanhToan> thanhToans;
+
+    @ManyToOne
+    @JoinColumn(name = "ma_vai_tro",referencedColumnName = "ma_vai_tro")
+    private VaiTro vaitro;
 
     @Column(name = "bo_phan")
     @NotBlank(message = "bộ phận không được để trống")

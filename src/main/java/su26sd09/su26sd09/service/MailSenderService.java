@@ -5,7 +5,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.MailSender;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.stereotype.Service;
-import su26sd09.su26sd09.entity.NguoiDung;
+import su26sd09.su26sd09.entity.KhachHang;
 
 @Service
 @RequiredArgsConstructor
@@ -15,7 +15,7 @@ public class MailSenderService {
     @Value("${app.base-url}")
     private String baseurl;
 
-    public void EmailSenderVerification(NguoiDung nguoiDung,String token) throws Exception {
+    public void EmailSenderVerification(KhachHang nguoiDung, String token) throws Exception {
     String verifyLink = "";
     if(!nguoiDung.getEmail().matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$")){
         System.out.println("email not valid");

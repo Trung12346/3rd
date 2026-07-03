@@ -9,7 +9,6 @@ import org.springframework.format.annotation.DateTimeFormat;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Entity
 @NoArgsConstructor
@@ -34,7 +33,7 @@ public class HoaDon {
 
     @ManyToOne
     @JoinColumn (name = "ma_nhan_vien_xuat")
-    public NguoiDung n;
+    public KhachHang n;
 
     @Column(name = "tien_phong",precision = 14,scale = 2)
     public BigDecimal tienPhong;

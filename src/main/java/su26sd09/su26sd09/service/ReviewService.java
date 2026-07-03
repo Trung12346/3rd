@@ -8,11 +8,11 @@ import su26sd09.su26sd09.dto.RoomReviewViewDTO;
 import su26sd09.su26sd09.entity.ChiTietDatPhong;
 import su26sd09.su26sd09.entity.DanhGia;
 import su26sd09.su26sd09.entity.DatPhong;
-import su26sd09.su26sd09.entity.NguoiDung;
+import su26sd09.su26sd09.entity.KhachHang;
 import su26sd09.su26sd09.repository.ChiTietDatPhongRepo;
 import su26sd09.su26sd09.repository.DanhGiaRepo;
 import su26sd09.su26sd09.repository.DatPhongRepo;
-import su26sd09.su26sd09.repository.NguoiDungRepository;
+import su26sd09.su26sd09.repository.KhachHangRepository;
 import su26sd09.su26sd09.repository.PhongRepository;
 
 import java.time.LocalDateTime;
@@ -32,13 +32,13 @@ public class ReviewService {
     private final DanhGiaRepo danhGiaRepo;
     private final DatPhongRepo datPhongRepo;
     private final ChiTietDatPhongRepo chiTietDatPhongRepo;
-    private final NguoiDungRepository nguoiDungRepository;
+    private final KhachHangRepository nguoiDungRepository;
     private final PhongRepository phongRepository;
 
     public ReviewService(DanhGiaRepo danhGiaRepo,
                          DatPhongRepo datPhongRepo,
                          ChiTietDatPhongRepo chiTietDatPhongRepo,
-                         NguoiDungRepository nguoiDungRepository,
+                         KhachHangRepository nguoiDungRepository,
                          PhongRepository phongRepository) {
         this.danhGiaRepo = danhGiaRepo;
         this.datPhongRepo = datPhongRepo;
@@ -70,7 +70,7 @@ public class ReviewService {
     public DanhGia createRoomReview(int maPhong, String email, RoomReviewRequest request) {
         assertRoomExists(maPhong);
 
-        NguoiDung nguoiDung = findUserByEmail(email);
+        KhachHang nguoiDung = findUserByEmail(email);
         DatPhong datPhong = resolveBookingForRoom(request.getMaDatPhong(), nguoiDung, maPhong);
 
         DanhGia danhGia = new DanhGia();
@@ -119,19 +119,19 @@ public class ReviewService {
         }
     }
 
-    private NguoiDung findUserByEmail(String email) {
+    private KhachHang findUserByEmail(String email) {
         if (email == null || email.isBlank()) {
             throw new IllegalArgumentException("Vui lòng đăng nhập để gửi đánh giá.");
         }
 
-        NguoiDung nguoiDung = nguoiDungRepository.findByEmail(email);
+        KhachHang nguoiDung = nguoiDungRepository.findByEmail(email).orElse(null);
         if (nguoiDung == null) {
             throw new IllegalArgumentException("Không tìm thấy tài khoản đăng nhập.");
         }
         return nguoiDung;
     }
 
-    private DatPhong resolveBookingForRoom(Integer maDatPhong, NguoiDung nguoiDung, int maPhong) {
+    private DatPhong resolveBookingForRoom(Integer maDatPhong, KhachHang nguoiDung, int maPhong) {
         if (maDatPhong != null) {
             DatPhong datPhong = datPhongRepo.findById(maDatPhong)
                     .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy mã đặt phòng."));
@@ -148,7 +148,7 @@ public class ReviewService {
             return datPhong;
         }
 
-        return datPhongRepo.FindByNguoiDung(nguoiDung.getMaNguoiDung())
+        return datPhongRepo.FindByNguoiDung(nguoiDung.getMa_khach_hang())
                 .stream()
                 .filter(datPhong -> bookingContainsRoom(datPhong, maPhong))
                 .filter(datPhong -> !isCanceledBooking(datPhong))
@@ -160,11 +160,11 @@ public class ReviewService {
         return datPhong != null && "Da huy".equals(datPhong.getTrangThai());
     }
 
-    private boolean isBookingOwner(DatPhong datPhong, NguoiDung nguoiDung) {
+    private boolean isBookingOwner(DatPhong datPhong, KhachHang nguoiDung) {
         return datPhong != null
                 && datPhong.getN() != null
-                && datPhong.getN().getMaNguoiDung() != null
-                && datPhong.getN().getMaNguoiDung().equals(nguoiDung.getMaNguoiDung());
+                && datPhong.getN().getMa_khach_hang() != null
+                && datPhong.getN().getMa_khach_hang().equals(nguoiDung.getMa_khach_hang());
     }
 
     private boolean bookingContainsRoom(DatPhong datPhong, int maPhong) {

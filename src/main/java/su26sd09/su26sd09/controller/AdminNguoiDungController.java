@@ -9,15 +9,12 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-import su26sd09.su26sd09.entity.DatPhong;
-import su26sd09.su26sd09.entity.NguoiDung;
-import su26sd09.su26sd09.repository.NguoiDungRepository;
+import su26sd09.su26sd09.entity.KhachHang;
 import su26sd09.su26sd09.repository.VaiTroRepo;
 import su26sd09.su26sd09.service.DatPhongService;
 import su26sd09.su26sd09.service.UserService;
@@ -45,7 +42,7 @@ public class AdminNguoiDungController {
     ) {
 
 
-            NguoiDung nguoiDung = new NguoiDung();
+            KhachHang nguoiDung = new KhachHang();
             model.addAttribute("nguoiDung",nguoiDung);
             model.addAttribute("nguoiDungs",userService.getAll());
             model.addAttribute("vaiTros",repo.findAll());
@@ -59,7 +56,7 @@ public class AdminNguoiDungController {
             Model model,
             RedirectAttributes redirectAttributes, Principal p
     ) {
-           NguoiDung nguoiDung = userService.Getbyid(id);
+           KhachHang nguoiDung = userService.Getbyid(id);
            model.addAttribute("nguoiDung",nguoiDung);
            model.addAttribute("nguoiDungs",userService.getAll());
            model.addAttribute("vaiTros",repo.findAll());
@@ -75,16 +72,16 @@ public class AdminNguoiDungController {
 
     @PostMapping("/save")
     public String save(
-            @Valid NguoiDung nguoiDung, BindingResult r,
+            @Valid KhachHang nguoiDung, BindingResult r,
             RedirectAttributes redirect
-            ,Principal p,@RequestParam(value = "matKhaumoi",required = false) String matKhaumoi) {
+            , Principal p, @RequestParam(value = "matKhaumoi",required = false) String matKhaumoi) {
          PasswordEncoder e = new BCryptPasswordEncoder();
 
-            if (nguoiDung.getMaNguoiDung() == null){
-                for (NguoiDung s : userService.getAll()){
+            if (nguoiDung.getMa_khach_hang() == null){
+                for (KhachHang s : userService.getAll()){
 
 
-                        if (  userService.checkEmail(nguoiDung.getEmail() , nguoiDung.getMaNguoiDung())){
+                        if (  userService.checkEmail(nguoiDung.getEmail() , nguoiDung.getMa_khach_hang())){
                             redirect.addFlashAttribute("error"," email này đã tồn tại");
                             return "redirect:/admin/nguoi-dung";
 
@@ -107,28 +104,28 @@ public class AdminNguoiDungController {
         System.out.println("ABC"+nguoiDung.getMatKhau_hash());
 
 
-            if ( nguoiDung.getMaNguoiDung() != null){
+            if ( nguoiDung.getMa_khach_hang() != null){
 
 
                 nguoiDung.setNgayCapNhat(LocalDateTime.now());
-                for (NguoiDung s : userService.getAll()){
-                          if (s.getMaNguoiDung().equals(nguoiDung.getMaNguoiDung())){
+                for (KhachHang s : userService.getAll()){
+                          if (s.getMa_khach_hang().equals(nguoiDung.getMa_khach_hang())){
 
                               if (s.getVaiTro().getTenVaiTro().equalsIgnoreCase("ROLE_STAFF") && !nguoiDung.getVaiTro().getTenVaiTro().equalsIgnoreCase("ROLE_STAFF")){
-                                      if (datPhongrepo.FindbyNguoiDung(s.getMaNguoiDung()) != null){
+                                      if (datPhongrepo.FindbyNguoiDung(s.getMa_khach_hang()) != null){
                                           redirect.addFlashAttribute("error","không thể cập nhật: người dùng có vai trò nhân viên có đơn đặt phòng khả dụng");
                                           return "redirect:/admin/nguoi-dung";
                                       }
 
                               }
-                              if ( (!s.getEmail().equals(nguoiDung.getEmail() )|| userService.checkEmail(nguoiDung.getEmail(),nguoiDung.getMaNguoiDung()))){
+                              if ( (!s.getEmail().equals(nguoiDung.getEmail() )|| userService.checkEmail(nguoiDung.getEmail(),nguoiDung.getMa_khach_hang()))){
                                  redirect.addFlashAttribute("error"," email này đã tồn tại");
                                  return "redirect:/admin/nguoi-dung";
                               }
 
                           }
                           if ((s.getVaiTro().getTenVaiTro().equalsIgnoreCase("ROLE_STAFF") &&  s.getSoDienThoai().equals(nguoiDung.getSoDienThoai()) )
-                                  && (!s.getMaNguoiDung().equals(nguoiDung.getMaNguoiDung()) && nguoiDung.getVaiTro().getTenVaiTro().equalsIgnoreCase("ROLE_STAFF"))){
+                                  && (!s.getMa_khach_hang().equals(nguoiDung.getMa_khach_hang()) && nguoiDung.getVaiTro().getTenVaiTro().equalsIgnoreCase("ROLE_STAFF"))){
                               redirect.addFlashAttribute("error","số điện thoại của nhân viên này đã được sử dụng bởi nhân viên khác (thông tin liên lạc của nhân viên không được trùng nhau)");
                               return "redirect:/admin/nguoi-dung";
                           }
@@ -155,12 +152,12 @@ public class AdminNguoiDungController {
     @GetMapping("/search")
     public String search(RedirectAttributes r,@RequestParam("keyword") String keyword,Principal p,Model model){
         if(userService.TimKiemTheoTen(keyword).size() >= 0){
-            model.addAttribute("nguoiDung",new NguoiDung());
+            model.addAttribute("nguoiDung",new KhachHang());
             model.addAttribute("nguoiDungs",userService.search(keyword));
             model.addAttribute("vaiTros",repo.findAll());
             r.addFlashAttribute("success","tìm thành công");
         }else{
-            model.addAttribute("nguoiDung",new NguoiDung());
+            model.addAttribute("nguoiDung",new KhachHang());
             model.addAttribute("nguoiDungs",userService.getAll());
             model.addAttribute("vaiTros",repo.findAll());
             r.addFlashAttribute("error","không tìm thấy tên trên yêu cầu");

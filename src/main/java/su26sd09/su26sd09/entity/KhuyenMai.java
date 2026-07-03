@@ -27,8 +27,8 @@ public class KhuyenMai {
     public int id;
 
     @ManyToOne
-    @JoinColumn(name = "ma_nguoi_tao")
-    public NguoiDung n;
+    @JoinColumn(name = "ma_nhan_vien")
+    public KhachHang n;
 
     @OneToMany(mappedBy = "km",cascade = CascadeType.ALL)
     private List<DatPhong> dp;
@@ -71,6 +71,8 @@ public class KhuyenMai {
     @Column(name = "ngay_tao",updatable = false,insertable = false)
     public LocalDateTime ngayTao;
 
-
+    @ManyToOne
+    @JoinColumn(name = "ma_admin",referencedColumnName = "ma_admin")
+    private Admin admin;
 
 }

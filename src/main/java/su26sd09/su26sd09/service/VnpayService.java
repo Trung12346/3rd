@@ -2,7 +2,6 @@ package su26sd09.su26sd09.service;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cglib.core.Local;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -15,7 +14,6 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.security.Principal;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -167,16 +165,16 @@ public class VnpayService {
             email = authentication.getName();
         } else {
             for (Nhanvien nv : ListNvLeTan.toList()) {
-                email = nv.getN().getEmail();
+                email = nv.getEmail();
             }
         }
 
-        NguoiDung n = nguoiDungService.findByEmail(email);
+        KhachHang n = nguoiDungService.findByEmail(email);
         Nhanvien nvGan = null;
         if (n != null) {
             boolean isNvDp = n.getVaiTro() != null && "ROLE_STAFF".equals(n.getVaiTro().getTenVaiTro());
             if (isNvDp) {
-                nvGan = nhanVienService.findByMaNguoiDung(n.getMaNguoiDung());
+                nvGan = nhanVienService.findByMaNhanVien(n.getMa_khach_hang());
             } else {
                 for (Nhanvien nv : nhanVienService.findAll().stream()
                         .filter(nv -> nv.getBoPhan().equalsIgnoreCase("lễ tân")).toList()) {
