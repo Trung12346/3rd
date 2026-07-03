@@ -62,9 +62,9 @@ public class KhuyenMai {
     public boolean hoatDong;
 
 
-    @Column(name = "dieu_kien_giam_toi_thieu")
-    @NotNull(message = "điều kiện giảm tối thiểu không được để trống")
-    public BigDecimal dieuKienGiamToiThieu;
+    @Column(name = "gia_duoc_giam_toi_thieu")
+    @NotNull(message = "giá tối thiểu để giảm không được để trống")
+    public BigDecimal giaToiThieuDuocGiam;
 
     @Column(name = "ngay_tao",updatable = false,insertable = false)
     public LocalDateTime ngayTao;

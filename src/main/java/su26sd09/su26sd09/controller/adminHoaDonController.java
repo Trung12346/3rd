@@ -150,7 +150,7 @@ public class adminHoaDonController {
         model.addAttribute("hoaDon", new HoaDon());
         model.addAttribute("datPhongs", datPhongService.findAll());
 
-        model.addAttribute("nguoiDungs", nguoiDungService.findAll());
+        model.addAttribute("nguoiDungs", nhanVienService.findAll().stream().filter(x -> x.getVaitro().getTenVaiTro().equals("ROLE_STAFF")));
 
         model.addAttribute("maHoaDon", maHoaDon);
         model.addAttribute("maDatPhong", maDatPhong);

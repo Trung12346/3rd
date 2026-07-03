@@ -1,5 +1,9 @@
 package su26sd09.su26sd09.service;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Autowired;
 import su26sd09.su26sd09.entity.NhanSu;
@@ -21,7 +25,7 @@ public class NhanVienService {
     public List<NhanSu> findAll(){
 
 
-        return repo.findAll();
+        return repo.findAll().stream().filter(x -> x.getVaitro().getTenVaiTro().equalsIgnoreCase("ROLE_STAFF")).toList();
     }
 
     public NhanSu findbyid(int id){
@@ -116,5 +120,30 @@ public class NhanVienService {
             return true;
         }
         return false;
+    }
+
+
+    public boolean checkSodienThoai(String sdt,int id){
+        boolean ifoundit = false;
+        if (repo.findAll().stream().anyMatch(x ->x.getSdt().equals(sdt) && x.getId() != id)){
+            ifoundit = true;
+         return ifoundit;
+        }
+
+        return ifoundit;
+    }
+
+    public Page<NhanSu> search(String hoTen, String email, String sdt, String maCCCD,
+                               String boPhan, Boolean trangThai,
+                               int page, int size) {
+        Pageable pageable = PageRequest.of(Math.max(page, 0), size, Sort.by("id").descending());
+        return repo.search(
+                blankToNull(hoTen), blankToNull(email), blankToNull(sdt),
+                blankToNull(maCCCD), blankToNull(boPhan), trangThai,  pageable
+        );
+    }
+
+    private String blankToNull(String s) {
+        return (s == null || s.isBlank()) ? null : s.trim();
     }
 }

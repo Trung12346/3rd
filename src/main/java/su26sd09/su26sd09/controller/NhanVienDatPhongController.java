@@ -249,7 +249,7 @@ public class NhanVienDatPhongController {
             if (i > 0) {
                 sb.append(",");
             }
-            BigDecimal dieuKien = km.getDieuKienGiamToiThieu() == null ? BigDecimal.ZERO : km.getDieuKienGiamToiThieu();
+            BigDecimal dieuKien = km.getGiaToiThieuDuocGiam() == null ? BigDecimal.ZERO : km.getGiaToiThieuDuocGiam();
             sb.append("{")
                     .append("\"id\":").append(km.getId()).append(",")
                     .append("\"code\":\"").append(escapeJson(km.getPromoCode())).append("\",")

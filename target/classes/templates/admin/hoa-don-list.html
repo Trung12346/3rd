@@ -113,7 +113,7 @@
 
             <input type="hidden" name="maDatPhong" th:value="${hoaDon.d != null ? hoaDon.d.id : ''}">
             <input type="hidden" name="maKhuyenMai" th:value="${hoaDon.k != null ? hoaDon.k.id : ''}">
-            <input type="hidden" name="maNhanVienXuat" th:value="${hoaDon.n != null ? hoaDon.n.maNguoiDung : ''}">
+            <input type="hidden" name="maNhanVienXuat" th:value="${hoaDon.n != null ? hoaDon.n.id : ''}">
 
             <div class="admin-grid">
                 <div class="admin-field">
@@ -143,8 +143,8 @@
                     <select th:disabled="${hoaDon.id != 0}" name="maNhanVienXuat">
                         <option value="">-- Chọn nhân viên --</option>
                         <option th:each="nd : ${nguoiDungs}"
-                                th:value="${nd.maNguoiDung}"
-                                th:text="${nd.hoTen + ' - ' + nd.email}"
+                                th:value="${nd.id}"
+                                th:text="${nd.hoten + ' - ' + nd.email}"
                                 th:selected="${hoaDon.n != null and hoaDon.n.maNguoiDung == nd.maNguoiDung}">
                         </option>
                     </select>

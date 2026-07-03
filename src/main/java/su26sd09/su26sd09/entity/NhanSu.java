@@ -34,9 +34,11 @@ public class NhanSu {
     private String dia_chi;
 
     @Column(name = "email")
+    @Pattern(regexp = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$",message = "email không đúng định dạng")
     private String email;
 
     @Column(name = "so_dien_thoai")
+    @Pattern(regexp = "^(03|05|07|08|09)\\d{8}$",message = "số điện thoại không đúng định dạng")
     private String sdt;
 
     @Column(name = "mat_khau_hash")
@@ -50,6 +52,7 @@ public class NhanSu {
 
     @ManyToOne
     @JoinColumn(name = "ma_vai_tro",referencedColumnName = "ma_vai_tro")
+    @NotNull(message = "vai trò không được để trống")
     private VaiTro vaitro;
 
     @Column(name = "bo_phan")

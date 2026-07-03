@@ -282,7 +282,7 @@ public class PhongController {
         if (km == null || !km.isHoatDong() || km.getGiatriGiam() == null) {
             return BigDecimal.ZERO;
         }
-        BigDecimal dieuKien = km.getDieuKienGiamToiThieu() == null ? BigDecimal.ZERO : km.getDieuKienGiamToiThieu();
+        BigDecimal dieuKien = km.getGiaToiThieuDuocGiam() == null ? BigDecimal.ZERO : km.getGiaToiThieuDuocGiam();
         if (tienPhong.compareTo(dieuKien) < 0) {
             return BigDecimal.ZERO;
         }
@@ -304,7 +304,7 @@ public class PhongController {
             if (i > 0) {
                 sb.append(",");
             }
-            BigDecimal dieuKien = km.getDieuKienGiamToiThieu() == null ? BigDecimal.ZERO : km.getDieuKienGiamToiThieu();
+            BigDecimal dieuKien = km.getGiaToiThieuDuocGiam() == null ? BigDecimal.ZERO : km.getGiaToiThieuDuocGiam();
             sb.append("{")
                     .append("\"id\":").append(km.getId()).append(",")
                     .append("\"code\":\"").append(escapeJson(km.getPromoCode())).append("\",")

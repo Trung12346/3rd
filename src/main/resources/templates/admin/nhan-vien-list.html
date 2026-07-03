@@ -31,51 +31,37 @@
             <input type="hidden" th:field="*{id}">
 
             <div class="admin-grid">
-                <div class="admin-field">
-                    <label>Người dùng</label>
-                    <select name="maNguoiDung" >
-                        <option value="">-- Chọn người dùng --</option>
-                        <option th:each="nd : ${nguoiDungs}"
-                                th:value="${nd.n.maNguoiDung}"
-                                th:text="${nd.n.hoTen + ' - ' + nd.n.email + ' - ' + nd.n.vaiTro.tenVaiTro}"
-                                th:selected="${nhanVien.n != null and nhanVien.n.maNguoiDung == nd.n.maNguoiDung}">
-                        </option>
-                    </select >
-                </div>
-
 
                 <div class="admin-field">
                     <label>Ho ten</label>
-                    <input type="text" th:field="*{n.hoTen}" placeholder="VD: Nguyen Van A" >
+                    <input type="text" th:field="*{hoten}" placeholder="VD: Nguyen Van A" >
                 </div>
 
                 <div class="admin-field">
                     <label>Email</label>
-                    <input type="email" th:field="*{n.email}" placeholder="example@gmail.com" >
+                    <input type="email" th:field="*{email}" placeholder="example@gmail.com" >
                 </div>
 
-                <div class="admin-field" th:if="${nhanVien.n.maNguoiDung == null}">
+                <div class="admin-field" th:if="${nhanVien.id == null}">
                     <label>Mat khau</label>
                     <input type="password"
-                           th:field="*{n.matKhau_hash}"
+                           th:field="*{mat_khau_hash}"
                            placeholder="Nhap khi them moi" >
                 </div>
 
-
-                <div class="admin-field" th:if="${nhanVien.n.maNguoiDung != null}">
+                <div class="admin-field" th:if="${nhanVien.id != null}">
                     <label>Mat khau</label>
                     <input type="password"
                            name="matKhaumoi"
                            placeholder="Nhap khi neu muon doi" >
                     <input
-                            th:field="*{n.matKhau_hash}"
+                            th:field="*{mat_khau_hash}"
                             th:type="hidden" >
                 </div>
 
-
                 <div class="admin-field">
                     <label>So dien thoai</label>
-                    <input type="tel" th:field="*{n.soDienThoai}" placeholder="09xxxxxxxx" pattern="[0-9]{10}">
+                    <input type="tel" th:field="*{sdt}" placeholder="09xxxxxxxx" pattern="[0-9]{10}">
                 </div>
                 <div class="admin-field">
                     <label>mã căn cước công dân</label>
@@ -84,7 +70,7 @@
 
                 <div class="admin-field">
                     <label>Trang thai</label>
-                    <select th:field="*{n.trangThai}">
+                    <select th:field="*{trang_thai}">
                         <option th:value="true">Hoat dong</option>
                         <option th:value="false">Khoa</option>
                     </select>
@@ -95,12 +81,13 @@
                 </div>
                 <div class="admin-field full">
                     <label>Dia chi</label>
-                    <textarea th:field="*{n.diaChi}" placeholder="So nha, duong, tinh/TP..."></textarea>
+                    <textarea th:field="*{dia_chi}" placeholder="So nha, duong, tinh/TP..."></textarea>
                 </div>
                 <div class="admin-field">
                     <label>Bộ phận</label>
                     <input type="text" th:field="*{boPhan}" placeholder="VD: Lễ tân">
                 </div>
+
             </div>
 
             <div class="admin-actions">
@@ -110,12 +97,56 @@
         </form>
     </section>
 
+
+
     <section class="admin-panel">
         <h2>Danh Sách Nhân Viên</h2>
 
-        <form th:action="@{/admin/nhan-vien/search}" method="get" class="search-row">
-            <input type="text" name="keyword" placeholder="Tìm theo tên" th:value="${keyword}">
-            <button type="submit" class="admin-btn outline">Tìm Kiếm</button>
+        <form th:action="@{/admin/nhan-vien}" method="get" class="admin-grid" style="margin-bottom:16px;">
+            <div class="admin-field">
+                <label>Họ tên</label>
+                <input type="text" name="hoTen" th:value="${hoTen}" placeholder="Tìm theo họ tên">
+            </div>
+            <div class="admin-field">
+                <label>Email</label>
+                <input type="text" name="email" th:value="${email}" placeholder="Tìm theo email">
+            </div>
+            <div class="admin-field">
+                <label>Số điện thoại</label>
+                <input type="text" name="sdt" th:value="${sdt}" placeholder="Tìm theo SĐT">
+            </div>
+            <div class="admin-field">
+                <label>Mã CCCD</label>
+                <input type="text" name="maCCCD" th:value="${maCCCD}" placeholder="Tìm theo CCCD">
+            </div>
+            <div class="admin-field">
+                <label>Bộ phận</label>
+                <input type="text" name="boPhan" th:value="${boPhan}" placeholder="Tìm theo bộ phận">
+            </div>
+            <div class="admin-field">
+                <label>Trạng thái</label>
+                <select name="trangThai">
+                    <option value="">-- Tất cả --</option>
+                    <option value="true" th:selected="${trangThai != null and trangThai == true}">Mở khóa</option>
+                    <option value="false" th:selected="${trangThai != null and trangThai == false}">Khóa</option>
+                </select>
+            </div>
+            <div class="admin-field">
+                <label>Vai trò</label>
+                <select name="maVaiTro">
+                    <option value="">-- Tất cả --</option>
+                    <option th:each="vt : ${vaiTros}"
+                            th:value="${vt.id}"
+                            th:text="${vt.tenVaiTro}"
+                            th:selected="${maVaiTro != null and maVaiTro == vt.id}">
+                    </option>
+                </select>
+            </div>
+
+            <div class="admin-actions">
+                <button type="submit" class="admin-btn outline">Tìm Kiếm</button>
+                <a th:href="@{/admin/nhan-vien}" class="admin-btn outline">Xóa Lọc</a>
+            </div>
         </form>
 
         <div class="admin-table-wrap">
@@ -138,14 +169,14 @@
                 <tbody>
                 <tr th:each="nv : ${nhanViens}">
                     <td th:text="${nv.id}"></td>
-                    <td><strong th:text="${nv.n != null ? nv.n.hoTen : ''}"></strong></td>
-                    <td th:text="${nv.n != null ? nv.n.email : ''}"></td>
-                    <td th:text="${nv.n != null ? nv.n.soDienThoai : ''}"></td>
-                    <td th:text="${nv.n != null ? nv.maCCCD : ''}"></td>
-                    <td th:text="${nv.n != null ? #temporals.format(nv.ngaySinh, 'dd/MM/yyyy') : ''}"></td>
-                    <td th:text="${nv.n != null ? nv.n.diaChi : ''}"></td>
-                    <td th:text="${nv.n != null ? nv.n.vaiTro.tenVaiTro : ''}"></td>
-                    <td th:text="${nv.n.trangThai == true ? 'mở khóa' : 'khóa'}"></td>
+                    <td><strong th:text="${nv != null ? nv.hoten : ''}"></strong></td>
+                    <td th:text="${nv != null ? nv.email : ''}"></td>
+                    <td th:text="${nv != null ? nv.sdt : ''}"></td>
+                    <td th:text="${nv != null ? nv.maCCCD : ''}"></td>
+                    <td th:text="${nv != null ? #temporals.format(nv.ngaySinh, 'dd/MM/yyyy') : ''}"></td>
+                    <td th:text="${nv != null ? nv.dia_chi : ''}"></td>
+                    <td th:text="${nv != null ? nv.vaitro.tenVaiTro : ''}"></td>
+                    <td th:text="${nv.trang_thai == true ? 'mở khóa' : 'khóa'}"></td>
                     <td th:text="${nv.boPhan}"></td>
                     <td>
                         <div class="row-actions">
@@ -161,10 +192,29 @@
                     </td>
                 </tr>
                 <tr th:if="${nhanViens.isEmpty()}">
-                    <td colspan="9"><div class="empty-state">Không tìm thấy nhân viên phù hợp.</div></td>
+                    <td colspan="11"><div class="empty-state">Không tìm thấy nhân viên phù hợp.</div></td>
                 </tr>
                 </tbody>
             </table>
+        </div>
+
+        <!-- Phân trang -->
+        <div class="admin-actions" th:if="${nhanViensPage.totalPages > 1}" style="justify-content:center; gap:6px;">
+            <a th:if="${nhanViensPage.hasPrevious()}"
+               class="admin-btn small outline"
+               th:href="@{/admin/nhan-vien(page=${nhanViensPage.number - 1}, hoTen=${hoTen}, email=${email}, sdt=${sdt}, maCCCD=${maCCCD}, boPhan=${boPhan}, trangThai=${trangThai}, maVaiTro=${maVaiTro})}">« Trước</a>
+
+            <span th:each="i : ${#numbers.sequence(0, nhanViensPage.totalPages - 1)}">
+            <a th:href="@{/admin/nhan-vien(page=${i}, hoTen=${hoTen}, email=${email}, sdt=${sdt}, maCCCD=${maCCCD}, boPhan=${boPhan}, trangThai=${trangThai}, maVaiTro=${maVaiTro})}"
+               th:text="${i + 1}"
+               th:classappend="${i == nhanViensPage.number} ? ' active'"
+               class="admin-btn small outline">
+            </a>
+        </span>
+
+            <a th:if="${nhanViensPage.hasNext()}"
+               class="admin-btn small outline"
+               th:href="@{/admin/nhan-vien(page=${nhanViensPage.number + 1}, hoTen=${hoTen}, email=${email}, sdt=${sdt}, maCCCD=${maCCCD}, boPhan=${boPhan}, trangThai=${trangThai}, maVaiTro=${maVaiTro})}">Sau »</a>
         </div>
     </section>
 </main>
