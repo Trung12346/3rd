@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import su26sd09.su26sd09.entity.KhuyenMai;
 import su26sd09.su26sd09.entity.KhachHang;
+import su26sd09.su26sd09.entity.NhanSu;
 import su26sd09.su26sd09.service.NhanVienService;
 import su26sd09.su26sd09.service.UserService;
 import su26sd09.su26sd09.service.khuyenMaiService;
@@ -23,6 +24,8 @@ public class AdminkhuyenMaiController {
     UserService nguoiDungRepo;
     @Autowired
     NhanVienService nvRepo;
+
+
 
     public Boolean CheckRole(String email){
         String role = "";
@@ -89,9 +92,9 @@ public class AdminkhuyenMaiController {
                 redirect.addFlashAttribute("error","giá trị giảm không được quá 50%");
                 return "redirect:/admin/khuyen-mai";
             }
-            for (KhachHang ng : nguoiDungRepo.getAll()){
+            for (NhanSu ng : nvRepo.findAll()){
                 if (ng.getEmail().equalsIgnoreCase(p.getName())){
-                    m.setN(ng);
+                    m.setNhanSu(ng);
                 }
             }
             if (m.giatriGiam.compareTo(BigDecimal.valueOf(100.0)) > 0 && m.loaiGiam.equalsIgnoreCase("PERCENT")){
@@ -110,7 +113,6 @@ public class AdminkhuyenMaiController {
             }
             repo.save(m);
 
-            System.out.println(m.n.getEmail());
         }
         return "redirect:/admin/khuyen-mai";
     }

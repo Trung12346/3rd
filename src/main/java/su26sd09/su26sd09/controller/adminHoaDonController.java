@@ -50,6 +50,9 @@ public class adminHoaDonController {
     @Autowired
     private khuyenMaiService khuyenMaiService;
 
+    @Autowired
+    private NhanVienService nhanVienService;
+
     @GetMapping("")
     public String getHoaDon(
             @RequestParam(required = false) Integer maHoaDon,
@@ -231,7 +234,7 @@ public class adminHoaDonController {
         }
 
         if (maNhanVienXuat != null) {
-            hoaDon.setN(nguoiDungService.findById(maNhanVienXuat));
+            hoaDon.setN(nhanVienService.findbyid(maNhanVienXuat));
             System.out.println("Ma nhan vien xuat :"+maNhanVienXuat);
         }
         hoaDonService.save(hoaDon);

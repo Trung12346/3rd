@@ -30,7 +30,7 @@ public class DatPhong {
 
     @JoinColumn(name = "ma_nhan_vien")
     @ManyToOne
-    public Nhanvien nv;
+    public NhanSu nv;
 
     @ManyToOne
     @JoinColumn(name = "ma_khuyen_mai",referencedColumnName = "ma_khuyen_mai")

@@ -14,12 +14,14 @@ C:\Users\ADMIN\Downloads\3rd\src\main\java\su26sd09\su26sd09\controller\AdminNha
 C:\Users\ADMIN\Downloads\3rd\src\main\java\su26sd09\su26sd09\controller\AdminPhongController.java
 C:\Users\ADMIN\Downloads\3rd\src\main\java\su26sd09\su26sd09\controller\AdminQLDVController.java
 C:\Users\ADMIN\Downloads\3rd\src\main\java\su26sd09\su26sd09\controller\AdminThongKeDoanhThu.java
+C:\Users\ADMIN\Downloads\3rd\src\main\java\su26sd09\su26sd09\controller\AdminThongKeNangCaoController.java
 C:\Users\ADMIN\Downloads\3rd\src\main\java\su26sd09\su26sd09\controller\DanhGiaController.java
 C:\Users\ADMIN\Downloads\3rd\src\main\java\su26sd09\su26sd09\controller\GioHangController.java
 C:\Users\ADMIN\Downloads\3rd\src\main\java\su26sd09\su26sd09\controller\Home.java
 C:\Users\ADMIN\Downloads\3rd\src\main\java\su26sd09\su26sd09\controller\LoaiPhongController.java
 C:\Users\ADMIN\Downloads\3rd\src\main\java\su26sd09\su26sd09\controller\LoginController.java
 C:\Users\ADMIN\Downloads\3rd\src\main\java\su26sd09\su26sd09\controller\LogoutController.java
+C:\Users\ADMIN\Downloads\3rd\src\main\java\su26sd09\su26sd09\controller\NhanVienCheckoutController.java
 C:\Users\ADMIN\Downloads\3rd\src\main\java\su26sd09\su26sd09\controller\NhanVienDatPhongController.java
 C:\Users\ADMIN\Downloads\3rd\src\main\java\su26sd09\su26sd09\controller\nhanVienQLDVController.java
 C:\Users\ADMIN\Downloads\3rd\src\main\java\su26sd09\su26sd09\controller\PhongController.java
@@ -29,6 +31,7 @@ C:\Users\ADMIN\Downloads\3rd\src\main\java\su26sd09\su26sd09\controller\UserProf
 C:\Users\ADMIN\Downloads\3rd\src\main\java\su26sd09\su26sd09\controller\VerifyEmailController.java
 C:\Users\ADMIN\Downloads\3rd\src\main\java\su26sd09\su26sd09\controller\VnpayController.java
 C:\Users\ADMIN\Downloads\3rd\src\main\java\su26sd09\su26sd09\dto\AdminDanhGiaDTO.java
+C:\Users\ADMIN\Downloads\3rd\src\main\java\su26sd09\su26sd09\dto\AdvancedThongKeDTO.java
 C:\Users\ADMIN\Downloads\3rd\src\main\java\su26sd09\su26sd09\dto\CustomerReviewRequest.java
 C:\Users\ADMIN\Downloads\3rd\src\main\java\su26sd09\su26sd09\dto\CustomerReviewViewDTO.java
 C:\Users\ADMIN\Downloads\3rd\src\main\java\su26sd09\su26sd09\dto\DoanhThuChartDTO.java
@@ -43,10 +46,10 @@ C:\Users\ADMIN\Downloads\3rd\src\main\java\su26sd09\su26sd09\entity\DanhGia.java
 C:\Users\ADMIN\Downloads\3rd\src\main\java\su26sd09\su26sd09\entity\DatPhong.java
 C:\Users\ADMIN\Downloads\3rd\src\main\java\su26sd09\su26sd09\entity\Dich_vu.java
 C:\Users\ADMIN\Downloads\3rd\src\main\java\su26sd09\su26sd09\entity\HoaDon.java
+C:\Users\ADMIN\Downloads\3rd\src\main\java\su26sd09\su26sd09\entity\KhachHang.java
 C:\Users\ADMIN\Downloads\3rd\src\main\java\su26sd09\su26sd09\entity\KhuyenMai.java
 C:\Users\ADMIN\Downloads\3rd\src\main\java\su26sd09\su26sd09\entity\LoaiPhong.java
-C:\Users\ADMIN\Downloads\3rd\src\main\java\su26sd09\su26sd09\entity\NguoiDung.java
-C:\Users\ADMIN\Downloads\3rd\src\main\java\su26sd09\su26sd09\entity\Nhanvien.java
+C:\Users\ADMIN\Downloads\3rd\src\main\java\su26sd09\su26sd09\entity\NhanSu.java
 C:\Users\ADMIN\Downloads\3rd\src\main\java\su26sd09\su26sd09\entity\Phong.java
 C:\Users\ADMIN\Downloads\3rd\src\main\java\su26sd09\su26sd09\entity\ThanhToan.java
 C:\Users\ADMIN\Downloads\3rd\src\main\java\su26sd09\su26sd09\entity\TienNghi.java
@@ -61,9 +64,9 @@ C:\Users\ADMIN\Downloads\3rd\src\main\java\su26sd09\su26sd09\repository\DanhGiaR
 C:\Users\ADMIN\Downloads\3rd\src\main\java\su26sd09\su26sd09\repository\DatPhongRepo.java
 C:\Users\ADMIN\Downloads\3rd\src\main\java\su26sd09\su26sd09\repository\DichVuRepo.java
 C:\Users\ADMIN\Downloads\3rd\src\main\java\su26sd09\su26sd09\repository\HoaDonRepo.java
+C:\Users\ADMIN\Downloads\3rd\src\main\java\su26sd09\su26sd09\repository\KhachHangRepository.java
 C:\Users\ADMIN\Downloads\3rd\src\main\java\su26sd09\su26sd09\repository\khuyenMaiRepo.java
 C:\Users\ADMIN\Downloads\3rd\src\main\java\su26sd09\su26sd09\repository\LoaiPhongRepository.java
-C:\Users\ADMIN\Downloads\3rd\src\main\java\su26sd09\su26sd09\repository\NguoiDungRepository.java
 C:\Users\ADMIN\Downloads\3rd\src\main\java\su26sd09\su26sd09\repository\NhanVienRepo.java
 C:\Users\ADMIN\Downloads\3rd\src\main\java\su26sd09\su26sd09\repository\PhongRepository.java
 C:\Users\ADMIN\Downloads\3rd\src\main\java\su26sd09\su26sd09\repository\ThanhToanRepo.java

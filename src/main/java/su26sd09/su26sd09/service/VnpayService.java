@@ -158,29 +158,28 @@ public class VnpayService {
         }
 
          authentication = SecurityContextHolder.getContext().getAuthentication();
-        List<Nhanvien> listNhanVien = nhanVienService.findAll();
-        Stream<Nhanvien> ListNvLeTan = listNhanVien.stream().filter(nv -> nv.getBoPhan().equalsIgnoreCase("lễ tân"));
+        List<NhanSu> listNhanVien = nhanVienService.findAll();
+        Stream<NhanSu> ListNvLeTan = listNhanVien.stream().filter(nv -> nv.getBoPhan().equalsIgnoreCase("lễ tân"));
         String email = null;
         if (authentication != null && authentication.isAuthenticated() && !(authentication instanceof AnonymousAuthenticationToken)) {
             email = authentication.getName();
         } else {
-            for (Nhanvien nv : ListNvLeTan.toList()) {
+            for (NhanSu nv : ListNvLeTan.toList()) {
                 email = nv.getEmail();
             }
         }
 
-        KhachHang n = nguoiDungService.findByEmail(email);
-        Nhanvien nvGan = null;
-        if (n != null) {
-            boolean isNvDp = n.getVaiTro() != null && "ROLE_STAFF".equals(n.getVaiTro().getTenVaiTro());
-            if (isNvDp) {
-                nvGan = nhanVienService.findByMaNhanVien(n.getMa_khach_hang());
-            } else {
-                for (Nhanvien nv : nhanVienService.findAll().stream()
-                        .filter(nv -> nv.getBoPhan().equalsIgnoreCase("lễ tân")).toList()) {
-                    nvGan = nv;
-                }
-            }
+        NhanSu n = nhanVienService.FindByemail(email);
+        NhanSu nvGan = null;
+        if (n != null && n.getVaitro() != null && "ROLE_STAFF".equals(n.getVaitro().getTenVaiTro())) {
+            // Người thao tác là nhân viên -> gán nhân viên đó
+            nvGan = n;
+        } else {
+            // Không phải nhân viên (khách vãng lai) -> lấy 1 nhân viên lễ tân làm mặc định
+            nvGan = nhanVienService.findAll().stream()
+                    .filter(nv -> "lễ tân".equalsIgnoreCase(nv.getBoPhan()))
+                    .findFirst()
+                    .orElse(null);
         }
 
         LocalDateTime thoiGianThanhToan;

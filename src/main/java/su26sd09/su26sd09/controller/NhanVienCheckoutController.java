@@ -63,16 +63,14 @@ public class NhanVienCheckoutController {
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
         if (isAdmin) return true;
 
-        NguoiDung n = nguoiDungService.findByEmail(authentication.getName());
+        KhachHang n = nguoiDungService.findByEmail(authentication.getName());
         if (n == null) return false;
-        Nhanvien nv = nhanVienService.findByMaNguoiDung(n.getMaNguoiDung());
+        NhanSu nv = nhanVienService.FindByemail(authentication.getName());
         return nv != null && "Lễ Tân".equals(nv.getBoPhan());
     }
 
-    private Nhanvien nhanVienHienTai(Authentication authentication) {
-        NguoiDung n = nguoiDungService.findByEmail(authentication.getName());
-        if (n == null) return null;
-        return nhanVienService.findByMaNguoiDung(n.getMaNguoiDung());
+    private NhanSu nhanVienHienTai(Authentication authentication) {
+        return nhanVienService.FindByemail(authentication.getName());
     }
 
     // ================= TINH TOAN FOLIO =================
@@ -277,8 +275,8 @@ public class NhanVienCheckoutController {
         BigDecimal tienVat = folio.get("tienVat");
         BigDecimal tongTien = folio.get("tongTien");
 
-        NguoiDung nguoiXuLy = nguoiDungService.findByEmail(authentication.getName());
-        Nhanvien nvHienTai = nhanVienHienTai(authentication);
+        NhanSu nguoiXuLy = nhanVienService.FindByemail(authentication.getName());
+        NhanSu nvHienTai = nhanVienHienTai(authentication);
 
         // Tao moi hoac cap nhat hoa don gan voi don dat phong nay
         HoaDon hoaDon = hoaDonService.findByDatPhongId(id);

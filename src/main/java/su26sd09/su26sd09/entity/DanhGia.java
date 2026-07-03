@@ -22,7 +22,7 @@ public class DanhGia {
     public int id;
 
     @ManyToOne
-    @JoinColumn(name = "ma_khach_hang")
+    @JoinColumn(name = "ma_nguoi_dung")
     public KhachHang n;
 
     @ManyToOne

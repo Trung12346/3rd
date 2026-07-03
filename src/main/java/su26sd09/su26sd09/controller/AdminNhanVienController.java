@@ -12,7 +12,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import su26sd09.su26sd09.entity.KhachHang;
-import su26sd09.su26sd09.entity.Nhanvien;
+import su26sd09.su26sd09.entity.NhanSu;
 import su26sd09.su26sd09.entity.VaiTro;
 import su26sd09.su26sd09.repository.NhanVienRepo;
 import su26sd09.su26sd09.repository.VaiTroRepo;
@@ -44,7 +44,7 @@ public class AdminNhanVienController {
 
     @GetMapping
     public String index(Model model){
-        Nhanvien nv = new Nhanvien();
+        NhanSu nv = new NhanSu();
         model.addAttribute("nhanViens",repo.findAll());
         model.addAttribute("nhanVien",nv);
         model.addAttribute("vaiTros",vaiTroRepo.findAll());
@@ -70,7 +70,7 @@ public class AdminNhanVienController {
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     @PostMapping("/save")
-    public String saveNhanVien(@Valid Nhanvien nv, BindingResult bindingResult,
+    public String saveNhanVien(@Valid NhanSu nv, BindingResult bindingResult,
                                Principal principal, RedirectAttributes redirect,
                                @RequestParam(value = "matKhaumoi", required = false) String matKhauMoi,
                                @RequestParam(value = "maNguoiDung", required = false) Integer maNguoiDung) {
@@ -111,8 +111,8 @@ public class AdminNhanVienController {
     }
 
 
-    private String themNhanVienTuNguoiDungCoSan(Nhanvien nv, Integer maNguoiDung,
-                                                RedirectAttributes redirect,VaiTro v) {
+    private String themNhanVienTuNguoiDungCoSan(NhanSu nv, Integer maNguoiDung,
+                                                RedirectAttributes redirect, VaiTro v) {
         if (repo.IsNhanVienTonTai(maNguoiDung)) {
             redirect.addFlashAttribute("error", "nhân viên này đã tồn tại");
             return "redirect:/admin/nhan-vien";
@@ -172,7 +172,7 @@ public class AdminNhanVienController {
         return "redirect:/admin/nhan-vien";
     }
 
-    private String themNhanVienMoi(VaiTro v,Nhanvien nv, RedirectAttributes redirect) {
+    private String themNhanVienMoi(VaiTro v, NhanSu nv, RedirectAttributes redirect) {
         if (nv.getBoPhan() == null || nv.getBoPhan().isBlank()) {
             return "redirect:/admin/nhan-vien";
         }
@@ -199,8 +199,8 @@ public class AdminNhanVienController {
         return "redirect:/admin/nhan-vien"; // fix: thiếu return trong code gốc
     }
     @Transactional
-    public String capNhatNhanVien(Nhanvien nv, Integer maNguoiDung,
-                             VaiTro v,   String matKhauMoi, RedirectAttributes redirect) {
+    public String capNhatNhanVien(NhanSu nv, Integer maNguoiDung,
+                                  VaiTro v, String matKhauMoi, RedirectAttributes redirect) {
         if (repo.TrungNv(maNguoiDung, nv.getId())) { // fix: bỏ == true
             redirect.addFlashAttribute("error", "vui lòng chọn mã nhân viên không trùng với nhân viên khác");
             return "redirect:/admin/nhan-vien";
@@ -266,7 +266,7 @@ public class AdminNhanVienController {
     @GetMapping("/search")
     public String searchNhanVien(Model model, Principal p ,@RequestParam("keyword") String name , RedirectAttributes redirect){
         if (CheckRole(p.getName())){
-            Nhanvien nv = new Nhanvien();
+            NhanSu nv = new NhanSu();
             model.addAttribute("nhanViens",repo.findByName(name));
             model.addAttribute("nhanVien",nv);
             model.addAttribute("vaiTros",vaiTroRepo.findAll());

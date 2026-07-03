@@ -408,7 +408,7 @@
                               th:text="${phong.soPhong + ' '}">
                         </span>
                     </td>
-                    <td th:text="${dp.nv != null ? dp.nv.n.hoTen : ''}"></td>
+                    <td th:text="${dp.nv != null ? dp.nv.hoten : ''}"></td>
                     <td th:text="${dp.ngaydatPhong != null ? #temporals.format(dp.ngaydatPhong, 'dd/MM/yyyy') : ''}"></td>
                     <td th:text="${dp.ngaytraPhong != null ? #temporals.format(dp.ngaytraPhong, 'dd/MM/yyyy') : ''}"></td>
                     <td th:text="${dp.songuoiLon + ' NL, ' + dp.sotreEm + ' TE'}"></td>

@@ -39,8 +39,8 @@ public class ThanhToan {
     public String magiaodich;
 
     @ManyToOne
-    @JoinColumn(name = "ma_nhan_vien",referencedColumnName = "ma_nhan_vien")
-    public Nhanvien nv;
+    @JoinColumn(name = "ma_nhan_vien",referencedColumnName = "ma_nhan_su")
+    public NhanSu nv;
 
     @Column(name = "Ngay_thanh_toan")
     @DateTimeFormat(pattern = "yyyy-MM-dd hh:MM:ss")

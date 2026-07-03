@@ -26,9 +26,7 @@ public class KhuyenMai {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     public int id;
 
-    @ManyToOne
-    @JoinColumn(name = "ma_nhan_vien")
-    public KhachHang n;
+
 
     @OneToMany(mappedBy = "km",cascade = CascadeType.ALL)
     private List<DatPhong> dp;
@@ -72,7 +70,7 @@ public class KhuyenMai {
     public LocalDateTime ngayTao;
 
     @ManyToOne
-    @JoinColumn(name = "ma_admin",referencedColumnName = "ma_admin")
-    private Admin admin;
+        @JoinColumn(name = "ma_nguoi_tao",referencedColumnName = "ma_nhan_su")
+    private NhanSu nhanSu;
 
 }

@@ -339,8 +339,8 @@ public class PhongController {
             if(dp ==null) {
                 return "dat-phong-thong-tin-khach";
             }
-            List<Nhanvien> listNv = nhanVienService.findAll();
-            Stream<Nhanvien> ListnvLeTan = listNv.stream().filter(nv -> nv.getBoPhan().equalsIgnoreCase("lễ tân"));
+            List<NhanSu> listNv = nhanVienService.findAll();
+            Stream<NhanSu> ListnvLeTan = listNv.stream().filter(nv -> nv.getBoPhan().equalsIgnoreCase("lễ tân"));
             
             List<ChiTietDatPhong> listCtdp = chiTietDatPhongService.findByDatPhongId(id);
             List<Chi_tiet_dich_vu> listCtdv = ctdvService.findByDatPhongId(id);
@@ -352,24 +352,27 @@ public class PhongController {
             }
             amount = amount.add(amountdv);
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        String emailSearch = null;
+        String  emailSearch = null;
         if (auth != null && auth.isAuthenticated() && !(auth instanceof AnonymousAuthenticationToken)) {
             emailSearch = auth.getName();
         } else {
-            for (Nhanvien nv : ListnvLeTan.toList()) {
+            for (NhanSu nv : ListnvLeTan.toList()) {
                 emailSearch = nv.getEmail();
             }
         }
 
-        KhachHang n = nguoiDungService.findByEmail(emailSearch);
+        NhanSu n = nhanVienService.FindByemail(emailSearch);
 
-        boolean isNvDp = n.getVaiTro() != null && "ROLE_STAFF".equals(n.getVaiTro().toString());
+        boolean isNvDp = n != null
+                && n.getVaitro() != null
+                && "ROLE_STAFF".equals(n.getVaitro().getTenVaiTro());
 
         if (isNvDp) {
-            Nhanvien nv = nhanVienService.findByMaNhanVien(n.getMa_khach_hang());
-            dp.setNv(nv != null ? nv : nhanVienService.findByMaNhanVien(nguoiDungService.findByEmail(emailSearch).getMa_khach_hang()));
+            // Nhân viên đang thao tác -> gán nhân viên đó vào nv
+            dp.setNv(n);
         } else {
-            dp.setNv(nhanVienService.findByMaNhanVien(nguoiDungService.findByEmail(emailSearch).getMa_khach_hang()));
+            // Khách vãng lai -> không gán nv, chỉ dùng hoten để hiển thị
+            dp.setNv(null);
         }
         System.out.println("Amount Xac nhan thong tin khach hang: "+amount);
         System.out.println("Amount dich vu xac nhan thong tin khach hang: "+amountdv);
@@ -452,7 +455,7 @@ public class PhongController {
         ctdp.setP(phong);
         ctdp.setGiaMoiDem(phong.getGiaMoiDem());
         ctdp.setGiaKhiDat(phong.getGiaMoiDem().multiply(BigDecimal.valueOf(ChronoUnit.DAYS.between(ngayNhan,ngayTra))));
-
+        ctdp.setMa_cccd(ma_cccd);
         chiTietDatPhongService.save(ctdp);
 
         phong.setTrangThai("Trong");

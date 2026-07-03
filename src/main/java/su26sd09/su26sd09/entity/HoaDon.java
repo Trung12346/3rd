@@ -32,8 +32,8 @@ public class HoaDon {
 
 
     @ManyToOne
-    @JoinColumn (name = "ma_nhan_vien_xuat")
-    public KhachHang n;
+    @JoinColumn (name = "ma_nhan_vien_xuat",referencedColumnName = "ma_nhan_su")
+    public NhanSu n;
 
     @Column(name = "tien_phong",precision = 14,scale = 2)
     public BigDecimal tienPhong;

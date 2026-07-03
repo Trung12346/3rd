@@ -392,13 +392,9 @@ public class NhanVienDatPhongController {
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
 
         if (!isAdmin) {
-            KhachHang n = nguoiDungService.findByEmail(authentication.getName());
-            if (n == null) {
-                return "redirect:/home";
-            }
 
-            Nhanvien nv = nhanVienService.FindByemail(authentication.getName());
-            if (nv == null || !"Lễ Tân".equals(nv.getBoPhan())) {
+            NhanSu nv = nhanVienService.FindByemail(authentication.getName());
+            if (!nhanVienService.laLeTanDangHoatDong(nv)) {
                 return "redirect:/home";
             }
         }
@@ -465,11 +461,19 @@ public class NhanVienDatPhongController {
                          Authentication authentication,
                          RedirectAttributes redirectAttributes) {
         int soLoi = 0;
-        KhachHang n = nguoiDungService.findByEmail(authentication.getName());
+        NhanSu nvCheck = authentication == null ? null : nhanVienService.FindByemail(authentication.getName());
+        NhanSu nhanVienXuLy = nhanVienService.laLeTanDangHoatDong(nvCheck)
+                ? nvCheck
+                : nhanVienService.findLeTanDangHoatDongMacDinh();
+        boolean isAdmin = authentication != null && authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
 
-        Nhanvien nvCheck = nhanVienService.FindByemail(authentication.getName());
+        if (nhanVienXuLy == null) {
+            redirectAttributes.addFlashAttribute("error", "Khong tim thay nhan vien Le Tan dang hoat dong");
+            return "redirect:/nhan-vien/dat-phong-quay";
+        }
 
-        if (nvCheck == null || !"Lễ Tân".equals(nvCheck.getBoPhan())) {
+        if (!isAdmin && !nhanVienService.laLeTanDangHoatDong(nvCheck)) {
             System.out.println("khong khop bo phan");
             return "redirect:/home";
         }
@@ -511,19 +515,7 @@ public class NhanVienDatPhongController {
             dp.setKm(km);
         }
 
-        Nhanvien staffDefault = nhanVienService.FindByemail("staff@hotel.vn");
-
-        if (authentication != null) {
-            KhachHang nd = nguoiDungService.findByEmail(authentication.getName());
-            if (nd != null) {
-                Nhanvien nv = nhanVienService.findByMaNhanVien(nd.getMa_khach_hang());
-                dp.setNv(nv != null ? nv : nhanVienService.findbyid(staffDefault.getId()));
-            } else {
-                dp.setNv(nhanVienService.findbyid(staffDefault.getId()));
-            }
-        } else {
-            dp.setNv(nhanVienService.findByMaNhanVien(staffDefault.getId()));
-        }
+        dp.setNv(nhanVienXuLy);
 
         DatPhong savedDp = datPhongService.save(dp);
 
@@ -546,8 +538,6 @@ public class NhanVienDatPhongController {
             ctdp.setGiaMoiDem(phong.getGiaMoiDem());
 
             BigDecimal giaApDung = phong.getGiaMoiDem();
-
-
 
             if (maKhuyenMai != null) {
                 KhuyenMai kmDon = khuyenMaiService.findbyId(maKhuyenMai);
@@ -614,23 +604,13 @@ public class NhanVienDatPhongController {
         tt.setNgaythanhToan(LocalDateTime.now());
         tt.setGichu("Thu tien mat tai quay da nhan du 100%");
 
-        if (authentication != null) {
-            KhachHang nd = nguoiDungService.findByEmail(authentication.getName());
-            if (nd != null) {
-                Nhanvien nv = nhanVienService.findbyid(nvCheck.getId());
-                tt.setNv(nv != null ? nv : nhanVienService.FindByemail("staff@hotel.vn"));
-            } else {
-                tt.setNv(nhanVienService.FindByemail("staff@hotel.vn"));
-            }
-        } else {
-            tt.setNv(nhanVienService.FindByemail("staff@hotel.vn"));
-        }
-        System.out.println(nhanVienService.FindByemail("staff@hotel.vn").getEmail());
+        tt.setNv(nhanVienXuLy);
         thanhToanService.save(tt);
         redirectAttributes.addFlashAttribute("success",
                 "Tao don thanh cong, ma don: " + savedDp.getId() + ", tong tien da thu: " + tongCong + " VND");
         return "redirect:/nhan-vien/dat-phong";
     }
+
     private BigDecimal tinhGiaSauGiam(BigDecimal giaGoc, KhuyenMai km) {
         if ("PERCENT".equals(km.getLoaiGiam())) {
             BigDecimal phanTramGiam = km.getGiatriGiam().divide(BigDecimal.valueOf(100), 4, RoundingMode.HALF_UP);
