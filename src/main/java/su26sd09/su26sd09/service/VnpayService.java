@@ -120,91 +120,70 @@ public class VnpayService {
 
     public int orderReturn(HttpServletRequest request, Authentication authentication) {
         System.out.println("Truy cap Order Return");
-        String vnp_ResponseCode  = request.getParameter("vnp_ResponseCode");
+
+         Map<String, String> fields = new HashMap<>();
+        Enumeration<String> paramNames = request.getParameterNames();
+        while (paramNames.hasMoreElements()) {
+            String name = paramNames.nextElement();
+            String value = request.getParameter(name);
+            if (name.startsWith("vnp_") && value != null && value.length() > 0) {
+                fields.put(name, value);
+            }
+        }
+        String vnp_SecureHash = fields.remove("vnp_SecureHash");
+        fields.remove("vnp_SecureHashType");
+
+        String checkHash = vnpayConfig.hashAllFields(fields);
+        if (vnp_SecureHash == null || !checkHash.equalsIgnoreCase(vnp_SecureHash)) {
+            System.out.println("Chu ky khong hop le, nghi ngo gia mao. checkHash=" + checkHash + " vnp_SecureHash=" + vnp_SecureHash);
+            return 0;
+        }
+
+         String vnp_ResponseCode  = request.getParameter("vnp_ResponseCode");
         String vnp_TxnRef        = request.getParameter("vnp_TxnRef");
-        String amount            = request.getParameter("vnp_Amount");
+        String amount             = request.getParameter("vnp_Amount");
         String vnp_TransactionNo = request.getParameter("vnp_TransactionNo");
         String vnp_PayDate       = request.getParameter("vnp_PayDate");
         String vnp_OrderInfo     = request.getParameter("vnp_OrderInfo");
 
         int maDatPhong = Integer.parseInt(vnp_TxnRef.split("_")[0]);
-
-        List<ChiTietDatPhong> chiTietDatPhong = CtdatPhongService.findByDatPhongId(maDatPhong);
-        List<Chi_tiet_dich_vu> chiTietDichVus = chiTietDichVuService.findByDatPhongId(maDatPhong);
-
-        BigDecimal amountPhong = BigDecimal.ZERO;
-        for (ChiTietDatPhong ctdp : chiTietDatPhong) {
-            amountPhong = amountPhong.add(ctdp.getGiaKhiDat());
-        }
-
-        BigDecimal amountDv = BigDecimal.ZERO;
-        for (Chi_tiet_dich_vu ctdv : chiTietDichVus) {
-            amountDv = amountDv.add(ctdv.getDonGia());
-        }
-
-        BigDecimal VATCD = new BigDecimal("0.10");
-        BigDecimal amountTongTien = BigDecimal.ZERO.add(amountPhong).add(amountDv);
-        BigDecimal TienVat = amountTongTien.multiply(VATCD).setScale(2, RoundingMode.HALF_UP);
-        amountTongTien = amountTongTien.add(TienVat);
-
-        System.out.println("Amount String: " + amount);
         Long amountParse = Long.parseLong(amount) / 100;
         BigDecimal amountVnpay = BigDecimal.valueOf(amountParse);
 
-        boolean thanhCong = amountVnpay.compareTo(amountTongTien) == 0 && "00".equals(vnp_ResponseCode);
+        boolean vnpayBaoThanhCong = "00".equals(vnp_ResponseCode);
+        boolean laThuThemDichVu = "ThuThemDichVu".equals(vnp_OrderInfo);
 
-        if (!thanhCong) {
-            System.out.println("thanh toan that bai vnpay=" + amountVnpay
-                    + " amountTongTien=" + amountTongTien
-                    + " TienVat=" + TienVat
-                    + " amountDv=" + amountDv);
+        DatPhong dp = datPhongService.findById(maDatPhong);
+        if (dp == null) {
+            System.out.println("Khong tim thay DatPhong: " + maDatPhong);
             return 0;
         }
 
-        DatPhong dp = datPhongService.findById(maDatPhong);
-        dp.setTrangThai("Cho xac nhan");
-
-        authentication = SecurityContextHolder.getContext().getAuthentication();
+         authentication = SecurityContextHolder.getContext().getAuthentication();
         List<Nhanvien> listNhanVien = nhanVienService.findAll();
         Stream<Nhanvien> ListNvLeTan = listNhanVien.stream().filter(nv -> nv.getBoPhan().equalsIgnoreCase("lễ tân"));
         String email = null;
         if (authentication != null && authentication.isAuthenticated() && !(authentication instanceof AnonymousAuthenticationToken)) {
             email = authentication.getName();
         } else {
-            for(Nhanvien nv: ListNvLeTan.toList()) {
+            for (Nhanvien nv : ListNvLeTan.toList()) {
                 email = nv.getN().getEmail();
             }
         }
 
         NguoiDung n = nguoiDungService.findByEmail(email);
-        if (n == null) {
-            System.out.println("Khong tim thay NguoiDung voi email: " + email);
-            return 0;
-        }
-
-        boolean isNvDp = n.getVaiTro() != null && "ROLE_STAFF".equals(n.getVaiTro().getTenVaiTro());
-
         Nhanvien nvGan = null;
-        if (isNvDp) {
-            nvGan = nhanVienService.findByMaNguoiDung(n.getMaNguoiDung());
-        }else{
-            for (Nhanvien nv : ListNvLeTan.toList()) {
-                nvGan = nv;
+        if (n != null) {
+            boolean isNvDp = n.getVaiTro() != null && "ROLE_STAFF".equals(n.getVaiTro().getTenVaiTro());
+            if (isNvDp) {
+                nvGan = nhanVienService.findByMaNguoiDung(n.getMaNguoiDung());
+            } else {
+                for (Nhanvien nv : nhanVienService.findAll().stream()
+                        .filter(nv -> nv.getBoPhan().equalsIgnoreCase("lễ tân")).toList()) {
+                    nvGan = nv;
+                }
             }
         }
-        if (nvGan == null) {
-
-            NguoiDung staffDefault = nguoiDungService.findByEmail(email);
-            if (staffDefault != null) {
-                nvGan = nhanVienService.findByMaNguoiDung(staffDefault.getMaNguoiDung());
-            }
-        }
-        if (nvGan == null) {
-            System.out.println("Khong tim thay Nhanvien fallback nv bo phan le tan");
-        }
-
-        dp.setNv(nvGan);
-        datPhongService.save(dp);
 
         LocalDateTime thoiGianThanhToan;
         try {
@@ -215,30 +194,93 @@ public class VnpayService {
             thoiGianThanhToan = LocalDateTime.now();
         }
 
+         if (laThuThemDichVu) {
+            if (!vnpayBaoThanhCong) {
+                System.out.println("Thu them dich vu that bai, maDatPhong=" + maDatPhong);
+                return 0;
+            }
+
+            HoaDon hd = hoaDonService.findByDatPhongId(maDatPhong);
+            if (hd == null) {
+                System.out.println("Khong tim thay HoaDon de cong don, maDatPhong=" + maDatPhong);
+                return 0;
+            }
+
+            BigDecimal daThanhToan = hd.getDaThanhToan() == null ? BigDecimal.ZERO : hd.getDaThanhToan();
+            BigDecimal conNo = hd.getTongTien().subtract(daThanhToan);
+
+             if (amountVnpay.compareTo(conNo) > 0) {
+                System.out.println("Canh bao: so tien VNPay (" + amountVnpay + ") vuot qua con no (" + conNo + "), co the la callback trung.");
+                return 0;
+            }
+
+            hd.setDaThanhToan(daThanhToan.add(amountVnpay));
+            hd.setNgayCapNhat(LocalDateTime.now());
+            hoaDonService.save(hd);
+
+            ThanhToan thanhToan = new ThanhToan();
+            thanhToan.setH(hd);
+            thanhToan.setPhuongThuc("Chuyen Khoan");
+            thanhToan.setSoTien(amountVnpay);
+            thanhToan.setTrangThai("Thanh cong");
+            thanhToan.setMagiaodich(vnp_TransactionNo);
+            thanhToan.setNv(nvGan);
+            thanhToan.setNgaythanhToan(thoiGianThanhToan);
+            thanhToan.setGichu("Thu chuyen khoan dich vu phat sinh, ma don: " + maDatPhong);
+            thanhToanService.save(thanhToan);
+
+            System.out.println("Thu them dich vu thanh cong: " + amountVnpay + " Ma GD: " + vnp_TransactionNo);
+            return 1;
+        }
+
+        List<ChiTietDatPhong> chiTietDatPhong = CtdatPhongService.findByDatPhongId(maDatPhong);
+        List<Chi_tiet_dich_vu> chiTietDichVus = chiTietDichVuService.findByDatPhongId(maDatPhong);
+
+        BigDecimal amountPhong = BigDecimal.ZERO;
+        for (ChiTietDatPhong ctdp : chiTietDatPhong) {
+            amountPhong = amountPhong.add(ctdp.getGiaKhiDat());
+        }
+        BigDecimal amountDv = BigDecimal.ZERO;
+        for (Chi_tiet_dich_vu ctdv : chiTietDichVus) {
+            amountDv = amountDv.add(ctdv.getDonGia());
+        }
+
+        BigDecimal VATCD = new BigDecimal("0.10");
+        BigDecimal tienGiam = tinhTienGiam(amountPhong, dp.getKm());
+        BigDecimal amountTongTien = amountPhong.subtract(tienGiam).add(amountDv);
+        BigDecimal tienVat = amountTongTien.multiply(VATCD).setScale(2, RoundingMode.HALF_UP);
+        amountTongTien = amountTongTien.add(tienVat);
+
+        boolean thanhCong = amountVnpay.compareTo(amountTongTien) == 0 && vnpayBaoThanhCong;
+        if (!thanhCong) {
+            System.out.println("thanh toan that bai vnpay=" + amountVnpay + " amountTongTien=" + amountTongTien);
+            return 0;
+        }
+
+        dp.setTrangThai("Cho xac nhan");
+        dp.setNv(nvGan);
+        datPhongService.save(dp);
+
         for (ChiTietDatPhong ctdp : chiTietDatPhong) {
             Phong p = ctdp.getP();
             p.setTrangThai("Dang su dung");
             phongService.save1(p);
         }
 
-        System.out.println("Principal from Vnpay: " + email);
-
         HoaDon hd = new HoaDon();
         hd.setNgayXuat(LocalDateTime.now());
         hd.setD(dp);
+        hd.setK(dp.getKm());
         hd.setTienDichVu(amountDv);
         hd.setTienPhong(amountPhong);
         hd.setN(n);
         hd.setTongTien(amountTongTien);
-        hd.setTienGiam(BigDecimal.ZERO);
-        hd.setTienVat(TienVat);
+        hd.setTienGiam(tienGiam);
+        hd.setTienVat(tienVat);
         hd.setDaThanhToan(amountVnpay);
         hd.setGhiChu("So Phong Dat: " + chiTietDatPhong.size() + " Ma Dat Phong: " + maDatPhong);
-        System.out.println("Amount dich vu: " + amountDv);
         hd.setNgayCapNhat(null);
         hoaDonService.save(hd);
-
-        System.out.println("Ma Nguoi Dung trong Vnpay: " + n.getMaNguoiDung());
 
         ThanhToan thanhToan = new ThanhToan();
         thanhToan.setPhuongThuc("Chuyen Khoan");
@@ -247,17 +289,30 @@ public class VnpayService {
         thanhToan.setTrangThai("Thanh cong");
         thanhToan.setMagiaodich(vnp_TransactionNo);
         thanhToan.setNv(nvGan);
-        thanhToan.setNgaythanhToan(LocalDateTime.now());
+        thanhToan.setNgaythanhToan(thoiGianThanhToan);
         thanhToan.setGichu("Thanh Toan Don Dat Phong: " + maDatPhong);
         thanhToanService.save(thanhToan);
 
-        System.out.println("Ma nhan vien duoc gan: " + (thanhToan.getNv() != null ? thanhToan.getNv().getId() : "null"));
-        System.out.println("Hoa Don: " + hd.getId());
-        System.out.println("Thanh toan thanh cong: " + amountVnpay
-                + "  Ma GD VNPay: " + vnp_TransactionNo
-                + "  Thoi gian: " + thoiGianThanhToan);
-
+        System.out.println("Thanh toan thanh cong (dat phong lan dau): " + amountVnpay + " Ma GD: " + vnp_TransactionNo);
         return 1;
+    }
+
+    private BigDecimal tinhTienGiam(BigDecimal tienPhong, KhuyenMai km) {
+        if (km == null || !km.isHoatDong() || km.getGiatriGiam() == null) {
+            return BigDecimal.ZERO;
+        }
+        BigDecimal dieuKien = km.getDieuKienGiamToiThieu() == null ? BigDecimal.ZERO : km.getDieuKienGiamToiThieu();
+        if (tienPhong.compareTo(dieuKien) < 0) {
+            return BigDecimal.ZERO;
+        }
+        if ("PERCENT".equalsIgnoreCase(km.getLoaiGiam())) {
+            return tienPhong.multiply(km.getGiatriGiam())
+                    .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+        }
+        if ("AMOUNT".equalsIgnoreCase(km.getLoaiGiam()) || "FIXED".equalsIgnoreCase(km.getLoaiGiam())) {
+            return km.getGiatriGiam().min(tienPhong);
+        }
+        return BigDecimal.ZERO;
     }
 }
 

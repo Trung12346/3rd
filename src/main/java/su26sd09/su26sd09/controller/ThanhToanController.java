@@ -60,12 +60,15 @@ public class ThanhToanController {
                 amountDv = amountDv.add(ctdv.getDonGia());
             }
 
-            Totalamount = Totalamount.add(amountDv);
+            BigDecimal tienGiam = tinhTienGiam(amountPhong, dp.getKm());
+            BigDecimal tienPhongSauGiam = amountPhong.subtract(tienGiam);
+            Totalamount = tienPhongSauGiam.add(amountDv);
             BigDecimal tienVat = Totalamount.multiply(ThueVat).setScale(2,RoundingMode.HALF_UP);
             Totalamount = Totalamount.add(tienVat);
             model.addAttribute("datPhong",dp);
             model.addAttribute("TongTien",amountPhong);
             model.addAttribute("TienDv",amountDv);
+            model.addAttribute("TienGiam",tienGiam);
             model.addAttribute("TienVat",tienVat);
             model.addAttribute("TongCong",Totalamount);
             return "Thanh-Toan";
@@ -86,8 +89,10 @@ public class ThanhToanController {
             amountDv = amountDv.add(ctdv.getDonGia());
         }
 
+        DatPhong dp = datPhongService.findById(id);
         BigDecimal VATCD = new BigDecimal("0.10");
-        BigDecimal tongTien = amount.add(amountDv);
+        BigDecimal tienGiam = tinhTienGiam(amount, dp != null ? dp.getKm() : null);
+        BigDecimal tongTien = amount.subtract(tienGiam).add(amountDv);
         BigDecimal tienVat = tongTien.multiply(VATCD).setScale(2, RoundingMode.HALF_UP);
         tongTien = tongTien.add(tienVat);
 
@@ -122,7 +127,8 @@ public class ThanhToanController {
         }
 
         BigDecimal VATCD = new BigDecimal("0.10");
-        BigDecimal amountTongTien = amountPhong.add(amountDv);
+        BigDecimal tienGiam = tinhTienGiam(amountPhong, dp.getKm());
+        BigDecimal amountTongTien = amountPhong.subtract(tienGiam).add(amountDv);
         BigDecimal tienVat = amountTongTien.multiply(VATCD).setScale(2, RoundingMode.HALF_UP);
         amountTongTien = amountTongTien.add(tienVat);
 
@@ -132,9 +138,10 @@ public class ThanhToanController {
         HoaDon hd = new HoaDon();
         hd.setNgayXuat(LocalDateTime.now());
         hd.setD(dp);
+        hd.setK(dp.getKm());
         hd.setTienPhong(amountPhong);
         hd.setTienDichVu(amountDv);
-        hd.setTienGiam(BigDecimal.ZERO);
+        hd.setTienGiam(tienGiam);
         hd.setTienVat(tienVat);
         hd.setTongTien(amountTongTien);
         hd.setDaThanhToan(BigDecimal.ZERO);
@@ -177,16 +184,36 @@ public class ThanhToanController {
         for (Chi_tiet_dich_vu ctdv : chiTietDichVus) {
             amountDv = amountDv.add(ctdv.getDonGia());
         }
-        Totalamount = amountPhong.add(amountDv);
+        BigDecimal tienGiam = tinhTienGiam(amountPhong, dp.getKm());
+        Totalamount = amountPhong.subtract(tienGiam).add(amountDv);
         BigDecimal tienVat = Totalamount.multiply(ThueVat).setScale(2, RoundingMode.HALF_UP);
         Totalamount = Totalamount.add(tienVat);
         model.addAttribute("datPhong", dp);
         model.addAttribute("TongTien", amountPhong);
         model.addAttribute("TienVat",tienVat);
         model.addAttribute("TienDv", amountDv);
+        model.addAttribute("TienGiam", tienGiam);
         model.addAttribute("TongCong", Totalamount);
 
         return "thanh-toan-thanh-cong";
+    }
+
+    private BigDecimal tinhTienGiam(BigDecimal tienPhong, KhuyenMai km) {
+        if (km == null || !km.isHoatDong() || km.getGiatriGiam() == null) {
+            return BigDecimal.ZERO;
+        }
+        BigDecimal dieuKien = km.getDieuKienGiamToiThieu() == null ? BigDecimal.ZERO : km.getDieuKienGiamToiThieu();
+        if (tienPhong.compareTo(dieuKien) < 0) {
+            return BigDecimal.ZERO;
+        }
+        if ("PERCENT".equalsIgnoreCase(km.getLoaiGiam())) {
+            return tienPhong.multiply(km.getGiatriGiam())
+                    .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+        }
+        if ("AMOUNT".equalsIgnoreCase(km.getLoaiGiam()) || "FIXED".equalsIgnoreCase(km.getLoaiGiam())) {
+            return km.getGiatriGiam().min(tienPhong);
+        }
+        return BigDecimal.ZERO;
     }
 
 

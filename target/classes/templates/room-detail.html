@@ -153,6 +153,40 @@
         width: 100%;
       }
     }
+
+    /* ===== Booking form validation (phong-theo-loai style) ===== */
+    .form-error-banner {
+      background: #FDEDEC;
+      border: 1px solid #E74C3C;
+      color: #C0392B;
+      padding: 10px 12px;
+      border-radius: 2px;
+      font-size: 13px;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .form-group.has-error input,
+    .form-group.has-error select {
+      border-color: #E74C3C !important;
+      background: #FFF5F4;
+    }
+    .field-error-msg {
+      display: none;
+      color: #E74C3C;
+      font-size: 12px;
+      margin-top: 5px;
+    }
+    .form-group.has-error .field-error-msg {
+      display: block;
+    }
+    .btn-confirm-disabled {
+      background: #bdc3c7 !important;
+      color: #fff !important;
+      cursor: not-allowed !important;
+      opacity: 0.7;
+    }
   </style>
 </head>
 <body>
@@ -219,26 +253,34 @@
         <input type="hidden" name="maPhong" th:value="${phong != null ? phong.maPhong : 0}">
         <input type="hidden" name="maLoaiPhong" th:value="${loaiPhong != null ? loaiPhong.id : 0}">
         <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
-        
-        <div class="form-group">
+
+        <div th:if="${bookingError != null}" class="form-error-banner">
+          <i class="fa-solid fa-circle-exclamation"></i>
+          <span th:text="${bookingError}">Số lượng người không hợp lệ.</span>
+        </div>
+
+        <div class="form-group" id="grp-ngay-nhan">
           <label>Ngày nhận phòng</label>
           <input type="datetime-local" name="ngayNhan" id="ngayNhanInput" required>
+          <span class="field-error-msg" id="err-ngay-nhan">Vui lòng chọn ngày nhận phòng.</span>
         </div>
-        <div class="form-group">
+        <div class="form-group" id="grp-ngay-tra">
           <label>Ngày trả phòng</label>
           <input type="datetime-local" name="ngayTra" id="ngayTraInput" required>
+          <span class="field-error-msg" id="err-ngay-tra">Ngày trả phòng phải cách ngày nhận phòng ít nhất 1 ngày.</span>
         </div>
-        <div class="form-group">
+        <div class="form-group" id="grp-nguoi-lon">
           <label>Người lớn</label>
-          <select name="nguoiLon" style="width:100%; padding: 12px; border: 1px solid var(--border-color); font-family: inherit;">
+          <select name="nguoiLon" id="sl-nguoi-lon" style="width:100%; padding: 12px; border: 1px solid var(--border-color); font-family: inherit;">
             <option value="1">1</option>
             <option value="2" selected>2</option>
             <option value="3">3</option>
           </select>
+          <span class="field-error-msg" id="err-nguoi">Số lượng người vượt quá sức chứa của phòng.</span>
         </div>
         <div class="form-group">
           <label>Trẻ em</label>
-          <select name="treEm" style="width:100%; padding: 12px; border: 1px solid var(--border-color); font-family: inherit;">
+          <select name="treEm" id="sl-tre-em" style="width:100%; padding: 12px; border: 1px solid var(--border-color); font-family: inherit;">
             <option value="0" selected>0</option>
             <option value="1">1</option>
             <option value="2">2</option>
@@ -247,6 +289,11 @@
         <div class="form-group">
           <label>Yêu cầu thêm</label>
           <textarea name="yeuCauThem" placeholder="Vi du: phong tang cao, giuong doi..." style="width:100%; padding: 12px; border: 1px solid var(--border-color); font-family: inherit; resize: vertical; min-height: 70px;"></textarea>
+        </div>
+        <div class="form-group" id="grp-ma-cccd">
+          <label>Số CCCD người đặt</label>
+          <input type="text" name="ma_cccd" id="input-ma-cccd" maxlength="12" pattern="[0-9]{12}" placeholder="12 số CCCD" style="width:100%; padding: 12px; border: 1px solid var(--border-color); font-family: inherit;">
+          <span class="field-error-msg" id="err-ma-cccd">Vui lòng nhập 12 số CCCD hợp lệ.</span>
         </div>
 
         <div class="widget-total" id="soDemRow" style="display:none;">
@@ -263,6 +310,7 @@
         </div>
 
         <button type="submit"
+                id="btn-confirm-booking"
                 class="btn btn-filled"
                 style="width: 100%; padding: 15px; font-size: 16px;"
                 th:disabled="${phong == null or phong.trangThai != 'Trong'}">
@@ -537,6 +585,168 @@
 
   document.getElementById('ngayNhanInput').addEventListener('change', tinhSoDemVaTongTien);
   document.getElementById('ngayTraInput').addEventListener('change', tinhSoDemVaTongTien);
+
+  // ===== Client-side validation cho dat phong nhanh =====
+  (function () {
+    const form = document.getElementById('quickBookingForm');
+    if (!form) return;
+
+    const ngayNhanEl = document.getElementById('ngayNhanInput');
+    const ngayTraEl = document.getElementById('ngayTraInput');
+    const slNguoiLonEl = document.getElementById('sl-nguoi-lon');
+    const slTreEmEl = document.getElementById('sl-tre-em');
+    const maCccdEl = document.getElementById('input-ma-cccd');
+    const btnSubmit = document.getElementById('btn-confirm-booking');
+
+    const grpNgayNhan = document.getElementById('grp-ngay-nhan');
+    const grpNgayTra = document.getElementById('grp-ngay-tra');
+    const grpNguoiLon = document.getElementById('grp-nguoi-lon');
+    const grpMaCccd = document.getElementById('grp-ma-cccd');
+    const errNgayNhan = document.getElementById('err-ngay-nhan');
+    const errNgayTra = document.getElementById('err-ngay-tra');
+    const errNguoi = document.getElementById('err-nguoi');
+    const errMaCccd = document.getElementById('err-ma-cccd');
+
+    // Lay suc chua toi da tu carousel card (loaiPhong hien tai)
+    let sucChuaToiDa = 0;
+    const cardHienTai = document.querySelector('.loai-phong-card[style*="border: 2px solid"]') || document.querySelector('.loai-phong-card');
+    // Su fallback: lay tu card dau tien (la loai phong hien tai)
+    const allCards = document.querySelectorAll('.loai-phong-card');
+    for (let i = 0; i < allCards.length; i++) {
+      const txt = allCards[i].textContent || '';
+      const m = txt.match(/Tối đa\s*(\d+)\s*người/i);
+      if (m) {
+        sucChuaToiDa = parseInt(m[1], 10) || 0;
+        break;
+      }
+    }
+    // Neu khong tim thay, lay tu URL id va thu truy van thong qua data attribute
+    if (sucChuaToiDa <= 0) {
+      // Fallback: thu element co chua "suc chua toi da" trong badge
+      const metaEls = document.querySelectorAll('span, div');
+      for (let i = 0; i < metaEls.length; i++) {
+        const t = metaEls[i].textContent || '';
+        if (t.includes('Tối đa') && t.includes('người') && t.length < 60) {
+          const m = t.match(/(\d+)/);
+          if (m) {
+            sucChuaToiDa = parseInt(m[1], 10) || 0;
+            break;
+          }
+        }
+      }
+    }
+
+    function clearError(grp) {
+      if (grp) grp.classList.remove('has-error');
+    }
+    function showError(grp) {
+      if (grp) grp.classList.add('has-error');
+    }
+
+    function kiemTraHopLe() {
+      clearError(grpNgayNhan);
+      clearError(grpNgayTra);
+      clearError(grpNguoiLon);
+      clearError(grpMaCccd);
+
+      const v1 = ngayNhanEl.value;
+      const v2 = ngayTraEl.value;
+      if (!v1) {
+        showError(grpNgayNhan);
+        errNgayNhan.textContent = 'Vui lòng chọn ngày nhận phòng.';
+        return { ok: false, lyDo: 'Chua chon ngay nhan phong.' };
+      }
+      if (!v2) {
+        showError(grpNgayTra);
+        errNgayTra.textContent = 'Vui lòng chọn ngày trả phòng.';
+        return { ok: false, lyDo: 'Chua chon ngay tra phong.' };
+      }
+      const d1 = new Date(v1);
+      const d2 = new Date(v2);
+      const diffDays = Math.round((d2 - d1) / 86400000);
+      if (diffDays < 1) {
+        showError(grpNgayTra);
+        errNgayTra.textContent = 'Ngày trả phòng phải cách ngày nhận phòng ít nhất 1 ngày.';
+        return { ok: false, lyDo: 'Ngay tra phong phai cach ngay nhan phong it nhat 1 ngay.' };
+      }
+
+      if (sucChuaToiDa > 0) {
+        const nl = parseInt(slNguoiLonEl.value, 10) || 0;
+        const te = parseInt(slTreEmEl.value, 10) || 0;
+        if (nl + te > sucChuaToiDa) {
+          showError(grpNguoiLon);
+          errNguoi.textContent = 'Số lượng người (' + (nl + te) + ') vượt quá sức chứa của phòng (' + sucChuaToiDa + ' người).';
+          return { ok: false, lyDo: 'So luong nguoi vuot qua suc chua.' };
+        }
+      }
+
+      // Validate CCCD: 12 chu so
+      if (maCccdEl) {
+        const cccd = (maCccdEl.value || '').trim();
+        if (cccd && !/^[0-9]{12}$/.test(cccd)) {
+          showError(grpMaCccd);
+          errMaCccd.textContent = 'Số CCCD phải gồm đúng 12 chữ số.';
+          return { ok: false, lyDo: 'So CCCD khong hop le.' };
+        }
+      }
+
+      return { ok: true, lyDo: null };
+    }
+
+    function capNhatTrangThaiNut() {
+      if (!btnSubmit) return;
+      // Neu phong khong kha dung (controller da set disabled san), giu nguyen
+      if (btnSubmit.disabled && btnSubmit.dataset.phongKhongKhaDung === 'true') return;
+
+      const kq = kiemTraHopLe();
+      if (kq.ok) {
+        btnSubmit.disabled = false;
+        btnSubmit.title = '';
+      } else {
+        btnSubmit.disabled = true;
+        btnSubmit.title = kq.lyDo || 'Vui lòng kiểm tra lại thông tin đặt phòng.';
+      }
+    }
+
+    // Danh dau nut bi disable boi trang thai phong (giu nguyen trang thai do)
+    if (btnSubmit && btnSubmit.disabled) {
+      btnSubmit.dataset.phongKhongKhaDung = 'true';
+    }
+
+    // Lang nghe thay doi
+    if (ngayNhanEl) {
+      ngayNhanEl.addEventListener('change', capNhatTrangThaiNut);
+      ngayNhanEl.addEventListener('input', capNhatTrangThaiNut);
+    }
+    if (ngayTraEl) {
+      ngayTraEl.addEventListener('change', capNhatTrangThaiNut);
+      ngayTraEl.addEventListener('input', capNhatTrangThaiNut);
+    }
+    if (slNguoiLonEl) slNguoiLonEl.addEventListener('change', capNhatTrangThaiNut);
+    if (slTreEmEl) slTreEmEl.addEventListener('change', capNhatTrangThaiNut);
+    if (maCccdEl) {
+      maCccdEl.addEventListener('input', capNhatTrangThaiNut);
+      maCccdEl.addEventListener('change', capNhatTrangThaiNut);
+    }
+
+    // Re-validate sau khi tinh so dem
+    if (typeof tinhSoDemVaTongTien === 'function') {
+      const origFn = tinhSoDemVaTongTien;
+      // Wrap (chi can goi lai validate; khong can sua logic tinh tien)
+    }
+
+    // Khoi tao: cap nhat trang thai nut
+    capNhatTrangThaiNut();
+
+    // Phong an toan khi submit
+    form.addEventListener('submit', function (e) {
+      const kq = kiemTraHopLe();
+      if (!kq.ok) {
+        e.preventDefault();
+        capNhatTrangThaiNut();
+      }
+    });
+  })();
 </script>
 </body>
 </html>

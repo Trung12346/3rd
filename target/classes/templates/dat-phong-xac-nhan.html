@@ -107,6 +107,19 @@
         .summary-dv-item .dv-name { color: var(--text-dark); }
         .summary-dv-item .dv-price { color: var(--sky-primary); font-weight: 600; white-space: nowrap; }
         .summary-dv-empty { font-size: 13px; color: #9ca3af; font-style: italic; }
+        .promo-box { margin-top: 18px; }
+        .promo-box label { color: var(--text-gray); display: block; font-size: 12px; font-weight: 700; margin-bottom: 6px; text-transform: uppercase; }
+        .promo-row { display: grid; gap: 8px; grid-template-columns: 1fr; }
+        .promo-row input {
+            border: 1px solid #d1d5db;
+            border-radius: 2px;
+            font-size: 14px;
+            padding: 10px 12px;
+            width: 100%;
+        }
+        .promo-info, .promo-error { display: none; font-size: 12px; font-weight: 600; margin-top: 8px; }
+        .promo-info { color: #15803d; }
+        .promo-error { color: #b42318; }
 
         .booking-actions { display: grid; gap: 10px; grid-template-columns: 120px 1fr; margin-top: 22px; }
         .back-btn, .continue-btn {
@@ -149,9 +162,11 @@
     <form th:action="@{/phong/dat-phong/xac-nhan/{id}(id=${datPhong.id})}" method="post">
         <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
         <input type="hidden" name="maDatPhong" th:value="${datPhong.id}">
-        <input type="hidden" name="tongTienPhong" id="hidden-tien-phong" th:value="${TongTien}">
+        <input type="hidden" name="tongTienPhong" id="hidden-tien-phong" th:value="${TienPhong}">
         <input type="hidden" name="tongTienDichVu" id="hidden-tien-dich-vu" value="0">
-        <input type="hidden" name="tongCong" id="hidden-tong-cong" th:value="${TongTien}">
+        <input type="hidden" name="tongTienGiam" id="hidden-tien-giam" th:value="${TienGiam != null ? TienGiam : 0}">
+        <input type="hidden" name="maKhuyenMai" id="promoIdHidden" th:value="${datPhong.km != null ? datPhong.km.id : ''}">
+        <input type="hidden" name="tongCong" id="hidden-tong-cong" th:value="${TongSauGiam != null ? TongSauGiam : TongTien}">
 
         <div class="booking-layout">
             <section>
@@ -199,9 +214,11 @@
                                 </div>
                                 <div class="addon-soluong">
                                     <label>Số lượng (<span th:text="${dv.donVi}">đơn vị</span>)</label>
-                                    <input type="number" th:name="${'soLuong_' + dv.id}" min="1" value="1">
+                                    <input type="number" th:name="${'soLuong_' + dv.id}" min="1"
+                                           th:value="${dichVuDaChonMap != null and dichVuDaChonMap.containsKey(dv.id) ? dichVuDaChonMap.get(dv.id).soluong : 1}">
                                     <label style="margin-top:8px; display:block;">Ngày sử dụng</label>
-                                    <input type="datetime-local" th:name="${'ngaySuDung_' + dv.id}">
+                                    <input type="datetime-local" th:name="${'ngaySuDung_' + dv.id}"
+                                           th:value="${dichVuDaChonMap != null and dichVuDaChonMap.containsKey(dv.id) and dichVuDaChonMap.get(dv.id).ngay_su_dung != null ? #temporals.format(dichVuDaChonMap.get(dv.id).ngay_su_dung, 'yyyy-MM-dd''T''HH:mm') : ''}">
 
                                 </div>
                             </div>
@@ -258,9 +275,26 @@
                     <div id="summary-dv-items"></div>
                 </div>
 
+                <div class="promo-box">
+                    <label>Mã khuyến mãi</label>
+                    <div class="promo-row">
+                        <input type="text" id="promoInput"
+                               placeholder="Nhập mã khuyến mãi"
+                               autocomplete="off"
+                               th:value="${datPhong.km != null ? datPhong.km.promoCode : ''}">
+                    </div>
+                    <div class="promo-info" id="promoInfo"></div>
+                    <div class="promo-error" id="promoError"></div>
+                </div>
+
+                <div class="summary-line" id="summary-row-giam" style="display:none; margin-top:14px;">
+                    <span>Giảm giá</span>
+                    <strong id="summary-tien-giam">− đ 0</strong>
+                </div>
+
                 <div class="summary-total">
                     <span>Tổng cộng</span>
-                    <strong id="summary-tong-cong" th:text="${'đ ' + #numbers.formatDecimal(TongTien, 0, 'COMMA', 0, 'POINT')}">đ 0</strong>
+                    <strong id="summary-tong-cong" th:text="${'đ ' + #numbers.formatDecimal(TongSauGiam != null ? TongSauGiam : TongTien, 0, 'COMMA', 0, 'POINT')}">đ 0</strong>
                 </div>
                 <div style="color:#9ca3af; font-size:12px; margin-top:-8px;">Giá bao gồm tất cả các loại thuế và phí</div>
             </aside>
@@ -274,10 +308,46 @@
 </main>
 
 <script th:inline="javascript">
-    const tienPhong = /*[[${TongTien}]]*/ 0;
+    const tienPhong = /*[[${TienPhong}]]*/ 0;
+    window.__KM_LIST__ = JSON.parse(/*[[${kmJson}]]*/ '[]');
 
     function formatTien(soTien) {
         return Number(soTien).toLocaleString('vi-VN');
+    }
+
+    function timKhuyenMai() {
+        const promoInput = document.getElementById('promoInput');
+        const promoIdHidden = document.getElementById('promoIdHidden');
+        const promoError = document.getElementById('promoError');
+        const code = (promoInput.value || '').trim();
+
+        promoIdHidden.value = '';
+        promoError.style.display = 'none';
+        promoError.textContent = '';
+
+        if (!code) {
+            return null;
+        }
+
+        const matchedKm = (window.__KM_LIST__ || []).find(function (km) {
+            return (km.code || '').toLowerCase() === code.toLowerCase();
+        });
+
+        if (!matchedKm) {
+            promoError.textContent = 'Mã khuyến mãi không hợp lệ.';
+            promoError.style.display = 'block';
+            return null;
+        }
+
+        const dieuKien = parseFloat(matchedKm.dieuKien) || 0;
+        if (tienPhong < dieuKien) {
+            promoError.textContent = 'Đơn chưa đạt điều kiện tối thiểu: đ ' + formatTien(dieuKien) + '.';
+            promoError.style.display = 'block';
+            return null;
+        }
+
+        promoIdHidden.value = matchedKm.id;
+        return matchedKm;
     }
 
     function tinhLaiTongTien() {
@@ -289,7 +359,7 @@
             const id      = cb.dataset.id;
             const ten     = cb.dataset.ten;
             const donVi   = cb.dataset.donvi;
-            const slInput = document.querySelector(`.addon-soluong input[data-id="${id}"]`);
+            const slInput = document.querySelector('input[name="soLuong_' + id + '"]');
             const soLuong = slInput ? (parseInt(slInput.value) || 1) : 1;
             const thanh   = gia * soLuong;
 
@@ -297,12 +367,34 @@
             dvItems.push({ ten, soLuong, donVi, thanh });
         });
 
-        const tongCong = tienPhong + tongDichVu;
+        const matchedKm = timKhuyenMai();
+        let tienGiam = 0;
+        if (matchedKm) {
+            const giaTriGiam = parseFloat(matchedKm.giatriGiam) || 0;
+            tienGiam = (matchedKm.loaiGiam || '').toUpperCase() === 'PERCENT'
+                ? tienPhong * giaTriGiam / 100
+                : Math.min(giaTriGiam, tienPhong);
+        }
+        const tongCong = tienPhong - tienGiam + tongDichVu;
 
         document.getElementById('summary-tien-dich-vu').textContent = 'đ ' + formatTien(tongDichVu);
         document.getElementById('summary-tong-cong').textContent    = 'đ ' + formatTien(tongCong);
         document.getElementById('hidden-tien-dich-vu').value        = tongDichVu;
+        document.getElementById('hidden-tien-giam').value           = Math.round(tienGiam);
         document.getElementById('hidden-tong-cong').value           = tongCong;
+
+        const rowGiam = document.getElementById('summary-row-giam');
+        const promoInfo = document.getElementById('promoInfo');
+        if (tienGiam > 0 && matchedKm) {
+            rowGiam.style.display = 'flex';
+            document.getElementById('summary-tien-giam').textContent = '− đ ' + formatTien(tienGiam);
+            promoInfo.style.display = 'block';
+            promoInfo.textContent = 'Đã áp dụng mã ' + matchedKm.code + ', giảm đ ' + formatTien(tienGiam) + '.';
+        } else {
+            rowGiam.style.display = 'none';
+            promoInfo.style.display = 'none';
+            promoInfo.textContent = '';
+        }
 
         const listEl  = document.getElementById('summary-dv-list');
         const itemsEl = document.getElementById('summary-dv-items');
@@ -349,6 +441,8 @@
     document.querySelectorAll('.addon-soluong input[type="number"]').forEach(function (input) {
         input.addEventListener('input', tinhLaiTongTien);
     });
+
+    document.getElementById('promoInput').addEventListener('input', tinhLaiTongTien);
 
     tinhLaiTongTien();
 </script>

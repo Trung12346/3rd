@@ -427,6 +427,14 @@
             transition: background 0.2s;
         }
         .btn-confirm:hover { background: #1565c0; }
+        .btn-confirm:disabled,
+        .btn-confirm[disabled] {
+            background: #bdc3c7;
+            color: #fff;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        .btn-confirm:disabled:hover { background: #bdc3c7; }
         .sidebar-note {
             text-align: center;
             font-size: 12px;
@@ -486,6 +494,34 @@
             font-weight: 600; text-transform: uppercase; transition: all 0.3s;
         }
         .btn-logout:hover { border-color: #E74C3C; color: #E74C3C; background: #FDEDEC; }
+
+        /* Booking form validation */
+        .form-error-banner {
+            background: #FDEDEC;
+            border: 1px solid #E74C3C;
+            color: #C0392B;
+            padding: 10px 12px;
+            border-radius: 2px;
+            font-size: 13px;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .sidebar-form-group.has-error input,
+        .sidebar-form-group.has-error select {
+            border-color: #E74C3C;
+            background: #FFF5F4;
+        }
+        .field-error-msg {
+            display: none;
+            color: #E74C3C;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+        .sidebar-form-group.has-error .field-error-msg {
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -610,21 +646,28 @@
                 <input type="hidden" name="maLoaiPhong" th:value="${loaiPhong != null} ? ${loaiPhong.id} : 1">
                 <input type="hidden" name="maPhong" id="quick-ma-phong">
 
+                <div th:if="${bookingError != null}" class="form-error-banner">
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                    <span th:text="${bookingError}">Số lượng người không hợp lệ.</span>
+                </div>
+
                 <div class="selected-room-box" id="selectedRoomBox">
                     <strong id="selected-room-title">Chua chon phòng cu the</strong>
                     <span id="selected-room-detail">Bấm nút Đặt Phòng ở một phòng còn trống để đưa thông tin phòng vào form này.</span>
                 </div>
 
-                <div class="sidebar-form-group">
+                <div class="sidebar-form-group" id="grp-ngay-nhan">
                     <label><i class="fa-regular fa-calendar"></i> Ngày nhận phòng</label>
-                    <input type="datetime-local" name="ngayNhan" required>
+                    <input type="datetime-local" name="ngayNhan" id="ngay-nhan" required>
+                    <span class="field-error-msg" id="err-ngay-nhan">Vui lòng chọn ngày nhận phòng.</span>
                 </div>
-                <div class="sidebar-form-group">
+                <div class="sidebar-form-group" id="grp-ngay-tra">
                     <label><i class="fa-regular fa-calendar-check"></i> Ngày trả phòng</label>
-                    <input type="datetime-local" name="ngayTra" required>
+                    <input type="datetime-local" name="ngayTra" id="ngay-tra" required>
+                    <span class="field-error-msg" id="err-ngay-tra">Ngày trả phòng phải cách ngày nhận phòng ít nhất 1 ngày.</span>
                 </div>
                 <div class="sidebar-guests">
-                    <div class="sidebar-form-group">
+                    <div class="sidebar-form-group" id="grp-nguoi-lon">
                         <label>Người lớn</label>
                         <select name="nguoiLon" id="sl-nguoi-lon">
                             <option value="1">1</option>
@@ -632,10 +675,11 @@
                             <option value="3">3</option>
                             <option value="4">4</option>
                         </select>
+                        <span class="field-error-msg" id="err-nguoi">Số lượng người vượt quá sức chứa của phòng.</span>
                     </div>
                     <div class="sidebar-form-group">
                         <label>Trẻ em</label>
-                        <select name="treEm">
+                        <select name="treEm" id="sl-tre-em">
                             <option value="0" selected>0</option>
                             <option value="1">1</option>
                             <option value="2">2</option>
@@ -646,6 +690,10 @@
                 <div class="sidebar-form-group" >
                     <label>Yêu cầu thêm (tuy chon)</label>
                     <textarea name="yeuCauThem" placeholder="Phòng tầng cao, view đẹp..."></textarea>
+                </div>
+                <div class="sidebar-form-group" >
+                    <label>Mã CCCD</label>
+                    <input name="ma_cccd" placeholder="00XXXXXXXXX"></input>
                 </div>
 
                 <!-- Tom tat gia -->
@@ -664,7 +712,7 @@
                     </div>
                 </div>
 
-                <button type="submit" class="btn-confirm">
+                <button type="submit" class="btn-confirm" id="btn-confirm-booking" disabled>
                     <i class="fa-solid fa-check" style="margin-right:6px;"></i>Xác Nhận Đặt Phòng
                 </button>
                 <p class="sidebar-note">
@@ -809,6 +857,130 @@
             window.location.href = '/logout';
         }
     }
+
+    // ===== Client-side validation cho dat phong nhanh =====
+    (function () {
+        const form = document.getElementById('quickBookingForm');
+        if (!form) return;
+
+        const ngayNhanEl = document.getElementById('ngay-nhan');
+        const ngayTraEl = document.getElementById('ngay-tra');
+        const slNguoiLonEl = document.getElementById('sl-nguoi-lon');
+        const slTreEmEl = document.getElementById('sl-tre-em');
+        const maPhongEl = document.getElementById('quick-ma-phong');
+        const btnSubmit = document.getElementById('btn-confirm-booking');
+
+        const grpNgayNhan = document.getElementById('grp-ngay-nhan');
+        const grpNgayTra = document.getElementById('grp-ngay-tra');
+        const grpNguoiLon = document.getElementById('grp-nguoi-lon');
+        const errNgayNhan = document.getElementById('err-ngay-nhan');
+        const errNgayTra = document.getElementById('err-ngay-tra');
+        const errNguoi = document.getElementById('err-nguoi');
+
+        // Lay suc chua toi da tu DOM (badge capacity)
+        const sucChuaEl = document.querySelector('.badge-capacity');
+        let sucChuaToiDa = 0;
+        if (sucChuaEl) {
+            const match = sucChuaEl.textContent.match(/(\d+)\s*người/i);
+            if (match) sucChuaToiDa = parseInt(match[1], 10) || 0;
+        }
+
+        function clearError(grp) {
+            grp.classList.remove('has-error');
+        }
+        function showError(grp) {
+            grp.classList.add('has-error');
+        }
+
+        // Tra ve { ok: boolean, lyDo: string|null }
+        function kiemTraHopLe() {
+            // Reset loi hien thi
+            clearError(grpNgayNhan);
+            clearError(grpNgayTra);
+            clearError(grpNguoiLon);
+
+            // 1. Phai chon phong
+            if (!maPhongEl.value) {
+                return { ok: false, lyDo: 'Vui long chon phong truoc khi dat.' };
+            }
+
+            // 2. Ngay
+            const v1 = ngayNhanEl.value;
+            const v2 = ngayTraEl.value;
+            if (!v1) {
+                showError(grpNgayNhan);
+                errNgayNhan.textContent = 'Vui lòng chọn ngày nhận phòng.';
+                return { ok: false, lyDo: 'Chua chon ngay nhan phong.' };
+            }
+            if (!v2) {
+                showError(grpNgayTra);
+                errNgayTra.textContent = 'Vui lòng chọn ngày trả phòng.';
+                return { ok: false, lyDo: 'Chua chon ngay tra phong.' };
+            }
+            const d1 = new Date(v1);
+            const d2 = new Date(v2);
+            const diffDays = Math.round((d2 - d1) / 86400000);
+            if (diffDays < 1) {
+                showError(grpNgayTra);
+                errNgayTra.textContent = 'Ngày trả phòng phải cách ngày nhận phòng ít nhất 1 ngày.';
+                return { ok: false, lyDo: 'Ngay tra phong phai cach ngay nhan phong it nhat 1 ngay.' };
+            }
+
+            // 3. So nguoi khong vuot suc chua
+            if (sucChuaToiDa > 0) {
+                const nl = parseInt(slNguoiLonEl.value, 10) || 0;
+                const te = parseInt(slTreEmEl.value, 10) || 0;
+                if (nl + te > sucChuaToiDa) {
+                    showError(grpNguoiLon);
+                    errNguoi.textContent = 'Số lượng người (' + (nl + te) + ') vượt quá sức chứa của phòng (' + sucChuaToiDa + ' người).';
+                    return { ok: false, lyDo: 'So luong nguoi vuot qua suc chua.' };
+                }
+            }
+
+            return { ok: true, lyDo: null };
+        }
+
+        function capNhatTrangThaiNut() {
+            if (!btnSubmit) return;
+            const kq = kiemTraHopLe();
+            if (kq.ok) {
+                btnSubmit.disabled = false;
+                btnSubmit.title = '';
+            } else {
+                btnSubmit.disabled = true;
+                btnSubmit.title = kq.lyDo || 'Vui lòng kiểm tra lại thông tin đặt phòng.';
+            }
+        }
+
+        // Lang nghe thay doi
+        ngayNhanEl.addEventListener('change', capNhatTrangThaiNut);
+        ngayTraEl.addEventListener('change', capNhatTrangThaiNut);
+        ngayNhanEl.addEventListener('input', capNhatTrangThaiNut);
+        ngayTraEl.addEventListener('input', capNhatTrangThaiNut);
+        slNguoiLonEl.addEventListener('change', capNhatTrangThaiNut);
+        slTreEmEl.addEventListener('change', capNhatTrangThaiNut);
+
+        // Trang thai ban dau: disabled
+        capNhatTrangThaiNut();
+
+        // Hook vao ham chonPhongNhanh de re-validate khi chon phong
+        const originalChonPhong = window.chonPhongNhanh;
+        window.chonPhongNhanh = function (event, button) {
+            if (typeof originalChonPhong === 'function') {
+                originalChonPhong(event, button);
+            }
+            capNhatTrangThaiNut();
+        };
+
+        // Phong an toan khi submit
+        form.addEventListener('submit', function (e) {
+            const kq = kiemTraHopLe();
+            if (!kq.ok) {
+                e.preventDefault();
+                capNhatTrangThaiNut();
+            }
+        });
+    })();
 </script>
 </body>
 </html>

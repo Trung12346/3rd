@@ -169,6 +169,10 @@
                 <span>Tien dich vu</span>
                 <strong th:text="${'d ' + (TienDv != null ? #numbers.formatDecimal(TienDv, 0, 'COMMA', 0, 'POINT') : '0')}">d 0</strong>
             </div>
+            <div class="summary-line" th:if="${TienGiam != null and TienGiam.compareTo(T(java.math.BigDecimal).ZERO) > 0}">
+                <span>Giam gia</span>
+                <strong th:text="${'- d ' + #numbers.formatDecimal(TienGiam, 0, 'COMMA', 0, 'POINT')}">- d 0</strong>
+            </div>
             <div class="summary-line">
                 <span>Tien VAT</span>
                 <strong th:text="${'d ' + (TienVat != null ? #numbers.formatDecimal(TienVat, 0, 'COMMA', 0, 'POINT') : '0')}">d 0</strong>

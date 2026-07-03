@@ -53,6 +53,9 @@ public class PhongController {
     @Autowired
     private NhanVienService nhanVienService;
 
+    @Autowired
+    private khuyenMaiService khuyenMaiService;
+
     @GetMapping
     public String index(Model model) {
         // Lấy tất cả phòng
@@ -136,6 +139,16 @@ public class PhongController {
 
             }
         }
+        Map<Integer, Chi_tiet_dich_vu> dichVuDaChonMap = new HashMap<>();
+        List<Integer> dichVuDaChonIds = new ArrayList<>();
+        if (listctdv != null) {
+            for (Chi_tiet_dich_vu dv : listctdv) {
+                if (dv.getDv() != null) {
+                    dichVuDaChonMap.put(dv.getDv().getId(), dv);
+                    dichVuDaChonIds.add(dv.getDv().getId());
+                }
+            }
+        }
         for(ChiTietDatPhong ct : listCt){
             amountP = amountP.add(ct.getGiaKhiDat());
             System.out.println("Chi tiet phong dang dat: "+ct.getP().getSoPhong());
@@ -146,14 +159,22 @@ public class PhongController {
         }
         System.out.println("AmountDv: "+amountDv);
         amount = amount.add(amountDv);
+        BigDecimal tienGiam = tinhTienGiam(amountP, dp.getKm());
+        BigDecimal tienPhongSauGiam = amountP.subtract(tienGiam);
+        BigDecimal tongSauGiam = tienPhongSauGiam.add(amountDv);
         model.addAttribute("TienDv",amountDv);
 
         model.addAttribute("TongTien",amount);
         model.addAttribute("TienPhong",amountP);
+        model.addAttribute("TienGiam", tienGiam);
+        model.addAttribute("TongSauGiam", tongSauGiam);
         model.addAttribute("datPhong",dp);
         model.addAttribute("chiTietDatPhongList",listCt);
         model.addAttribute("nightCount",resthue);
         model.addAttribute("dichVuList",dichVuService.findAll());
+        model.addAttribute("dichVuDaChonIds", dichVuDaChonIds);
+        model.addAttribute("dichVuDaChonMap", dichVuDaChonMap);
+        model.addAttribute("kmJson", buildKhuyenMaiJson());
 
         return "dat-phong-xac-nhan";
     }
@@ -161,13 +182,31 @@ public class PhongController {
     @PostMapping("/dat-phong/xac-nhan/{id}")
     public String ConfirmDV(@PathVariable int id,
                             @RequestParam(value = "dichVuIds", required = false) List<Integer> dichvuid,
+                            @RequestParam(value = "maKhuyenMai", required = false) Integer maKhuyenMai,
                             @RequestParam Map<String, String> allParams) {
 
         DatPhong dp = datphongservice.findById(id);
+        if (dp == null) {
+            return "redirect:/home";
+        }
+
+        dp.setKm(null);
+        if (maKhuyenMai != null) {
+            KhuyenMai km = khuyenMaiService.findbyId(maKhuyenMai);
+            if (km != null && km.isHoatDong()) {
+                dp.setKm(km);
+            }
+        }
+        datphongservice.save(dp);
+
+        ctdvService.deleteByDatPhongId(id);
 
         if (dichvuid != null) {
             for (Integer maDichVu : dichvuid) {
                 Dich_vu dv = dichVuService.findById(maDichVu);
+                if (dv == null) {
+                    continue;
+                }
 
                 String slStr = allParams.get("soLuong_" + maDichVu);
                 int sl = (slStr != null && !slStr.isBlank()) ? Integer.parseInt(slStr) : 1;
@@ -208,7 +247,8 @@ public class PhongController {
         BigDecimal amountDv = BigDecimal.ZERO;
        model.addAttribute("datPhong",dp);
         System.out.println("Debug dat phong Ngay nhan phong: "+dp.getNgaydatPhong());
-       model.addAttribute("nightCount",5);
+       long nightCount = ChronoUnit.DAYS.between(dp.getNgaydatPhong().toLocalDate(), dp.getNgaytraPhong().toLocalDate());
+       model.addAttribute("nightCount", Math.max(1, nightCount));
        model.addAttribute("chiTietDatPhongList",listCt);
         BigDecimal amount = BigDecimal.ZERO;
         BigDecimal ThueVat = new BigDecimal("0.10");
@@ -226,14 +266,65 @@ public class PhongController {
             System.out.println("In for each loops: "+chiTietDatPhong.getGiaMoiDem());
 
         }
-        BigDecimal TotalAmount = amount.add(amountDv);
+        BigDecimal tienGiam = tinhTienGiam(amount, dp.getKm());
+        BigDecimal tienPhongSauGiam = amount.subtract(tienGiam);
+        BigDecimal TotalAmount = tienPhongSauGiam.add(amountDv);
         BigDecimal TienVat = TotalAmount.multiply(ThueVat).setScale(2, RoundingMode.HALF_UP);
         TotalAmount = TotalAmount.add(TienVat);
         System.out.println("Amount: "+ amount);
         model.addAttribute("TienVat",TienVat);
         model.addAttribute("TienPhong",amount);
+        model.addAttribute("TienGiam", tienGiam);
         model.addAttribute("TongTien",TotalAmount);
+        model.addAttribute("TongCong",TotalAmount);
+        model.addAttribute("chiTietDichVuList", listctdv);
         return "dat-phong-thong-tin-khach";
+    }
+
+    private BigDecimal tinhTienGiam(BigDecimal tienPhong, KhuyenMai km) {
+        if (km == null || !km.isHoatDong() || km.getGiatriGiam() == null) {
+            return BigDecimal.ZERO;
+        }
+        BigDecimal dieuKien = km.getDieuKienGiamToiThieu() == null ? BigDecimal.ZERO : km.getDieuKienGiamToiThieu();
+        if (tienPhong.compareTo(dieuKien) < 0) {
+            return BigDecimal.ZERO;
+        }
+        if ("PERCENT".equalsIgnoreCase(km.getLoaiGiam())) {
+            return tienPhong.multiply(km.getGiatriGiam())
+                    .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+        }
+        if ("AMOUNT".equalsIgnoreCase(km.getLoaiGiam()) || "FIXED".equalsIgnoreCase(km.getLoaiGiam())) {
+            return km.getGiatriGiam().min(tienPhong);
+        }
+        return BigDecimal.ZERO;
+    }
+
+    private String buildKhuyenMaiJson() {
+        List<KhuyenMai> kmList = khuyenMaiService.findAllActive().toList();
+        StringBuilder sb = new StringBuilder("[");
+        for (int i = 0; i < kmList.size(); i++) {
+            KhuyenMai km = kmList.get(i);
+            if (i > 0) {
+                sb.append(",");
+            }
+            BigDecimal dieuKien = km.getDieuKienGiamToiThieu() == null ? BigDecimal.ZERO : km.getDieuKienGiamToiThieu();
+            sb.append("{")
+                    .append("\"id\":").append(km.getId()).append(",")
+                    .append("\"code\":\"").append(escapeJson(km.getPromoCode())).append("\",")
+                    .append("\"loaiGiam\":\"").append(escapeJson(km.getLoaiGiam())).append("\",")
+                    .append("\"giatriGiam\":").append(km.getGiatriGiam() == null ? "0" : km.getGiatriGiam().toPlainString()).append(",")
+                    .append("\"dieuKien\":").append(dieuKien.toPlainString())
+                    .append("}");
+        }
+        sb.append("]");
+        return sb.toString();
+    }
+
+    private static String escapeJson(String s) {
+        if (s == null) {
+            return "";
+        }
+        return s.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 
     @PostMapping("/dat-phong/thong-tin-khach/{id}")
@@ -304,6 +395,7 @@ public class PhongController {
                                @RequestParam Integer treEm,
 
                                @RequestParam(required = false) String yeuCauThem,
+                               @RequestParam(required = false) String ma_cccd,
                                Authentication authentication,
                                RedirectAttributes redirectAttributes) {
         System.out.println("vao Controller");
@@ -313,6 +405,24 @@ public class PhongController {
             return "redirect:/loai-phong/" + maLoaiPhong;
         }
 
+        // Validate so dem phai it nhat 1 ngay (ngay tra > ngay nhan)
+        long soDem = ChronoUnit.DAYS.between(ngayNhan, ngayTra);
+        if (soDem < 1) {
+            redirectAttributes.addFlashAttribute("bookingError", "Ngày trả phòng phải sau ngày nhận phòng ít nhất 1 ngày.");
+            return "redirect:/loai-phong/" + maLoaiPhong;
+        }
+
+        // Validate so luong nguoi khong vuot qua suc chua cua phong
+        if (phong.getLoaiPhong() != null) {
+            int sucChua = phong.getLoaiPhong().getSucChuaToiDa();
+            int tongNguoi = (nguoiLon != null ? nguoiLon : 0) + (treEm != null ? treEm : 0);
+            if (tongNguoi > sucChua) {
+                redirectAttributes.addFlashAttribute("bookingError",
+                        "Số lượng người (" + tongNguoi + ") vượt quá sức chứa của phòng (" + sucChua + " người).");
+                return "redirect:/loai-phong/" + maLoaiPhong;
+            }
+        }
+
         DatPhong dp = new DatPhong();
         dp.setNgaydatPhong(ngayNhan);
         dp.setNgaytraPhong(ngayTra);
@@ -320,11 +430,14 @@ public class PhongController {
         dp.setSotreEm(treEm);
 
         dp.setYeuCauThem(yeuCauThem);
+        if (ma_cccd != null && !ma_cccd.isBlank()) {
+            dp.setMa_cccd(ma_cccd.trim());
+        }
         dp.setNgayTao(LocalDateTime.now());
         boolean isLoggedIn = authentication != null
                 && authentication.isAuthenticated()
                 && !(authentication instanceof AnonymousAuthenticationToken);
-        if (isLoggedIn) {
+        if (isLoggedIn && !isNhanVienOrAdmin(authentication)) {
 
             NguoiDung nd = nguoiDungService.findByEmail(authentication.getName());
             if(nd !=null) {
@@ -351,6 +464,13 @@ public class PhongController {
         phongService.save1(phong);
 
         return "redirect:/phong/dat-phong/xac-nhan/" + savedDp.getId();
+    }
+
+    private boolean isNhanVienOrAdmin(Authentication authentication) {
+        return authentication != null
+                && authentication.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority())
+                        || "ROLE_STAFF".equals(a.getAuthority()));
     }
 
 

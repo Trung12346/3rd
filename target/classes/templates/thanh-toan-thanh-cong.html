@@ -136,6 +136,10 @@
                 <span>Tiền dịch vụ</span>
                 <span th:text="${'đ ' + (TienDv != null ? #numbers.formatDecimal(TienDv, 0, 'COMMA', 0, 'POINT') : '0')}">đ 0</span>
             </div>
+            <div class="receipt-row" th:if="${TienGiam != null and TienGiam.compareTo(T(java.math.BigDecimal).ZERO) > 0}">
+                <span>Giảm giá</span>
+                <span th:text="${'- đ ' + #numbers.formatDecimal(TienGiam, 0, 'COMMA', 0, 'POINT')}">- đ 0</span>
+            </div>
             <div class="receipt-total">
                 <span>Tổng đã thanh toán</span>
                 <span th:text="${'đ ' + #numbers.formatDecimal(TongCong, 0, 'COMMA', 0, 'POINT')}">đ 0</span>

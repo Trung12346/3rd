@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="'Chi tiết đặt phòng #' + (${datPhong != null ? datPhong.id : ''}) + ' | Hotel'">Chi tiết đặt phòng | Hotel</title>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; }
+        body { background: #f4f7fa; }
+        .cdp-shell { margin: 0 auto; max-width: 1280px; padding: 32px 5% 80px; }
+
+        .cdp-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 14px; margin-bottom: 22px; }
+        .cdp-header h1 { color: var(--sky-dark); font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+        .cdp-header p { color: var(--text-gray); font-size: 13px; }
+
+        .trang-thai-badge {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: .04em;
+        }
+        .trang-thai-badge.cho-thanh-toan { background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; }
+        .trang-thai-badge.da-thanh-toan { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+        .trang-thai-badge.da-huy { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+        .loi-badge {
+            display: inline-flex; align-items: center; justify-content: center;
+            min-width: 24px; height: 24px; padding: 0 8px; margin-left: 10px;
+            border-radius: 999px; background: #dc2626; color: #fff;
+            font-size: 12px; font-weight: 800;
+        }
+
+        .cdp-layout { display: grid; gap: 22px; grid-template-columns: minmax(0, 1fr) 360px; align-items: start; }
+
+        .cdp-panel {
+            background: #fff; border: 1px solid #e2e8f0; border-radius: 10px;
+            box-shadow: 0 2px 14px rgba(0,0,0,0.05); padding: 24px; margin-bottom: 20px;
+        }
+        .cdp-panel:last-child { margin-bottom: 0; }
+        .cdp-panel-title {
+            display: flex; align-items: center; gap: 10px;
+            color: var(--sky-dark); font-size: 16px; font-weight: 700;
+            margin-bottom: 18px; padding-bottom: 12px; border-bottom: 2px solid #eef2f6;
+        }
+        .cdp-panel-title i { color: var(--sky-primary); }
+        .cdp-panel-sub { color: #94a3b8; font-size: 12px; font-weight: 400; margin-left: auto; text-transform: none; letter-spacing: 0; }
+
+        /* ===== Khối ngày nhận / trả ===== */
+        .stay-grid { display: grid; gap: 16px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .stay-field label { display: block; color: #64748b; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 6px; }
+        .stay-field input {
+            width: 100%; padding: 11px 12px; border: 1px solid #d1d5db; border-radius: 6px;
+            font-size: 14px; font-family: inherit; transition: border-color .15s, box-shadow .15s;
+        }
+        .stay-field input:focus { outline: none; border-color: var(--sky-primary); box-shadow: 0 0 0 3px rgba(52,152,219,.12); }
+        .stay-hint { color: #94a3b8; font-size: 11px; margin-top: 5px; display: block; }
+        .stay-guests { display: grid; gap: 16px; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 16px; }
+        .stay-guests input { width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; }
+
+        .canh-bao-phu-thu {
+            margin-top: 14px; padding: 12px 14px; border-radius: 6px;
+            background: #fffbeb; border: 1px solid #fde68a; color: #92400e;
+            font-size: 13px; display: none; align-items: flex-start; gap: 8px;
+        }
+        .canh-bao-phu-thu.show { display: flex; }
+        .canh-bao-phu-thu i { margin-top: 2px; }
+
+        /* ===== Danh sách phòng ===== */
+        .room-row { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 14px; padding: 14px 0; border-bottom: 1px solid #f1f5f9; align-items: center; }
+        .room-row:last-child { border-bottom: none; }
+        .room-row .room-name { font-weight: 700; color: var(--text-dark); margin-bottom: 3px; }
+        .room-row .room-sub { font-size: 12px; color: #94a3b8; }
+        .room-row .room-price { font-weight: 700; color: var(--sky-primary); white-space: nowrap; }
+
+        /* ===== Quản lý dịch vụ ===== */
+        .dv-them-form { display: grid; gap: 12px; grid-template-columns: minmax(0,1.6fr) 0.8fr 1.2fr auto; align-items: end; margin-bottom: 18px; padding: 16px; background: #f8fafc; border-radius: 8px; border: 1px dashed #cbd5e1; }
+        .dv-them-form .ff label { display: block; font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 5px; }
+        .dv-them-form select, .dv-them-form input {
+            width: 100%; padding: 9px 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px; font-family: inherit;
+        }
+        .btn-them-dv {
+            background: var(--sky-primary); color: #fff; border: none; border-radius: 6px;
+            padding: 10px 16px; font-weight: 700; font-size: 13px; cursor: pointer; white-space: nowrap;
+            transition: background .15s;
+        }
+        .btn-them-dv:hover { background: var(--sky-dark); }
+        .btn-them-dv:disabled { background: #cbd5e1; cursor: not-allowed; }
+
+        .dv-table { width: 100%; border-collapse: collapse; }
+        .dv-table th {
+            text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .04em;
+            color: #94a3b8; padding: 8px 10px; border-bottom: 2px solid #eef2f6;
+        }
+        .dv-table td { padding: 10px; border-bottom: 1px solid #f1f5f9; font-size: 13px; vertical-align: middle; }
+        .dv-table tr:last-child td { border-bottom: none; }
+        .dv-table input[type="number"] { width: 70px; padding: 6px 8px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 13px; }
+        .dv-table input[type="datetime-local"] { padding: 6px 8px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 12px; width: 170px; }
+        .dv-empty { color: #94a3b8; font-size: 13px; text-align: center; padding: 22px 0; font-style: italic; }
+        .btn-xoa-dv {
+            background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; border-radius: 5px;
+            padding: 5px 10px; font-size: 12px; cursor: pointer; font-weight: 600;
+        }
+        .btn-xoa-dv:hover { background: #fee2e2; }
+        .dv-row-error { color: #d22630; font-size: 11px; margin-top: 3px; display: block; font-weight: 600; }
+
+        /* ===== Summary panel ===== */
+        .summary-panel { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; box-shadow: 0 2px 14px rgba(0,0,0,.05); padding: 22px; position: sticky; top: 20px; }
+        .summary-panel h2 { color: var(--sky-dark); font-size: 15px; font-weight: 700; margin-bottom: 16px; }
+        .sum-row { display: flex; justify-content: space-between; font-size: 13px; padding: 7px 0; border-bottom: 1px dashed #f1f5f9; }
+        .sum-row:last-of-type { border-bottom: none; }
+        .sum-row span:first-child { color: #6b7280; }
+        .sum-row span:last-child { font-weight: 600; color: #374151; }
+        .sum-row.phu-thu span:last-child { color: #c2410c; }
+        .sum-total {
+            display: flex; justify-content: space-between; align-items: center;
+            background: var(--sky-dark); border-radius: 8px; padding: 14px 16px; margin-top: 14px;
+        }
+        .sum-total span:first-child { color: rgba(255,255,255,.8); font-size: 13px; }
+        .sum-total span:last-child { color: #fff; font-size: 20px; font-weight: 700; }
+
+        .btn-luu-thay-doi {
+            width: 100%; background: var(--sky-primary); color: #fff; border: none;
+            padding: 13px; border-radius: 6px; font-weight: 700; font-size: 14px;
+            text-transform: uppercase; cursor: pointer; margin-top: 16px; letter-spacing: .04em;
+            transition: background .15s;
+        }
+        .btn-luu-thay-doi:hover { background: var(--sky-dark); }
+        .btn-luu-thay-doi:disabled { background: #94a3b8; cursor: not-allowed; }
+
+        .admin-message.error { background: #fff1f1; color: #b42318; font-weight: 600; margin-bottom: 18px; padding: 12px 16px; border-radius: 6px; border: 1px solid #fecaca; }
+        .admin-message.success { background: #f0fdf4; color: #15803d; font-weight: 600; margin-bottom: 18px; padding: 12px 16px; border-radius: 6px; border: 1px solid #bbf7d0; }
+
+        /* ===== Thu tiền còn nợ ===== */
+        .thu-tien-panel { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; box-shadow: 0 2px 14px rgba(0,0,0,.05); padding: 22px 24px; margin-bottom: 20px; }
+        .thu-tien-info { display: flex; flex-wrap: wrap; gap: 18px; margin-bottom: 16px; font-size: 13px; color: #475569; }
+        .thu-tien-info b { color: var(--sky-dark); }
+        .thu-tien-form { display: grid; gap: 12px; grid-template-columns: minmax(0,1fr) minmax(0,1.2fr) auto; align-items: end; padding: 16px; background: #f8fafc; border-radius: 8px; border: 1px dashed #cbd5e1; }
+        .thu-tien-form .ff label { display: block; font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 5px; }
+        .thu-tien-form select, .thu-tien-form input {
+            width: 100%; padding: 9px 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px; font-family: inherit;
+        }
+        .btn-thu-tien {
+            background: #15803d; color: #fff; border: none; border-radius: 6px;
+            padding: 10px 16px; font-weight: 700; font-size: 13px; cursor: pointer; white-space: nowrap;
+            transition: background .15s;
+        }
+        .btn-thu-tien:hover { background: #166534; }
+        @media (max-width: 640px) {
+            .thu-tien-form { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 980px) {
+            .cdp-layout { grid-template-columns: 1fr; }
+            .summary-panel { position: static; }
+            .dv-them-form { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 640px) {
+            .stay-grid, .stay-guests { grid-template-columns: 1fr; }
+            .dv-table { display: block; overflow-x: auto; white-space: nowrap; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+    <div class="topbar-left"><span>Tel: +84 123 456 789 &nbsp;|&nbsp; Email: info@hotel.local</span></div>
+</div>
+
+<header>
+    <a href="/home" class="logo"><img src="/logo.jpg" alt="Hotel Logo"></a>
+    <nav class="nav-menu">
+        <a href="/home">Trang Chủ</a>
+        <a href="/phong">Phòng Nghỉ</a>
+        <a href="/loai-phong">Loại Phòng</a>
+        <a href="/gio-hang">Danh Sách Đặt Phòng</a>
+    </nav>
+    <div class="header-actions" sec:authorize="isAnonymous()">
+        <a href="/Login" class="btn btn-outline">Đăng Nhập</a>
+        <a href="/Register" class="btn btn-filled">Đăng Ký</a>
+    </div>
+    <div class="header-actions" sec:authorize="isAuthenticated()">
+        <a href="/profiles" class="btn btn-outline">Thông Tin Tài Khoản</a>
+        <a href="/logout" class="btn btn-filled">Đăng Xuất</a>
+    </div>
+</header>
+
+<main class="cdp-shell">
+
+    <div class="cdp-header">
+        <div>
+            <h1>
+                <span th:text="'Chi Tiết Đặt Phòng #' + (${datPhong != null ? datPhong.id : ''})">Chi Tiết Đặt Phòng #0</span>
+                <span class="loi-badge"
+                      th:if="${soLoi != null and soLoi > 0}"
+                      th:text="${soLoi}">0</span>
+            </h1>
+            <p>Xem thông tin lưu trú và quản lý dịch vụ bổ sung cho đơn đặt phòng của bạn.</p>
+        </div>
+        <span class="trang-thai-badge"
+              th:classappend="${hoaDon != null and hoaDon.daThanhToan != null and hoaDon.daThanhToan.compareTo(hoaDon.tongTien) >= 0}
+                               ? 'da-thanh-toan'
+                               : (${datPhong != null and datPhong.trangThai == 'Da huy'} ? 'da-huy' : 'cho-thanh-toan')"
+              th:text="${hoaDon != null and hoaDon.daThanhToan != null and hoaDon.daThanhToan.compareTo(hoaDon.tongTien) >= 0}
+                        ? 'Đã thanh toán'
+                        : (${datPhong != null and datPhong.trangThai == 'Da huy'} ? 'Đã huỷ' : 'Chờ thanh toán')">
+            Chưa thanh toán
+        </span>
+    </div>
+
+    <div th:if="${loiCapNhat}" class="admin-message error" th:text="${loiCapNhat}"></div>
+    <div th:if="${thanhCongCapNhat}" class="admin-message success" th:text="${thanhCongCapNhat}"></div>
+    <div th:if="${success}" class="admin-message success" th:text="${success}"></div>
+    <div th:if="${error}" class="admin-message error" th:text="${error}"></div>
+    <div class="cdp-panel">
+        <div class="cdp-panel-title">
+            <i class="fa-solid fa-id-card"></i> Thông Tin Khách Hàng
+            <span class="cdp-panel-sub" th:text="${datPhong.n != null} ? 'Tài khoản đã đăng ký' : 'Khách vãng lai'">Khách vãng lai</span>
+        </div>
+
+        <form th:action="@{/nhan-vien/dat-phong/chi-tiet/{id}/khach-hang(id=${datPhong.id})}" method="post"
+              class="stay-grid" style="grid-template-columns: repeat(2, minmax(0,1fr));">
+            <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+
+            <!-- Khách vãng lai: sửa trực tiếp trên đơn đặt phòng -->
+            <th:block th:if="${datPhong.n == null}">
+                <div class="stay-field">
+                    <label>Họ tên khách</label>
+                    <input type="text" name="hoten" th:value="${datPhong.hoten}" required>
+                </div>
+                <div class="stay-field">
+                    <label>Email</label>
+                    <input type="email" name="email" th:value="${datPhong.email}">
+                </div>
+                <div class="stay-field">
+                    <label>Số điện thoại</label>
+                    <input type="text" name="sdt" th:value="${datPhong.sdt}">
+                </div>
+                <div class="stay-field">
+                    <label>Số CCCD</label>
+                    <input type="text" name="maCccd" th:value="${datPhong.ma_cccd}">
+                </div>
+            </th:block>
+
+            <!-- Đã có tài khoản: sửa thông tin tài khoản người dùng -->
+            <th:block th:if="${datPhong.n != null}">
+                <div class="stay-field">
+                    <label>Họ tên tài khoản</label>
+                    <input type="text" name="hoten" th:value="${datPhong.n.hoTen}" required>
+                </div>
+                <div class="stay-field">
+                    <label>Email tài khoản</label>
+                    <input type="email" name="email" th:value="${datPhong.n.email}">
+                </div>
+                <div class="stay-field">
+                    <label>Số điện thoại tài khoản</label>
+                    <input type="text" name="sdt" th:value="${datPhong.n.sdt}">
+                </div>
+                <div class="stay-field">
+                    <label>Số CCCD (đơn này)</label>
+                    <input type="text" name="maCccd" th:value="${datPhong.ma_cccd}">
+                </div>
+                <p style="grid-column:1 / -1; font-size:12px; color:#94a3b8; margin:0;">
+                    Họ tên / email / SĐT thuộc tài khoản khách — sửa ở đây sẽ áp dụng cho toàn bộ tài khoản, ảnh hưởng cả các đơn khác của khách này.
+                </p>
+            </th:block>
+
+            <button type="submit" class="btn-thu-tien" style="grid-column:1 / -1; justify-self:start;">
+                <i class="fa-solid fa-floppy-disk"></i> Lưu Thông Tin Khách Hàng
+            </button>
+        </form>
+    </div>
+    <!-- ===== THU TIỀN CÒN NỢ (form riêng, tách khỏi form cập nhật đơn) ===== -->
+    <div class="thu-tien-panel" th:if="${hoaDon != null}">
+        <div class="cdp-panel-title" style="border:none; margin-bottom:12px; padding-bottom:0;">
+            <i class="fa-solid fa-money-bill-wave"></i> Thu Tiền Còn Thiếu
+        </div>
+
+        <div class="thu-tien-info">
+            <span>Tổng hóa đơn: <b th:text="${#numbers.formatDecimal(hoaDon.tongTien, 0, 'COMMA', 0, 'POINT')} + ' VND'">0 VND</b></span>
+            <span>Đã thu: <b th:text="${#numbers.formatDecimal(hoaDon.daThanhToan ?: 0, 0, 'COMMA', 0, 'POINT')} + ' VND'">0 VND</b></span>
+            <span>Còn nợ: <b th:text="${#numbers.formatDecimal(hoaDon.tongTien.subtract(hoaDon.daThanhToan ?: 0), 0, 'COMMA', 0, 'POINT')} + ' VND'">0 VND</b></span>
+        </div>
+
+        <form th:action="@{/nhan-vien/dat-phong/chi-tiet/{id}/thu-tien(id=${datPhong.id})}" method="post" class="thu-tien-form">
+            <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+
+            <div class="ff">
+                <label>Số tiền thu</label>
+                <input type="number" name="soTien" min="0" step="1000" required>
+            </div>
+
+            <div class="ff">
+                <label>Phương thức</label>
+                <select name="phuongThuc" required>
+                    <option value="Tien Mat">Tiền mặt</option>
+                    <option value="Chuyen Khoan">Chuyển khoản (VNPay)</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn-thu-tien">
+                <i class="fa-solid fa-hand-holding-dollar"></i> Thu Tiền
+            </button>
+        </form>
+    </div>
+
+    <form th:action="@{/nhan-vien/dat-phong/chi-tiet/{id}/update(id=${datPhong != null ? datPhong.id : 0})}"
+          method="post" id="chiTietForm">
+        <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+        <input type="hidden" name="maDatPhong" th:value="${datPhong != null ? datPhong.id : 0}">
+        <input type="hidden" name="tongTienPhong" id="h-tien-phong" value="0">
+        <input type="hidden" name="tongPhuThuGio" id="h-phu-thu" value="0">
+        <input type="hidden" name="tongTienDichVu" id="h-tien-dv" value="0">
+        <input type="hidden" name="tongTienVat" id="h-tien-vat" value="0">
+        <input type="hidden" name="tongCong" id="h-tong-cong" value="0">
+        <div id="dichVuHiddenInputs"></div>
+
+        <div class="cdp-layout">
+            <section>
+
+                <!-- ===== 1. THÔNG TIN LƯU TRÚ ===== -->
+                <div class="cdp-panel">
+                    <div class="cdp-panel-title"><i class="fa-solid fa-calendar-days"></i> Thông Tin Lưu Trú</div>
+
+                    <div class="stay-grid">
+                        <div class="stay-field">
+                            <label>Ngày nhận phòng</label>
+                            <input type="datetime-local" id="ngayNhan" name="ngayNhan"
+                                   th:value="${datPhong != null and datPhong.ngaydatPhong != null} ? ${#temporals.format(datPhong.ngaydatPhong, 'yyyy-MM-dd''T''HH:mm')} : ''"
+                                   required>
+                            <small class="stay-hint">Giờ chuẩn không phụ thu: 08:00 hoặc 12:00</small>
+                        </div>
+                        <div class="stay-field">
+                            <label>Ngày trả phòng</label>
+                            <input type="datetime-local" id="ngayTra" name="ngayTra"
+                                   th:value="${datPhong != null and datPhong.ngaytraPhong != null} ? ${#temporals.format(datPhong.ngaytraPhong, 'yyyy-MM-dd''T''HH:mm')} : ''"
+                                   required>
+                            <small class="stay-hint">Tối thiểu 1 ngày sau ngày nhận phòng &middot; Giờ chuẩn: 08:00 hoặc 12:00</small>
+                        </div>
+                    </div>
+
+                    <div class="stay-guests">
+                        <div class="stay-field">
+                            <label>Người lớn</label>
+                            <input type="number" id="nguoiLon" name="nguoiLon" min="1"
+                                   th:value="${datPhong != null ? datPhong.songuoiLon : 1}">
+                        </div>
+                        <div class="stay-field">
+                            <label>Trẻ em</label>
+                            <input type="number" id="treEm" name="treEm" min="0"
+                                   th:value="${datPhong != null ? datPhong.sotreEm : 0}">
+                        </div>
+                    </div>
+
+                    <div class="canh-bao-phu-thu" id="canhBaoPhuThu">
+                        <i class="fa-solid fa-circle-exclamation"></i>
+                        <span id="canhBaoPhuThuText"></span>
+                    </div>
+                </div>
+
+                <!-- ===== 2. PHÒNG ĐÃ ĐẶT ===== -->
+                <div class="cdp-panel">
+                    <div class="cdp-panel-title">
+                        <i class="fa-solid fa-bed"></i> Phòng Đã Đặt
+                        <span class="cdp-panel-sub" th:text="${chiTietDatPhongList != null ? #lists.size(chiTietDatPhongList) : 0} + ' phòng'">1 phòng</span>
+                    </div>
+                    <div th:each="ct : ${chiTietDatPhongList}" class="room-row"
+                         th:attr="data-gia=${ct.p != null ? ct.p.giaMoiDem : 0}">
+                        <div>
+                            <div class="room-name"
+                                 th:text="'Phòng ' + (${ct.p != null ? ct.p.soPhong : ''}) + ' - ' + (${ct.p != null and ct.p.loaiPhong != null ? ct.p.loaiPhong.tenLoai : ''})">
+                                Phòng 101 - Deluxe
+                            </div>
+                            <div class="room-sub" th:text="${ct.p != null ? ('Tầng ' + ct.p.soTang) : ''}">Tầng 1</div>
+                        </div>
+                        <div class="room-price"
+                             th:text="${ct.p != null} ? (${#numbers.formatDecimal(ct.p.giaMoiDem, 0, 'COMMA', 0, 'POINT')} + ' VND/đêm') : '0 VND/đêm'">
+                            1.200.000 VND/đêm
+                        </div>
+                    </div>
+                    <div th:if="${chiTietDatPhongList == null or #lists.isEmpty(chiTietDatPhongList)}" class="dv-empty">
+                        Không có phòng nào trong đơn đặt này.
+                    </div>
+                </div>
+
+                <!-- ===== 3. QUẢN LÝ DỊCH VỤ ===== -->
+                <div class="cdp-panel">
+                    <div class="cdp-panel-title">
+                        <i class="fa-solid fa-concierge-bell"></i> Quản Lý Dịch Vụ
+                        <span class="cdp-panel-sub" id="dvCountLabel">0 dịch vụ</span>
+                    </div>
+
+                    <!-- Form thêm dịch vụ mới -->
+                    <div class="dv-them-form">
+                        <div class="ff">
+                            <label>Chọn dịch vụ</label>
+                            <select id="dvSelect">
+                                <option value="">-- Chọn dịch vụ --</option>
+                                <option th:each="dv : ${dichVuList}"
+                                        th:value="${dv.id}"
+                                        th:attr="data-gia=${dv.gia},data-ten=${dv.ten_dich_vu},data-donvi=${dv.donVi}"
+                                        th:text="${dv.ten_dich_vu} + ' — ' + ${#numbers.formatDecimal(dv.gia, 0, 'COMMA', 0, 'POINT')} + ' VND/' + ${dv.donVi}">
+                                    Bữa sáng — 150.000 VND/người
+                                </option>
+                            </select>
+                        </div>
+                        <div class="ff">
+                            <label>Số lượng</label>
+                            <input type="number" id="dvSoLuong" min="1" value="1">
+                        </div>
+                        <div class="ff">
+                            <label>Ngày sử dụng</label>
+                            <input type="datetime-local" id="dvNgaySuDung">
+                        </div>
+                        <button type="button" class="btn-them-dv" id="btnThemDv" onclick="themDichVu()">
+                            <i class="fa-solid fa-plus"></i> Thêm
+                        </button>
+                    </div>
+                    <div th:if="${dichVuList == null or #lists.isEmpty(dichVuList)}" class="dv-empty" style="margin-bottom:10px;">
+                        Khách sạn hiện chưa có dịch vụ bổ sung nào đang hoạt động.
+                    </div>
+
+                    <!-- Bảng dịch vụ đã thêm -->
+                    <table class="dv-table">
+                        <thead>
+                        <tr>
+                            <th>Dịch vụ</th>
+                            <th>Số lượng</th>
+                            <th>Ngày sử dụng</th>
+                            <th>Thành tiền</th>
+                            <th></th>
+                        </tr>
+                        </thead>
+                        <tbody id="dvTableBody"></tbody>
+                    </table>
+                    <div class="dv-empty" id="dvEmptyRow">Chưa có dịch vụ nào được thêm vào đơn.</div>
+                </div>
+
+            </section>
+
+            <!-- ===== TÓM TẮT ===== -->
+            <aside class="summary-panel">
+                <h2>Tóm Tắt Chi Phí</h2>
+
+                <div class="sum-row">
+                    <span>Số đêm</span>
+                    <span id="sumSoDem">--</span>
+                </div>
+                <div class="sum-row">
+                    <span>Tiền phòng</span>
+                    <span id="sumTienPhong">đ 0</span>
+                </div>
+                <div class="sum-row phu-thu" id="sumPhuThuRow" style="display:none;">
+                    <span>Phụ thu giờ nhận/trả</span>
+                    <span id="sumPhuThu">đ 0</span>
+                </div>
+                <div class="sum-row">
+                    <span>Tiền dịch vụ</span>
+                    <span id="sumTienDv">đ 0</span>
+                </div>
+                <div class="sum-row">
+                    <span>VAT (10%)</span>
+                    <span id="sumVat">đ 0</span>
+                </div>
+
+                <div class="sum-total">
+                    <span>Tổng cộng</span>
+                    <span id="sumTongCong">đ 0</span>
+                </div>
+
+                <button type="submit" class="btn-luu-thay-doi" id="btnLuu">
+                    <i class="fa-solid fa-floppy-disk"></i> Lưu Thay Đổi
+                </button>
+                <p style="text-align:center; font-size:11px; color:#94a3b8; margin-top:12px;">
+                    Giá đã bao gồm VAT và các loại phí liên quan.
+                </p>
+            </aside>
+        </div>
+    </form>
+</main>
+
+<footer>
+    <p>&copy; 2026 Hotel. All rights reserved.</p>
+</footer>
+
+<script th:inline="javascript">
+    /* ============================================================
+     * TRANG CHI TIẾT ĐẶT PHÒNG & QUẢN LÝ DỊCH VỤ
+     * Toàn bộ tính toán / validate đều chạy phía CLIENT (JS thuần),
+     * dùng chung thư viện BookingValidate (booking-validate.js).
+     * ============================================================ */
+
+    const BookingValidate = {
+        formatVND(n) {
+            return Math.round(n || 0).toLocaleString('vi-VN') + ' VND';
+        },
+        hienThiLoi() {},
+        capNhatMinNgayTra(ngayNhanEl, ngayTraEl) {
+            if (ngayNhanEl && ngayTraEl && ngayNhanEl.value) ngayTraEl.min = ngayNhanEl.value;
+        },
+        validateNgayNhanTra(ngayNhan, ngayTra) {
+            if (!ngayNhan || !ngayTra) return { hopLe: false, soDem: 0, thongBao: '' };
+            const start = new Date(ngayNhan);
+            const end = new Date(ngayTra);
+            const diff = Math.ceil((end - start) / 86400000);
+            return { hopLe: end > start, soDem: Math.max(1, diff), thongBao: '' };
+        },
+        validateNgayTrongKhoangLuuTru() {
+            return { hopLe: true, thongBao: '' };
+        },
+        tinhPhuThuGio() {
+            return { tong: 0, chiTiet: [] };
+        }
+    };
+
+    // Giá từng phòng trong đơn (lấy từ data-gia của .room-row)
+    const giaCacPhong = Array.from(document.querySelectorAll('.room-row'))
+        .map(el => parseFloat(el.dataset.gia) || 0);
+    const tongGiaMoiDem = giaCacPhong.reduce((a, b) => a + b, 0);
+
+    const ngayNhanEl = document.getElementById('ngayNhan');
+    const ngayTraEl  = document.getElementById('ngayTra');
+    const chiTietFormEl = document.getElementById('chiTietForm');
+    const btnLuuEl = document.getElementById('btnLuu');
+
+    // ===== STATE: danh sách dịch vụ đang được quản lý (JS thuần, không phụ thuộc DOM lúc load) =====
+    // Mỗi phần tử: { key, id, ten, donVi, giaDonVi, soLuong, ngaySuDung }
+    let dsDichVu = [];
+    let dvKeySeq = 1;
+
+    /*[# th:if="${chiTietDichVuList != null}"]*/
+    /*[# th:each="ct : ${chiTietDichVuList}"]*/
+    dsDichVu.push({
+        key: 'existing-' + (dvKeySeq++),
+        id: /*[[${ct.dv != null ? ct.dv.id : 0}]]*/ 0,
+        ten: /*[[${ct.dv != null ? ct.dv.ten_dich_vu : ''}]]*/ '',
+        donVi: /*[[${ct.dv != null ? ct.dv.donVi : ''}]]*/ '',
+        giaDonVi: /*[[${ct.dv != null ? ct.dv.gia : 0}]]*/ 0,
+        soLuong: /*[[${ct.soluong != null ? ct.soluong : 1}]]*/ 1,
+        ngaySuDung: /*[[${ct.ngay_su_dung != null ? #temporals.format(ct.ngay_su_dung, 'yyyy-MM-dd''T''HH:mm') : ''}]]*/ ''
+    });
+    /*[/]*/
+    /*[/]*/
+
+    function themDichVu() {
+        const sel = document.getElementById('dvSelect');
+        const opt = sel.options[sel.selectedIndex];
+        if (!sel.value) {
+            alert('Vui lòng chọn 1 dịch vụ để thêm.');
+            return;
+        }
+        const soLuongInput = document.getElementById('dvSoLuong');
+        const ngayInput = document.getElementById('dvNgaySuDung');
+        const soLuong = parseInt(soLuongInput.value) || 1;
+
+        dsDichVu.push({
+            key: 'new-' + (dvKeySeq++),
+            id: parseInt(sel.value),
+            ten: opt.dataset.ten,
+            donVi: opt.dataset.donvi,
+            giaDonVi: parseFloat(opt.dataset.gia) || 0,
+            soLuong: soLuong,
+            ngaySuDung: ngayInput.value || ''
+        });
+
+        sel.value = '';
+        soLuongInput.value = 1;
+        ngayInput.value = '';
+
+        veLaiBangDichVu();
+        tinhTongTien();
+    }
+
+    function xoaDichVu(key) {
+        dsDichVu = dsDichVu.filter(dv => dv.key !== key);
+        veLaiBangDichVu();
+        tinhTongTien();
+    }
+
+    function capNhatSoLuong(key, value) {
+        const dv = dsDichVu.find(d => d.key === key);
+        if (dv) dv.soLuong = Math.max(1, parseInt(value) || 1);
+        tinhTongTien();
+    }
+
+    function capNhatNgaySuDung(key, value, inputEl) {
+        const dv = dsDichVu.find(d => d.key === key);
+        if (!dv) return;
+
+        const ketQua = BookingValidate.validateNgayTrongKhoangLuuTru(value, ngayNhanEl.value, ngayTraEl.value);
+        BookingValidate.hienThiLoi(inputEl, ketQua.hopLe ? '' : ketQua.thongBao);
+        dv.ngaySuDung = value;
+        dv.hopLe = ketQua.hopLe;
+        tinhTongTien();
+    }
+
+    function veLaiBangDichVu() {
+        const tbody = document.getElementById('dvTableBody');
+        const emptyRow = document.getElementById('dvEmptyRow');
+        const countLabel = document.getElementById('dvCountLabel');
+
+        countLabel.textContent = dsDichVu.length + ' dịch vụ';
+        emptyRow.style.display = dsDichVu.length === 0 ? 'block' : 'none';
+        tbody.innerHTML = '';
+
+        dsDichVu.forEach(dv => {
+            const tr = document.createElement('tr');
+            const thanhTien = dv.giaDonVi * dv.soLuong;
+
+            const tdTen = document.createElement('td');
+            tdTen.textContent = dv.ten + ' (' + BookingValidate.formatVND(dv.giaDonVi) + '/' + dv.donVi + ')';
+
+            const tdSl = document.createElement('td');
+            const slInput = document.createElement('input');
+            slInput.type = 'number';
+            slInput.min = '1';
+            slInput.value = dv.soLuong;
+            slInput.addEventListener('input', function () { capNhatSoLuong(dv.key, this.value); veLaiBangDichVu(); });
+            tdSl.appendChild(slInput);
+
+            const tdNgay = document.createElement('td');
+            const ngayInput = document.createElement('input');
+            ngayInput.type = 'datetime-local';
+            ngayInput.value = dv.ngaySuDung || '';
+            if (ngayNhanEl.value) ngayInput.min = ngayNhanEl.value;
+            if (ngayTraEl.value) ngayInput.max = ngayTraEl.value;
+            ngayInput.addEventListener('change', function () { capNhatNgaySuDung(dv.key, this.value, this); });
+            tdNgay.appendChild(ngayInput);
+            if (dv.ngaySuDung) {
+                const ketQua = BookingValidate.validateNgayTrongKhoangLuuTru(dv.ngaySuDung, ngayNhanEl.value, ngayTraEl.value);
+                if (!ketQua.hopLe) {
+                    const err = document.createElement('span');
+                    err.className = 'dv-row-error';
+                    err.textContent = ketQua.thongBao;
+                    tdNgay.appendChild(err);
+                    dv.hopLe = false;
+                } else {
+                    dv.hopLe = true;
+                }
+            } else {
+                dv.hopLe = true;
+            }
+
+            const tdThanh = document.createElement('td');
+            tdThanh.textContent = BookingValidate.formatVND(thanhTien);
+            tdThanh.style.fontWeight = '700';
+            tdThanh.style.color = 'var(--sky-primary)';
+
+            const tdXoa = document.createElement('td');
+            const btnXoa = document.createElement('button');
+            btnXoa.type = 'button';
+            btnXoa.className = 'btn-xoa-dv';
+            btnXoa.textContent = 'Xóa';
+            btnXoa.onclick = function () { xoaDichVu(dv.key); };
+            tdXoa.appendChild(btnXoa);
+
+            tr.appendChild(tdTen);
+            tr.appendChild(tdSl);
+            tr.appendChild(tdNgay);
+            tr.appendChild(tdThanh);
+            tr.appendChild(tdXoa);
+            tbody.appendChild(tr);
+        });
+    }
+
+    function sinhHiddenInputsDichVu() {
+        const container = document.getElementById('dichVuHiddenInputs');
+        container.innerHTML = '';
+        dsDichVu.forEach(dv => {
+            const inId = document.createElement('input');
+            inId.type = 'hidden';
+            inId.name = 'dichVuIds';
+            inId.value = dv.id;
+            container.appendChild(inId);
+
+            const inSl = document.createElement('input');
+            inSl.type = 'hidden';
+            inSl.name = 'soLuong_' + dv.id;
+            inSl.value = dv.soLuong;
+            container.appendChild(inSl);
+
+            const inNgay = document.createElement('input');
+            inNgay.type = 'hidden';
+            inNgay.name = 'ngaySuDung_' + dv.id;
+            inNgay.value = dv.ngaySuDung || '';
+            container.appendChild(inNgay);
+        });
+    }
+
+    /** Tính toàn bộ tổng tiền: tiền phòng + phụ thu giờ + tiền dịch vụ + VAT, cập nhật UI + hidden input */
+    function tinhTongTien() {
+        BookingValidate.capNhatMinNgayTra(ngayNhanEl, ngayTraEl);
+        const ketQuaNgay = BookingValidate.validateNgayNhanTra(ngayNhanEl.value, ngayTraEl.value);
+        BookingValidate.hienThiLoi(ngayTraEl, ketQuaNgay.hopLe ? '' : ketQuaNgay.thongBao);
+
+        const canhBao = document.getElementById('canhBaoPhuThu');
+        const canhBaoText = document.getElementById('canhBaoPhuThuText');
+
+        let soDem = 0, tienPhong = 0, phuThu = { tong: 0, chiTiet: [] }, tienDv = 0, vat = 0, tongCong = 0;
+
+        if (ketQuaNgay.hopLe) {
+            soDem = ketQuaNgay.soDem;
+            tienPhong = tongGiaMoiDem * soDem;
+            phuThu = BookingValidate.tinhPhuThuGio(ngayNhanEl.value, ngayTraEl.value);
+        }
+
+        // Cập nhật min/max ngày sử dụng dịch vụ theo khoảng lưu trú mới + tái validate từng dòng
+        document.querySelectorAll('#dvTableBody input[type="datetime-local"]').forEach(inp => {
+            if (ngayNhanEl.value) inp.min = ngayNhanEl.value;
+            if (ngayTraEl.value) inp.max = ngayTraEl.value;
+        });
+
+        let dichVuHopLe = true;
+        dsDichVu.forEach(dv => {
+            tienDv += dv.giaDonVi * dv.soLuong;
+            if (dv.ngaySuDung) {
+                const kq = BookingValidate.validateNgayTrongKhoangLuuTru(dv.ngaySuDung, ngayNhanEl.value, ngayTraEl.value);
+                if (!kq.hopLe) dichVuHopLe = false;
+            }
+        });
+
+        vat = Math.round((tienPhong + phuThu.tong + tienDv) * 0.10);
+        tongCong = tienPhong + phuThu.tong + tienDv + vat;
+
+        document.getElementById('sumSoDem').textContent = ketQuaNgay.hopLe ? (soDem + ' đêm') : '--';
+        document.getElementById('sumTienPhong').textContent = 'đ ' + BookingValidate.formatVND(tienPhong).replace(' VND', '');
+        document.getElementById('sumTienDv').textContent = 'đ ' + BookingValidate.formatVND(tienDv).replace(' VND', '');
+        document.getElementById('sumVat').textContent = 'đ ' + BookingValidate.formatVND(vat).replace(' VND', '');
+        document.getElementById('sumTongCong').textContent = 'đ ' + BookingValidate.formatVND(tongCong).replace(' VND', '');
+
+        const phuThuRow = document.getElementById('sumPhuThuRow');
+        if (phuThu.tong > 0) {
+            document.getElementById('sumPhuThu').textContent = 'đ ' + BookingValidate.formatVND(phuThu.tong).replace(' VND', '');
+            phuThuRow.style.display = 'flex';
+            canhBao.classList.add('show');
+            canhBaoText.textContent = 'Đơn đang bị phụ thu ' + BookingValidate.formatVND(phuThu.tong) +
+                ' vì ' + phuThu.chiTiet.map(ct => ct.nhan.toLowerCase() + ' lúc ' + ct.gio).join(' và ') +
+                ' (ngoài khung giờ chuẩn 08:00 / 12:00).';
+        } else {
+            phuThuRow.style.display = 'none';
+            canhBao.classList.remove('show');
+        }
+
+        document.getElementById('h-tien-phong').value = Math.round(tienPhong);
+        document.getElementById('h-phu-thu').value = Math.round(phuThu.tong);
+        document.getElementById('h-tien-dv').value = Math.round(tienDv);
+        document.getElementById('h-tien-vat').value = Math.round(vat);
+        document.getElementById('h-tong-cong').value = Math.round(tongCong);
+
+        sinhHiddenInputsDichVu();
+
+        btnLuuEl.disabled = false;
+        return true;
+    }
+
+    ngayNhanEl.addEventListener('change', function () { veLaiBangDichVu(); tinhTongTien(); });
+    ngayTraEl.addEventListener('change', function () { veLaiBangDichVu(); tinhTongTien(); });
+
+    if (chiTietFormEl) {
+        chiTietFormEl.addEventListener('submit', function (e) {
+            tinhTongTien();
+            sinhHiddenInputsDichVu();
+        });
+    }
+
+    // Khởi tạo lần đầu
+    veLaiBangDichVu();
+    tinhTongTien();
+</script>
+</body>
+</html>
