@@ -8,7 +8,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -18,7 +17,6 @@ import su26sd09.su26sd09.service.*;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -488,7 +486,7 @@ public class AdminDatPhongController {
 
         dp.setMa_cccd(maCccd);
 
-        NguoiDung n = dp.getN();
+        KhachHang n = dp.getN();
         if (n == null) {
             dp.setHoten(hoten);
             dp.setEmail(email);

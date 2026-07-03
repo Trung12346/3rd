@@ -2,26 +2,51 @@ package su26sd09.su26sd09.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.web.bind.annotation.PathVariable;
-import su26sd09.su26sd09.entity.NguoiDung;
+import org.springframework.data.repository.query.Param;
 import su26sd09.su26sd09.entity.Nhanvien;
 
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
-public interface NhanVienRepo extends JpaRepository<Nhanvien,Integer> {
+public interface NhanVienRepo extends JpaRepository<Nhanvien, Integer> {
 
-    @Query("select n from Nhanvien n where n.n.hoTen like concat('%',:name,'%') ")
-    public List<Nhanvien> findbyName(@PathVariable("name") String name);
+    @Query("""
+        select n
+        from Nhanvien n
+        where n.hoten like concat('%', :name, '%')
+    """)
+    List<Nhanvien> findbyName(@Param("name") String name);
 
-    Nhanvien findByN_MaNguoiDung(Integer maNguoiDung);
-
-    boolean existsByMaCCCDAndIdNot(String maCCCD, int id);
-
-   List<Nhanvien> findByN_VaiTro_TenVaiTro(String tenVaiTro);
-
-    boolean existsByN_MaNguoiDung(int id);
+    Optional<Nhanvien> findByEmail(String email);
 
 
-    boolean existsByN_MaNguoiDungAndIdNot(Integer maNguoidung,int id);
+    List<Nhanvien> findByVaitro_TenVaiTro(String tenVaiTro);
 
+    boolean existsByMaCCCDAndIdNot(String maCCCD, Integer id);
+
+    boolean existsBySdt(String sdt);
+
+    boolean existsByMaCCCD(String maCCCD);
+
+    boolean existsByEmail(String email);
+
+    boolean existsByEmailAndIdNot(String email, Integer id);
+
+    boolean existsBySdtAndVaitro_TenVaiTroAndIdNot(
+            String sdt,
+            String tenVaiTro,
+            Integer id
+    );
+
+    @Query("""
+       SELECT CASE
+           WHEN FUNCTION('DATEDIFF', YEAR, n.ngaySinh, CURRENT_DATE) >= 18
+           THEN true
+           ELSE false
+       END
+       FROM Nhanvien n
+       WHERE n.ngaySinh = :ngaySinh
+       """)
+    Boolean CheckAge(@Param("ngaySinh") LocalDate ngaySinh);
 }

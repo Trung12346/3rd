@@ -392,12 +392,12 @@ public class NhanVienDatPhongController {
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
 
         if (!isAdmin) {
-            NguoiDung n = nguoiDungService.findByEmail(authentication.getName());
+            KhachHang n = nguoiDungService.findByEmail(authentication.getName());
             if (n == null) {
                 return "redirect:/home";
             }
 
-            Nhanvien nv = nhanVienService.findByMaNguoiDung(n.getMaNguoiDung());
+            Nhanvien nv = nhanVienService.FindByemail(authentication.getName());
             if (nv == null || !"Lễ Tân".equals(nv.getBoPhan())) {
                 return "redirect:/home";
             }
@@ -465,9 +465,9 @@ public class NhanVienDatPhongController {
                          Authentication authentication,
                          RedirectAttributes redirectAttributes) {
         int soLoi = 0;
-        NguoiDung n = nguoiDungService.findByEmail(authentication.getName());
+        KhachHang n = nguoiDungService.findByEmail(authentication.getName());
 
-        Nhanvien nvCheck = nhanVienService.findByMaNguoiDung(n.getMaNguoiDung());
+        Nhanvien nvCheck = nhanVienService.FindByemail(authentication.getName());
 
         if (nvCheck == null || !"Lễ Tân".equals(nvCheck.getBoPhan())) {
             System.out.println("khong khop bo phan");
@@ -511,18 +511,18 @@ public class NhanVienDatPhongController {
             dp.setKm(km);
         }
 
-        NguoiDung staffDefault = nguoiDungService.findByEmail("staff@hotel.vn");
+        Nhanvien staffDefault = nhanVienService.FindByemail("staff@hotel.vn");
 
         if (authentication != null) {
-            NguoiDung nd = nguoiDungService.findByEmail(authentication.getName());
+            KhachHang nd = nguoiDungService.findByEmail(authentication.getName());
             if (nd != null) {
-                Nhanvien nv = nhanVienService.findByMaNguoiDung(nd.getMaNguoiDung());
-                dp.setNv(nv != null ? nv : nhanVienService.findByMaNguoiDung(staffDefault.getMaNguoiDung()));
+                Nhanvien nv = nhanVienService.findByMaNhanVien(nd.getMa_khach_hang());
+                dp.setNv(nv != null ? nv : nhanVienService.findbyid(staffDefault.getId()));
             } else {
-                dp.setNv(nhanVienService.findByMaNguoiDung(staffDefault.getMaNguoiDung()));
+                dp.setNv(nhanVienService.findbyid(staffDefault.getId()));
             }
         } else {
-            dp.setNv(nhanVienService.findByMaNguoiDung(staffDefault.getMaNguoiDung()));
+            dp.setNv(nhanVienService.findByMaNhanVien(staffDefault.getId()));
         }
 
         DatPhong savedDp = datPhongService.save(dp);
@@ -615,17 +615,17 @@ public class NhanVienDatPhongController {
         tt.setGichu("Thu tien mat tai quay da nhan du 100%");
 
         if (authentication != null) {
-            NguoiDung nd = nguoiDungService.findByEmail(authentication.getName());
+            KhachHang nd = nguoiDungService.findByEmail(authentication.getName());
             if (nd != null) {
-                Nhanvien nv = nhanVienService.findByMaNguoiDung(nd.getMaNguoiDung());
-                tt.setNv(nv != null ? nv : nhanVienService.findByMaNguoiDung(nguoiDungService.findByEmail("staff@hotel.vn").getMaNguoiDung()));
+                Nhanvien nv = nhanVienService.findbyid(nvCheck.getId());
+                tt.setNv(nv != null ? nv : nhanVienService.FindByemail("staff@hotel.vn"));
             } else {
-                tt.setNv(nhanVienService.findbyid((nguoiDungService.findByEmail("staff@hotel.vn").getMaNguoiDung())));
+                tt.setNv(nhanVienService.FindByemail("staff@hotel.vn"));
             }
         } else {
-            tt.setNv(nhanVienService.findbyid((nguoiDungService.findByEmail("staff@hotel.vn").getMaNguoiDung())));
+            tt.setNv(nhanVienService.FindByemail("staff@hotel.vn"));
         }
-        System.out.println(nguoiDungService.findByEmail("staff@hotel.vn").getMaNguoiDung());
+        System.out.println(nhanVienService.FindByemail("staff@hotel.vn").getEmail());
         thanhToanService.save(tt);
         redirectAttributes.addFlashAttribute("success",
                 "Tao don thanh cong, ma don: " + savedDp.getId() + ", tong tien da thu: " + tongCong + " VND");
@@ -657,7 +657,7 @@ public class NhanVienDatPhongController {
 
         dp.setMa_cccd(maCccd);
 
-        NguoiDung n = dp.getN();
+        KhachHang n = dp.getN();
         if (n == null) {
             dp.setHoten(hoten);
             dp.setEmail(email);

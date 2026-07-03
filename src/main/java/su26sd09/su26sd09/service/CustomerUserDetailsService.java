@@ -5,25 +5,49 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
-import su26sd09.su26sd09.entity.NguoiDung;
+import su26sd09.su26sd09.entity.Admin;
+import su26sd09.su26sd09.entity.KhachHang;
+import su26sd09.su26sd09.entity.Nhanvien;
 import su26sd09.su26sd09.entity.UserDetail;
-import su26sd09.su26sd09.repository.NguoiDungRepository;
+import su26sd09.su26sd09.repository.AdminRepo;
+import su26sd09.su26sd09.repository.KhachHangRepository;
+import su26sd09.su26sd09.repository.NhanVienRepo;
+
+import java.util.Optional;
 
 @Service
 
 public class CustomerUserDetailsService  implements UserDetailsService {
 
     @Autowired
-    NguoiDungRepository nguoiDungRepository;
+    KhachHangRepository nguoiDungRepository;
+
+    @Autowired
+    NhanVienRepo nhanVienRepo;
+
+    @Autowired
+    AdminRepo adminRepo;
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        NguoiDung nguoiDung = nguoiDungRepository.findByEmail(email);
+        Optional<KhachHang> nguoiDung = nguoiDungRepository.findByEmail(email);
+        Optional<Nhanvien> nvCheck = nhanVienRepo.findByEmail(email);
+        Optional<Admin> adminCheck = adminRepo.findByEmail(email);
         System.out.println("tim email " + email);
         System.out.println("ket qua" + nguoiDung);
-        if(nguoiDung ==null){
-            throw new UsernameNotFoundException("Khong tim thay");
+        if(adminCheck.isPresent()){
+            Admin admin = adminCheck.get();
+            return new UserDetail(admin.getMa_admin(),admin.getEmail(),admin.getMat_khau_hash(),admin.getVaiTro());
         }
-        return new UserDetail(nguoiDung);
+        if(nguoiDung.isPresent()){
+            KhachHang kh = nguoiDung.get();
+            return new UserDetail(kh.getMa_khach_hang(),kh.getEmail(),kh.getMatKhau_hash(),kh.getVaiTro());
+
+        }
+        if (nvCheck.isPresent()) {
+            Nhanvien nv = nvCheck.get();
+            return  new UserDetail(nv.getId(),nv.getEmail(),nv.getMat_khau_hash(),nv.getVaitro());
+        }
+        throw new UsernameNotFoundException("Không tìm thấy user với username: " + email);
     }
 }

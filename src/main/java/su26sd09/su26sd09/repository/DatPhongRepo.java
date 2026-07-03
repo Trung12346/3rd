@@ -15,13 +15,14 @@ import java.util.List;
 @Repository
 public interface DatPhongRepo extends JpaRepository<DatPhong,Integer> {
 
-    @Query("select d from DatPhong d where d.n.maNguoiDung = :id")
+
+    @Query("select d from DatPhong d where d.n.ma_khach_hang = :id")
     Page<DatPhong> findByNguoiDung(int id, Pageable pageable);
 
     List<DatPhong> findByTrangThaiAndNgayTaoBefore(String trangThai, LocalDateTime ngay);
 
 
-    @Query("select d from DatPhong d where d.n.maNguoiDung = :id")
+    @Query("select d from DatPhong d where d.n.ma_khach_hang = :id")
     List<DatPhong> FindByNguoiDung(Integer id);
 
     @Query("select c.p from ChiTietDatPhong c where c.d.id = :maDatPhong")

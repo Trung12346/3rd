@@ -6,13 +6,12 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-import su26sd09.su26sd09.entity.NguoiDung;
+import su26sd09.su26sd09.entity.KhachHang;
 import su26sd09.su26sd09.entity.Nhanvien;
 import su26sd09.su26sd09.entity.VaiTro;
 import su26sd09.su26sd09.repository.NhanVienRepo;
@@ -46,12 +45,11 @@ public class AdminNhanVienController {
     @GetMapping
     public String index(Model model){
         Nhanvien nv = new Nhanvien();
-        nv.setN(new NguoiDung());
         model.addAttribute("nhanViens",repo.findAll());
         model.addAttribute("nhanVien",nv);
         model.addAttribute("vaiTros",vaiTroRepo.findAll());
 
-        model.addAttribute("nguoiDungs",repo.ListAdd());
+
         return "admin/nhan-vien-list";
     }
 
@@ -91,9 +89,9 @@ public class AdminNhanVienController {
 
         for (FieldError fe : bindingResult.getFieldErrors()) {
             if (fe.getField().equals("matKhau_hash") && matKhauMoi != null && !matKhauMoi.isBlank()) {
-                nv.getN().setMatKhau_hash(passwordEncoder.encode(matKhauMoi));
+                nv.setMat_khau_hash(passwordEncoder.encode(matKhauMoi));
             } else if (fe.getField().equals("n.vaiTro") && roleStaff != null) {
-                nv.n.setVaiTro(roleStaff);
+                nv.setVaitro(roleStaff);
             } else {
                 redirect.addFlashAttribute("error", fe.getDefaultMessage());
                 return "redirect:/admin/nhan-vien";
@@ -128,46 +126,45 @@ public class AdminNhanVienController {
             return "redirect:/admin/nhan-vien";
         }
 
-        NguoiDung nguoiDung = NguoiDungRepo.Getbyid(maNguoiDung);
+        KhachHang nguoiDung = NguoiDungRepo.Getbyid(maNguoiDung);
         if (nguoiDung == null) {
             redirect.addFlashAttribute("error", "không tìm thấy tài khoản người dùng");
             return "redirect:/admin/nhan-vien";
         }
         String oldEmail = nguoiDung.getEmail();
 
-        if (nv.getN().getHoTen() != null && !nv.getN().getHoTen().isBlank()) {
-            nguoiDung.setHoTen(nv.getN().getHoTen());
+        if (nv.getHoten() != null && !nv.getHoten().isBlank()) {
+            nv.setHoten(nv.getHoten());
         }
-        if (nv.getN().getDiaChi() != null && !nv.getN().getDiaChi().isBlank()) {
-            nguoiDung.setDiaChi(nv.getN().getDiaChi());
+        if (nv.getDia_chi() != null && !nv.getDia_chi().isBlank()) {
+            nguoiDung.setDiaChi(nv.getDia_chi());
         }
-        if (nv.getN().getSoDienThoai() != null && !nv.getN().getSoDienThoai().isBlank()) {
-            nguoiDung.setSoDienThoai(nv.getN().getSoDienThoai());
+        if (nv.getSdt() != null && !nv.getSdt().isBlank()) {
+            nguoiDung.setSoDienThoai(nv.getSdt());
         }
-        if (nv.getN().getEmail() != null && !nv.getN().getEmail().isBlank()) {
-            nguoiDung.setEmail(nv.getN().getEmail());
+        if (nv.getEmail() != null && !nv.getEmail().isBlank()) {
+            nguoiDung.setEmail(nv.getEmail());
         }
         nguoiDung.setNgayCapNhat(LocalDateTime.now());
         nguoiDung.setVaiTro(v);
 
         if (!nguoiDung.getEmail().equals(oldEmail)
-                && NguoiDungRepo.checkEmail(nguoiDung.getEmail(), nguoiDung.getMaNguoiDung())) {
+                && NguoiDungRepo.checkEmail(nguoiDung.getEmail(), nguoiDung.getMa_khach_hang())) {
             redirect.addFlashAttribute("error", "email đã tồn tại");
             return "redirect:/admin/nhan-vien";
         }
-        if (NguoiDungRepo.checkSoDienThoainv(nguoiDung.getSoDienThoai(),nguoiDung.getMaNguoiDung())) {
+        if (nvrepo.existsBySdt(nguoiDung.getSoDienThoai())) {
             redirect.addFlashAttribute("error", "số điện thoại đã được đăng ký");
             return "redirect:/admin/nhan-vien";
         }
-        if (repo.checkTrungCccd(nv.getMaCCCD(), nv.getId())) {
+        if (nvrepo.existsByMaCCCD(nv.getMaCCCD())) {
             redirect.addFlashAttribute("error", "mã CCCD đã được đăng ký");
             return "redirect:/admin/nhan-vien";
         }
-         if (repo.CheckAge(nv.ngaySinh) == false){
+         if (nvrepo.CheckAge(nv.ngaySinh) == false){
              redirect.addFlashAttribute("error","ngày sinh không hợp lệ( nhân viên có tuổi dưới 18)");
              return "redirect:/admin/nhan-vien";
          }
-        nv.setN(nguoiDung);
 
         NguoiDungRepo.save(nguoiDung);
         repo.save(nv);
@@ -179,11 +176,11 @@ public class AdminNhanVienController {
         if (nv.getBoPhan() == null || nv.getBoPhan().isBlank()) {
             return "redirect:/admin/nhan-vien";
         }
-        if (NguoiDungRepo.checkEmail(nv.getN().getEmail(), nv.getN().getMaNguoiDung())) {
+        if (NguoiDungRepo.checkEmail(nv.getEmail(), nv.getId())) {
             redirect.addFlashAttribute("error", "email đã tồn tại");
             return "redirect:/admin/nhan-vien";
         }
-        if (NguoiDungRepo.checkSoDienThoainv(nv.n.getSoDienThoai(),nv.n.getMaNguoiDung())){
+        if (nvrepo.existsBySdt(nv.getSdt())){
             redirect.addFlashAttribute("error","số điện thoại đã được đăng ký ");
             return "redirect:/admin/nhan-vien";
         }
@@ -195,8 +192,7 @@ public class AdminNhanVienController {
             redirect.addFlashAttribute("error","ngày sinh không hợp lệ (nhân viên dưới 18 tuổi)");
             return "redirect:/admin/nhan-vien";
         }
-        nv.n.setVaiTro(v);
-        NguoiDungRepo.save(nv.getN());
+        nv.setVaitro(v);
 
         repo.save(nv);
         redirect.addFlashAttribute("success", "thêm nhân viên thành công");
@@ -210,33 +206,33 @@ public class AdminNhanVienController {
             return "redirect:/admin/nhan-vien";
         }
 
-        NguoiDung nguoiDung = NguoiDungRepo.Getbyid(maNguoiDung);
+        KhachHang nguoiDung = NguoiDungRepo.Getbyid(maNguoiDung);
         String oldEmail = nguoiDung.getEmail();
 
         nguoiDung.setNgayCapNhat(LocalDateTime.now());
-        nguoiDung.setHoTen(nv.getN().getHoTen());
-        nguoiDung.setDiaChi(nv.getN().getDiaChi());
-        nguoiDung.setSoDienThoai(nv.getN().getSoDienThoai());
-        nguoiDung.setEmail(nv.getN().getEmail());
-        nguoiDung.setTrangThai(nv.getN().isTrangThai());
+        nguoiDung.setHoTen(nv.getHoten());
+        nguoiDung.setDiaChi(nv.getDia_chi());
+        nguoiDung.setSoDienThoai(nv.getSdt());
+        nguoiDung.setEmail(nv.getEmail());
+        nguoiDung.setTrangThai(nv.isTrang_thai());
         nguoiDung.setVaiTro(v);
 
         // Password: đổi nếu có matKhauMoi, giữ nguyên nếu không
         if (matKhauMoi != null && !matKhauMoi.isEmpty()) {
             nguoiDung.setMatKhau_hash(passwordEncoder.encode(matKhauMoi));
         } else {
-            nguoiDung.setMatKhau_hash(nv.getN().getMatKhau_hash());
+            nguoiDung.setMatKhau_hash(nv.getMat_khau_hash());
         }
 
-        nv.setN(nguoiDung);
+
 
         // fix: check email thay đổi TRƯỚC khi query DB (short-circuit)
-        if (!nv.getN().getEmail().equals(oldEmail)
-                && NguoiDungRepo.checkEmail(nv.getN().getEmail(), nv.getN().getMaNguoiDung())) {
+        if (!nv.getEmail().equals(oldEmail)
+                && NguoiDungRepo.checkEmail(nv.getEmail(), nv.getId())) {
             redirect.addFlashAttribute("error", "email đã tồn tại");
             return "redirect:/admin/nhan-vien";
         }
-        if (NguoiDungRepo.checkSoDienThoainv(nv.n.getSoDienThoai(),nv.n.getMaNguoiDung())){
+        if (nvrepo.existsBySdt(nv.getSdt())){
             redirect.addFlashAttribute("error","số điện thoại đã được đăng ký ");
             return "redirect:/admin/nhan-vien";
         }
@@ -248,7 +244,6 @@ public class AdminNhanVienController {
             redirect.addFlashAttribute("error","ngày sinh không hợp lệ (nhân viên dưới 18 tuổi)");
             return "redirect:/admin/nhan-vien";
         }
-        NguoiDungRepo.save(nv.getN());
         repo.save(nv);
         redirect.addFlashAttribute("success", "cập nhật nhân viên thành công");
         return "redirect:/admin/nhan-vien";
@@ -260,7 +255,6 @@ public class AdminNhanVienController {
         if(CheckRole(p.getName())){
             model.addAttribute("nhanViens",repo.findAll());
             model.addAttribute("nhanVien",repo.findbyid(id));
-            model.addAttribute("nguoiDungs",repo.ListAdd());
             model.addAttribute("vaiTros",vaiTroRepo.findAll());
 
             return "admin/nhan-vien-list";
@@ -273,10 +267,8 @@ public class AdminNhanVienController {
     public String searchNhanVien(Model model, Principal p ,@RequestParam("keyword") String name , RedirectAttributes redirect){
         if (CheckRole(p.getName())){
             Nhanvien nv = new Nhanvien();
-            nv.setN(new NguoiDung());
             model.addAttribute("nhanViens",repo.findByName(name));
             model.addAttribute("nhanVien",nv);
-            model.addAttribute("nguoiDungs",repo.ListAdd());
             model.addAttribute("vaiTros",vaiTroRepo.findAll());
             redirect.addFlashAttribute("success","tổng số tìm được = " + repo.findByName(name).size());
             return "admin/nhan-vien-list";

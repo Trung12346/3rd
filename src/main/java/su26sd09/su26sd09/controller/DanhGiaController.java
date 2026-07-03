@@ -16,10 +16,10 @@ import su26sd09.su26sd09.dto.RoomReviewRequest;
 import su26sd09.su26sd09.dto.RoomReviewViewDTO;
 import su26sd09.su26sd09.entity.DanhGia;
 import su26sd09.su26sd09.entity.DatPhong;
-import su26sd09.su26sd09.entity.NguoiDung;
+import su26sd09.su26sd09.entity.KhachHang;
 import su26sd09.su26sd09.repository.DanhGiaRepo;
 import su26sd09.su26sd09.repository.DatPhongRepo;
-import su26sd09.su26sd09.repository.NguoiDungRepository;
+import su26sd09.su26sd09.repository.KhachHangRepository;
 import su26sd09.su26sd09.service.ReviewService;
 
 import java.security.Principal;
@@ -36,12 +36,12 @@ public class DanhGiaController {
 
     private final DanhGiaRepo danhGiaRepo;
     private final DatPhongRepo datPhongRepo;
-    private final NguoiDungRepository nguoiDungRepository;
+    private final KhachHangRepository nguoiDungRepository;
     private final ReviewService reviewService;
 
     public DanhGiaController(DanhGiaRepo danhGiaRepo,
                              DatPhongRepo datPhongRepo,
-                             NguoiDungRepository nguoiDungRepository,
+                             KhachHangRepository nguoiDungRepository,
                              ReviewService reviewService) {
         this.danhGiaRepo = danhGiaRepo;
         this.datPhongRepo = datPhongRepo;
@@ -114,7 +114,7 @@ public class DanhGiaController {
             return "redirect:/home/reviews";
         }
 
-        NguoiDung nguoiDung = nguoiDungRepository.findByEmail(principal.getName());
+        KhachHang nguoiDung = nguoiDungRepository.findByEmail(principal.getName()).orElse(null);
         if (nguoiDung == null) {
             redirectAttributes.addFlashAttribute("reviewError", "Không tìm thấy tài khoản đăng nhập.");
             return "redirect:/Login";
@@ -238,11 +238,11 @@ public class DanhGiaController {
                 .toList();
     }
 
-    private boolean isBookingOwner(DatPhong datPhong, NguoiDung nguoiDung) {
+    private boolean isBookingOwner(DatPhong datPhong, KhachHang nguoiDung) {
         return datPhong != null
                 && datPhong.getN() != null
-                && datPhong.getN().getMaNguoiDung() != null
-                && datPhong.getN().getMaNguoiDung().equals(nguoiDung.getMaNguoiDung());
+                && datPhong.getN().getMa_khach_hang() != null
+                && datPhong.getN().getMa_khach_hang().equals(nguoiDung.getMa_khach_hang());
     }
 
     private boolean isLoggedIn(Authentication authentication) {

@@ -7,8 +7,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import su26sd09.su26sd09.entity.KhuyenMai;
-import su26sd09.su26sd09.entity.NguoiDung;
-import su26sd09.su26sd09.repository.NguoiDungRepository;
+import su26sd09.su26sd09.entity.KhachHang;
 import su26sd09.su26sd09.service.NhanVienService;
 import su26sd09.su26sd09.service.UserService;
 import su26sd09.su26sd09.service.khuyenMaiService;
@@ -28,7 +27,7 @@ public class AdminkhuyenMaiController {
     public Boolean CheckRole(String email){
         String role = "";
 
-        for (NguoiDung n : nguoiDungRepo.getAll()){
+        for (KhachHang n : nguoiDungRepo.getAll()){
             if(n.getEmail().equals(email)) {
                 if (n.getVaiTro().getTenVaiTro().equals("ROLE_ADMIN")) {
                     role = n.getVaiTro().getTenVaiTro();
@@ -90,7 +89,7 @@ public class AdminkhuyenMaiController {
                 redirect.addFlashAttribute("error","giá trị giảm không được quá 50%");
                 return "redirect:/admin/khuyen-mai";
             }
-            for (NguoiDung ng : nguoiDungRepo.getAll()){
+            for (KhachHang ng : nguoiDungRepo.getAll()){
                 if (ng.getEmail().equalsIgnoreCase(p.getName())){
                     m.setN(ng);
                 }

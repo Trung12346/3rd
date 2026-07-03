@@ -11,10 +11,10 @@ import su26sd09.su26sd09.entity.LoaiPhong;
 import java.util.List;
 
 public interface DanhGiaRepo extends JpaRepository<DanhGia,Integer> {
-    @Query("select d from DanhGia d where d.n.maNguoiDung = :id")
+    @Query("select d from DanhGia d where d.n.ma_khach_hang = :id")
     Page<DanhGia> findByNguoiDung(int id , Pageable pageable);
 
-    @Query("select d from DanhGia d where d.n.maNguoiDung = :id")
+    @Query("select d from DanhGia d where d.n.ma_khach_hang = :id")
     List<DanhGia> FindByNguoiDung(int id);
 
     @Query("""

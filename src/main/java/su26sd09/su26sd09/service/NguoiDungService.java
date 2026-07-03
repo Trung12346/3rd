@@ -2,8 +2,8 @@ package su26sd09.su26sd09.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import su26sd09.su26sd09.entity.NguoiDung;
-import su26sd09.su26sd09.repository.NguoiDungRepository;
+import su26sd09.su26sd09.entity.KhachHang;
+import su26sd09.su26sd09.repository.KhachHangRepository;
 
 import java.util.List;
 import java.util.stream.Stream;
@@ -12,29 +12,29 @@ import java.util.stream.Stream;
 public class NguoiDungService {
 
     @Autowired
-    NguoiDungRepository nguoiDungRepository;
+    KhachHangRepository nguoiDungRepository;
 
-    public NguoiDung save(NguoiDung n){
+    public KhachHang save(KhachHang n){
         return nguoiDungRepository.save(n);
     }
 
-    public List<NguoiDung> findAll(){
+    public List<KhachHang> findAll(){
         return nguoiDungRepository.findAll();
     }
 
-    public NguoiDung findById(Integer id){
+    public KhachHang findById(Integer id){
         return nguoiDungRepository.findById(id).orElse(null);
     }
 
-    public NguoiDung findByName(String name){
+    public KhachHang findByName(String name){
         return nguoiDungRepository.findByHoTen(name);
     }
 
-    public NguoiDung findByEmail(String email){
-        return nguoiDungRepository.findByEmail(email);
+    public KhachHang findByEmail(String email){
+        return nguoiDungRepository.findByEmail(email).orElse(null);
     }
 
-    public Stream<NguoiDung> findWhereRoleNV(){
+    public Stream<KhachHang> findWhereRoleNV(){
         return nguoiDungRepository.findAll().stream().filter(nguoiDung -> nguoiDung.getVaiTro().getId() == 2);
     }
 }

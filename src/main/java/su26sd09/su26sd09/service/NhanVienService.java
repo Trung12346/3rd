@@ -1,17 +1,14 @@
 package su26sd09.su26sd09.service;
 
-import jakarta.transaction.Transactional;
-import org.springframework.cglib.core.Local;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Autowired;
-import su26sd09.su26sd09.entity.NguoiDung;
+import su26sd09.su26sd09.entity.KhachHang;
 import su26sd09.su26sd09.entity.Nhanvien;
 import su26sd09.su26sd09.repository.NhanVienRepo;
 
 import java.time.LocalDate;
 import java.time.Period;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 @Service
@@ -53,25 +50,15 @@ public class NhanVienService {
         return repo.findbyName(name);
     }
 
-    public List<Nhanvien> ListAdd(){
-        List<Nhanvien> Listnv = new ArrayList<>();
-        for (NguoiDung n : NguoiDungRepo.getAll()){
-            if(n.getVaiTro().getTenVaiTro().equals("ROLE_STAFF") ){
-                Nhanvien nv = new Nhanvien();
-                nv.setN(n);
-                Listnv.add(nv);
-            }
-        }
-        return Listnv;
-    }
 
-    public Nhanvien findByMaNguoiDung(Integer id){
-        return repo.findByN_MaNguoiDung(id);
+
+    public Nhanvien findByMaNhanVien(Integer id){
+        return repo.findById(id).orElse(null);
     }
 
     public boolean IsNhanVienTonTai(int id){
         for (Nhanvien nv : repo.findAll()){
-            if(nv.n.getMaNguoiDung() == id){
+            if(nv.getId() == id){
                 return true;
             }
         }
@@ -81,7 +68,7 @@ public class NhanVienService {
     public boolean TrungNv(Integer id,int idnv){
         System.out.println(id);
         for (Nhanvien nv : repo.findAll()){
-            if ((nv.n.getMaNguoiDung().equals(id) && nv.getId() != idnv)){
+            if ((nv.getId().equals(id) && nv.getId() != idnv)){
                 return true;
             }
         }
@@ -89,8 +76,11 @@ public class NhanVienService {
     }
 
     public void lock(Nhanvien nv) {
-     nv.n.setTrangThai(false);
+     nv.setTrang_thai(false);
 
+    }
+    public Nhanvien FindByemail(String email){
+    return repo.findByEmail(email).orElse(null);
     }
 
     public boolean checkTrungCccd(String maCCCD, int id) {

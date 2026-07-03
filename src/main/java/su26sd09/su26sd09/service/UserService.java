@@ -3,10 +3,10 @@ package su26sd09.su26sd09.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import su26sd09.su26sd09.entity.NguoiDung;
-import su26sd09.su26sd09.entity.Nhanvien;
+import su26sd09.su26sd09.entity.KhachHang;
 import su26sd09.su26sd09.entity.VaiTro;
-import su26sd09.su26sd09.repository.NguoiDungRepository;
+import su26sd09.su26sd09.repository.KhachHangRepository;
+import su26sd09.su26sd09.repository.NhanVienRepo;
 import su26sd09.su26sd09.repository.VaiTroRepo;
 
 import java.util.List;
@@ -16,32 +16,35 @@ import java.util.Locale;
 public class UserService {
 
     @Autowired
-    NguoiDungRepository repo;
+    KhachHangRepository repo;
 
     @Autowired
     VaiTroRepo vaiTroRepo;
 
     @Autowired
+    NhanVienRepo nvRepo;
+
+    @Autowired
     PasswordEncoder passwordEncoder;
 
-    public List<NguoiDung> getAll(){
+    public List<KhachHang> getAll(){
         return repo.findAll();
     }
 
-    public NguoiDung Getbyid(int id){
+    public KhachHang Getbyid(int id){
         return repo.findById(id).orElse(null);
     }
 
-    public void remove(NguoiDung nguoiDung){
+    public void remove(KhachHang nguoiDung){
         repo.delete(nguoiDung);
     }
 
-    public void save(NguoiDung nguoiDung){
+    public void save(KhachHang nguoiDung){
         repo.save(nguoiDung);
     }
 
-    public List<NguoiDung> search(String keyword) {
-        List<NguoiDung> nguoiDungs = repo.findAll();
+    public List<KhachHang> search(String keyword) {
+        List<KhachHang> nguoiDungs = repo.findAll();
         if (keyword == null || keyword.isBlank()) {
             return nguoiDungs;
         }
@@ -52,7 +55,7 @@ public class UserService {
                         || contains(nd.getEmail(), q)
                         || contains(nd.getSoDienThoai(), q)
                         || (nd.getVaiTro() != null && contains(nd.getVaiTro().getTenVaiTro(), q))
-                        || String.valueOf(nd.getMaNguoiDung()).contains(q))
+                        || String.valueOf(nd.getMa_khach_hang()).contains(q))
                 .toList();
     }
 
@@ -60,11 +63,11 @@ public class UserService {
         return vaiTroRepo.findAll();
     }
 
-    public void saveAdmin(NguoiDung formNguoiDung, Integer vaiTroId, String matKhauMoi) {
+    public void saveAdmin(KhachHang formNguoiDung, Integer vaiTroId, String matKhauMoi) {
         VaiTro vaiTro = vaiTroRepo.findById(vaiTroId)
                 .orElseThrow(() -> new RuntimeException("Vai tro khong ton tai"));
 
-        if (formNguoiDung.getMaNguoiDung() == null) {
+        if (formNguoiDung.getMa_khach_hang() == null) {
             if (repo.existsByEmail(formNguoiDung.getEmail())) {
                 throw new RuntimeException("Email da ton tai");
             }
@@ -83,21 +86,21 @@ public class UserService {
             return;
         }
 
-        NguoiDung oldNguoiDung = Getbyid(formNguoiDung.getMaNguoiDung());
+        KhachHang oldNguoiDung = Getbyid(formNguoiDung.getMa_khach_hang());
         if (oldNguoiDung == null) {
             throw new RuntimeException("Khong tim thay nguoi dung");
         }
 
-        NguoiDung sameEmail = repo.findByEmail(formNguoiDung.getEmail());
-        if (sameEmail != null && !sameEmail.getMaNguoiDung().equals(oldNguoiDung.getMaNguoiDung())) {
+        KhachHang sameEmail = repo.findByEmail(formNguoiDung.getEmail()).orElse(null);
+        if (sameEmail != null && !sameEmail.getMa_khach_hang().equals(oldNguoiDung.getMa_khach_hang())) {
             throw new RuntimeException("Email da ton tai");
         }
 
-        NguoiDung samePhone = null;
+        KhachHang samePhone = null;
         if (formNguoiDung.getSoDienThoai() != null && !formNguoiDung.getSoDienThoai().isBlank()) {
             samePhone = repo.findBySoDienThoai(formNguoiDung.getSoDienThoai());
         }
-        if (samePhone != null && !samePhone.getMaNguoiDung().equals(oldNguoiDung.getMaNguoiDung())) {
+        if (samePhone != null && !samePhone.getMa_khach_hang().equals(oldNguoiDung.getMa_khach_hang())) {
             throw new RuntimeException("So dien thoai da ton tai");
         }
 
@@ -115,7 +118,7 @@ public class UserService {
     }
 
     public void setTrangThai(int id, boolean trangThai) {
-        NguoiDung nguoiDung = Getbyid(id);
+        KhachHang nguoiDung = Getbyid(id);
         if (nguoiDung != null) {
             nguoiDung.setTrangThai(trangThai);
             repo.save(nguoiDung);
@@ -132,8 +135,12 @@ public class UserService {
            return repo.findOthers(id).stream().anyMatch(x -> x.getSoDienThoai().equals(sodienthoai) );
     }
 
-    public boolean checkSoDienThoainv(String sdt, Integer id){
-        return repo.existsBySoDienThoaiAndVaiTro_TenVaiTroAndMaNguoiDungNot(sdt, "ROLE_STAFF", id == null ? 0 : id);
+    public boolean checkSoDienThoaiNV(String sdt, Integer id) {
+        return nvRepo.existsBySdtAndVaitro_TenVaiTroAndIdNot(
+                sdt,
+                "ROLE_STAFF",
+                id == null ? 0 : id
+        );
     }
 
     public boolean checkEmail(String email, Integer id){
@@ -141,7 +148,7 @@ public class UserService {
            return repo.findOthers(id).stream().anyMatch(x -> x.getEmail().equals(email));
     }
 
-      public List<NguoiDung> TimKiemTheoTen(String name){
+      public List<KhachHang> TimKiemTheoTen(String name){
         return repo.search(name);
       }
 

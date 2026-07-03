@@ -10,13 +10,10 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import su26sd09.su26sd09.entity.*;
-import su26sd09.su26sd09.repository.ChiTietDichvuRepo;
 import su26sd09.su26sd09.service.*;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.security.Principal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -360,19 +357,19 @@ public class PhongController {
             emailSearch = auth.getName();
         } else {
             for (Nhanvien nv : ListnvLeTan.toList()) {
-                emailSearch = nv.getN().getEmail();
+                emailSearch = nv.getEmail();
             }
         }
 
-        NguoiDung n = nguoiDungService.findByEmail(emailSearch);
+        KhachHang n = nguoiDungService.findByEmail(emailSearch);
 
         boolean isNvDp = n.getVaiTro() != null && "ROLE_STAFF".equals(n.getVaiTro().toString());
 
         if (isNvDp) {
-            Nhanvien nv = nhanVienService.findByMaNguoiDung(n.getMaNguoiDung());
-            dp.setNv(nv != null ? nv : nhanVienService.findByMaNguoiDung(nguoiDungService.findByEmail(emailSearch).getMaNguoiDung()));
+            Nhanvien nv = nhanVienService.findByMaNhanVien(n.getMa_khach_hang());
+            dp.setNv(nv != null ? nv : nhanVienService.findByMaNhanVien(nguoiDungService.findByEmail(emailSearch).getMa_khach_hang()));
         } else {
-            dp.setNv(nhanVienService.findByMaNguoiDung(nguoiDungService.findByEmail(emailSearch).getMaNguoiDung()));
+            dp.setNv(nhanVienService.findByMaNhanVien(nguoiDungService.findByEmail(emailSearch).getMa_khach_hang()));
         }
         System.out.println("Amount Xac nhan thong tin khach hang: "+amount);
         System.out.println("Amount dich vu xac nhan thong tin khach hang: "+amountdv);
@@ -405,14 +402,12 @@ public class PhongController {
             return "redirect:/loai-phong/" + maLoaiPhong;
         }
 
-        // Validate so dem phai it nhat 1 ngay (ngay tra > ngay nhan)
         long soDem = ChronoUnit.DAYS.between(ngayNhan, ngayTra);
         if (soDem < 1) {
             redirectAttributes.addFlashAttribute("bookingError", "Ngày trả phòng phải sau ngày nhận phòng ít nhất 1 ngày.");
             return "redirect:/loai-phong/" + maLoaiPhong;
         }
 
-        // Validate so luong nguoi khong vuot qua suc chua cua phong
         if (phong.getLoaiPhong() != null) {
             int sucChua = phong.getLoaiPhong().getSucChuaToiDa();
             int tongNguoi = (nguoiLon != null ? nguoiLon : 0) + (treEm != null ? treEm : 0);
@@ -439,7 +434,7 @@ public class PhongController {
                 && !(authentication instanceof AnonymousAuthenticationToken);
         if (isLoggedIn && !isNhanVienOrAdmin(authentication)) {
 
-            NguoiDung nd = nguoiDungService.findByEmail(authentication.getName());
+            KhachHang nd = nguoiDungService.findByEmail(authentication.getName());
             if(nd !=null) {
                 dp.setHoten(nd.getHoTen());
                 dp.setEmail(nd.getEmail());

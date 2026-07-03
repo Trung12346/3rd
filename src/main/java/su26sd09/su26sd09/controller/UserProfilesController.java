@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import su26sd09.su26sd09.entity.DanhGia;
 import su26sd09.su26sd09.entity.DatPhong;
-import su26sd09.su26sd09.entity.NguoiDung;
+import su26sd09.su26sd09.entity.KhachHang;
 import su26sd09.su26sd09.service.ChiTietDatPhongService;
 import su26sd09.su26sd09.service.DanhGiaService;
 import su26sd09.su26sd09.service.DatPhongService;
@@ -34,20 +34,20 @@ public class    UserProfilesController {
     @Autowired
     PasswordEncoder passwordEncoder;
 
-    private NguoiDung getNguoiDungByPrincipal(Principal p) {
+    private KhachHang getNguoiDungByPrincipal(Principal p) {
         return repo.getAll().stream()
                 .filter(n -> n.getEmail().equals(p.getName()))
                 .findFirst()
-                .orElse(new NguoiDung());
+                .orElse(new KhachHang());
     }
 
     @GetMapping("")
     public String home(Model model, Principal p,
                        @RequestParam(value = "tab", defaultValue = "overview") String tab) {
 
-        NguoiDung nguoidung = getNguoiDungByPrincipal(p);
+        KhachHang nguoidung = getNguoiDungByPrincipal(p);
 
-        List<DatPhong> allDatPhong = datPhongRepo.FindbyNguoiDung(nguoidung.getMaNguoiDung());
+        List<DatPhong> allDatPhong = datPhongRepo.FindbyNguoiDung(nguoidung.getMa_khach_hang());
 
         Map<Integer, String> phongTheoDon = new HashMap<>();
         for (DatPhong datPhong : allDatPhong) {
@@ -59,7 +59,7 @@ public class    UserProfilesController {
             phongTheoDon.put(datPhong.getId(), tenPhong);
         }
 
-        List<DanhGia> listDanhGia = danhGiaRepo.findByNguoiDung(nguoidung.getMaNguoiDung());
+        List<DanhGia> listDanhGia = danhGiaRepo.findByNguoiDung(nguoidung.getMa_khach_hang());
 
         model.addAttribute("listDatPhong", allDatPhong);
         model.addAttribute("phongTheoDon", phongTheoDon);
@@ -77,7 +77,7 @@ public class    UserProfilesController {
                                 @RequestParam("diaChi") String diaChi,
                                 Principal p,
                                 RedirectAttributes redirectAttributes) {
-        NguoiDung nguoidung = getNguoiDungByPrincipal(p);
+        KhachHang nguoidung = getNguoiDungByPrincipal(p);
         nguoidung.setHoTen(hoTen);
         nguoidung.setSoDienThoai(soDienThoai);
         nguoidung.setDiaChi(diaChi);
@@ -92,7 +92,7 @@ public class    UserProfilesController {
                                  @RequestParam("xacNhanMatKhau") String xacNhanMatKhau,
                                  Principal p,
                                  RedirectAttributes redirectAttributes) {
-        NguoiDung nguoidung = getNguoiDungByPrincipal(p);
+        KhachHang nguoidung = getNguoiDungByPrincipal(p);
 
         if (!passwordEncoder.matches(matKhauHienTai, nguoidung.getMatKhau_hash())) {
             redirectAttributes.addFlashAttribute("errorMsg", "Mật khẩu hiện tại không đúng!");

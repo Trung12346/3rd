@@ -4,10 +4,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import su26sd09.su26sd09.entity.DatPhong;
 import su26sd09.su26sd09.entity.DanhGia;
-import su26sd09.su26sd09.entity.LoaiPhong;
-import su26sd09.su26sd09.entity.NguoiDung;
+import su26sd09.su26sd09.entity.KhachHang;
 import su26sd09.su26sd09.repository.DanhGiaRepo;
 
 import java.time.LocalDateTime;
@@ -94,7 +92,7 @@ public class DanhGiaService {
         repo.findById(id).ifPresent(repo::delete);
     }
 
-    public void createReview(NguoiDung nguoiDung, int diemDanhGia, String noiDung) {
+    public void createReview(KhachHang nguoiDung, int diemDanhGia, String noiDung) {
         DanhGia danhGia = new DanhGia();
         danhGia.setN(nguoiDung);
         danhGia.setDiemDanhGia(Math.max(1, Math.min(5, diemDanhGia)));

@@ -5,29 +5,37 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 public class UserDetail implements org.springframework.security.core.userdetails.UserDetails {
 
-    private final NguoiDung nguoiDung;
+    private Integer id;
+    private String email;
+    private String passwordhash;
+    private VaiTro role;
 
-    public UserDetail(NguoiDung nguoiDung) {
-        this.nguoiDung = nguoiDung;
+    public UserDetail(Integer id,String email,String passwordhash,VaiTro role ) {
+        this.id = id;
+        this.email = email;
+        this.passwordhash = passwordhash;
+        this.role = role;
     }
+
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority(nguoiDung.getVaiTro().getTenVaiTro()));
+        return Collections.singletonList(new SimpleGrantedAuthority(role.getTenVaiTro()));
     }
 
     @Override
     public @Nullable String getPassword() {
-        return nguoiDung.getMatKhau_hash();
+        return passwordhash;
     }
 
     @Override
     public String getUsername() {
-        return nguoiDung.getEmail();
+        return email;
     }
 
     @Override

@@ -8,21 +8,19 @@ import jakarta.validation.constraints.Pattern;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
-import org.springframework.data.domain.Page;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Data
 @Entity
 @Getter
 @Setter
-@Table(name = "nguoi_dung")
-public class  NguoiDung {
+@Table(name = "khach_hang")
+public class KhachHang {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "ma_nguoi_dung")
-    private Integer maNguoiDung;
+    @Column(name = "ma_khach_hang")
+    private Integer ma_khach_hang;
 
 
 
