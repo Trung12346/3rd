@@ -94,13 +94,28 @@ public class DanhGiaService {
         repo.findById(id).ifPresent(repo::delete);
     }
 
-    public void createReview(NguoiDung nguoiDung, int diemDanhGia, String noiDung) {
+    /**
+     * Creates a general review tied to a real booking. danh_gia.ma_dat_phong is NOT NULL
+     * with a FOREIGN KEY to dat_phong (see db.sql), so datPhong must be a non-null booking
+     * that actually belongs to nguoiDung -- callers must resolve/validate ownership before
+     * calling this method, the same way ReviewService does for room reviews.
+     */
+    public DanhGia createReview(NguoiDung nguoiDung, DatPhong datPhong, int diemDanhGia, String noiDung) {
+        if (nguoiDung == null) {
+            throw new IllegalArgumentException("Không tìm thấy tài khoản đăng nhập.");
+        }
+        if (datPhong == null) {
+            throw new IllegalArgumentException("Đánh giá phải gắn với một đơn đặt phòng hợp lệ.");
+        }
+
         DanhGia danhGia = new DanhGia();
         danhGia.setN(nguoiDung);
+        danhGia.setD(datPhong);
         danhGia.setDiemDanhGia(Math.max(1, Math.min(5, diemDanhGia)));
         danhGia.setNoiDung(noiDung);
-        danhGia.setDaDuyet(false);        danhGia.setNgayTao(LocalDateTime.now());
-        repo.save(danhGia);
+        danhGia.setDaDuyet(false);
+        danhGia.setNgayTao(LocalDateTime.now());
+        return repo.save(danhGia);
     }
 
     private boolean contains(String value, String keyword) {

@@ -157,6 +157,19 @@
             margin-bottom: 8px;
         }
 
+        .customer-review-required {
+            color: #C0392B;
+        }
+
+        .customer-review-field-hint {
+            margin: 6px 0 0;
+            color: var(--text-gray, #666);
+            font-size: 12px;
+            font-weight: 400;
+            text-transform: none;
+            line-height: 1.5;
+        }
+
         .customer-review-form-group input,
         .customer-review-form-group textarea {
             width: 100%;
@@ -177,6 +190,10 @@
         .customer-review-form-group input:focus,
         .customer-review-form-group textarea:focus {
             border-color: var(--sky-primary, #3498DB);
+        }
+
+        .customer-review-form-group input:invalid:not(:placeholder-shown) {
+            border-color: #C0392B;
         }
 
         .customer-rating-input {
@@ -339,10 +356,11 @@
                     <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
 
                     <div class="customer-review-form-group">
-                        <label for="customerReviewBooking">Mã đặt phòng</label>
-                        <input id="customerReviewBooking" type="number" name="maDatPhong" min="1"
+                        <label for="customerReviewBooking">Mã đặt phòng <span class="customer-review-required">*</span></label>
+                        <input id="customerReviewBooking" type="number" name="maDatPhong" min="1" required
                                th:value="${maDatPhong != null ? maDatPhong : ''}"
-                               placeholder="Nhập nếu muốn gắn với đơn đặt phòng">
+                               placeholder="Nhập mã đặt phòng của bạn">
+                        <p class="customer-review-field-hint">Bắt buộc — đánh giá phải được gắn với một đơn đặt phòng thuộc tài khoản của bạn.</p>
                     </div>
 
                     <div class="customer-review-form-group">

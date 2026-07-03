@@ -85,6 +85,133 @@ public interface ThongKeRepo extends JpaRepository<HoaDon, Integer> {
         SELECT ten_loai FROM loai_phong
         """, nativeQuery = true)
     public List<String> getTenLoaiPhong();
+    // ===== PHAN TICH NANG CAO (deep analysis additions) =====
+
+    /**
+     * Row 0: [tien_phong, tien_dich_vu, tien_giam, tien_vat] cong don trong ky, tinh tren hoa_don.
+     */
+    @Query(value = """
+        SELECT
+            COALESCE(SUM(tien_phong), 0)    AS doanh_thu_phong,
+            COALESCE(SUM(tien_dich_vu), 0)  AS doanh_thu_dich_vu,
+            COALESCE(SUM(tien_giam), 0)     AS tien_giam,
+            COALESCE(SUM(tien_vat), 0)      AS tien_vat
+        FROM hoa_don
+        WHERE ngay_xuat >= :start AND ngay_xuat < DATEADD(day, 1, :end)
+        """, nativeQuery = true)
+    public List<Object[]> getRevenueBreakdown(@Param("start") LocalDate start, @Param("end") LocalDate end);
+
+    /**
+     * Row 0: [tong_dat_phong, so_dat_huy] trong ky, dua tren ngay tao don.
+     */
+    @Query(value = """
+        SELECT
+            COUNT(*) AS tong_dat_phong,
+            COALESCE(SUM(CASE WHEN trang_thai = N'Da huy' THEN 1 ELSE 0 END), 0) AS so_dat_huy
+        FROM dat_phong
+        WHERE ngay_tao >= :start AND ngay_tao < DATEADD(day, 1, :end)
+        """, nativeQuery = true)
+    public List<Object[]> getCancellationStats(@Param("start") LocalDate start, @Param("end") LocalDate end);
+
+    /**
+     * Row 0: [tong_khach, khach_quay_lai] - khach quay lai la khach co > 1 don (chua tinh don da huy) trong ky.
+     */
+    @Query(value = """
+        SELECT
+            COUNT(*) AS tong_khach,
+            COALESCE(SUM(CASE WHEN cnt > 1 THEN 1 ELSE 0 END), 0) AS khach_quay_lai
+        FROM (
+            SELECT ma_khach, COUNT(*) AS cnt
+            FROM dat_phong
+            WHERE ngay_tao >= :start AND ngay_tao < DATEADD(day, 1, :end)
+              AND trang_thai <> N'Da huy'
+            GROUP BY ma_khach
+        ) t
+        """, nativeQuery = true)
+    public List<Object[]> getRepeatGuestStats(@Param("start") LocalDate start, @Param("end") LocalDate end);
+
+    @Query(value = """
+        SELECT tt.phuong_thuc, SUM(tt.so_tien) AS tong_tien
+        FROM thanh_toan tt
+        JOIN hoa_don hd ON tt.ma_hoa_don = hd.ma_hoa_don
+        WHERE tt.trang_thai = N'Thanh cong'
+          AND hd.ngay_xuat >= :start AND hd.ngay_xuat < DATEADD(day, 1, :end)
+        GROUP BY tt.phuong_thuc
+        ORDER BY SUM(tt.so_tien) DESC
+        """, nativeQuery = true)
+    public List<Object[]> getPaymentMethodBreakdown(@Param("start") LocalDate start, @Param("end") LocalDate end);
+
+    @Query(value = """
+        SELECT trang_thai, COUNT(*) AS so_luong
+        FROM dat_phong
+        WHERE ngay_tao >= :start AND ngay_tao < DATEADD(day, 1, :end)
+        GROUP BY trang_thai
+        """, nativeQuery = true)
+    public List<Object[]> getBookingStatusBreakdown(@Param("start") LocalDate start, @Param("end") LocalDate end);
+
+    @Query(value = """
+        SELECT TOP 10
+            p.so_phong,
+            lp.ten_loai,
+            COUNT(ct.ma_chi_tiet)     AS luot_dat,
+            SUM(ct.gia_khi_dat)       AS doanh_thu
+        FROM chi_tiet_dat_phong ct
+        JOIN dat_phong d  ON ct.ma_dat_phong = d.ma_dat_phong
+        JOIN phong p      ON ct.ma_phong = p.ma_phong
+        JOIN loai_phong lp ON p.ma_loai_phong = lp.ma_loai_phong
+        WHERE d.ngay_tao >= :start AND d.ngay_tao < DATEADD(day, 1, :end)
+          AND d.trang_thai <> N'Da huy'
+        GROUP BY p.so_phong, lp.ten_loai
+        ORDER BY SUM(ct.gia_khi_dat) DESC
+        """, nativeQuery = true)
+    public List<Object[]> getTopPhongDoanhThu(@Param("start") LocalDate start, @Param("end") LocalDate end);
+
+    @Query(value = """
+        SELECT COALESCE(SUM(ct.gia_khi_dat), 0)
+        FROM chi_tiet_dat_phong ct
+        JOIN dat_phong d ON ct.ma_dat_phong = d.ma_dat_phong
+        WHERE d.ngay_tao >= :start AND d.ngay_tao < DATEADD(day, 1, :end)
+          AND d.trang_thai <> N'Da huy'
+        """, nativeQuery = true)
+    public Double getTongDoanhThuPhongChiTiet(@Param("start") LocalDate start, @Param("end") LocalDate end);
+
+    @Query(value = """
+        SELECT TOP 10
+            dv.ten_dich_vu,
+            SUM(ct.so_luong)               AS so_luong,
+            SUM(ct.so_luong * ct.don_gia)  AS doanh_thu
+        FROM chi_tiet_dich_vu ct
+        JOIN dich_vu dv  ON ct.ma_dich_vu = dv.ma_dich_vu
+        JOIN dat_phong d ON ct.ma_dat_phong = d.ma_dat_phong
+        WHERE d.ngay_tao >= :start AND d.ngay_tao < DATEADD(day, 1, :end)
+        GROUP BY dv.ten_dich_vu
+        ORDER BY SUM(ct.so_luong * ct.don_gia) DESC
+        """, nativeQuery = true)
+    public List<Object[]> getTopDichVuDoanhThu(@Param("start") LocalDate start, @Param("end") LocalDate end);
+
+    @Query(value = """
+        SELECT COALESCE(SUM(ct.so_luong * ct.don_gia), 0)
+        FROM chi_tiet_dich_vu ct
+        JOIN dat_phong d ON ct.ma_dat_phong = d.ma_dat_phong
+        WHERE d.ngay_tao >= :start AND d.ngay_tao < DATEADD(day, 1, :end)
+        """, nativeQuery = true)
+    public Double getTongDoanhThuDichVuChiTiet(@Param("start") LocalDate start, @Param("end") LocalDate end);
+
+    @Query(value = """
+        SELECT TOP 10
+            nd.ho_ten,
+            nd.email,
+            COUNT(DISTINCT hd.ma_hoa_don) AS so_lan_dat,
+            SUM(hd.tong_tien)             AS tong_chi_tieu
+        FROM hoa_don hd
+        JOIN dat_phong d  ON hd.ma_dat_phong = d.ma_dat_phong
+        JOIN nguoi_dung nd ON d.ma_khach = nd.ma_nguoi_dung
+        WHERE hd.ngay_xuat >= :start AND hd.ngay_xuat < DATEADD(day, 1, :end)
+        GROUP BY nd.ho_ten, nd.email
+        ORDER BY SUM(hd.tong_tien) DESC
+        """, nativeQuery = true)
+    public List<Object[]> getTopKhachHang(@Param("start") LocalDate start, @Param("end") LocalDate end);
+
 }
 
 
