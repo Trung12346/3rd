@@ -13,7 +13,7 @@
 <main class="admin-wrapper">
     <div class="admin-header">
         <h1>Quản lý đánh giá</h1>
-        <a th:href="@{/admin/danh-gia}" class="admin-btn outline">Làm mới form</a>
+        <a th:href="@{/nhan-su/admin/danh-gia}" class="admin-btn outline">Làm mới form</a>
     </div>
 
     <div th:if="${success}" class="admin-message success">
@@ -26,7 +26,7 @@
     <section class="admin-panel">
         <h2>Danh sách đánh giá</h2>
 
-        <form th:action="@{/admin/danh-gia}" method="get" class="search-row">
+        <form th:action="@{/nhan-su/admin/danh-gia}" method="get" class="search-row">
             <input type="text" name="keyword" placeholder="Tìm theo khách hàng, mã đặt phòng, nội dung..." th:value="${keyword}">
             <button type="submit" class="admin-btn outline">Tìm Kiếm</button>
         </form>
@@ -66,7 +66,7 @@
                         <div th:if="${phError}" class="admin-message error">
                             <span th:text="${phError}"></span>
                         </div>
-                        <form class="admin-reply-form" th:action="@{/admin/loai-phong/{id}/danh-gia/{dgid}(id=${id}, dgid=${dg.id})}" method="post">
+                        <form class="admin-reply-form" th:action="@{/nhan-su/admin/loai-phong/{id}/danh-gia/{dgid}(id=${id}, dgid=${dg.id})}" method="post">
                             <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
                             <textarea class="admin-inline-input" name="phanHoi" rows="2" th:text="${dg.phanHoi}"></textarea>
                             <button type="submit" class="admin-btn small outline">Lưu phản hồi</button>

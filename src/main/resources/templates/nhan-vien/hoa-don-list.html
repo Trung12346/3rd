@@ -79,13 +79,13 @@
         <img src="/logo.jpg" alt="Hotel Logo">
     </a>
     <nav class="nav-menu admin-nav">
-        <a href="/nhan-vien/dat-phong" class="active">Đơn đặt phòng</a>
-        <a href="/nhan-vien/danh-gia">Đánh giá</a>
-        <a href="/nhan-vien/khach-hang">Khách hàng</a>
-        <a href="/nhan-vien/phong">Phòng</a>
-        <a href="/nhan-vien/khuyen-mai">Khuyến mãi</a>
-        <a href="/nhan-vien/dat-phong/them-dich-vu">Thêm dịch vụ</a>
-        <a href="/nhan-vien/hoa-don">Hóa Đơn</a>
+        <a href="/nhan-su/dat-phong" class="active">Đơn đặt phòng</a>
+        <a href="/nhan-su/danh-gia">Đánh giá</a>
+        <a href="/nhan-su/khach-hang">Khách hàng</a>
+        <a href="/nhan-su/phong">Phòng</a>
+        <a href="/nhan-su/khuyen-mai">Khuyến mãi</a>
+        <a href="/nhan-su/dat-phong/them-dich-vu">Thêm dịch vụ</a>
+        <a href="/nhan-su/hoa-don">Hóa Đơn</a>
     </nav>
     <div class="header-actions">
         <a href="/logout" class="btn btn-outline">Đăng Xuất</a>
@@ -95,7 +95,7 @@
 <main class="admin-wrapper">
     <div class="admin-header">
         <h1>Quản Lý Hóa Đơn</h1>
-        <a th:href="@{/nhan-vien/hoa-don}" class="admin-btn outline">Làm Mới</a>
+        <a th:href="@{/nhan-su/hoa-don}" class="admin-btn outline">Làm Mới</a>
     </div>
 
     <div th:if="${success}" class="admin-message success">
@@ -111,7 +111,7 @@
         <!-- Tìm kiếm -->
         <section class="admin-panel">
             <h2>Tìm Kiếm Hóa Đơn</h2>
-            <form th:action="@{/nhan-vien/hoa-don}" method="get">
+            <form th:action="@{/nhan-su/hoa-don}" method="get">
                 <div class="admin-grid">
                     <div class="admin-field">
                         <label>Mã hóa đơn</label>
@@ -164,7 +164,7 @@
                 </div>
                 <div class="admin-actions">
                     <button type="submit" class="admin-btn outline">Tìm Kiếm</button>
-                    <a th:href="@{/nhan-vien/hoa-don}" class="admin-btn outline">Xóa Lọc</a>
+                    <a th:href="@{/nhan-su/hoa-don}" class="admin-btn outline">Xóa Lọc</a>
                 </div>
             </form>
         </section>
@@ -236,7 +236,7 @@
                     <td>
                         <div class="row-actions">
                             <a class="admin-btn small pdf-btn"
-                               th:href="@{/nhan-vien/hoa-don/xuat-pdf/{id}(id=${hd.id})}"
+                               th:href="@{/nhan-su/hoa-don/xuat-pdf/{id}(id=${hd.id})}"
                                target="_blank">
                                 Xuất PDF
                             </a>

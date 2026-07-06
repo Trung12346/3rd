@@ -13,7 +13,7 @@
 <main class="admin-wrapper">
     <div class="admin-header">
         <h1>Quan ly phong</h1>
-        <a th:href="@{/nhan-vien/phong}" class="admin-btn outline">Lam moi form</a>
+        <a th:href="@{/nhan-su/phong}" class="admin-btn outline">Lam moi form</a>
     </div>
 
     <div th:if="${success}" class="admin-message success">
@@ -26,7 +26,7 @@
     <section class="admin-panel">
         <h2 th:text="${title}">Them phong</h2>
 
-        <form th:action="@{/nhan-vien/phong/save}" th:object="${phong}" method="post">
+        <form th:action="@{/nhan-su/phong/save}" th:object="${phong}" method="post">
             <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
             <input type="hidden" th:field="*{maPhong}">
 
@@ -90,7 +90,7 @@
 
             <div class="admin-actions">
                 <button type="submit" class="admin-btn">Luu phong</button>
-                <a th:href="@{/nhan-vien/phong}" class="admin-btn outline">Huy</a>
+                <a th:href="@{/nhan-su/phong}" class="admin-btn outline">Huy</a>
             </div>
         </form>
     </section>
@@ -98,7 +98,7 @@
     <section class="admin-panel">
         <h2>Danh sach phong</h2>
 
-        <form th:action="@{/nhan-vien/phong}" method="get" class="search-row">
+        <form th:action="@{/nhan-su/phong}" method="get" class="search-row">
             <input type="text" name="keyword" placeholder="Tim theo so phong, trang thai, loai phong..." th:value="${keyword}">
             <button type="submit" class="admin-btn outline">Tim kiem</button>
         </form>
@@ -148,8 +148,8 @@
                     <td>
                         <div class="row-actions">
                             <a class="admin-btn small outline"
-                               th:href="@{/nhan-vien/phong/edit/{id}(id=${p.maPhong}, keyword=${keyword})}">Sua</a>
-                            <form th:action="@{/nhan-vien/phong/delete/{id}(id=${p.maPhong})}"
+                               th:href="@{/nhan-su/phong/edit/{id}(id=${p.maPhong}, keyword=${keyword})}">Sua</a>
+                            <form th:action="@{/nhan-su/phong/delete/{id}(id=${p.maPhong})}"
                                   method="post"
                                   onsubmit="return confirm('Ban co chac muon xoa phong nay?')">
                                 <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">

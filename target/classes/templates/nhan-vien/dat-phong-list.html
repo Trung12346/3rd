@@ -198,7 +198,7 @@
 <main class="admin-wrapper">
     <div class="admin-header">
         <h1>Quản Lý Đơn Đặt Phòng</h1>
-        <a th:href="@{/nhan-vien/dat-phong}" class="admin-btn outline">Làm mới</a>
+        <a th:href="@{/nhan-su/dat-phong}" class="admin-btn outline">Làm mới</a>
     </div>
 
     <div th:if="${success}" class="admin-message success">
@@ -211,7 +211,7 @@
     <section class="admin-panel">
         <h2>Tìm Kiếm Đơn Đặt Phòng</h2>
 
-        <form th:action="@{/nhan-vien/dat-phong/search}" method="get">
+        <form th:action="@{/nhan-su/dat-phong/search}" method="get">
             <div class="admin-grid">
                 <div class="admin-field">
                     <label>Mã đặt phòng</label>
@@ -289,7 +289,7 @@
 
             <div class="admin-actions">
                 <button type="submit" class="admin-btn outline">Tìm Kiếm</button>
-                <a th:href="@{/nhan-vien/dat-phong}" class="admin-btn outline">Xóa Lọc</a>
+                <a th:href="@{/nhan-su/dat-phong}" class="admin-btn outline">Xóa Lọc</a>
             </div>
         </form>
     </section>
@@ -366,7 +366,7 @@
 
             <div class="admin-actions">
                 <button type="submit" class="admin-btn outline">Lưu Thay Đổi</button>
-                <a th:href="@{/nhan-vien/dat-phong(page=${currentPage}, size=${pageSize})}" class="admin-btn outline">Hủy</a>
+                <a th:href="@{/nhan-su/dat-phong(page=${currentPage}, size=${pageSize})}" class="admin-btn outline">Hủy</a>
             </div>
         </form>
     </section>
@@ -437,7 +437,7 @@
                             </span>
 
                             <form th:if="${dp.trangThai != 'Chua thanh toan' and dp.trangThai != 'Da huy' and dp.trangThai != 'Da tra phong'}"
-                                  th:action="@{/nhan-vien/dat-phong/update-trang-thai}" method="post" style="margin: 0;">
+                                  th:action="@{/nhan-su/dat-phong/update-trang-thai}" method="post" style="margin: 0;">
                                 <input type="hidden" name="id" th:value="${dp.id}">
                                 <input type="hidden" name="page" th:value="${currentPage}">
                                 <input type="hidden" name="size" th:value="${pageSize}">
@@ -470,7 +470,7 @@
                             </span>
 
                             <form th:if="${dp.trangThai == 'Chua thanh toan'}"
-                                  th:action="@{/nhan-vien/dat-phong/cancel}" method="post" style="margin: 0;">
+                                  th:action="@{/nhan-su/dat-phong/cancel}" method="post" style="margin: 0;">
                                 <input type="hidden" name="id" th:value="${dp.id}">
                                 <input type="hidden" name="page" th:value="${currentPage}">
                                 <input type="hidden" name="size" th:value="${pageSize}">
@@ -494,7 +494,7 @@
                         </span>
                     </td>
                     <td>
-                        <a th:href="@{/nhan-vien/dat-phong/chi-tiet/{id}(id=${dp.id})}"
+                        <a th:href="@{/nhan-su/dat-phong/chi-tiet/{id}(id=${dp.id})}"
                            class="admin-btn small outline">
                             Sửa
                         </a>
@@ -518,30 +518,30 @@
 
             <div class="pagination-links">
                 <a th:if="${currentPage > 0}"
-                   th:href="@{/nhan-vien/dat-phong(page=0, size=${pageSize})}"
+                   th:href="@{/nhan-su/dat-phong(page=0, size=${pageSize})}"
                    class="page-btn" aria-label="Trang đầu">&laquo;</a>
                 <span th:if="${currentPage == 0}" class="page-btn disabled">&laquo;</span>
 
                 <a th:if="${currentPage > 0}"
-                   th:href="@{/nhan-vien/dat-phong(page=${currentPage - 1}, size=${pageSize})}"
+                   th:href="@{/nhan-su/dat-phong(page=${currentPage - 1}, size=${pageSize})}"
                    class="page-btn" aria-label="Trang trước">&lsaquo;</a>
                 <span th:if="${currentPage == 0}" class="page-btn disabled">&lsaquo;</span>
 
                 <span th:each="i : ${#numbers.sequence(0, totalPages - 1)}">
                     <a th:if="${i != currentPage}"
-                       th:href="@{/nhan-vien/dat-phong(page=${i}, size=${pageSize})}"
+                       th:href="@{/nhan-su/dat-phong(page=${i}, size=${pageSize})}"
                        class="page-btn" th:text="${i + 1}"></a>
                     <span th:if="${i == currentPage}"
                           class="page-btn active" th:text="${i + 1}"></span>
                 </span>
 
                 <a th:if="${currentPage < totalPages - 1}"
-                   th:href="@{/nhan-vien/dat-phong(page=${currentPage + 1}, size=${pageSize})}"
+                   th:href="@{/nhan-su/dat-phong(page=${currentPage + 1}, size=${pageSize})}"
                    class="page-btn" aria-label="Trang sau">&rsaquo;</a>
                 <span th:if="${currentPage == totalPages - 1}" class="page-btn disabled">&rsaquo;</span>
 
                 <a th:if="${currentPage < totalPages - 1}"
-                   th:href="@{/nhan-vien/dat-phong(page=${totalPages - 1}, size=${pageSize})}"
+                   th:href="@{/nhan-su/dat-phong(page=${totalPages - 1}, size=${pageSize})}"
                    class="page-btn" aria-label="Trang cuối">&raquo;</a>
                 <span th:if="${currentPage == totalPages - 1}" class="page-btn disabled">&raquo;</span>
             </div>

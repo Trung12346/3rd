@@ -13,7 +13,7 @@
 <main class="admin-wrapper">
     <div class="admin-header">
         <h1>Quan Ly Nguoi Dung</h1>
-        <a th:href="@{/admin/nguoi-dung}" class="admin-btn outline">Lam Moi Form</a>
+        <a th:href="@{/nhan-su/admin/nguoi-dung}" class="admin-btn outline">Lam Moi Form</a>
     </div>
 
     <div th:if="${success}" class="admin-message success">
@@ -26,7 +26,7 @@
     <section class="admin-panel">
         <h2 th:text="${title}">Them nguoi dung</h2>
 
-        <form th:action="@{/admin/nguoi-dung/save}" th:object="${nguoiDung}" method="post">
+        <form th:action="@{/nhan-su/admin/nguoi-dung/save}" th:object="${nguoiDung}" method="post">
             <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
             <input type="hidden" th:field="*{maNguoiDung}">
 
@@ -86,7 +86,7 @@
 
             <div class="admin-actions">
                 <button type="submit" class="admin-btn">Luu Nguoi Dung</button>
-                <a th:href="@{/admin/nguoi-dung}" class="admin-btn outline">Huy</a>
+                <a th:href="@{/nhan-su/admin/nguoi-dung}" class="admin-btn outline">Huy</a>
             </div>
         </form>
     </section>
@@ -94,7 +94,7 @@
     <section class="admin-panel">
         <h2>Danh Sach Nguoi Dung</h2>
 
-        <form th:action="@{/admin/nguoi-dung/search}" method="get" class="search-row">
+        <form th:action="@{/nhan-su/admin/nguoi-dung/search}" method="get" class="search-row">
             <input type="text"
                    name="keyword"
                    placeholder="Tim theo ten"
@@ -133,10 +133,10 @@
                     <td>
                         <div class="row-actions">
                             <a class="admin-btn small outline"
-                               th:href="@{/admin/nguoi-dung/edit/{id}(id=${nd.maNguoiDung})}">
+                               th:href="@{/nhan-su/admin/nguoi-dung/edit/{id}(id=${nd.maNguoiDung})}">
                                 Sua
                             </a>
-                            <form th:action="@{/admin/nguoi-dung/lock/{id}(id=${nd.maNguoiDung})}"
+                            <form th:action="@{/nhan-su/admin/nguoi-dung/lock/{id}(id=${nd.maNguoiDung})}"
                                   method="post"
                                   onsubmit="return confirm('Ban co chac muon khoa nguoi dung nay?')">
                                 <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">

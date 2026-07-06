@@ -13,7 +13,7 @@
 <main class="admin-wrapper">
     <div class="admin-header">
         <h1>Quan ly khach hang</h1>
-        <a th:href="@{/nhan-vien/khach-hang}" class="admin-btn outline">Lam moi</a>
+        <a th:href="@{/nhan-su/khach-hang}" class="admin-btn outline">Lam moi</a>
     </div>
 
     <div th:if="${success}" class="admin-message success">
@@ -26,7 +26,7 @@
     <section class="admin-panel">
         <h2>Danh sach khach hang</h2>
 
-        <form th:action="@{/nhan-vien/khach-hang}" method="get" class="search-row">
+        <form th:action="@{/nhan-su/khach-hang}" method="get" class="search-row">
             <input type="text" name="keyword" placeholder="Tim theo ten, email, so dien thoai..." th:value="${keyword}">
             <button type="submit" class="admin-btn outline">Tim kiem</button>
         </form>
@@ -61,7 +61,7 @@
                     <td th:text="${nd.ngayTao != null ? #temporals.format(nd.ngayTao, 'dd/MM/yyyy') : ''}"></td>
                     <td>
                         <form th:id="${'customer-update-' + nd.maNguoiDung}"
-                              th:action="@{/nhan-vien/khach-hang/update/{id}(id=${nd.maNguoiDung})}"
+                              th:action="@{/nhan-su/khach-hang/update/{id}(id=${nd.maNguoiDung})}"
                               method="post">
                             <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
                             <button type="submit" class="admin-btn small">Luu</button>

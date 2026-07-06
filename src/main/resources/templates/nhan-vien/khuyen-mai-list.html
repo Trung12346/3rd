@@ -13,7 +13,7 @@
 <main class="admin-wrapper">
     <div class="admin-header">
         <h1>Quan ly khuyen mai</h1>
-        <a th:href="@{/nhan-vien/khuyen-mai}" class="admin-btn outline">Lam moi form</a>
+        <a th:href="@{/nhan-su/khuyen-mai}" class="admin-btn outline">Lam moi form</a>
     </div>
 
     <div th:if="${success}" class="admin-message success">
@@ -26,7 +26,7 @@
     <section class="admin-panel">
         <h2 th:text="${title}">Them khuyen mai</h2>
 
-        <form th:action="@{/nhan-vien/khuyen-mai/save}" th:object="${khuyenMai}" method="post">
+        <form th:action="@{/nhan-su/khuyen-mai/save}" th:object="${khuyenMai}" method="post">
             <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
             <input type="hidden" th:field="*{id}">
 
@@ -75,7 +75,7 @@
 
             <div class="admin-actions">
                 <button type="submit" class="admin-btn">Luu khuyen mai</button>
-                <a th:href="@{/nhan-vien/khuyen-mai}" class="admin-btn outline">Huy</a>
+                <a th:href="@{/nhan-su/khuyen-mai}" class="admin-btn outline">Huy</a>
             </div>
         </form>
     </section>
@@ -83,7 +83,7 @@
     <section class="admin-panel">
         <h2>Danh sach khuyen mai</h2>
 
-        <form th:action="@{/nhan-vien/khuyen-mai}" method="get" class="search-row">
+        <form th:action="@{/nhan-su/khuyen-mai}" method="get" class="search-row">
             <input type="text" name="keyword" placeholder="Tim theo ma, mo ta, loai giam, nguoi tao..." th:value="${keyword}">
             <button type="submit" class="admin-btn outline">Tim kiem</button>
         </form>
@@ -121,8 +121,8 @@
                     <td>
                         <div class="row-actions">
                             <a class="admin-btn small outline"
-                               th:href="@{/nhan-vien/khuyen-mai/edit/{id}(id=${km.id}, keyword=${keyword})}">Sua</a>
-                            <form th:action="@{/nhan-vien/khuyen-mai/delete/{id}(id=${km.id})}"
+                               th:href="@{/nhan-su/khuyen-mai/edit/{id}(id=${km.id}, keyword=${keyword})}">Sua</a>
+                            <form th:action="@{/nhan-su/khuyen-mai/delete/{id}(id=${km.id})}"
                                   method="post"
                                   onsubmit="return confirm('Ban co chac muon xoa khuyen mai nay?')">
                                 <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">

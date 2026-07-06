@@ -18,7 +18,7 @@ import su26sd09.su26sd09.service.UserService;
 import java.security.Principal;
 
 @Controller
-@RequestMapping("/admin/khach-hang")
+@RequestMapping("/nhan-su/admin/khach-hang")
 public class AdminKhachHangController {
     @Autowired
     private KhachHangRepository ndRepo;
@@ -65,7 +65,7 @@ public class AdminKhachHangController {
         )
         {
             redirect.addFlashAttribute("error","số điện thoại hoặc email này đã tốn tại");
-            return "redirect:/admin/khach-hang";
+            return "redirect:/nhan-su/admin/khach-hang";
         }
         if(nguoiDung.getMa_khach_hang() != null)
         {
@@ -90,7 +90,7 @@ public class AdminKhachHangController {
             if(!errByp)
             {
                 redirect.addFlashAttribute("error", r.getFieldError().getDefaultMessage());
-                return "redirect:/admin/khach-hang";
+                return "redirect:/nhan-su/admin/khach-hang";
             }
 
         }
@@ -98,7 +98,7 @@ public class AdminKhachHangController {
         userService.save(nguoiDung);
         redirect.addFlashAttribute("success", "Luu nguoi dung thanh cong");
 
-        return "redirect:/admin/khach-hang";
+        return "redirect:/nhan-su/admin/khach-hang";
     }
 
     @PostMapping("/lock/{id}")
@@ -111,6 +111,6 @@ public class AdminKhachHangController {
         userService.setTrangThai(id, false);
         redirect.addFlashAttribute("success", "Khoa nguoi dung thanh cong");
 
-        return "redirect:/admin/khach-hang";
+        return "redirect:/nhan-su/admin/khach-hang";
     }
 }

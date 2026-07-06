@@ -166,23 +166,7 @@
     <div class="topbar-left"><span>Tel: +84 123 456 789 &nbsp;|&nbsp; Email: info@hotel.local</span></div>
 </div>
 
-<header>
-    <a href="/home" class="logo"><img src="/logo.jpg" alt="Hotel Logo"></a>
-    <nav class="nav-menu">
-        <a href="/home">Trang Chủ</a>
-        <a href="/phong">Phòng Nghỉ</a>
-        <a href="/loai-phong">Loại Phòng</a>
-        <a href="/gio-hang">Danh Sách Đặt Phòng</a>
-    </nav>
-    <div class="header-actions" sec:authorize="isAnonymous()">
-        <a href="/Login" class="btn btn-outline">Đăng Nhập</a>
-        <a href="/Register" class="btn btn-filled">Đăng Ký</a>
-    </div>
-    <div class="header-actions" sec:authorize="isAuthenticated()">
-        <a href="/profiles" class="btn btn-outline">Thông Tin Tài Khoản</a>
-        <a href="/logout" class="btn btn-filled">Đăng Xuất</a>
-    </div>
-</header>
+<div th:replace="~{fragments/headers/app-header :: appHeader}"></div>
 
 <main class="cdp-shell">
 
@@ -217,7 +201,7 @@
             <span class="cdp-panel-sub" th:text="${datPhong.n != null} ? 'Tài khoản đã đăng ký' : 'Khách vãng lai'">Khách vãng lai</span>
         </div>
 
-        <form th:action="@{/nhan-vien/dat-phong/chi-tiet/{id}/khach-hang(id=${datPhong.id})}" method="post"
+        <form th:action="@{/nhan-su/dat-phong/chi-tiet/{id}/khach-hang(id=${datPhong.id})}" method="post"
               class="stay-grid" style="grid-template-columns: repeat(2, minmax(0,1fr));">
             <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
 
@@ -253,7 +237,7 @@
                 </div>
                 <div class="stay-field">
                     <label>Số điện thoại tài khoản</label>
-                    <input type="text" name="sdt" th:value="${datPhong.n.sdt}">
+                    <input type="text" name="sdt" th:value="${datPhong.n.soDienThoai}">
                 </div>
                 <div class="stay-field">
                     <label>Số CCCD (đơn này)</label>
@@ -281,7 +265,7 @@
             <span>Còn nợ: <b th:text="${#numbers.formatDecimal(hoaDon.tongTien.subtract(hoaDon.daThanhToan ?: 0), 0, 'COMMA', 0, 'POINT')} + ' VND'">0 VND</b></span>
         </div>
 
-        <form th:action="@{/nhan-vien/dat-phong/chi-tiet/{id}/thu-tien(id=${datPhong.id})}" method="post" class="thu-tien-form">
+        <form th:action="@{/nhan-su/dat-phong/chi-tiet/{id}/thu-tien(id=${datPhong.id})}" method="post" class="thu-tien-form">
             <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
 
             <div class="ff">
@@ -303,7 +287,7 @@
         </form>
     </div>
 
-    <form th:action="@{/nhan-vien/dat-phong/chi-tiet/{id}/update(id=${datPhong != null ? datPhong.id : 0})}"
+    <form th:action="@{/nhan-su/dat-phong/chi-tiet/{id}/update(id=${datPhong != null ? datPhong.id : 0})}"
           method="post" id="chiTietForm">
         <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
         <input type="hidden" name="maDatPhong" th:value="${datPhong != null ? datPhong.id : 0}">

@@ -17,12 +17,14 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="SU26-SD-09" />
+        <module name="3rd" />
         <module name="SU26-SD-09-master" />
       </profile>
     </annotationProcessing>
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="3rd" options="-parameters" />
       <module name="SU26-SD-09" options="-parameters" />
       <module name="SU26-SD-09-master" options="-parameters" />
       <module name="su26sd09" options="-parameters" />

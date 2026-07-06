@@ -10,7 +10,7 @@ import su26sd09.su26sd09.entity.LoaiPhong;
 import su26sd09.su26sd09.service.LoaiPhongService;
 
 @Controller
-@RequestMapping("/admin/loai-phong")
+@RequestMapping("/nhan-su/admin/loai-phong")
 public class AdminLoaiPhongController {
 
     @Autowired
@@ -36,20 +36,20 @@ public class AdminLoaiPhongController {
     public String save(RedirectAttributes redirect, @ModelAttribute("loaiPhong") LoaiPhong l , BindingResult b){
         if (b.hasErrors()){
             redirect.addFlashAttribute("error",b.getFieldError().getDefaultMessage());
-            return "redirect:/admin/loai-phong";
+            return "redirect:/nhan-su/admin/loai-phong";
         }
         if (repo.CheckTrungLoai(l)){
             redirect.addFlashAttribute("error","tên loại phòng đã tồn tại");
-            return "redirect:/admin/loai-phong";
+            return "redirect:/nhan-su/admin/loai-phong";
         }
         repo.save(l);
-        return "redirect:/admin/loai-phong";
+        return "redirect:/nhan-su/admin/loai-phong";
     }
 
     @GetMapping("/delete/{id}")
     public String delete(@PathVariable("id") int id){
         repo.delete(repo.findbyid(id));
-        return "redirect:/admin/loai-phong";
+        return "redirect:/nhan-su/admin/loai-phong";
     }
 
 
@@ -62,7 +62,7 @@ public class AdminLoaiPhongController {
             return "admin/loai-phong-list";
         }
         model.addAttribute("error","không tìm thấy kết quả khả dụng");
-        return "redirect:/admin/loai-phong";
+        return "redirect:/nhan-su/admin/loai-phong";
     }
 
 }

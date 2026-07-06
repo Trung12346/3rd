@@ -139,6 +139,69 @@
             font-size: 12px;
         }
 
+        .chart-row.chart-row-3col {
+            grid-template-columns: 1.1fr 1fr 0.9fr;
+        }
+
+        /* ===== GHI NHAN & THUC THU (invoiced vs cash-collected) ===== */
+        .cash-compare-row {
+            align-items: baseline;
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .cash-compare-dot {
+            border-radius: 50%;
+            flex-shrink: 0;
+            height: 8px;
+            width: 8px;
+            margin-top: 3px;
+        }
+
+        .cash-compare-label {
+            color: var(--text-dark);
+            flex: 1;
+            font-size: 13px;
+        }
+
+        .cash-compare-value {
+            font-family: 'Playfair Display', serif;
+            font-size: 16px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .cash-compare-bar-wrap {
+            background: #eef2f5;
+            border-radius: 999px;
+            height: 10px;
+            margin: 14px 0 10px;
+            overflow: hidden;
+            width: 100%;
+        }
+
+        .cash-compare-bar {
+            background: linear-gradient(90deg, #27AE60, #2ECC71);
+            border-radius: 999px;
+            height: 100%;
+            transition: width 0.3s ease;
+        }
+
+        .cash-compare-foot {
+            color: var(--text-gray);
+            display: flex;
+            font-size: 12px;
+            justify-content: space-between;
+        }
+
+        .cash-compare-hint {
+            color: var(--text-gray);
+            font-size: 11px;
+            line-height: 1.5;
+            margin-top: 14px;
+        }
+
         /* ===== KPI PHU (RevPAR / ADR / huy / quay lai) ===== */
         .stat-card.compact {
             padding: 16px 18px;
@@ -260,6 +323,7 @@
 
         @media (max-width: 1100px) {
             .chart-row { grid-template-columns: 1fr; }
+            .chart-row.chart-row-3col { grid-template-columns: 1fr; }
             .status-flow-item { grid-template-columns: 120px 1fr 50px; }
         }
 
@@ -281,8 +345,8 @@
     <div class="admin-header">
         <h1>Thống Kê Doanh Thu</h1>
         <div class="row-actions">
-            <a th:href="@{/admin/thong-ke}" class="admin-btn outline">Làm Mới</a>
-            <a th:href="@{/admin/thong-ke/xuat-pdf(tuNgay=${tuNgay},denNgay=${denNgay})}" class="admin-btn" target="_blank">Xuất PDF</a>
+            <a th:href="@{/nhan-su/admin/thong-ke}" class="admin-btn outline">Làm Mới</a>
+            <a th:href="@{/nhan-su/admin/thong-ke/xuat-pdf(tuNgay=${tuNgay},denNgay=${denNgay})}" class="admin-btn" target="_blank">Xuất PDF</a>
         </div>
     </div>
 
@@ -296,7 +360,7 @@
     <!-- ===== BO LOC ===== -->
     <section class="admin-panel">
         <h2>Bộ Lọc Thống Kê</h2>
-        <form th:action="@{/admin/thong-ke}" method="get">
+        <form th:action="@{/nhan-su/admin/thong-ke}" method="get">
             <div class="admin-grid">
                 <div class="admin-field">
                     <label>Từ ngày</label>
@@ -329,7 +393,7 @@
 
             <div class="admin-actions">
                 <button type="submit" class="admin-btn outline">Áp Dụng</button>
-                <a th:href="@{/admin/thong-ke}" class="admin-btn outline">Xóa Lọc</a>
+                <a th:href="@{/nhan-su/admin/thong-ke}" class="admin-btn outline">Xóa Lọc</a>
             </div>
         </form>
     </section>
@@ -460,7 +524,7 @@
             <script>
                 (async () => {
                     const ctx = document.getElementById('myChart');
-                    const rsp = await fetch(`/admin/thong-ke/doanh-thu?tuNgay=${tuNgay}&denNgay=${denNgay}&xemTheo=${xemTheo}`).then(response => response.json())
+                    const rsp = await fetch(`/nhan-su/admin/thong-ke/doanh-thu?tuNgay=${tuNgay}&denNgay=${denNgay}&xemTheo=${xemTheo}`).then(response => response.json())
                     const data = {
                         labels: rsp.labels,
 
@@ -500,11 +564,34 @@
 
     <!-- ===== CO CAU DOANH THU & PHUONG THUC THANH TOAN ===== -->
     <section class="admin-panel">
-        <div class="chart-row">
+        <div class="chart-row chart-row-3col">
             <div>
                 <h3>Cơ Cấu Doanh Thu</h3>
                 <div class="composition-bar-wrap" id="compositionBar"></div>
                 <div class="composition-legend" id="compositionLegend"></div>
+            </div>
+            <div>
+                <h3>Ghi Nhận &amp; Thực Thu</h3>
+                <div class="cash-compare">
+                    <div class="cash-compare-row">
+                        <span class="cash-compare-dot" style="background:#3498DB"></span>
+                        <span class="cash-compare-label">Doanh thu ghi nhận <span class="cell-sub">(hóa đơn)</span></span>
+                        <span class="cash-compare-value" id="kpiDoanhThuGhiNhan">--</span>
+                    </div>
+                    <div class="cash-compare-row">
+                        <span class="cash-compare-dot" style="background:#27AE60"></span>
+                        <span class="cash-compare-label">Doanh thu thực thu <span class="cell-sub">(thanh toán)</span></span>
+                        <span class="cash-compare-value" id="kpiDoanhThuThucThu">--</span>
+                    </div>
+                    <div class="cash-compare-bar-wrap">
+                        <div class="cash-compare-bar" id="cashCompareBar" style="width:0%"></div>
+                    </div>
+                    <div class="cash-compare-foot">
+                        <span>Tỷ lệ thu tiền: <strong id="kpiTyLeThuTien">--</strong></span>
+                        <span id="kpiSoGiaoDich">--</span>
+                    </div>
+                    <p class="cash-compare-hint">Doanh thu ghi nhận tính theo ngày xuất hóa đơn; doanh thu thực thu tính theo ngày thanh toán thành công — hai mốc thời gian có thể lệch nhau nên tỷ lệ trên chỉ mang tính tham khảo.</p>
+                </div>
             </div>
             <div>
                 <h3>Phương Thức Thanh Toán</h3>
@@ -513,13 +600,20 @@
         </div>
         <script>
             (async () => {
-                const rsp = await fetch(`/admin/thong-ke/phan-tich-nang-cao?tuNgay=${tuNgay}&denNgay=${denNgay}`).then(r => r.json());
+                const rsp = await fetch(`/nhan-su/admin/thong-ke/phan-tich-nang-cao?tuNgay=${tuNgay}&denNgay=${denNgay}`).then(r => r.json());
 
                 // ----- KPI cards -----
                 document.getElementById('kpiRevPar').textContent = formatVND(rsp.revPar);
                 document.getElementById('kpiAdr').textContent = formatVND(rsp.adr);
                 document.getElementById('kpiCancelRate').textContent = formatPercent(rsp.tyLeHuy);
                 document.getElementById('kpiRepeatRate').textContent = formatPercent(rsp.tyLeKhachQuayLai);
+
+                // ----- Ghi nhan (hoa don) vs Thuc thu (thanh toan) -----
+                document.getElementById('kpiDoanhThuGhiNhan').textContent = formatVND(rsp.doanhThuGhiNhan);
+                document.getElementById('kpiDoanhThuThucThu').textContent = formatVND(rsp.doanhThuThucThu);
+                document.getElementById('kpiTyLeThuTien').textContent = formatPercent(rsp.tyLeThuTien);
+                document.getElementById('kpiSoGiaoDich').textContent = `${rsp.soGiaoDichThanhCong || 0} giao dịch thành công`;
+                document.getElementById('cashCompareBar').style.width = `${Math.min(100, rsp.tyLeThuTien || 0)}%`;
 
                 // ----- Co cau doanh thu -----
                 const compParts = [
@@ -611,7 +705,7 @@
                     <script>
                         (async () => {
                             const ctxPie = document.getElementById('roomTypeChart');
-                            const rspPie = await fetch(`/admin/thong-ke/doanh-thu-theo-loai-phong?tuNgay=${tuNgay}&denNgay=${denNgay}`).then(response => response.json())
+                            const rspPie = await fetch(`/nhan-su/admin/thong-ke/doanh-thu-theo-loai-phong?tuNgay=${tuNgay}&denNgay=${denNgay}`).then(response => response.json())
                             const dataPie = {
                                 labels: rspPie.labels,
 
@@ -652,7 +746,7 @@
                 <div class="chart-legend" id="roomTypeLegend"></div>
                 <script>
                     (async () => {
-                        const rspDtl = await fetch(`/admin/thong-ke/chi-tiet-doanh-thu-theo-loai-phong?tuNgay=${tuNgay}&denNgay=${denNgay}`).then(response => response.json());
+                        const rspDtl = await fetch(`/nhan-su/admin/thong-ke/chi-tiet-doanh-thu-theo-loai-phong?tuNgay=${tuNgay}&denNgay=${denNgay}`).then(response => response.json());
                         let html = '';
                         rspDtl.forEach((t) => {
                             html += `
@@ -759,7 +853,7 @@
                 // ----- Top phong -----
                 const topPhongEl = document.getElementById('topPhongBody');
                 try {
-                    const topPhong = await fetch(`/admin/thong-ke/top-phong?tuNgay=${tuNgay}&denNgay=${denNgay}`).then(r => r.json());
+                    const topPhong = await fetch(`/nhan-su/admin/thong-ke/top-phong?tuNgay=${tuNgay}&denNgay=${denNgay}`).then(r => r.json());
                     topPhongEl.innerHTML = (!topPhong || topPhong.length === 0)
                         ? '<tr><td colspan="6"><div class="empty-state">Chưa có dữ liệu đặt phòng trong khoảng thời gian này.</div></td></tr>'
                         : topPhong.map((r, i) => `
@@ -782,7 +876,7 @@
                 // ----- Top dich vu -----
                 const topDichVuEl = document.getElementById('topDichVuBody');
                 try {
-                    const topDichVu = await fetch(`/admin/thong-ke/top-dich-vu?tuNgay=${tuNgay}&denNgay=${denNgay}`).then(r => r.json());
+                    const topDichVu = await fetch(`/nhan-su/admin/thong-ke/top-dich-vu?tuNgay=${tuNgay}&denNgay=${denNgay}`).then(r => r.json());
                     topDichVuEl.innerHTML = (!topDichVu || topDichVu.length === 0)
                         ? '<tr><td colspan="5"><div class="empty-state">Chưa có dịch vụ nào được sử dụng trong khoảng thời gian này.</div></td></tr>'
                         : topDichVu.map((r, i) => `
@@ -804,7 +898,7 @@
                 // ----- Top khach hang -----
                 const topKhachHangEl = document.getElementById('topKhachHangBody');
                 try {
-                    const topKhachHang = await fetch(`/admin/thong-ke/top-khach-hang?tuNgay=${tuNgay}&denNgay=${denNgay}`).then(r => r.json());
+                    const topKhachHang = await fetch(`/nhan-su/admin/thong-ke/top-khach-hang?tuNgay=${tuNgay}&denNgay=${denNgay}`).then(r => r.json());
                     topKhachHangEl.innerHTML = (!topKhachHang || topKhachHang.length === 0)
                         ? '<tr><td colspan="5"><div class="empty-state">Chưa có khách hàng nào phát sinh hóa đơn trong khoảng thời gian này.</div></td></tr>'
                         : topKhachHang.map((r, i) => `

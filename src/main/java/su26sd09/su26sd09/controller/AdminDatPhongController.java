@@ -26,7 +26,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @Controller
-@RequestMapping("/admin/dat-phong")
+@RequestMapping("/nhan-su/admin/dat-phong")
 public class AdminDatPhongController {
 
     @Autowired
@@ -108,7 +108,7 @@ public class AdminDatPhongController {
         DatPhong datPhong = datPhongService.findById(id);
         if (datPhong == null) {
             redirectAttributes.addFlashAttribute("error", "Khong tim thay don dat phong #" + id);
-            return "redirect:/admin/dat-phong";
+            return "redirect:/nhan-su/admin/dat-phong";
         }
 
         List<ChiTietDatPhong> chiTietDatPhongList = chiTietDatPhongService.findByDatPhongId(id);
@@ -146,13 +146,13 @@ public class AdminDatPhongController {
         DatPhong datPhong = datPhongService.findById(id);
         if (datPhong == null) {
             redirectAttributes.addFlashAttribute("error", "Khong tim thay don dat phong #" + id);
-            return "redirect:/admin/dat-phong";
+            return "redirect:/nhan-su/admin/dat-phong";
         }
         List<String> loiCapNhat = validateChiTietDatPhong(ngayNhan, ngayTra, nguoiLon, treEm, dichVuIds, allParams);
         if (!loiCapNhat.isEmpty()) {
             redirectAttributes.addFlashAttribute("soLoi", loiCapNhat.size());
             redirectAttributes.addFlashAttribute("loiCapNhat", String.join(" ", loiCapNhat));
-            return "redirect:/admin/dat-phong/chi-tiet/" + id;
+            return "redirect:/nhan-su/admin/dat-phong/chi-tiet/" + id;
         }
 
         datPhong.setNgaydatPhong(ngayNhan);
@@ -169,7 +169,7 @@ public class AdminDatPhongController {
         capNhatHoaDonNeuCo(id, tongTienPhong, tongTienDichVu, tongTienGiam, tongTienVat, tongCong, km);
 
         redirectAttributes.addFlashAttribute("thanhCongCapNhat", "Cap nhat chi tiet dat phong #" + id + " thanh cong.");
-        return "redirect:/admin/dat-phong/chi-tiet/" + id;
+        return "redirect:/nhan-su/admin/dat-phong/chi-tiet/" + id;
     }
 
     private void capNhatGiaPhongTheoNgay(Integer maDatPhong, LocalDateTime ngayNhan, LocalDateTime ngayTra) {
@@ -307,13 +307,13 @@ public class AdminDatPhongController {
         DatPhong dp = datPhongService.findById(id);
         if (dp == null) {
             redirectAttributes.addFlashAttribute("error", "Không tìm thấy đơn đặt phòng #" + id);
-            return "redirect:/admin/dat-phong?page=" + page + "&size=" + size;
+            return "redirect:/nhan-su/admin/dat-phong?page=" + page + "&size=" + size;
         }
 
         if (!"Chua thanh toan".equals(dp.getTrangThai())) {
             redirectAttributes.addFlashAttribute("error",
                     "Chỉ có thể hủy đơn khi đang ở trạng thái Chưa thanh toán");
-            return "redirect:/admin/dat-phong?page=" + page + "&size=" + size;
+            return "redirect:/nhan-su/admin/dat-phong?page=" + page + "&size=" + size;
         }
 
         dp.setTrangThai("Da huy");
@@ -321,7 +321,7 @@ public class AdminDatPhongController {
         datPhongService.save(dp);
 
         redirectAttributes.addFlashAttribute("success", "Đã hủy đơn đặt phòng #" + id);
-        return "redirect:/admin/dat-phong?page=" + page + "&size=" + size;
+        return "redirect:/nhan-su/admin/dat-phong?page=" + page + "&size=" + size;
     }
 
     @GetMapping("/search")
@@ -403,12 +403,12 @@ public class AdminDatPhongController {
 
         if (dp == null) {
             redirectAttributes.addFlashAttribute("error", "khong tim thay don dat phong");
-            return "redirect:/admin/dat-phong";
+            return "redirect:/nhan-su/admin/dat-phong";
         }
 
         if (dp.getMa_cccd() == null || dp.getMa_cccd().isEmpty()) {
             redirectAttributes.addFlashAttribute("error", "don dat phong chua co CCCD");
-            return "redirect:/admin/dat-phong";
+            return "redirect:/nhan-su/admin/dat-phong";
         }
 
         dp.setTrangThai(trangThai);
@@ -426,7 +426,7 @@ public class AdminDatPhongController {
         }
 
         redirectAttributes.addFlashAttribute("success", "Cap nhat trang thai thanh cong");
-        return "redirect:/admin/dat-phong";
+        return "redirect:/nhan-su/admin/dat-phong";
     }
     @PostMapping("/update")
     public String update(
@@ -448,7 +448,7 @@ public class AdminDatPhongController {
         DatPhong dp = datPhongService.findById(id);
         if (dp == null) {
             redirectAttributes.addFlashAttribute("error", "Không tìm thấy đơn đặt phòng #" + id);
-            return "redirect:/admin/dat-phong";
+            return "redirect:/nhan-su/admin/dat-phong";
         }
 
         if (dp.getN() == null) {
@@ -469,7 +469,7 @@ public class AdminDatPhongController {
         datPhongService.save(dp);
 
         redirectAttributes.addFlashAttribute("success", "Cập nhật đơn đặt phòng #" + id + " thành công");
-        return "redirect:/admin/dat-phong";
+        return "redirect:/nhan-su/admin/dat-phong";
     }
     @PostMapping("/dat-phong/chi-tiet/{id}/khach-hang")
     public String capNhatKhachHang(@PathVariable Integer id,
@@ -481,7 +481,7 @@ public class AdminDatPhongController {
         DatPhong dp = datPhongService.findById(id);
         if (dp == null) {
             redirectAttributes.addFlashAttribute("error", "Khong tim thay don dat phong #" + id);
-            return "redirect:/nhan-vien/dat-phong";
+            return "redirect:/nhan-su/nhan-vien/dat-phong";
         }
 
         dp.setMa_cccd(maCccd);
@@ -502,7 +502,7 @@ public class AdminDatPhongController {
         datPhongService.save(dp);
 
         redirectAttributes.addFlashAttribute("thanhCongCapNhat", "Cap nhat thong tin khach hang thanh cong.");
-        return "redirect:/nhan-vien/dat-phong/chi-tiet/" + id;
+        return "redirect:/nhan-su/dat-phong/chi-tiet/" + id;
     }
     @PostMapping("/dat-phong/chi-tiet/{id}/thu-tien")
     public String thuTien(@PathVariable Integer id, @RequestParam BigDecimal soTien,
@@ -511,14 +511,14 @@ public class AdminDatPhongController {
         DatPhong dp = datPhongService.findById(id);
         if(hd == null&&dp==null){
             redirectAttributes.addFlashAttribute("error","don dat phong chua co hd");
-            return "redirect:/nhan-vien/dat-phong/"+id;
+            return "redirect:/nhan-su/dat-phong/"+id;
         }
 
         BigDecimal daThanhToan = hd.getDaThanhToan() ==null ? BigDecimal.ZERO : hd.getDaThanhToan();
         BigDecimal conNo = hd.getTongTien().subtract(daThanhToan);
         if(soTien.compareTo(conNo) > 0){
             redirectAttributes.addFlashAttribute("error","Số tiền vượt quá số tiền còn thiếu");
-            return "redirect:/nhan-vien/dat-phong/"+id;
+            return "redirect:/nhan-su/dat-phong/"+id;
         }
         if("Chuyen Khoan".equalsIgnoreCase(phuongthuc)){
             String baseUrl = request.getScheme() + "://"+request.getServerName() + ":"+request.getServerPort();
@@ -539,7 +539,7 @@ public class AdminDatPhongController {
         hoaDonService.save(hd);
 
         redirectAttributes.addFlashAttribute("success", "Đã thu " + soTien + " VND tiền mặt.");
-        return "redirect:/nhan-vien/dat-phong/chi-tiet/" + id;
+        return "redirect:/nhan-su/dat-phong/chi-tiet/" + id;
 
     }
     

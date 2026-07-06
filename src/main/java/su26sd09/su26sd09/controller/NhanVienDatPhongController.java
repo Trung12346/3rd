@@ -27,7 +27,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @Controller
-@RequestMapping("/nhan-vien")
+@RequestMapping("/nhan-su")
 public class NhanVienDatPhongController {
 
     @Autowired private PhongService phongService;
@@ -84,7 +84,7 @@ public class NhanVienDatPhongController {
         DatPhong datPhong = datPhongService.findById(id);
         if (datPhong == null) {
             redirectAttributes.addFlashAttribute("error", "Khong tim thay don dat phong #" + id);
-            return "redirect:/nhan-vien/dat-phong";
+            return "redirect:/nhan-su/dat-phong";
         }
 
         model.addAttribute("hoaDon", hoaDonService.findByDatPhongId(id)); // <-- đã thêm chưa?
@@ -118,13 +118,13 @@ public class NhanVienDatPhongController {
         DatPhong datPhong = datPhongService.findById(id);
         if (datPhong == null) {
             redirectAttributes.addFlashAttribute("error", "Khong tim thay don dat phong #" + id);
-            return "redirect:/nhan-vien/dat-phong";
+            return "redirect:/nhan-su/dat-phong";
         }
         List<String> loiCapNhat = validateChiTietDatPhong(ngayNhan, ngayTra, nguoiLon, treEm, dichVuIds, allParams);
         if (!loiCapNhat.isEmpty()) {
             redirectAttributes.addFlashAttribute("soLoi", loiCapNhat.size());
             redirectAttributes.addFlashAttribute("loiCapNhat", String.join(" ", loiCapNhat));
-            return "redirect:/nhan-vien/dat-phong/chi-tiet/" + id;
+            return "redirect:/nhan-su/dat-phong/chi-tiet/" + id;
         }
 
         datPhong.setNgaydatPhong(ngayNhan);
@@ -141,7 +141,7 @@ public class NhanVienDatPhongController {
         capNhatHoaDonNeuCo(id, tongTienPhong, tongTienDichVu, tongTienGiam, tongTienVat, tongCong, km);
 
         redirectAttributes.addFlashAttribute("thanhCongCapNhat", "Cap nhat chi tiet dat phong #" + id + " thanh cong.");
-        return "redirect:/nhan-vien/dat-phong/chi-tiet/" + id;
+        return "redirect:/nhan-su/dat-phong/chi-tiet/" + id;
     }
 
     private void capNhatGiaPhongTheoNgay(Integer maDatPhong, LocalDateTime ngayNhan, LocalDateTime ngayTra) {
@@ -335,12 +335,12 @@ public class NhanVienDatPhongController {
         DatPhong dp = datPhongService.findById(id);
         if (dp == null) {
             redirectAttributes.addFlashAttribute("error", "Không tìm thấy đơn đặt phòng #" + id);
-            return "redirect:/nhan-vien/dat-phong?page=" + page + "&size=" + size;
+            return "redirect:/nhan-su/dat-phong?page=" + page + "&size=" + size;
         }
 
         if (dp.getMa_cccd() == null || dp.getMa_cccd().isEmpty()) {
             redirectAttributes.addFlashAttribute("error", "Đơn đặt phòng chưa có CCCD, không thể xác nhận.");
-            return "redirect:/nhan-vien/dat-phong?page=" + page + "&size=" + size;
+            return "redirect:/nhan-su/dat-phong?page=" + page + "&size=" + size;
         }
 
         dp.setTrangThai(trangThai);
@@ -357,7 +357,7 @@ public class NhanVienDatPhongController {
         }
 
         redirectAttributes.addFlashAttribute("success", "Cập nhật trạng thái đơn #" + id + " thành công.");
-        return "redirect:/nhan-vien/dat-phong?page=" + page + "&size=" + size;
+        return "redirect:/nhan-su/dat-phong?page=" + page + "&size=" + size;
     }
 
     @PostMapping("/dat-phong/cancel")
@@ -370,12 +370,12 @@ public class NhanVienDatPhongController {
         DatPhong dp = datPhongService.findById(id);
         if (dp == null) {
             redirectAttributes.addFlashAttribute("error", "Khong tim thay don dat phong #" + id);
-            return "redirect:/nhan-vien/dat-phong?page=" + page + "&size=" + size;
+            return "redirect:/nhan-su/dat-phong?page=" + page + "&size=" + size;
         }
 
         if (!"Chua thanh toan".equals(dp.getTrangThai())) {
             redirectAttributes.addFlashAttribute("error", "Chi co the huy don khi dang o trang thai Chua thanh toan");
-            return "redirect:/nhan-vien/dat-phong?page=" + page + "&size=" + size;
+            return "redirect:/nhan-su/dat-phong?page=" + page + "&size=" + size;
         }
 
         dp.setTrangThai("Da huy");
@@ -383,7 +383,7 @@ public class NhanVienDatPhongController {
         datPhongService.save(dp);
 
         redirectAttributes.addFlashAttribute("success", "Da huy don dat phong #" + id);
-        return "redirect:/nhan-vien/dat-phong?page=" + page + "&size=" + size;
+        return "redirect:/nhan-su/dat-phong?page=" + page + "&size=" + size;
     }
 
     @GetMapping("/dat-phong-quay")
@@ -395,7 +395,7 @@ public class NhanVienDatPhongController {
 
             NhanSu nv = nhanVienService.FindByemail(authentication.getName());
             if (!nhanVienService.laLeTanDangHoatDong(nv)) {
-                return "redirect:/home";
+                return "redirect:/home"; //TODO: THEM URL DASHBOARD VAO DAY
             }
         }
 
@@ -470,21 +470,21 @@ public class NhanVienDatPhongController {
 
         if (nhanVienXuLy == null) {
             redirectAttributes.addFlashAttribute("error", "Khong tim thay nhan vien Le Tan dang hoat dong");
-            return "redirect:/nhan-vien/dat-phong-quay";
+            return "redirect:/nhan-su/dat-phong-quay";
         }
 
         if (!isAdmin && !nhanVienService.laLeTanDangHoatDong(nvCheck)) {
             System.out.println("khong khop bo phan");
-            return "redirect:/home";
+            return "redirect:/home"; //TODO: THEM URL DASHBOARD VAO DAY
         }
 
         if (maCccd == null || maCccd.isEmpty()) {
             redirectAttributes.addFlashAttribute("error", "CCCD khong duoc de trong");
-            return "redirect:/nhan-vien/dat-phong-quay";
+            return "redirect:/nhan-su/dat-phong-quay";
         }
         if (maPhongList == null || maPhongList.isEmpty()) {
             redirectAttributes.addFlashAttribute("error", "Vui long chon it nhat 1 phong");
-            return "redirect:/nhan-vien/dat-phong-quay";
+            return "redirect:/nhan-su/dat-phong-quay";
         }
         int TongNguoi = songuoiLon + sotreEm;
         int sucChua = 0;
@@ -493,7 +493,7 @@ public class NhanVienDatPhongController {
         }
         if(TongNguoi > sucChua){
             redirectAttributes.addFlashAttribute("error",  "Số lượng người vượt quá Sức Chứa phòng");
-            return "redirect:/nhan-vien/dat-phong-quay";
+            return "redirect:/nhan-su/dat-phong-quay";
         }
         System.out.println("Tong Nguoi: "+TongNguoi + "Suc Chua: "+sucChua);
         DatPhong dp = new DatPhong();
@@ -608,7 +608,7 @@ public class NhanVienDatPhongController {
         thanhToanService.save(tt);
         redirectAttributes.addFlashAttribute("success",
                 "Tao don thanh cong, ma don: " + savedDp.getId() + ", tong tien da thu: " + tongCong + " VND");
-        return "redirect:/nhan-vien/dat-phong";
+        return "redirect:/nhan-su/dat-phong";
     }
 
     private BigDecimal tinhGiaSauGiam(BigDecimal giaGoc, KhuyenMai km) {
@@ -632,7 +632,7 @@ public class NhanVienDatPhongController {
         DatPhong dp = datPhongService.findById(id);
         if (dp == null) {
             redirectAttributes.addFlashAttribute("error", "Khong tim thay don dat phong #" + id);
-            return "redirect:/nhan-vien/dat-phong";
+            return "redirect:/nhan-su/dat-phong";
         }
 
         dp.setMa_cccd(maCccd);
@@ -653,7 +653,7 @@ public class NhanVienDatPhongController {
         datPhongService.save(dp);
 
         redirectAttributes.addFlashAttribute("thanhCongCapNhat", "Cap nhat thong tin khach hang thanh cong.");
-        return "redirect:/nhan-vien/dat-phong/chi-tiet/" + id;
+        return "redirect:/nhan-su/dat-phong/chi-tiet/" + id;
     }
     @PostMapping("/dat-phong/chi-tiet/{id}/thu-tien")
     public String thuTien(@PathVariable Integer id, @RequestParam BigDecimal soTien,
@@ -662,14 +662,14 @@ public class NhanVienDatPhongController {
         DatPhong dp = datPhongService.findById(id);
         if(hd == null&&dp==null){
             redirectAttributes.addFlashAttribute("error","don dat phong chua co hd");
-            return "redirect:/nhan-vien/dat-phong/"+id;
+            return "redirect:/nhan-su/dat-phong/"+id;
         }
 
         BigDecimal daThanhToan = hd.getDaThanhToan() ==null ? BigDecimal.ZERO : hd.getDaThanhToan();
         BigDecimal conNo = hd.getTongTien().subtract(daThanhToan);
         if(soTien.compareTo(conNo) > 0){
             redirectAttributes.addFlashAttribute("error","Số tiền vượt quá số tiền còn thiếu");
-            return "redirect:/nhan-vien/dat-phong/"+id;
+            return "redirect:/nhan-su/dat-phong/"+id;
         }
         if("Chuyen Khoan".equalsIgnoreCase(phuongthuc)){
             String baseUrl = request.getScheme() + "://"+request.getServerName() + ":"+request.getServerPort();
@@ -690,7 +690,7 @@ public class NhanVienDatPhongController {
         hoaDonService.save(hd);
 
         redirectAttributes.addFlashAttribute("success", "Đã thu " + soTien + " VND tiền mặt.");
-        return "redirect:/nhan-vien/dat-phong/chi-tiet/" + id;
+        return "redirect:/nhan-su/dat-phong/chi-tiet/" + id;
 
     }
 }

@@ -13,7 +13,7 @@
 <main class="admin-wrapper">
     <div class="admin-header">
         <h1>Quản Lý Nhân Viên</h1>
-        <a th:href="@{/admin/nhan-vien}" class="admin-btn outline">Làm Mới Form</a>
+        <a th:href="@{/nhan-su/admin/nhan-vien}" class="admin-btn outline">Làm Mới Form</a>
     </div>
 
     <div th:if="${success}" class="admin-message success">
@@ -26,7 +26,7 @@
     <section class="admin-panel">
         <h2 th:text="${title}">Thêm nhân viên</h2>
 
-        <form th:action="@{/admin/nhan-vien/save}" th:object="${nhanVien}" method="post">
+        <form th:action="@{/nhan-su/admin/nhan-vien/save}" th:object="${nhanVien}" method="post">
             <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
             <input type="hidden" th:field="*{id}">
 
@@ -92,7 +92,7 @@
 
             <div class="admin-actions">
                 <button type="submit" class="admin-btn">Lưu Nhân Viên</button>
-                <a th:href="@{/admin/nhan-vien}" class="admin-btn outline">Hủy</a>
+                <a th:href="@{/nhan-su/admin/nhan-vien}" class="admin-btn outline">Hủy</a>
             </div>
         </form>
     </section>
@@ -102,7 +102,7 @@
     <section class="admin-panel">
         <h2>Danh Sách Nhân Viên</h2>
 
-        <form th:action="@{/admin/nhan-vien}" method="get" class="admin-grid" style="margin-bottom:16px;">
+        <form th:action="@{/nhan-su/admin/nhan-vien}" method="get" class="admin-grid" style="margin-bottom:16px;">
             <div class="admin-field">
                 <label>Họ tên</label>
                 <input type="text" name="hoTen" th:value="${hoTen}" placeholder="Tìm theo họ tên">
@@ -145,7 +145,7 @@
 
             <div class="admin-actions">
                 <button type="submit" class="admin-btn outline">Tìm Kiếm</button>
-                <a th:href="@{/admin/nhan-vien}" class="admin-btn outline">Xóa Lọc</a>
+                <a th:href="@{/nhan-su/admin/nhan-vien}" class="admin-btn outline">Xóa Lọc</a>
             </div>
         </form>
 
@@ -181,8 +181,8 @@
                     <td>
                         <div class="row-actions">
                             <a class="admin-btn small outline"
-                               th:href="@{/admin/nhan-vien/edit/{id}(id=${nv.id})}">Sửa</a>
-                            <form th:action="@{/admin/nhan-vien/lock/{id}(id=${nv.id})}"
+                               th:href="@{/nhan-su/admin/nhan-vien/edit/{id}(id=${nv.id})}">Sửa</a>
+                            <form th:action="@{/nhan-su/admin/nhan-vien/lock/{id}(id=${nv.id})}"
                                   method="post"
                                   onsubmit="return confirm('Bạn có chắc muốn khóa nhân viên này?')">
                                 <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
@@ -202,10 +202,10 @@
         <div class="admin-actions" th:if="${nhanViensPage.totalPages > 1}" style="justify-content:center; gap:6px;">
             <a th:if="${nhanViensPage.hasPrevious()}"
                class="admin-btn small outline"
-               th:href="@{/admin/nhan-vien(page=${nhanViensPage.number - 1}, hoTen=${hoTen}, email=${email}, sdt=${sdt}, maCCCD=${maCCCD}, boPhan=${boPhan}, trangThai=${trangThai}, maVaiTro=${maVaiTro})}">« Trước</a>
+               th:href="@{/nhan-su/admin/nhan-vien(page=${nhanViensPage.number - 1}, hoTen=${hoTen}, email=${email}, sdt=${sdt}, maCCCD=${maCCCD}, boPhan=${boPhan}, trangThai=${trangThai}, maVaiTro=${maVaiTro})}">« Trước</a>
 
             <span th:each="i : ${#numbers.sequence(0, nhanViensPage.totalPages - 1)}">
-            <a th:href="@{/admin/nhan-vien(page=${i}, hoTen=${hoTen}, email=${email}, sdt=${sdt}, maCCCD=${maCCCD}, boPhan=${boPhan}, trangThai=${trangThai}, maVaiTro=${maVaiTro})}"
+            <a th:href="@{/nhan-su/admin/nhan-vien(page=${i}, hoTen=${hoTen}, email=${email}, sdt=${sdt}, maCCCD=${maCCCD}, boPhan=${boPhan}, trangThai=${trangThai}, maVaiTro=${maVaiTro})}"
                th:text="${i + 1}"
                th:classappend="${i == nhanViensPage.number} ? ' active'"
                class="admin-btn small outline">
@@ -214,7 +214,7 @@
 
             <a th:if="${nhanViensPage.hasNext()}"
                class="admin-btn small outline"
-               th:href="@{/admin/nhan-vien(page=${nhanViensPage.number + 1}, hoTen=${hoTen}, email=${email}, sdt=${sdt}, maCCCD=${maCCCD}, boPhan=${boPhan}, trangThai=${trangThai}, maVaiTro=${maVaiTro})}">Sau »</a>
+               th:href="@{/nhan-su/admin/nhan-vien(page=${nhanViensPage.number + 1}, hoTen=${hoTen}, email=${email}, sdt=${sdt}, maCCCD=${maCCCD}, boPhan=${boPhan}, trangThai=${trangThai}, maVaiTro=${maVaiTro})}">Sau »</a>
         </div>
     </section>
 </main>

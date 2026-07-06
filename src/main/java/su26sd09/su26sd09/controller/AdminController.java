@@ -10,6 +10,6 @@ public class AdminController {
 
     @GetMapping
     public String index() {
-        return "redirect:/admin/phong";
+        return "redirect:/nhan-su/admin/thong-ke";
     }
 }

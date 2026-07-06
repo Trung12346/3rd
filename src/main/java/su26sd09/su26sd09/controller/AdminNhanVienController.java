@@ -29,7 +29,7 @@ import java.time.LocalDateTime;
 import java.time.Period;
 
 @Controller
-@RequestMapping("/admin/nhan-vien")
+@RequestMapping("/nhan-su/admin/nhan-vien")
 public class AdminNhanVienController {
 
     @Autowired
@@ -87,7 +87,7 @@ public class AdminNhanVienController {
         redirect.addFlashAttribute("success","khóa nhân viên thành công");
 
 
-        return "redirect:/admin/nhan-vien";
+        return "redirect:/nhan-su/admin/nhan-vien";
 
     }
 
@@ -113,7 +113,7 @@ public class AdminNhanVienController {
                 nv.setVaitro(roleStaff);
             } else {
                 redirect.addFlashAttribute("error", fe.getDefaultMessage());
-                return "redirect:/admin/nhan-vien";
+                return "redirect:/nhan-su/admin/nhan-vien";
             }
         }
 
@@ -123,39 +123,39 @@ public class AdminNhanVienController {
           }
 
         redirect.addFlashAttribute("success", "cập nhật dữ liệu thành công");
-        return "redirect:/admin/nhan-vien";
+        return "redirect:/nhan-su/admin/nhan-vien";
     }
 
     private String LuuNhanVien(VaiTro roleStaff,  NhanSu nv, RedirectAttributes redirect) {
 
         if (Period.between(nv.getNgaySinh(), LocalDate.now()).getYears() < 18 || Period.between(nv.getNgaySinh(),LocalDate.now()).getYears() > 70){
             redirect.addFlashAttribute("error","vui lòng xem lại trường dữ liệu nhân viên(nhân viên phải từ 18 tuổi trở lên)");
-            return "redirect:/admin/nhan-vien";
+            return "redirect:/nhan-su/admin/nhan-vien";
         }
         if (nv.getId() == null){
 
             if (repo.checkTrungCccd(nv.maCCCD,0)){
                 redirect.addFlashAttribute("error","mã căn cước công dân này đã tồn tại ở nhân viên khác");
-                return "redirect:/admin/nhan-vien";
+                return "redirect:/nhan-su/admin/nhan-vien";
             }
             if (repo.checkSodienThoai(nv.getSdt(),0)){
                 redirect.addFlashAttribute("error","số điện thoại này đã tồn tại ở nhân viên khác");
-                return "redirect:/admin/nhan-vien";
+                return "redirect:/nhan-su/admin/nhan-vien";
             }
         }else{
             if (repo.checkTrungCccd(nv.maCCCD,nv.id)){
                 redirect.addFlashAttribute("error","mã căn cước công dân này đã tồn tại ở nhân viên khác");
-                return "redirect:/admin/nhan-vien";
+                return "redirect:/nhan-su/admin/nhan-vien";
             }
             if (repo.checkSodienThoai(nv.getSdt(),nv.id)){
                 redirect.addFlashAttribute("error","số điện thoại này đã tồn tại ở nhân viên khác");
-                return "redirect:/admin/nhan-vien";
+                return "redirect:/nhan-su/admin/nhan-vien";
             }
         }
 
         redirect.addFlashAttribute("success", "cập nhật dữ liệu thành công");
         repo.save(nv);
-        return "redirect:/admin/nhan-vien";
+        return "redirect:/nhan-su/admin/nhan-vien";
     }
 
 

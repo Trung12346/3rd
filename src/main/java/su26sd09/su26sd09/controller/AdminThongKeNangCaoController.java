@@ -20,7 +20,7 @@ import java.util.List;
  * AdminThongKeDoanhThu.java hien co.
  */
 @Controller
-@RequestMapping("/admin/thong-ke")
+@RequestMapping("/nhan-su/admin/thong-ke")
 public class AdminThongKeNangCaoController {
 
     @Autowired

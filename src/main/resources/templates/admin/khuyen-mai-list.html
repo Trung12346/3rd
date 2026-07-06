@@ -13,7 +13,7 @@
 <main class="admin-wrapper">
     <div class="admin-header">
         <h1>Quản Lý Khuyến Mãi</h1>
-        <a th:href="@{/admin/khuyen-mai}" class="admin-btn outline">Làm Mới Form</a>
+        <a th:href="@{/nhan-su/admin/khuyen-mai}" class="admin-btn outline">Làm Mới Form</a>
     </div>
 
     <div th:if="${success}" class="admin-message success">
@@ -26,7 +26,7 @@
     <section class="admin-panel">
         <h2 th:text="${title}">Thêm khuyến mãi</h2>
 
-        <form th:action="@{/admin/khuyen-mai/save}" th:object="${khuyenMai}" method="post">
+        <form th:action="@{/nhan-su/admin/khuyen-mai/save}" th:object="${khuyenMai}" method="post">
             <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
             <input type="hidden" th:field="*{id}">
 
@@ -73,7 +73,7 @@
 
             <div class="admin-actions">
                 <button type="submit" class="admin-btn">Lưu Khuyến Mãi</button>
-                <a th:href="@{/admin/khuyen-mai}" class="admin-btn outline">Hủy</a>
+                <a th:href="@{/nhan-su/admin/khuyen-mai}" class="admin-btn outline">Hủy</a>
             </div>
         </form>
     </section>
@@ -81,7 +81,7 @@
     <section class="admin-panel">
         <h2>Danh Sách Khuyến Mãi</h2>
 
-        <form th:action="@{/admin/khuyen-mai}" method="get" class="admin-grid" style="margin-bottom:16px;">
+        <form th:action="@{/nhan-su/admin/khuyen-mai}" method="get" class="admin-grid" style="margin-bottom:16px;">
 
             <div class="admin-field">
                 <label>Mã khuyến mãi</label>
@@ -149,7 +149,7 @@
                     Tìm Kiếm
                 </button>
 
-                <a th:href="@{/admin/khuyen-mai}"
+                <a th:href="@{/nhan-su/admin/khuyen-mai}"
                    class="admin-btn outline">
                     Xóa Lọc
                 </a>
@@ -192,8 +192,8 @@
                     <td>
                         <div class="row-actions">
                             <a class="admin-btn small outline"
-                               th:href="@{/admin/khuyen-mai/edit/{id}(id=${km.id})}">Sửa</a>
-                            <form th:action="@{/admin/khuyen-mai/delete/{id}(id=${km.id})}"
+                               th:href="@{/nhan-su/admin/khuyen-mai/edit/{id}(id=${km.id})}">Sửa</a>
+                            <form th:action="@{/nhan-su/admin/khuyen-mai/delete/{id}(id=${km.id})}"
                                   method="post"
                                   onsubmit="return confirm('Bạn có chắc muốn xóa khuyến mãi này?')">
                                 <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
@@ -212,7 +212,7 @@
         <div class="admin-actions" th:if="${khuyenMais.totalPages > 1}" style="justify-content:center; gap:6px;">
             <a th:if="${khuyenMais.hasPrevious()}"
                class="admin-btn small outline"
-               th:href="@{/admin/khuyen-mai(
+               th:href="@{/nhan-su/admin/khuyen-mai(
         page=${khuyenMais.number-1},
         promoCode=${promoCode},
         moTa=${moTa},
@@ -229,7 +229,7 @@
 <a class="admin-btn small outline"
    th:classappend="${i==khuyenMais.number} ? ' active'"
    th:text="${i+1}"
-   th:href="@{/admin/khuyen-mai(
+   th:href="@{/nhan-su/admin/khuyen-mai(
         page=${i},
         promoCode=${promoCode},
         moTa=${moTa},
@@ -244,7 +244,7 @@
 
             <a th:if="${khuyenMais.hasNext()}"
                class="admin-btn small outline"
-               th:href="@{/admin/khuyen-mai(
+               th:href="@{/nhan-su/admin/khuyen-mai(
         page=${khuyenMais.number+1},
         promoCode=${promoCode},
         moTa=${moTa},

@@ -16,7 +16,7 @@ import java.util.List;
 
 
 @Controller
-@RequestMapping("/admin/thong-ke")
+@RequestMapping("/nhan-su/admin/thong-ke")
 public class AdminThongKeDoanhThu {
     @Autowired
     ThongKeRepo tkr;

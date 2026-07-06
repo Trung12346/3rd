@@ -13,7 +13,7 @@
 <main class="admin-wrapper">
     <div class="admin-header">
         <h1>Quản Lý Khách Hàng</h1>
-        <a th:href="@{/admin/khach-hang}" class="admin-btn outline">Làm Mới Form</a>
+        <a th:href="@{/nhan-su/admin/khach-hang}" class="admin-btn outline">Làm Mới Form</a>
     </div>
 
     <div th:if="${success}" class="admin-message success">
@@ -26,9 +26,9 @@
     <section class="admin-panel">
         <h2 th:text="${title}">Thêm nhân viên</h2>
 
-        <form th:action="@{/admin/khach-hang/save}" th:object="${khachHang}" method="post">
+        <form th:action="@{/nhan-su/admin/khach-hang/save}" th:object="${khachHang}" method="post">
             <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
-            <input type="hidden" th:field="*{maNguoiDung}">
+            <input type="hidden" th:field="*{ma_khach_hang}">
 
             <div class="admin-grid">
 <!--                <div class="admin-field">-->
@@ -64,7 +64,7 @@
                 <input
                        th:field="*{matKhau_hash}"
                        placeholder="Nhap khi them moi hoac muon doi"
-                       th:type="hidden" th:if="${maNguoiDung != null}">
+                       th:type="hidden" th:if="${ma_khach_hang != null}">
 
                 <div class="admin-field">
                     <label>So dien thoai</label>
@@ -99,7 +99,7 @@
 
             <div class="admin-actions">
                 <button type="submit" class="admin-btn">Lưu Khách Hàng</button>
-                <a th:href="@{/admin/khach-hang}" class="admin-btn outline">Hủy</a>
+                <a th:href="@{/nhan-su/admin/khach-hang}" class="admin-btn outline">Hủy</a>
             </div>
         </form>
     </section>
@@ -107,7 +107,7 @@
     <section class="admin-panel">
         <h2>Danh Sách Khách Hàng</h2>
 
-        <form th:action="@{/admin/khach-hang}" method="get" class="search-row">
+        <form th:action="@{/nhan-su/admin/khach-hang}" method="get" class="search-row">
             <input type="text" name="keyword" placeholder="Tìm theo tên" th:value="${keyword}">
             <button type="submit" class="admin-btn outline">Tìm Kiếm</button>
         </form>
@@ -129,7 +129,7 @@
                 </thead>
                 <tbody>
                 <tr th:each="kh : ${khachHangs}">
-                    <td th:text="${kh.maNguoiDung}"></td>
+                    <td th:text="${kh.ma_khach_hang}"></td>
                     <td><strong th:text="${kh != null ? kh.hoTen : ''}"></strong></td>
                     <td th:text="${kh != null ? kh.email : ''}"></td>
                     <td th:text="${kh != null ? kh.soDienThoai : ''}"></td>
@@ -139,8 +139,8 @@
                     <td>
                         <div class="row-actions">
                             <a class="admin-btn small outline"
-                               th:href="@{/admin/khach-hang/edit/{id}(id=${kh.maNguoiDung})}">Sửa</a>
-                            <form th:action="@{/admin/khach-hang/lock/{id}(id=${kh.maNguoiDung})}"
+                               th:href="@{/nhan-su/admin/khach-hang/edit/{id}(id=${kh.ma_khach_hang})}">Sửa</a>
+                            <form th:action="@{/nhan-su/admin/khach-hang/lock/{id}(id=${kh.ma_khach_hang})}"
                                   method="post"
                                   onsubmit="return confirm('Bạn có chắc muốn khoá khách hàng này này?')">
                                 <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">

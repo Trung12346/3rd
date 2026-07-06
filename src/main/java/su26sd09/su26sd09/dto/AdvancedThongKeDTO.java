@@ -25,6 +25,12 @@ public class AdvancedThongKeDTO {
     Double tienGiam;
     Double tienVat;
 
+    // Doanh thu ghi nhan (hoa don, accrual) vs doanh thu thuc thu (thanh toan, cash-basis)
+    Double doanhThuGhiNhan;
+    Double doanhThuThucThu;
+    Integer soGiaoDichThanhCong;
+    Double tyLeThuTien;         // % doanhThuThucThu / doanhThuGhiNhan
+
     // Phuong thuc thanh toan
     List<String> paymentLabels;
     List<Double> paymentValues;

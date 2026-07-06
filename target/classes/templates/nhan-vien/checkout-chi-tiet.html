@@ -85,7 +85,7 @@
 <main class="admin-wrapper">
     <div class="admin-header">
         <h1>Trả Phòng — Đơn #<span th:text="${dp.id}"></span></h1>
-        <a th:href="@{/nhan-vien/checkout}" class="admin-btn outline">Quay Lại Danh Sách</a>
+        <a th:href="@{/nhan-su/checkout}" class="admin-btn outline">Quay Lại Danh Sách</a>
     </div>
 
     <div th:if="${success}" class="admin-message success">
@@ -206,7 +206,7 @@
         <!-- Them dich vu phat sinh - chi hien khi don con dang luu tru -->
         <form th:if="${dp.trangThai == 'Da nhan phong'}"
               class="inline-form"
-              th:action="@{/nhan-vien/checkout/{id}/them-dich-vu(id=${dp.id})}" method="post">
+              th:action="@{/nhan-su/checkout/{id}/them-dich-vu(id=${dp.id})}" method="post">
             <div class="admin-field">
                 <label>Thêm dịch vụ phát sinh</label>
                 <select name="maDichVu" required>
@@ -265,7 +265,7 @@
         <!-- Form xac nhan tra phong - chi hien khi don con dang luu tru -->
         <form th:if="${dp.trangThai == 'Da nhan phong'}"
               class="inline-form"
-              th:action="@{/nhan-vien/checkout/{id}/xac-nhan(id=${dp.id})}" method="post"
+              th:action="@{/nhan-su/checkout/{id}/xac-nhan(id=${dp.id})}" method="post"
               onsubmit="return confirm('Xác nhận thu tiền và trả phòng cho đơn #' + [[${dp.id}]] + '?');">
             <div class="admin-field">
                 <label>Phương thức thanh toán</label>
@@ -288,11 +288,11 @@
         <!-- Da tra phong: hien thi hoa don va nut xuat PDF -->
         <div th:if="${dp.trangThai == 'Da tra phong'}" class="admin-actions" style="margin-top:16px;">
             <a th:if="${hoaDon != null}"
-               th:href="@{/nhan-vien/checkout/{id}/xuat-pdf(id=${dp.id})}"
+               th:href="@{/nhan-su/checkout/{id}/xuat-pdf(id=${dp.id})}"
                class="admin-btn" target="_blank">
                 Xuất Hóa Đơn PDF
             </a>
-            <a th:href="@{/nhan-vien/checkout}" class="admin-btn outline">Quay Lại Danh Sách</a>
+            <a th:href="@{/nhan-su/checkout}" class="admin-btn outline">Quay Lại Danh Sách</a>
         </div>
 
         <div th:if="${dp.trangThai != 'Da nhan phong' and dp.trangThai != 'Da tra phong'}" class="admin-message error" style="margin-top:16px;">

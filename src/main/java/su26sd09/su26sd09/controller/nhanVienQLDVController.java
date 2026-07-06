@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Map;
 
 @Controller
-@RequestMapping("/nhan-vien/dich-vu")
+@RequestMapping("/nhan-su/dich-vu")
 public class nhanVienQLDVController {
     @Autowired
     private DichVuService dichVuService;
@@ -42,7 +42,7 @@ public class nhanVienQLDVController {
         Dich_vu dv = dichVuService.findById(id);
         if (dv == null) {
             redirectAttributes.addFlashAttribute("error", "Không tìm thấy dịch vụ");
-            return "redirect:/nhan-vien/dich-vu";
+            return "redirect:/nhan-su/dich-vu";
         }
         loadFormAndList(model, dv, keyword, trangThai, "Cập nhật dịch vụ");
         return "nhan-vien/dich-vu-list";
@@ -52,7 +52,7 @@ public class nhanVienQLDVController {
     public String save(@ModelAttribute Dich_vu dichVu, RedirectAttributes redirectAttributes) {
         dichVuService.save(dichVu);
         redirectAttributes.addFlashAttribute("success", "Lưu dịch vụ thành công");
-        return "redirect:/nhan-vien/dich-vu";
+        return "redirect:/nhan-su/dich-vu";
     }
 
     @PostMapping("/delete/{id}")
@@ -63,7 +63,7 @@ public class nhanVienQLDVController {
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", "Không thể xóa dịch vụ này vì đang được sử dụng trong hóa đơn/đặt phòng");
         }
-        return "redirect:/nhan-vien/dich-vu";
+        return "redirect:/nhan-su/dich-vu";
     }
 
     private void loadFormAndList(Model model, Dich_vu dv, String keyword, String trangThai, String title) {

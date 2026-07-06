@@ -35,7 +35,7 @@ import java.util.Map;
  *     thai "Trong") de co the ban/ cho thue tiep.
  */
 @Controller
-@RequestMapping("/nhan-vien/checkout")
+@RequestMapping("/nhan-su/checkout")
 public class NhanVienCheckoutController {
 
     @Autowired private DatPhongService datPhongService;
@@ -149,7 +149,7 @@ public class NhanVienCheckoutController {
             Model model) {
 
         if (!coQuyenCheckout(authentication)) {
-            return "redirect:/home";
+            return "redirect:/home"; //TODO: THEM URL DASHBOARD VAO DAY
         }
 
         List<DatPhong> dsCanTra = datPhongService.findAll().stream()
@@ -189,13 +189,13 @@ public class NhanVienCheckoutController {
                            Model model, RedirectAttributes redirectAttributes) {
 
         if (!coQuyenCheckout(authentication)) {
-            return "redirect:/home";
+            return "redirect:/home"; //TODO: THEM URL DASHBOARD VAO DAY
         }
 
         DatPhong dp = datPhongService.findById(id);
         if (dp == null) {
             redirectAttributes.addFlashAttribute("error", "Không tìm thấy đơn đặt phòng #" + id);
-            return "redirect:/nhan-vien/checkout";
+            return "redirect:/nhan-su/checkout";
         }
 
         napModelChiTiet(dp, model);
@@ -218,17 +218,17 @@ public class NhanVienCheckoutController {
         DatPhong dp = datPhongService.findById(id);
         if (dp == null) {
             redirectAttributes.addFlashAttribute("error", "Không tìm thấy đơn đặt phòng #" + id);
-            return "redirect:/nhan-vien/checkout";
+            return "redirect:/nhan-su/checkout";
         }
         if (!"Da nhan phong".equals(dp.getTrangThai())) {
             redirectAttributes.addFlashAttribute("error", "Đơn #" + id + " không ở trạng thái đang lưu trú, không thể thêm dịch vụ.");
-            return "redirect:/nhan-vien/checkout/" + id;
+            return "redirect:/nhan-su/checkout/" + id;
         }
 
         Dich_vu dv = dichVuService.findById(maDichVu);
         if (dv == null) {
             redirectAttributes.addFlashAttribute("error", "Dịch vụ không tồn tại.");
-            return "redirect:/nhan-vien/checkout/" + id;
+            return "redirect:/nhan-su/checkout/" + id;
         }
         if (soLuong == null || soLuong < 1) soLuong = 1;
 
@@ -242,7 +242,7 @@ public class NhanVienCheckoutController {
         ctdvService.save(ct);
 
         redirectAttributes.addFlashAttribute("success", "Đã thêm dịch vụ \"" + dv.getTen_dich_vu() + "\" vào đơn #" + id);
-        return "redirect:/nhan-vien/checkout/" + id;
+        return "redirect:/nhan-su/checkout/" + id;
     }
 
     // ================= XAC NHAN TRA PHONG + THU TIEN =================
@@ -255,17 +255,17 @@ public class NhanVienCheckoutController {
                                    RedirectAttributes redirectAttributes) {
 
         if (!coQuyenCheckout(authentication)) {
-            return "redirect:/home";
+            return "redirect:/home"; //TODO: THEM URL DASHBOARD VAO DAY
         }
 
         DatPhong dp = datPhongService.findById(id);
         if (dp == null) {
             redirectAttributes.addFlashAttribute("error", "Không tìm thấy đơn đặt phòng #" + id);
-            return "redirect:/nhan-vien/checkout";
+            return "redirect:/nhan-su/checkout";
         }
         if (!"Da nhan phong".equals(dp.getTrangThai())) {
             redirectAttributes.addFlashAttribute("error", "Đơn #" + id + " không ở trạng thái đang lưu trú, không thể trả phòng.");
-            return "redirect:/nhan-vien/checkout/" + id;
+            return "redirect:/nhan-su/checkout/" + id;
         }
 
         Map<String, BigDecimal> folio = tinhFolio(dp);
@@ -340,7 +340,7 @@ public class NhanVienCheckoutController {
         redirectAttributes.addFlashAttribute("success",
                 "Trả phòng thành công cho đơn #" + id + ". Hóa đơn #" + hoaDon.getId() +
                         " - Tổng tiền: " + tongTien.toPlainString() + " VND.");
-        return "redirect:/nhan-vien/checkout/" + id;
+        return "redirect:/nhan-su/checkout/" + id;
     }
 
     // ================= XUAT HOA DON PDF =================
@@ -356,7 +356,7 @@ public class NhanVienCheckoutController {
 
         HoaDon hoaDon = hoaDonService.findByDatPhongId(id);
         if (hoaDon == null) {
-            response.sendRedirect("/nhan-vien/checkout/" + id);
+            response.sendRedirect("/nhan-su/checkout/" + id);
             return;
         }
 

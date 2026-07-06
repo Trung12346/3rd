@@ -223,7 +223,7 @@
     <div th:if="${error}"   class="admin-message error"   th:text="${error}"></div>
     <div th:if="${success}" class="admin-message success" th:text="${success}"></div>
 
-    <form th:action="@{/nhan-vien/dat-phong-quay/submit}" method="post" id="quayForm">
+    <form th:action="@{/nhan-su/dat-phong-quay/submit}" method="post" id="quayForm">
         <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
         <input type="hidden" name="tongTienPhong"  id="h-tien-phong"  value="0">
         <input type="hidden" name="tongTienDichVu" id="h-tien-dv"     value="0">

@@ -23,7 +23,7 @@ import java.security.Principal;
 import java.time.LocalDateTime;
 
 @Controller
-@RequestMapping("/admin/nguoi-dung")
+@RequestMapping("/nhan-su/admin/nguoi-dung")
 public class AdminNguoiDungController {
 
     @Autowired
@@ -62,7 +62,7 @@ public class AdminNguoiDungController {
            model.addAttribute("vaiTros",repo.findAll());
                if (nguoiDung == null) {
                    redirectAttributes.addFlashAttribute("error", "Khong tim thay nguoi dung");
-                   return "redirect:/admin/nguoi-dung";
+                   return "redirect:/nhan-su/admin/nguoi-dung";
                }
 
 
@@ -83,7 +83,7 @@ public class AdminNguoiDungController {
 
                         if (  userService.checkEmail(nguoiDung.getEmail() , nguoiDung.getMa_khach_hang())){
                             redirect.addFlashAttribute("error"," email này đã tồn tại");
-                            return "redirect:/admin/nguoi-dung";
+                            return "redirect:/nhan-su/admin/nguoi-dung";
 
                     }
 
@@ -97,7 +97,7 @@ public class AdminNguoiDungController {
                         nguoiDung.setMatKhau_hash(e.encode(matKhaumoi));
                     }else{
                         redirect.addFlashAttribute("error",fe.getDefaultMessage());
-                        return "redirect:/admin/nguoi-dung";
+                        return "redirect:/nhan-su/admin/nguoi-dung";
                     }
 
             }
@@ -114,20 +114,20 @@ public class AdminNguoiDungController {
                               if (s.getVaiTro().getTenVaiTro().equalsIgnoreCase("ROLE_STAFF") && !nguoiDung.getVaiTro().getTenVaiTro().equalsIgnoreCase("ROLE_STAFF")){
                                       if (datPhongrepo.FindbyNguoiDung(s.getMa_khach_hang()) != null){
                                           redirect.addFlashAttribute("error","không thể cập nhật: người dùng có vai trò nhân viên có đơn đặt phòng khả dụng");
-                                          return "redirect:/admin/nguoi-dung";
+                                          return "redirect:/nhan-su/admin/nguoi-dung";
                                       }
 
                               }
                               if ( (!s.getEmail().equals(nguoiDung.getEmail() )|| userService.checkEmail(nguoiDung.getEmail(),nguoiDung.getMa_khach_hang()))){
                                  redirect.addFlashAttribute("error"," email này đã tồn tại");
-                                 return "redirect:/admin/nguoi-dung";
+                                 return "redirect:/nhan-su/admin/nguoi-dung";
                               }
 
                           }
                           if ((s.getVaiTro().getTenVaiTro().equalsIgnoreCase("ROLE_STAFF") &&  s.getSoDienThoai().equals(nguoiDung.getSoDienThoai()) )
                                   && (!s.getMa_khach_hang().equals(nguoiDung.getMa_khach_hang()) && nguoiDung.getVaiTro().getTenVaiTro().equalsIgnoreCase("ROLE_STAFF"))){
                               redirect.addFlashAttribute("error","số điện thoại của nhân viên này đã được sử dụng bởi nhân viên khác (thông tin liên lạc của nhân viên không được trùng nhau)");
-                              return "redirect:/admin/nguoi-dung";
+                              return "redirect:/nhan-su/admin/nguoi-dung";
                           }
                 }
                 userService.save(nguoiDung);
@@ -138,7 +138,7 @@ public class AdminNguoiDungController {
             }
 
 
-        return "redirect:/admin/nguoi-dung";
+        return "redirect:/nhan-su/admin/nguoi-dung";
     }
 
     @PostMapping("/lock/{id}")
@@ -146,7 +146,7 @@ public class AdminNguoiDungController {
             userService.setTrangThai(id, false);
             redirectAttributes.addFlashAttribute("success", "Khoa nguoi dung thanh cong");
 
-        return "redirect:/admin/nguoi-dung";
+        return "redirect:/nhan-su/admin/nguoi-dung";
     }
 
     @GetMapping("/search")

@@ -9,7 +9,7 @@ import su26sd09.su26sd09.entity.DanhGia;
 import su26sd09.su26sd09.repository.DanhGiaRepo;
 
 @Controller
-@RequestMapping("/admin/loai-phong/{id}/danh-gia")
+@RequestMapping("/nhan-su/admin/loai-phong/{id}/danh-gia")
 public class AdminDanhGiaController {
     @Autowired
     DanhGiaRepo dgRepo;
@@ -36,12 +36,12 @@ public class AdminDanhGiaController {
         DanhGia dg = dgRepo.findById(dgId).get();
         if(phanHoi == null || phanHoi.isBlank()) {
             redirect.addFlashAttribute("phError", "phản hồi trống");
-            return String.format("redirect:/admin/loai-phong/%d/danh-gia", id);
+            return String.format("redirect:/nhan-su/admin/loai-phong/%d/danh-gia", id);
         }
         dg.phanHoi = phanHoi;
         dgRepo.save(dg);
         redirect.addFlashAttribute("id", id);
         redirect.addFlashAttribute("phSuccess", "lưu thành công");
-        return String.format("redirect:/admin/loai-phong/%d/danh-gia", id);
+        return String.format("redirect:/nhan-su/admin/loai-phong/%d/danh-gia", id);
     }
 }

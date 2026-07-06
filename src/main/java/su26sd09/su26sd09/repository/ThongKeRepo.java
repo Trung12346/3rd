@@ -85,6 +85,7 @@ public interface ThongKeRepo extends JpaRepository<HoaDon, Integer> {
         SELECT ten_loai FROM loai_phong
         """, nativeQuery = true)
     public List<String> getTenLoaiPhong();
+
     // ===== PHAN TICH NANG CAO (deep analysis additions) =====
 
     /**
@@ -212,6 +213,26 @@ public interface ThongKeRepo extends JpaRepository<HoaDon, Integer> {
         """, nativeQuery = true)
     public List<Object[]> getTopKhachHang(@Param("start") LocalDate start, @Param("end") LocalDate end);
 
+    /**
+     * Doanh thu THUC THU (cash-basis): tien thuc te da thu qua thanh_toan, tinh theo
+     * ngay_thanh_toan - khac voi doanh thu ghi nhan tren hoa_don (accrual, tinh theo ngay_xuat).
+     * Chi tinh cac giao dich trang_thai = 'Thanh cong'.
+     */
+    @Query(value = """
+        SELECT COALESCE(SUM(so_tien), 0)
+        FROM thanh_toan
+        WHERE trang_thai = N'Thanh cong'
+          AND ngay_thanh_toan >= :start AND ngay_thanh_toan < DATEADD(day, 1, :end)
+        """, nativeQuery = true)
+    public Double getActualRevenueCollected(@Param("start") LocalDate start, @Param("end") LocalDate end);
+
+    @Query(value = """
+        SELECT COUNT(*)
+        FROM thanh_toan
+        WHERE trang_thai = N'Thanh cong'
+          AND ngay_thanh_toan >= :start AND ngay_thanh_toan < DATEADD(day, 1, :end)
+        """, nativeQuery = true)
+    public Integer getSoGiaoDichThanhCong(@Param("start") LocalDate start, @Param("end") LocalDate end);
 }
 
 

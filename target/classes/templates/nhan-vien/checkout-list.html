@@ -34,7 +34,7 @@
 <main class="admin-wrapper">
     <div class="admin-header">
         <h1>Trả Phòng (Checkout)</h1>
-        <a th:href="@{/nhan-vien/checkout}" class="admin-btn outline">Làm mới</a>
+        <a th:href="@{/nhan-su/checkout}" class="admin-btn outline">Làm mới</a>
     </div>
 
     <div th:if="${success}" class="admin-message success">
@@ -46,7 +46,7 @@
 
     <section class="admin-panel">
         <h2>Tìm Kiếm Đơn Đang Lưu Trú</h2>
-        <form th:action="@{/nhan-vien/checkout}" method="get">
+        <form th:action="@{/nhan-su/checkout}" method="get">
             <div class="admin-grid">
                 <div class="admin-field">
                     <label>Mã đặt phòng</label>
@@ -63,7 +63,7 @@
             </div>
             <div class="admin-actions">
                 <button type="submit" class="admin-btn outline">Tìm Kiếm</button>
-                <a th:href="@{/nhan-vien/checkout}" class="admin-btn outline">Xóa Lọc</a>
+                <a th:href="@{/nhan-su/checkout}" class="admin-btn outline">Xóa Lọc</a>
             </div>
         </form>
     </section>
@@ -114,7 +114,7 @@
                         <span class="status-badge info">Đang lưu trú</span>
                     </td>
                     <td>
-                        <a th:href="@{/nhan-vien/checkout/{id}(id=${dp.id})}" class="admin-btn small">
+                        <a th:href="@{/nhan-su/checkout/{id}(id=${dp.id})}" class="admin-btn small">
                             Trả Phòng
                         </a>
                     </td>

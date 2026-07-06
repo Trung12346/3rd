@@ -200,7 +200,7 @@
             <span class="cdp-panel-sub" th:text="${datPhong.n != null} ? 'Tài khoản đã đăng ký' : 'Khách vãng lai'">Khách vãng lai</span>
         </div>
 
-        <form th:action="@{/nhan-vien/dat-phong/chi-tiet/{id}/khach-hang(id=${datPhong.id})}" method="post"
+        <form th:action="@{/nhan-su/dat-phong/chi-tiet/{id}/khach-hang(id=${datPhong.id})}" method="post"
               class="stay-grid" style="grid-template-columns: repeat(2, minmax(0,1fr));">
             <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
 
@@ -292,7 +292,7 @@
             </span>
         </div>
 
-        <form th:action="@{/nhan-vien/dat-phong/chi-tiet/{id}/thu-tien(id=${datPhong.id})}" method="post" class="thu-tien-form">
+        <form th:action="@{/nhan-su/dat-phong/chi-tiet/{id}/thu-tien(id=${datPhong.id})}" method="post" class="thu-tien-form">
             <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
 
             <div class="ff">
@@ -314,7 +314,7 @@
         </form>
     </div>
 
-    <form th:action="@{/nhan-vien/dat-phong/chi-tiet/{id}/update(id=${datPhong != null ? datPhong.id : 0})}"
+    <form th:action="@{/nhan-su/dat-phong/chi-tiet/{id}/update(id=${datPhong != null ? datPhong.id : 0})}"
           method="post" id="chiTietForm">
         <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
         <input type="hidden" name="maDatPhong" th:value="${datPhong != null ? datPhong.id : 0}">

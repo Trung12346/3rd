@@ -13,7 +13,7 @@
 <main class="admin-wrapper">
     <div class="admin-header">
         <h1>Quản Lý Loại Phòng</h1>
-        <a th:href="@{/admin/loai-phong}" class="admin-btn outline">Làm Mới Form</a>
+        <a th:href="@{/nhan-su/admin/loai-phong}" class="admin-btn outline">Làm Mới Form</a>
     </div>
 
     <div th:if="${success}" class="admin-message success">
@@ -26,7 +26,7 @@
     <section class="admin-panel">
         <h2 th:text="${title}">Thêm loại phòng</h2>
 
-        <form th:action="@{/admin/loai-phong/save}" th:object="${loaiPhong}" method="post">
+        <form th:action="@{/nhan-su/admin/loai-phong/save}" th:object="${loaiPhong}" method="post">
             <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
             <input type="hidden" th:field="*{id}">
 
@@ -51,7 +51,7 @@
 
             <div class="admin-actions">
                 <button type="submit" class="admin-btn">Lưu Loại Phòng</button>
-                <a th:href="@{/admin/loai-phong}" class="admin-btn outline">Hủy</a>
+                <a th:href="@{/nhan-su/admin/loai-phong}" class="admin-btn outline">Hủy</a>
             </div>
         </form>
     </section>
@@ -59,7 +59,7 @@
     <section class="admin-panel">
         <h2>Danh Sách Loại Phòng</h2>
 
-        <form th:action="@{/admin/loai-phong/tim-kiem}" method="get" class="search-row">
+        <form th:action="@{/nhan-su/admin/loai-phong/tim-kiem}" method="get" class="search-row">
             <input type="text" name="keyword" placeholder="Tìm theo tên.." th:value="${keyword}">
             <button type="submit" class="admin-btn outline">Tìm Kiếm</button>
         </form>
@@ -86,8 +86,8 @@
                     <td>
                         <div class="row-actions">
                             <a class="admin-btn small outline"
-                               th:href="@{/admin/loai-phong/edit/{id}(id=${lp.id})}">Sửa</a>
-                            <form th:action="@{/admin/loai-phong/delete/{id}(id=${lp.id})}"
+                               th:href="@{/nhan-su/admin/loai-phong/edit/{id}(id=${lp.id})}">Sửa</a>
+                            <form th:action="@{/nhan-su/admin/loai-phong/delete/{id}(id=${lp.id})}"
                                   method="post"
                                   onsubmit="return confirm('Bạn có chắc muốn xóa loại phòng này?')">
                                 <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">

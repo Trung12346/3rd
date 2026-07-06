@@ -94,7 +94,7 @@
 <main class="admin-wrapper">
     <div class="admin-header">
         <h1>Quản Lý Hóa Đơn</h1>
-        <a th:href="@{/admin/hoa-don}" class="admin-btn outline">Làm Mới Form</a>
+        <a th:href="@{/nhan-su/admin/hoa-don}" class="admin-btn outline">Làm Mới Form</a>
     </div>
 
     <div th:if="${success}" class="admin-message success">
@@ -107,7 +107,7 @@
     <section class="admin-panel">
         <h2 th:text="${title}">Thêm hóa đơn</h2>
 
-        <form th:action="@{/admin/hoa-don/save}" th:object="${hoaDon}" method="post">
+        <form th:action="@{/nhan-su/admin/hoa-don/save}" th:object="${hoaDon}" method="post">
             <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
             <input type="hidden" th:field="*{id}">
 
@@ -188,7 +188,7 @@
 
             <div class="admin-actions">
                 <button type="submit" class="admin-btn">Lưu Hóa Đơn</button>
-                <a th:href="@{/admin/hoa-don}" class="admin-btn outline">Hủy</a>
+                <a th:href="@{/nhan-su/admin/hoa-don}" class="admin-btn outline">Hủy</a>
             </div>
         </form>
     </section>
@@ -199,7 +199,7 @@
         <section class="admin-panel">
             <h2>Tìm Kiếm Hóa Đơn</h2>
 
-            <form th:action="@{/admin/hoa-don}" method="get">
+            <form th:action="@{/nhan-su/admin/hoa-don}" method="get">
                 <div class="admin-grid">
                     <div class="admin-field">
                         <label>Mã hóa đơn</label>
@@ -246,7 +246,7 @@
 
                 <div class="admin-actions">
                     <button type="submit" class="admin-btn outline">Tìm Kiếm</button>
-                    <a th:href="@{/admin/hoa-don}" class="admin-btn outline">Xóa Lọc</a>
+                    <a th:href="@{/nhan-su/admin/hoa-don}" class="admin-btn outline">Xóa Lọc</a>
                 </div>
             </form>
         </section>
@@ -330,7 +330,7 @@
                     <td>
                         <div class="row-actions">
                             <a class="admin-btn small pdf-btn"
-                               th:href="@{/admin/hoa-don/xuat-pdf/{id}(id=${hd.id})}"
+                               th:href="@{/nhan-su/admin/hoa-don/xuat-pdf/{id}(id=${hd.id})}"
                                target="_blank">
                                 Xuất PDF
                             </a>

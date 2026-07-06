@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Map;
 
 @Controller
-@RequestMapping("/admin/phong")
+@RequestMapping("/nhan-su/admin/phong")
 public class AdminPhongController {
 
     @Autowired
@@ -39,7 +39,7 @@ public class AdminPhongController {
 
     @GetMapping("/create")
     public String create() {
-        return "redirect:/admin/phong";
+        return "redirect:/nhan-su/admin/phong";
     }
 
     @GetMapping("/edit/{id}")
@@ -53,7 +53,7 @@ public class AdminPhongController {
 
         if (phong == null) {
             redirectAttributes.addFlashAttribute("error", "Không tìm thấy phòng");
-            return "redirect:/admin/phong";
+            return "redirect:/nhan-su/admin/phong";
         }
 
         loadFormAndList(model, phong, phongService.findTienNghiIdsByPhong(id), keyword, "Cập nhật phòng");
@@ -69,14 +69,14 @@ public class AdminPhongController {
     ) {
         phongService.save(phong, loaiPhongId, tienNghiIds);
         redirectAttributes.addFlashAttribute("success", "Lưu phòng thành công");
-        return "redirect:/admin/phong";
+        return "redirect:/nhan-su/admin/phong";
     }
 
     @PostMapping("/delete/{id}")
     public String delete(@PathVariable("id") int id, RedirectAttributes redirectAttributes) {
         phongService.delete(id);
         redirectAttributes.addFlashAttribute("success", "Xóa phòng thành công");
-        return "redirect:/admin/phong";
+        return "redirect:/nhan-su/admin/phong";
     }
 
     private void loadFormAndList(

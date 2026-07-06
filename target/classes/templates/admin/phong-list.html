@@ -368,7 +368,7 @@
 
     <div class="admin-header">
         <h1>Quản Lý Phòng</h1>
-        <a th:href="@{/admin/phong}" class="admin-btn outline"> Làm Mới Form</a>
+        <a th:href="@{/nhan-su/admin/phong}" class="admin-btn outline"> Làm Mới Form</a>
     </div>
 
     <div th:if="${success}" class="admin-message success">
@@ -382,7 +382,7 @@
     <section class="admin-panel">
         <h2 th:text="${title}">Thêm Phòng</h2>
 
-        <form th:action="@{/admin/phong/save}" th:object="${phong}" method="post">
+        <form th:action="@{/nhan-su/admin/phong/save}" th:object="${phong}" method="post">
             <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
             <input type="hidden" th:field="*{maPhong}">
 
@@ -455,7 +455,7 @@
 
             <div class="admin-actions">
                 <button type="submit" class="admin-btn"> Lưu Phòng</button>
-                <a th:href="@{/admin/phong}" class="admin-btn outline"> Hủy</a>
+                <a th:href="@{/nhan-su/admin/phong}" class="admin-btn outline"> Hủy</a>
             </div>
         </form>
     </section>
@@ -464,7 +464,7 @@
     <section class="admin-panel">
         <h2>Danh Sách Phòng</h2>
 
-        <form th:action="@{/admin/phong}" method="get" class="search-row">
+        <form th:action="@{/nhan-su/admin/phong}" method="get" class="search-row">
             <input type="text"
                    name="keyword"
                    placeholder=" Tìm theo số phòng, trạng thái, loại phòng..."
@@ -517,10 +517,10 @@
                     <td>
                         <div class="row-actions">
                             <a class="admin-btn small outline"
-                               th:href="@{/admin/phong/edit/{id}(id=${p.maPhong}, keyword=${keyword})}">
+                               th:href="@{/nhan-su/admin/phong/edit/{id}(id=${p.maPhong}, keyword=${keyword})}">
                                  Sửa
                             </a>
-                            <form th:action="@{/admin/phong/delete/{id}(id=${p.maPhong})}"
+                            <form th:action="@{/nhan-su/admin/phong/delete/{id}(id=${p.maPhong})}"
                                   method="post"
                                   onsubmit="return confirm('Bạn có chắc muốn xóa phòng này?')">
                                 <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">

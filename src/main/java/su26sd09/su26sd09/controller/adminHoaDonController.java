@@ -26,7 +26,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @Controller
-@RequestMapping("/admin/hoa-don")
+@RequestMapping("/nhan-su/admin/hoa-don")
 public class adminHoaDonController {
 
     @Autowired
@@ -174,7 +174,7 @@ public class adminHoaDonController {
         List<Chi_tiet_dich_vu> chiTietDichVus = chiTietDichVuService.findByDatPhongId(maDatPhong);
         if (hoaDonExist != null) {
             redirectAttributes.addFlashAttribute("error", "Đơn #" + maDatPhong + " đã có hóa đơn rồi!");
-            return "redirect:/admin/dat-phong";
+            return "redirect:/nhan-su/admin/dat-phong";
         }
         BigDecimal amountDv = BigDecimal.ZERO;
         if(chiTietDichVus.size() !=0) {
@@ -239,7 +239,7 @@ public class adminHoaDonController {
         }
         hoaDonService.save(hoaDon);
         redirectAttributes.addFlashAttribute("success", "Lưu hóa đơn thành công!");
-        return "redirect:/admin/hoa-don";
+        return "redirect:/nhan-su/admin/hoa-don";
     }
 
     @GetMapping("/edit/{id}")
@@ -248,7 +248,7 @@ public class adminHoaDonController {
                              Model model) {
         HoaDon hoaDon = hoaDonService.findById(id);
         if (hoaDon == null) {
-            return "redirect:/admin/hoa-don";
+            return "redirect:/nhan-su/admin/hoa-don";
         }
 
         model.addAttribute("hoaDon", hoaDon);

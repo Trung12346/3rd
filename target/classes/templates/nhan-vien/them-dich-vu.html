@@ -19,13 +19,13 @@
         <img src="/logo.jpg" alt="Hotel Logo">
     </a>
     <nav class="nav-menu admin-nav">
-        <a href="/nhan-vien/dat-phong" class="active">Đơn đặt phòng</a>
-        <a href="/nhan-vien/danh-gia">Đánh giá</a>
-        <a href="/nhan-vien/khach-hang">Khách hàng</a>
-        <a href="/nhan-vien/phong">Phòng</a>
-        <a href="/nhan-vien/khuyen-mai">Khuyến mãi</a>
-        <a href="/nhan-vien/dat-phong/them-dich-vu">Thêm dịch vụ</a>
-        <a href="/nhan-vien/hoa-don">Hóa Đơn</a>
+        <a href="/nhan-su/dat-phong" class="active">Đơn đặt phòng</a>
+        <a href="/nhan-su/danh-gia">Đánh giá</a>
+        <a href="/nhan-su/khach-hang">Khách hàng</a>
+        <a href="/nhan-su/phong">Phòng</a>
+        <a href="/nhan-su/khuyen-mai">Khuyến mãi</a>
+        <a href="/nhan-su/dat-phong/them-dich-vu">Thêm dịch vụ</a>
+        <a href="/nhan-su/hoa-don">Hóa Đơn</a>
     </nav>
     <div class="header-actions">
         <a href="/logout" class="btn btn-outline">Đăng Xuất</a>
@@ -37,7 +37,7 @@
         <h1 th:text="${datPhong != null} ? 'Dịch vụ bổ sung — Đơn #' + ${datPhong.id} : 'Thêm dịch vụ bổ sung'">
             Thêm dịch vụ bổ sung
         </h1>
-        <a th:href="@{/nhan-vien/dat-phong(page=${currentPage}, size=${pageSize})}" class="admin-btn outline">
+        <a th:href="@{/nhan-su/dat-phong(page=${currentPage}, size=${pageSize})}" class="admin-btn outline">
             &laquo; Về danh sách đơn
         </a>
     </div>
@@ -53,7 +53,7 @@
     <!-- Form tìm kiếm đơn (luôn hiển thị) -->
     <section class="admin-panel">
         <h2>Tìm đơn đặt phòng</h2>
-        <form method="get" th:action="@{/nhan-vien/dat-phong/them-dich-vu}"
+        <form method="get" th:action="@{/nhan-su/dat-phong/them-dich-vu}"
               style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
             <input type="hidden" name="page" th:value="${currentPage}">
             <input type="hidden" name="size" th:value="${pageSize}">
@@ -84,7 +84,7 @@
         <section class="admin-panel" th:if="${dangO}">
             <h2>Thêm dịch vụ mới</h2>
 
-            <form th:action="@{/nhan-vien/dat-phong/them-dich-vu}" method="post">
+            <form th:action="@{/nhan-su/dat-phong/them-dich-vu}" method="post">
                 <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
                 <input type="hidden" name="id" th:value="${datPhong.id}">
                 <input type="hidden" name="page" th:value="${currentPage}">

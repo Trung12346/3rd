@@ -367,7 +367,7 @@
 
   <div class="admin-header">
     <h1>Quản Lý Dịch Vụ</h1>
-    <a th:href="@{/nhan-vien/dich-vu}" class="admin-btn outline">Làm Mới Form</a>
+    <a th:href="@{/nhan-su/dich-vu}" class="admin-btn outline">Làm Mới Form</a>
   </div>
 
   <div th:if="${success}" class="admin-message success">
@@ -405,7 +405,7 @@
   <section class="admin-panel">
     <h2 th:text="${title}">Thêm dịch vụ</h2>
 
-    <form th:action="@{/nhan-vien/dich-vu/save}" th:object="${dichVu}" method="post">
+    <form th:action="@{/nhan-su/dich-vu/save}" th:object="${dichVu}" method="post">
       <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
       <input type="hidden" th:field="*{id}">
 
@@ -438,7 +438,7 @@
 
       <div class="admin-actions">
         <button type="submit" class="admin-btn">Lưu dịch vụ</button>
-        <a th:href="@{/nhan-vien/dich-vu}" class="admin-btn outline">Hủy</a>
+        <a th:href="@{/nhan-su/dich-vu}" class="admin-btn outline">Hủy</a>
       </div>
     </form>
   </section>
@@ -447,7 +447,7 @@
   <section class="admin-panel">
     <h2>Danh Sách Dịch Vụ</h2>
 
-    <form th:action="@{/nhan-vien/dich-vu}" method="get" class="search-row">
+    <form th:action="@{/nhan-su/dich-vu}" method="get" class="search-row">
       <input type="hidden" name="trangThai" th:value="${trangThai}">
       <input type="text"
              name="keyword"
@@ -459,13 +459,13 @@
     <div class="filter-row">
       <a class="admin-btn filter small"
          th:classappend="${trangThai == ''} ? 'active'"
-         th:href="@{/nhan-vien/dich-vu(keyword=${keyword}, trangThai='')}">Tất cả</a>
+         th:href="@{/nhan-su/dich-vu(keyword=${keyword}, trangThai='')}">Tất cả</a>
       <a class="admin-btn filter small"
          th:classappend="${trangThai == 'active'} ? 'active'"
-         th:href="@{/nhan-vien/dich-vu(keyword=${keyword}, trangThai='active')}">Đang hoạt động</a>
+         th:href="@{/nhan-su/dich-vu(keyword=${keyword}, trangThai='active')}">Đang hoạt động</a>
       <a class="admin-btn filter small"
          th:classappend="${trangThai == 'inactive'} ? 'active'"
-         th:href="@{/nhan-vien/dich-vu(keyword=${keyword}, trangThai='inactive')}">Ngừng hoạt động</a>
+         th:href="@{/nhan-su/dich-vu(keyword=${keyword}, trangThai='inactive')}">Ngừng hoạt động</a>
     </div>
 
     <div class="admin-table-wrap">
@@ -498,10 +498,10 @@
           <td>
             <div class="row-actions">
               <a class="admin-btn small outline"
-                 th:href="@{/nhan-vien/dich-vu/edit/{id}(id=${dv.id}, keyword=${keyword}, trangThai=${trangThai})}">
+                 th:href="@{/nhan-su/dich-vu/edit/{id}(id=${dv.id}, keyword=${keyword}, trangThai=${trangThai})}">
                 Sửa
               </a>
-              <form th:action="@{/nhan-vien/dich-vu/delete/{id}(id=${dv.id})}"
+              <form th:action="@{/nhan-su/dich-vu/delete/{id}(id=${dv.id})}"
                     method="post"
                     onsubmit="return confirm('Bạn có chắc muốn xóa dịch vụ này?')">
                 <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
