@@ -136,7 +136,7 @@ public class NhanVienService {
     public Page<NhanSu> search(String hoTen, String email, String sdt, String maCCCD,
                                String boPhan, Boolean trangThai,
                                int page, int size) {
-        Pageable pageable = PageRequest.of(Math.max(page, 0), size, Sort.by("id").descending());
+        Pageable pageable = PageRequest.of(Math.max(page, 0), size, Sort.by("ma_nhan_su").descending());
         return repo.search(
                 blankToNull(hoTen), blankToNull(email), blankToNull(sdt),
                 blankToNull(maCCCD), blankToNull(boPhan), trangThai,  pageable
@@ -144,6 +144,6 @@ public class NhanVienService {
     }
 
     private String blankToNull(String s) {
-        return (s == null || s.isBlank()) ? null : s.trim();
+        return (s == null || s.isBlank()) ? null : s;
     }
 }

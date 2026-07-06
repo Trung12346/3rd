@@ -110,21 +110,28 @@ public class AdminkhuyenMaiController {
                 }
             for (NhanSu ng : nvRepo.findAll()){
                 if (ng.getEmail().equalsIgnoreCase(p.getName())){
+                    System.out.println("ng email: " + ng.getEmail());
+                    System.out.println("ng email: " + p.getName());
                     m.setNhanSu(ng);
+                    System.out.println(m.getNhanSu().getEmail());
                 }
             }
             if (m.giatriGiam.compareTo(BigDecimal.valueOf(99.0)) > 0 && m.loaiGiam.equalsIgnoreCase("PERCENT")){
                 redirect.addFlashAttribute("error","voucher giảm theo phần trăm tối đa là 99%");
                 return"redirect:/nhan-su/admin/khuyen-mai";
             }
-            if (m.giatriGiam.floatValue() > m.giaToiThieuDuocGiam.floatValue() * 99/100 && m.loaiGiam.equalsIgnoreCase("FIXED")){
+            if (m.giatriGiam.floatValue() > m.giaToiThieuDuocGiam.floatValue() * 99/100 && m.loaiGiam.equalsIgnoreCase("AMOUNT")){
                 redirect.addFlashAttribute("error","voucher giảm theo giá cụ thể không được bằng giá tối thiểu có thể giảm");
                 return"redirect:/nhan-su/admin/khuyen-mai";
+            }
+            if (m.hoatDong != false && !m.ngayBatDau.equals(LocalDate.now()) ){
+                redirect.addFlashAttribute("error","trạng thái không hợp lệ với mốc ngày đã chỉ định");
+                return "redirect:/nhan-su/admin/khuyen-mai";
             }
             if(m.id == 0){
                 redirect.addFlashAttribute("success","Luu khuyen mai thanh cong");
 
-            }if(m.id != 0){
+            }else{
                 redirect.addFlashAttribute("success","Cap nhat khuyen mai thanh cong");
             }
             repo.save(m);

@@ -63,6 +63,7 @@ public class AdminNhanVienController {
         Page<NhanSu> nhanViensPage = repo.search(
                 hoTen, email, sdt, maCCCD, boPhan, trangThai, page, size);
 
+
         model.addAttribute("nhanViens", nhanViensPage.getContent());
         model.addAttribute("nhanViensPage", nhanViensPage);
         model.addAttribute("nhanVien", new NhanSu());
@@ -172,8 +173,10 @@ public class AdminNhanVienController {
                                 @RequestParam(defaultValue = "10") int size,
                                 Model model,Principal p,@PathVariable("id") int id){
 
-        model.addAttribute("nhanViens",
-                repo.search(null,null,null,null,null,null,page,size));
+         Page<NhanSu> NhanvienPages =  repo.search(null,null,null,null,null,null,page,size);
+
+        model.addAttribute("nhanViens",NhanvienPages.getContent());
+        model.addAttribute("nhanViensPage", NhanvienPages);
 
             model.addAttribute("nhanVien",repo.findbyid(id));
 

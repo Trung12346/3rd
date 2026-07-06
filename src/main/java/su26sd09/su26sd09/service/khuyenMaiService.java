@@ -69,7 +69,7 @@ public class khuyenMaiService {
             int page,
             int size) {
 
-        Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
+        Pageable pageable = PageRequest.of(page, size, Sort.by("ma_khuyen_mai").descending());
         System.out.println("đây là size:" + repo.search(
                 promoCode,
                 moTa,

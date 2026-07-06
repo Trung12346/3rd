@@ -27,18 +27,16 @@ public interface khuyenMaiRepo extends JpaRepository<KhuyenMai,Integer> {
 
 
 
-    @Query("""
-
-            SELECT km
-                         FROM KhuyenMai km
-                               WHERE (:promoCode IS NULL OR LOWER(km.promoCode) LIKE LOWER(CONCAT('%', :promoCode, '%')))
-                     AND (:moTa IS NULL OR LOWER(km.moTa) LIKE LOWER(CONCAT('%', :moTa, '%')))
-               AND (:loaiGiam IS NULL OR LOWER(km.loaiGiam) = LOWER(:loaiGiam))
-AND (:giaTriGiam IS NULL OR km.giatriGiam = :giaTriGiam)
-                          AND (:ngayBatDau IS NULL OR km.ngayBatDau = :ngayBatDau)
-                                                      AND (:ngayKetThuc IS NULL OR km.ngayKetThuc = :ngayKetThuc)
-                                                     AND (:hoatDong IS NULL OR km.hoatDong = :hoatDong)
-""")
+    @Query(value = """
+       SELECT * FROM khuyen_mai km
+WHERE (:promoCode IS NULL OR LOWER(km.code_khuyen_mai) LIKE LOWER(N'%' + CAST(:promoCode AS NVARCHAR(MAX)) + N'%'))
+AND (:moTa IS NULL OR LOWER(km.mo_ta) LIKE LOWER(N'%' + CAST(:moTa AS NVARCHAR(MAX)) + N'%'))
+AND (:loaiGiam IS NULL OR LOWER(km.loai_giam) = LOWER(:loaiGiam))
+AND (:giaTriGiam IS NULL OR km.gia_tri_giam = :giaTriGiam)
+AND (:ngayBatDau IS NULL OR km.ngay_bat_dau = :ngayBatDau)
+AND (:ngayKetThuc IS NULL OR km.ngay_ket_thuc = :ngayKetThuc)
+AND (:hoatDong IS NULL OR km.hoat_dong = :hoatDong)
+""", nativeQuery = true)
     Page<KhuyenMai> search(
             @Param("promoCode") String promoCode,
             @Param("moTa") String moTa,
