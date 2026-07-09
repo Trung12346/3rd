@@ -99,29 +99,33 @@ public class AdminNhanVienController {
     public String saveNhanVien(@Valid NhanSu nv, BindingResult bindingResult,
                                Principal principal, RedirectAttributes redirect,
                                @RequestParam(value = "matKhaumoi", required = false) String matKhauMoi
-                               ) {
-
-
-
+    ) {
 
         VaiTro roleStaff = vaiTroRepo.findbyname("ROLE_STAFF");
-        System.out.println("hello"+roleStaff.getTenVaiTro());
-
-        for (FieldError fe : bindingResult.getFieldErrors()) {
-            if (fe.getField().equals("matKhau_hash") && matKhauMoi != null && !matKhauMoi.isBlank() || (matKhauMoi != null && !matKhauMoi.isBlank())) {
-                nv.setMat_khau_hash(passwordEncoder.encode(matKhauMoi));
-            } else if (fe.getField().equals("vaitro") && roleStaff != null) {
-                nv.setVaitro(roleStaff);
-            } else {
-                redirect.addFlashAttribute("error", fe.getDefaultMessage());
-                return "redirect:/nhan-su/admin/nhan-vien";
-            }
+        if (roleStaff == null) {
+            redirect.addFlashAttribute("error", "Không tìm thấy vai trò ROLE_STAFF trong hệ thống");
+            return "redirect:/nhan-su/admin/nhan-vien";
         }
 
-       String result = LuuNhanVien(roleStaff,nv,redirect);
-          if (result != null){
-              return result;
-          }
+        nv.setVaitro(roleStaff);
+
+        if (matKhauMoi != null && !matKhauMoi.isBlank()) {
+            nv.setMat_khau_hash(passwordEncoder.encode(matKhauMoi));
+        }
+
+        // Chỉ xét các lỗi validate KHÁC vaitro/matKhau_hash (2 field này đã tự xử lý ở trên)
+        for (FieldError fe : bindingResult.getFieldErrors()) {
+            if (fe.getField().equals("vaitro") || fe.getField().equals("matKhau_hash")) {
+                continue; // đã xử lý riêng ở trên, bỏ qua
+            }
+            redirect.addFlashAttribute("error", fe.getDefaultMessage());
+            return "redirect:/nhan-su/admin/nhan-vien";
+        }
+
+        String result = LuuNhanVien(roleStaff, nv, redirect);
+        if (result != null) {
+            return result;
+        }
 
         redirect.addFlashAttribute("success", "cập nhật dữ liệu thành công");
         return "redirect:/nhan-su/admin/nhan-vien";
@@ -173,25 +177,25 @@ public class AdminNhanVienController {
                                 @RequestParam(defaultValue = "10") int size,
                                 Model model,Principal p,@PathVariable("id") int id){
 
-         Page<NhanSu> NhanvienPages =  repo.search(null,null,null,null,null,null,page,size);
+        Page<NhanSu> NhanvienPages =  repo.search(null,null,null,null,null,null,page,size);
 
         model.addAttribute("nhanViens",NhanvienPages.getContent());
         model.addAttribute("nhanViensPage", NhanvienPages);
 
-            model.addAttribute("nhanVien",repo.findbyid(id));
+        model.addAttribute("nhanVien",repo.findbyid(id));
 
-            model.addAttribute("vaiTros",vaiTroRepo.findAll());
+        model.addAttribute("vaiTros",vaiTroRepo.findAll());
 
-            model.addAttribute("hoTen",hoTen);
-            model.addAttribute("email",email);
-            model.addAttribute("sdt",sdt);
-            model.addAttribute("maCCCD",maCCCD);
-            model.addAttribute("boPhan",boPhan);
-            model.addAttribute("trangThai",trangThai);
+        model.addAttribute("hoTen",hoTen);
+        model.addAttribute("email",email);
+        model.addAttribute("sdt",sdt);
+        model.addAttribute("maCCCD",maCCCD);
+        model.addAttribute("boPhan",boPhan);
+        model.addAttribute("trangThai",trangThai);
 
 
-            return "admin/nhan-vien-list";
-        }
+        return "admin/nhan-vien-list";
+    }
 
 
 

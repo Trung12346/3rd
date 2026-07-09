@@ -82,7 +82,7 @@ public class AdminkhuyenMaiController {
 
     @PostMapping("/delete/{id}")
     public  String deleteKhuyenMai(@PathVariable("id") int id, Principal p){
-            repo.delete(repo.findbyId(id));
+        repo.delete(repo.findbyId(id));
 
 
         return "redirect:/nhan-su/admin/khuyen-mai";
@@ -91,50 +91,47 @@ public class AdminkhuyenMaiController {
 
     @PostMapping("/save")
     public String saveKhuyenMai(RedirectAttributes redirect, Model model, Principal p, @Valid @ModelAttribute("khuyenMai") KhuyenMai m, BindingResult r){
-            if(r.hasErrors() ){
-                redirect.addFlashAttribute("error",r.getFieldError().getDefaultMessage());
-                return "redirect:/nhan-su/admin/khuyen-mai";
-            }
+        if(r.hasErrors() ){
+            redirect.addFlashAttribute("error",r.getFieldError().getDefaultMessage());
+            return "redirect:/nhan-su/admin/khuyen-mai";
+        }
 
-            else if(m.ngayKetThuc.isBefore(m.ngayBatDau) || m.ngayKetThuc.equals(m.ngayBatDau)){
-                redirect.addFlashAttribute("error","ngày kết thúc không phải sau ngày bắt đầu ít nhất 1 ngày");
-                return "redirect:/nhan-su/admin/khuyen-mai";
-            }
-            if(m.giatriGiam.compareTo(BigDecimal.ZERO) <= 0){
-                redirect.addFlashAttribute("error","giá trị giảm phải lớn hơn 0");
-                return "redirect:/nhan-su/admin/khuyen-mai";
-            }
-                if (m.giatriGiam.floatValue() > m.giaToiThieuDuocGiam.floatValue() * 99/100 && m.loaiGiam.equalsIgnoreCase("FIXED")){
-                    redirect.addFlashAttribute("error","voucher giảm theo giá cụ thể không được bằng giá tối thiểu có thể giảm");
-                    return"redirect:/nhan-su/admin/khuyen-mai";
-                }
-            for (NhanSu ng : nvRepo.findAll()){
+        else if(m.ngayKetThuc.isBefore(m.ngayBatDau) || m.ngayKetThuc.equals(m.ngayBatDau)){
+            redirect.addFlashAttribute("error","ngày kết thúc không phải sau ngày bắt đầu ít nhất 1 ngày");
+            return "redirect:/nhan-su/admin/khuyen-mai";
+        }
+        if(m.giatriGiam.compareTo(BigDecimal.ZERO) <= 0){
+            redirect.addFlashAttribute("error","giá trị giảm phải lớn hơn 0");
+            return "redirect:/nhan-su/admin/khuyen-mai";
+        }
+
+        if (m.id == 0){
+            for (NhanSu ng : nvRepo.findAlladmin()){
                 if (ng.getEmail().equalsIgnoreCase(p.getName())){
-                    System.out.println("ng email: " + ng.getEmail());
-                    System.out.println("ng email: " + p.getName());
                     m.setNhanSu(ng);
                     System.out.println(m.getNhanSu().getEmail());
                 }
             }
-            if (m.giatriGiam.compareTo(BigDecimal.valueOf(99.0)) > 0 && m.loaiGiam.equalsIgnoreCase("PERCENT")){
-                redirect.addFlashAttribute("error","voucher giảm theo phần trăm tối đa là 99%");
-                return"redirect:/nhan-su/admin/khuyen-mai";
-            }
-            if (m.giatriGiam.floatValue() > m.giaToiThieuDuocGiam.floatValue() * 99/100 && m.loaiGiam.equalsIgnoreCase("AMOUNT")){
-                redirect.addFlashAttribute("error","voucher giảm theo giá cụ thể không được bằng giá tối thiểu có thể giảm");
-                return"redirect:/nhan-su/admin/khuyen-mai";
-            }
-            if (m.hoatDong != false && !m.ngayBatDau.equals(LocalDate.now()) ){
-                redirect.addFlashAttribute("error","trạng thái không hợp lệ với mốc ngày đã chỉ định");
-                return "redirect:/nhan-su/admin/khuyen-mai";
-            }
-            if(m.id == 0){
-                redirect.addFlashAttribute("success","Luu khuyen mai thanh cong");
+        }
+        if (m.giatriGiam.compareTo(BigDecimal.valueOf(99.0)) > 0 && m.loaiGiam.equalsIgnoreCase("PERCENT")){
+            redirect.addFlashAttribute("error","voucher giảm theo phần trăm tối đa là 99%");
+            return"redirect:/nhan-su/admin/khuyen-mai";
+        }
+        if (m.giatriGiam.floatValue() > m.giaToiThieuDuocGiam.floatValue() * 99/100 && m.loaiGiam.equalsIgnoreCase("AMOUNT")){
+            redirect.addFlashAttribute("error","voucher giảm theo giá cụ thể không được bằng giá tối thiểu có thể giảm");
+            return"redirect:/nhan-su/admin/khuyen-mai";
+        }
+        if (m.hoatDong != false && (!m.ngayBatDau.equals(LocalDate.now()) || !m.ngayKetThuc.equals(LocalDate.now()))){
+            redirect.addFlashAttribute("error","trạng thái không hợp lệ với mốc ngày đã chỉ định");
+            return "redirect:/nhan-su/admin/khuyen-mai";
+        }
+        if(m.id == 0){
+            redirect.addFlashAttribute("success","Luu khuyen mai thanh cong");
 
-            }else{
-                redirect.addFlashAttribute("success","Cap nhat khuyen mai thanh cong");
-            }
-            repo.save(m);
+        }else{
+            redirect.addFlashAttribute("success","Cap nhat khuyen mai thanh cong");
+        }
+        repo.save(m);
 
 
         return "redirect:/nhan-su/admin/khuyen-mai";

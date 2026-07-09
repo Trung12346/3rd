@@ -28,6 +28,10 @@ public class NhanVienService {
         return repo.findAll().stream().filter(x -> x.getVaitro().getTenVaiTro().equalsIgnoreCase("ROLE_STAFF")).toList();
     }
 
+    public List<NhanSu> findAlladmin(){
+        return repo.findAll().stream().filter(x -> x.getVaitro().getTenVaiTro().equalsIgnoreCase("ROLE_ADMIN")).toList();
+    }
+
     public NhanSu findbyid(int id){
         System.out.println(id);
         return repo.findById(id).orElse(null);
@@ -79,11 +83,11 @@ public class NhanVienService {
     }
 
     public void lock(NhanSu nv) {
-     nv.setTrang_thai(false);
+        nv.setTrang_thai(false);
 
     }
     public NhanSu FindByemail(String email){
-    return repo.findByEmail(email).orElse(null);
+        return repo.findByEmail(email).orElse(null);
     }
 
     public NhanSu findLeTanDangHoatDongMacDinh() {
@@ -127,7 +131,7 @@ public class NhanVienService {
         boolean ifoundit = false;
         if (repo.findAll().stream().anyMatch(x ->x.getSdt().equals(sdt) && x.getId() != id)){
             ifoundit = true;
-         return ifoundit;
+            return ifoundit;
         }
 
         return ifoundit;
