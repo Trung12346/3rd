@@ -20,7 +20,6 @@ public class VnpayController {
 
     @GetMapping("/API/payment/vnpay-payment")
     public String GetVnpayPayment(HttpServletRequest request, RedirectAttributes redirectAttributes, Authentication authentication) {
-        System.out.println("truy cap API VNPAY");
         int paymentStatus = vnpayService.orderReturn(request, authentication);
 
         String vnp_TxnRef = request.getParameter("vnp_TxnRef");
@@ -40,22 +39,15 @@ public class VnpayController {
 
         if (paymentStatus == 1) {
             if (laThuThemDichVu) {
-                System.out.println("DEBUG: redirect THANH CONG (thu them dich vu) -> /nhan-vien/dat-phong/chi-tiet/" + maDatPhong);
                 redirectAttributes.addFlashAttribute("success", "Thanh toán chuyển khoản thành công.");
-                return "redirect:/nhan-vien/dat-phong/chi-tiet/" + maDatPhong;
+                return "redirect:/nhan-su/dat-phong/chi-tiet/" + maDatPhong;
             }
-
-            System.out.println("DEBUG: redirect THANH CONG -> /thanh-toan/thanh-cong/" + maDatPhong);
             return "redirect:/thanh-toan/thanh-cong/" + maDatPhong;
-
         } else {
             if (laThuThemDichVu) {
-                System.out.println("DEBUG: redirect THAT BAI (thu them dich vu) -> /nhan-vien/dat-phong/chi-tiet/" + maDatPhong);
                 redirectAttributes.addFlashAttribute("error", "Chuyển khoản thất bại hoặc số tiền không khớp.");
-                return "redirect:/nhan-vien/dat-phong/chi-tiet/" + maDatPhong;
+                return "redirect:/nhan-su/dat-phong/chi-tiet/" + maDatPhong;
             }
-
-            System.out.println("DEBUG: redirect THAT BAI -> /thanh-toan/dat-phong/" + maDatPhong);
             redirectAttributes.addFlashAttribute("bookingError", "Thanh toán thất bại hoặc số tiền không khớp.");
             return "redirect:/thanh-toan/dat-phong/" + maDatPhong;
         }

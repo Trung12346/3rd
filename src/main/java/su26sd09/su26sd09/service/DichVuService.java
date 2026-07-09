@@ -7,9 +7,11 @@ import su26sd09.su26sd09.repository.ChiTietDichvuRepo;
 import su26sd09.su26sd09.repository.DichVuRepo;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 public class DichVuService {
@@ -28,8 +30,18 @@ public class DichVuService {
         return dichVuRepo.findById(id).orElse(null);
     }
 
-    public List<Dich_vu> search(String keyword, String trangThai){
-        return dichVuRepo.search(keyword, trangThai);
+    public List<Dich_vu> search(String keyword, String trangThai, String loaiDichVu){
+        return dichVuRepo.search(keyword, trangThai, loaiDichVu);
+    }
+
+    /** Danh sách dịch vụ THƯỜNG đang hoạt động — dùng cho dropdown "Dịch vụ thường" khi thêm vào đơn. */
+    public List<Dich_vu> findActiveThuong(){
+        return dichVuRepo.findActiveByLoai("THUONG");
+    }
+
+    /** Danh sách dịch vụ PHÁT SINH đang hoạt động — dùng cho dropdown "Dịch vụ phát sinh" khi thêm vào đơn. */
+    public List<Dich_vu> findActivePhatSinh(){
+        return dichVuRepo.findActiveByLoai("PHAT_SINH");
     }
 
     public Dich_vu save(Dich_vu dv){
@@ -68,5 +80,36 @@ public class DichVuService {
     public BigDecimal tongTienDichVu(){
         BigDecimal tong = chiTietDichvuRepo.tongTienDichVu();
         return tong != null ? tong : BigDecimal.ZERO;
+    }
+
+    /** Tìm dịch vụ phát sinh đã tồn tại theo tên + đơn giá để tái sử dụng (không tạo trùng dòng master). */
+    public Optional<Dich_vu> findPhatSinhTheoTenVaGia(String ten, BigDecimal gia) {
+        if (ten == null || ten.isBlank() || gia == null) return Optional.empty();
+        return dichVuRepo.findByTenAndGia(ten.trim(), gia).stream()
+                .filter(d -> "PHAT_SINH".equals(d.getLoaiDv()))
+                .findFirst();
+    }
+
+    /** Tạo mới 1 dịch vụ master loại PHAT_SINH từ mô tả + đơn giá nhập tay trong chi-tiet-dat-phong. */
+    public Dich_vu taoDichVuPhatSinhMoi(String ten, BigDecimal gia) {
+        Dich_vu dv = new Dich_vu();
+        dv.setTen_dich_vu(ten);
+        dv.setGia(gia);
+        dv.setDonVi("vụ");
+        dv.setLoaiDv("PHAT_SINH");
+        dv.setHoat_dong(true);
+        return dichVuRepo.save(dv);
+    }
+
+    /** Trả về map: maDichVu -> danh sách maDatPhong đã dùng dịch vụ này (cho cột "Đơn phát sinh" ở dich-vu-list). */
+    public Map<Integer, List<Integer>> maDatPhongTheoDichVu() {
+        Map<Integer, List<Integer>> map = new HashMap<>();
+        for (Object[] row : dichVuRepo.findMaDatPhongTheoDichVu()) {
+            Integer maDv = (Integer) row[0];
+            Integer maDp = (Integer) row[1];
+            if (maDv == null || maDp == null) continue;
+            map.computeIfAbsent(maDv, k -> new ArrayList<>()).add(maDp);
+        }
+        return map;
     }
 }

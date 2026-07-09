@@ -48,6 +48,14 @@ public class AdminHoaDonChiTietController {
                 : List.of();
         List<ThanhToan> thanhToans = thanhToanRepo.findByH_IdOrderByNgaythanhToanAsc(id);
 
+        // Tinh tong phu phi ngoai gio (100k/loi) tu cac phong trong don
+        BigDecimal tongPhuThu = BigDecimal.ZERO;
+        for (ChiTietDatPhong ct : phongList) {
+            if (ct != null && ct.getPhuPhi() != null && ct.getPhuPhi().signum() > 0) {
+                tongPhuThu = tongPhuThu.add(ct.getPhuPhi());
+            }
+        }
+
         BigDecimal tongTien = hoaDon.getTongTien() != null ? hoaDon.getTongTien() : BigDecimal.ZERO;
         BigDecimal daThanhToan = hoaDon.getDaThanhToan() != null ? hoaDon.getDaThanhToan() : BigDecimal.ZERO;
         BigDecimal conLai = tongTien.subtract(daThanhToan);
@@ -70,6 +78,7 @@ public class AdminHoaDonChiTietController {
         model.addAttribute("dichVuList", dichVuList);
         model.addAttribute("thanhToans", thanhToans);
         model.addAttribute("conLai", conLai);
+        model.addAttribute("tongPhuThu", tongPhuThu);
         model.addAttribute("trangThaiThanhToanLabel", trangThaiThanhToanLabel);
         model.addAttribute("trangThaiThanhToanClass", trangThaiThanhToanClass);
         model.addAttribute("title", "Chi Tiết Hóa Đơn #" + id);

@@ -326,8 +326,21 @@ public class adminHoaDonController {
 
         HoaDon hoaDon = hoaDonService.findById(id);
 
+        // Tinh tong phu phi ngoai gio tu cac phong trong don
+        BigDecimal tongPhuThu = BigDecimal.ZERO;
+        if (hoaDon != null && hoaDon.getD() != null) {
+            List<ChiTietDatPhong> phongList =
+                    chiTietDatPhongService.findByDatPhongId(hoaDon.getD().getId());
+            for (ChiTietDatPhong ct : phongList) {
+                if (ct != null && ct.getPhuPhi() != null && ct.getPhuPhi().signum() > 0) {
+                    tongPhuThu = tongPhuThu.add(ct.getPhuPhi());
+                }
+            }
+        }
+
         Context context = new Context();
         context.setVariable("hoaDon", hoaDon);
+        context.setVariable("tongPhuThu", tongPhuThu);
 
         String html = templateEngine.process("admin/hoa-don-pdf", context);
 

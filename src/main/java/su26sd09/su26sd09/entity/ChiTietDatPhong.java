@@ -34,6 +34,9 @@ public class ChiTietDatPhong {
     @Column(name = "ma_cccd")
     private String ma_cccd;
 
+    @Column(name = "phu_phi_ngoai_gio")
+    private BigDecimal phuPhi;
+
     @ManyToOne
     @JoinColumn(name = "ma_dat_phong",referencedColumnName = "ma_dat_phong")
     private DatPhong d;

@@ -37,6 +37,8 @@
         .items-table tr.normal { border-bottom: 1px solid #eef2f5; }
         .items-table tr.normal td { color: #333; }
         .items-table tr.null-row td { color: #999; font-style: italic; }
+        .items-table tr.phuthu-row td { color: #c2410c; border-bottom: 1px solid #eef2f5; }
+        .items-table tr.phuthu-row td.right { color: #c2410c; }
 
         /* Totals */
         .totals { margin: 0 20px; border-top: 2px solid #2196c4; padding: 12px 0; }
@@ -127,6 +129,12 @@
                     th:text="${hoaDon.tienPhong != null ?
                             #numbers.formatDecimal(hoaDon.tienPhong, 0, 'COMMA', 0, 'POINT') : 'Không có'}">
                     2.400.000</td>
+            </tr>
+            <tr class="phuthu-row" th:if="${tongPhuThu != null and tongPhuThu.signum() > 0}">
+                <td>Phụ phí ngoài giờ</td>
+                <td class="right"
+                    th:text="${'+ ' + #numbers.formatDecimal(tongPhuThu, 0, 'COMMA', 0, 'POINT')}">
+                    + 100.000</td>
             </tr>
             <tr class="normal">
                 <td>Tiền dịch vụ</td>

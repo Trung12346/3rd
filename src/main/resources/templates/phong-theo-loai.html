@@ -5,7 +5,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title th:text="${loaiPhong != null} ? ${loaiPhong.tenLoai} + ' | Hotel' : 'Chi Tiết Phòng | Hotel'">Chi Tiết Phòng | Hotel</title>
+    <title th:text="${loaiPhong != null ? loaiPhong.tenLoai + ' | Hotel' : 'Chi Tiết Phòng | Hotel'}">
+        Chi Tiết Phòng
+    </title>
     <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -49,7 +51,7 @@
             margin-right: 8px;
             color: var(--sky-primary);
         }
-        
+
         :root {
             --sky-primary: #2196F3;
             --sky-light: #E3F2FD;
@@ -522,6 +524,93 @@
         .sidebar-form-group.has-error .field-error-msg {
             display: block;
         }
+
+        /* ===== Booking guard banner (phòng đang có khách / vừa trả) ===== */
+        .booking-guard-banner {
+            background: #fff8e1;
+            border: 1px solid #ffe082;
+            border-left: 4px solid #e67e22;
+            color: #8a6d00;
+            border-radius: 4px;
+            padding: 12px 14px;
+            margin-bottom: 14px;
+            font-size: 13px;
+            line-height: 1.55;
+            display: none;
+        }
+        .booking-guard-banner.show { display: flex; gap: 10px; align-items: flex-start; }
+        .booking-guard-banner i { color: #e67e22; font-size: 16px; margin-top: 1px; flex-shrink: 0; }
+        .booking-guard-banner strong { color: #6b4f00; }
+        .booking-guard-banner .guard-dates { display: block; margin-top: 4px; color: #8a6d00; font-size: 12px; }
+
+        /* ===== Phụ phí ngoài giờ (dòng trong summary-box) ===== */
+        .summary-row.extra-fee-row { display: none; color: #c0392b; }
+        .summary-row.extra-fee-row.show { display: flex; }
+        .summary-row.extra-fee-row strong { color: #c0392b; }
+
+        /* ===== Toast (góc phải màn hình) ===== */
+        .booking-toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: 360px;
+            pointer-events: none;
+        }
+        .booking-toast {
+            pointer-events: auto;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 12px 14px;
+            border-radius: 4px;
+            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.15);
+            font-size: 13.5px;
+            line-height: 1.5;
+            transform: translateX(120%);
+            opacity: 0;
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease;
+            cursor: default;
+        }
+        .booking-toast.show { transform: translateX(0); opacity: 1; }
+        .booking-toast .toast-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+        .booking-toast .toast-body { flex: 1; min-width: 0; }
+        .booking-toast .toast-title { font-weight: 700; margin-bottom: 2px; }
+        .booking-toast .toast-close {
+            background: transparent;
+            border: 0;
+            color: inherit;
+            opacity: 0.6;
+            cursor: pointer;
+            font-size: 18px;
+            padding: 0 4px;
+            line-height: 1;
+        }
+        .booking-toast .toast-close:hover { opacity: 1; }
+        .booking-toast.toast-warning {
+            background: #fff8e1;
+            border: 1px solid #ffe082;
+            border-left: 4px solid #e67e22;
+            color: #6b4f00;
+        }
+        .booking-toast.toast-warning .toast-icon { color: #e67e22; }
+        .booking-toast.toast-info {
+            background: #ebf5fb;
+            border: 1px solid #bbdefb;
+            border-left: 4px solid #2196F3;
+            color: #1a4a72;
+        }
+        .booking-toast.toast-info .toast-icon { color: #2196F3; }
+        .booking-toast.toast-error {
+            background: #fdecea;
+            border: 1px solid #f5c2c0;
+            border-left: 4px solid #e74c3c;
+            color: #922b21;
+        }
+        .booking-toast.toast-error .toast-icon { color: #e74c3c; }
     </style>
 </head>
 <body>
@@ -537,13 +626,13 @@
             <span></span>
             <a href="/loai-phong">Phòng Nghỉ</a>
             <span></span>
-            <span th:text="${loaiPhong != null} ? ${loaiPhong.tenLoai} : 'Chi Tiết Loại Phòng'">Deluxe</span>
+            <span th:text="${loaiPhong != null ? loaiPhong.tenLoai : 'Chi Tiết Loại Phòng'}">Deluxe</span>
         </nav>
-        <h1 th:text="${loaiPhong != null} ? ${loaiPhong.tenLoai} : 'Loại Phòng'">Phòng Deluxe</h1>
+        <h1 th:text="${loaiPhong != null ? loaiPhong.tenLoai : 'Loại Phòng'}">Phòng Deluxe</h1>
         <div class="badge-capacity">
             <i class="fa-solid fa-users"></i>
             Sức chứa tối đa
-            <span th:text="${loaiPhong != null} ? ${loaiPhong.sucChuaToiDa} + ' người' : '2 người'">2 người</span>
+            <span th:text="${loaiPhong != null ? loaiPhong.sucChuaToiDa + ' người' : '2 người'}">2 người</span>
             &nbsp;&nbsp;
             Từ <span th:text="${loaiPhong != null} ? ${#numbers.formatDecimal(loaiPhong.giaCoBan, 0, 'COMMA', 0, 'POINT')} + ' VND/đêm' : '1.200.000 VND/đêm'">1.200.000 VND/đêm</span>
         </div>
@@ -558,7 +647,7 @@
         <div class="phong-list-header">
             <h2>Các Phòng Hiện Có</h2>
             <span class="phong-count">
-                <span th:text="${phongs != null} ? ${phongs.size()} : 0">0</span> phòng
+                <span th:text="${phongs != null ? phongs.size() : 0}">0</span> phòng
             </span>
         </div>
 
@@ -573,7 +662,7 @@
                 <img src="https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=800&q=80"
                      th:alt="${p.soPhong}">
                 <span class="phong-status-badge"
-                      th:classappend="${p.trangThai == 'Trong'} ? 'status-trong' : (${p.trangThai == 'Cho xac nhan'} ? 'status-da-dat' : 'status-bao-tri')"
+                      th:classappend="${p.trangThai == 'Trong'} ? 'status-trong' : ((${p.trangThai == 'Dang su dung'} or ${p.trangThai == 'Da dat truoc'}) ? 'status-da-dat' : 'status-bao-tri')"
                       th:text="${p.trangThai}">Trong</span>
             </div>
             <div class="phong-card-info">
@@ -598,30 +687,44 @@
                         <span> VND/đêm</span>
                     </div>
                     <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-                    <button type="button"
-                       class="btn-dat-phong"
-                       th:classappend="${p.trangThai != 'Trong'} ? 'disabled' : ''"
-                       th:disabled="${p.trangThai != 'Trong'}"
-                       th:data-ma-phong="${p.maPhong}"
-                       th:data-so-phong="${p.soPhong}"
-                       th:data-tang="${p.soTang}"
-                       th:data-gia="${p.giaMoiDem}"
-                       th:data-gia-label="${#numbers.formatDecimal(p.giaMoiDem, 0, 'COMMA', 0, 'POINT')}"
-                       onclick="chonPhongNhanh(event, this)"
-                       th:text="${p.trangThai == 'Trong'} ? 'Đặt Phòng' : 'Không Khả Dụng'">
-                        Đặt Phòng
-                    </button>
-                    <button type="button"
-                            class="btn-save-cart"
-                            th:disabled="${p.trangThai != 'Trong'}"
-                            th:data-ma-phong="${p.maPhong}"
-                            th:data-so-phong="${p.soPhong}"
-                            th:data-tang="${p.soTang}"
-                            th:data-gia="${p.giaMoiDem}"
-                            th:data-loai="${loaiPhong != null ? loaiPhong.tenLoai : ''}"
-                            onclick="luuPhongVaoGio(event, this)">
-                        Thêm Vào Danh Sách
-                    </button>
+                        <button type="button"
+                                class="btn-dat-phong"
+                                th:classappend="${p.trangThai != 'Trong' and p.trangThai != 'Dang su dung' and p.trangThai != 'Da dat truoc'} ? 'disabled' : ''"
+                                th:disabled="${p.trangThai != 'Trong' and p.trangThai != 'Dang su dung' and p.trangThai != 'Da dat truoc'}"
+                                th:data-ma-phong="${p.maPhong}"
+                                th:data-so-phong="${p.soPhong}"
+                                th:data-tang="${p.soTang}"
+                                th:data-gia="${p.giaMoiDem}"
+                                th:data-gia-label="${#numbers.formatDecimal(p.giaMoiDem, 0, 'COMMA', 0, 'POINT')}"
+                                th:data-trang-thai-don="${bookingGuardByPhong != null and bookingGuardByPhong[p.maPhong] != null ? bookingGuardByPhong[p.maPhong].trangThaiDonGanNhat : ''}"
+                                th:data-ngay-bat-dau-khoa="${bookingGuardByPhong != null and bookingGuardByPhong[p.maPhong] != null and bookingGuardByPhong[p.maPhong].ngayBatDauKhoa != null ? #temporals.format(bookingGuardByPhong[p.maPhong].ngayBatDauKhoa, 'yyyy-MM-dd') : ''}"
+                                th:data-ngay-ket-thuc-khoa="${bookingGuardByPhong != null and bookingGuardByPhong[p.maPhong] != null and bookingGuardByPhong[p.maPhong].ngayKetThucKhoa != null ? #temporals.format(bookingGuardByPhong[p.maPhong].ngayKetThucKhoa, 'yyyy-MM-dd') : ''}"
+                                th:data-gio-nhan-toi-thieu="${bookingGuardByPhong != null and bookingGuardByPhong[p.maPhong] != null ? bookingGuardByPhong[p.maPhong].gioNhanToiThieu : '08:30'}"
+                                th:data-gio-nhan-toi-da="${bookingGuardByPhong != null and bookingGuardByPhong[p.maPhong] != null ? bookingGuardByPhong[p.maPhong].gioNhanToiDa : gioNhanToiDaMacDinh}"
+                                th:data-gio-tra-toi-da="${bookingGuardByPhong != null and bookingGuardByPhong[p.maPhong] != null ? bookingGuardByPhong[p.maPhong].gioTraToiDa : gioTraToiDaMacDinh}"                                    th:data-phu-phi-ngoai-gio="${bookingGuardByPhong != null and bookingGuardByPhong[p.maPhong] != null ? bookingGuardByPhong[p.maPhong].phuPhiNgoaiGioVND : 100000}"
+                                onclick="chonPhongNhanh(event, this)"
+                                th:text="${p.trangThai != 'Trong' and p.trangThai != 'Dang su dung' and p.trangThai != 'Da dat truoc'} ? 'Không Khả Dụng' : 'Đặt Phòng'">
+                            Đặt Phòng
+                        </button>
+                        <button type="button"
+                                class="btn-save-cart"
+                                th:disabled="${p.trangThai != 'Trong' and p.trangThai != 'Dang su dung' and p.trangThai != 'Da dat truoc'}"
+                                th:data-ma-phong="${p.maPhong}"
+                                th:data-so-phong="${p.soPhong}"
+                                th:data-tang="${p.soTang}"
+                                th:data-gia="${p.giaMoiDem}"
+                                th:data-loai="${loaiPhong != null ? loaiPhong.tenLoai : ''}"
+                                th:data-suc-chua="${loaiPhong != null ? loaiPhong.sucChuaToiDa : 0}"
+                                th:data-trang-thai-don="${bookingGuardByPhong != null and bookingGuardByPhong[p.maPhong] != null ? bookingGuardByPhong[p.maPhong].trangThaiDonGanNhat : ''}"
+                                th:data-ngay-bat-dau-khoa="${bookingGuardByPhong != null and bookingGuardByPhong[p.maPhong] != null and bookingGuardByPhong[p.maPhong].ngayBatDauKhoa != null ? #temporals.format(bookingGuardByPhong[p.maPhong].ngayBatDauKhoa, 'yyyy-MM-dd''T''HH:mm') : ''}"
+                                th:data-ngay-ket-thuc-khoa="${bookingGuardByPhong != null and bookingGuardByPhong[p.maPhong] != null and bookingGuardByPhong[p.maPhong].ngayKetThucKhoa != null ? #temporals.format(bookingGuardByPhong[p.maPhong].ngayKetThucKhoa, 'yyyy-MM-dd''T''HH:mm') : ''}"
+                                th:data-gio-nhan-toi-thieu="${bookingGuardByPhong != null and bookingGuardByPhong[p.maPhong] != null ? bookingGuardByPhong[p.maPhong].gioNhanToiThieu : '08:30'}"
+                                th:data-gio-nhan-toi-da="${bookingGuardByPhong != null and bookingGuardByPhong[p.maPhong] != null ? bookingGuardByPhong[p.maPhong].gioNhanToiDa : gioNhanToiDaMacDinh}"
+                                th:data-gio-tra-toi-da="${bookingGuardByPhong != null and bookingGuardByPhong[p.maPhong] != null ? bookingGuardByPhong[p.maPhong].gioTraToiDa : gioTraToiDaMacDinh}"
+                                th:data-phu-phi-ngoai-gio="${bookingGuardByPhong != null and bookingGuardByPhong[p.maPhong] != null ? bookingGuardByPhong[p.maPhong].phuPhiNgoaiGioVND : 100000}"
+                                onclick="luuPhongVaoGio(event, this)">
+                            Thêm Vào Danh Sách
+                        </button>
                     </div>
                 </div>
             </div>
@@ -643,12 +746,23 @@
             <form action="/phong/dat-phong/quick" method="post" id="quickBookingForm">
                 <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
 
-                <input type="hidden" name="maLoaiPhong" th:value="${loaiPhong != null} ? ${loaiPhong.id} : 1">
+                <input type="hidden" name="maLoaiPhong"
+                       th:value="${loaiPhong != null ? loaiPhong.id : 1}">
                 <input type="hidden" name="maPhong" id="quick-ma-phong">
+                <input type="hidden" name="tongPhuPhiNgoaiGio" id="hidden-tong-phu-phi" value="0">
 
                 <div th:if="${bookingError != null}" class="form-error-banner">
                     <i class="fa-solid fa-circle-exclamation"></i>
                     <span th:text="${bookingError}">Số lượng người không hợp lệ.</span>
+                </div>
+
+                <div class="booking-guard-banner" id="booking-guard-banner">
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                    <div>
+                        <strong id="guard-banner-title">Phòng đang có khách sử dụng</strong>
+                        <div class="guard-dates" id="guard-banner-dates"></div>
+                        <div class="guard-dates" id="guard-banner-note">Ngày nhận phòng mới phải cách ngày trả phòng của đơn đó ít nhất 1 ngày.</div>
+                    </div>
                 </div>
 
                 <div class="selected-room-box" id="selectedRoomBox">
@@ -706,6 +820,10 @@
                         <span>Số đêm</span>
                         <span id="so-dem">-</span>
                     </div>
+                    <div class="summary-row extra-fee-row" id="extra-fee-row">
+                        <span>Phụ phí ngoài giờ</span>
+                        <strong id="extra-fee-value">+ đ 0</strong>
+                    </div>
                     <div class="summary-row">
                         <span>Tổng tạm tính</span>
                         <span id="tong-tam-tinh">-</span>
@@ -730,12 +848,24 @@
     <p>&copy; 2026 Hotel. All rights reserved.</p>
 </footer>
 
+<div class="booking-toast-container" id="bookingToastContainer" aria-live="polite"></div>
+
 <script src="/header-dropdown.js"></script>
 <script>
     // Tinh tom tat gia tu dong
     const giaCoBanEl = document.getElementById('gia-co-ban');
     const soNgayEl = document.getElementById('so-dem');
     const tongEl = document.getElementById('tong-tam-tinh');
+    const extraFeeRowEl = document.getElementById('extra-fee-row');
+    const extraFeeValueEl = document.getElementById('extra-fee-value');
+
+    // ===== Cac trang thai don duoc coi la "dang khoa lich" (phai trung voi
+    // validateRoomBookingGuard() ben PhongController va buildSingleRoomGuard()
+    // ben PhongService: Da nhan phong / Cho xac nhan / Da xac nhan) =====
+    const TRANG_THAI_DON_BI_KHOA = ['Da nhan phong', 'Cho xac nhan', 'Da xac nhan'];
+    function laTrangThaiBiKhoa(trangThaiDon) {
+        return TRANG_THAI_DON_BI_KHOA.indexOf(trangThaiDon) !== -1;
+    }
 
     function parseGia(str) {
         return parseInt(str.replace(/[^0-9]/g, '')) || 0;
@@ -745,23 +875,232 @@
         return n.toLocaleString('vi-VN') + ' VND';
     }
 
+    function formatTienVND(n) {
+        return '+ đ ' + n.toLocaleString('vi-VN');
+    }
+
+    function parseTime(value) {
+        if (!value) return null;
+        const s = String(value);
+        const m = s.match(/(\d{1,2}):(\d{1,2})/);
+        if (m) return { h: parseInt(m[1], 10), m: parseInt(m[2], 10) };
+        return null;
+    }
+    function timeToMinutes(t) { return t ? (t.h * 60 + t.m) : 0; }
+    function pad2(n) { return String(n).padStart(2, '0'); }
+    function formatDate(iso) {
+        if (!iso) return '';
+        const parts = iso.split('-');
+        if (parts.length !== 3) return iso;
+        return parts[2] + '/' + parts[1] + '/' + parts[0];
+    }
+    function formatTime(t) {
+        if (!t) return '';
+        return pad2(t.h) + ':' + pad2(t.m);
+    }
+    function addDaysIso(iso, days) {
+        if (!iso) return '';
+        const d = new Date(iso + 'T00:00:00');
+        d.setDate(d.getDate() + days);
+        return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+    }
+
+    let currentExtraFee = 0;
+    let lastExtraFee = 0;
+
+    function tinhPhuPhiExtra() {
+        const form = document.getElementById('quickBookingForm');
+        if (!form) return 0;
+        const ngayNhanEl = document.getElementById('ngay-nhan');
+        const ngayTraEl = document.getElementById('ngay-tra');
+        if (!ngayNhanEl || !ngayTraEl) return 0;
+
+        const v1 = ngayNhanEl.value;
+        const v2 = ngayTraEl.value;
+        if (!v1 || !v2) {
+            if (extraFeeRowEl) extraFeeRowEl.classList.remove('show');
+            currentExtraFee = 0;
+            return 0;
+        }
+        const d1 = new Date(v1);
+        const d2 = new Date(v2);
+        if (isNaN(d1.getTime()) || isNaN(d2.getTime())) {
+            if (extraFeeRowEl) extraFeeRowEl.classList.remove('show');
+            currentExtraFee = 0;
+            return 0;
+        }
+        const gioNhanToiThieu = parseTime(form.dataset.gioNhanToiThieu) || { h: 8, m: 30 };
+        const gioNhanToiDa = parseTime(form.dataset.gioNhanToiDa) || { h: 11, m: 0 };
+        const gioTraToiDa = parseTime(form.dataset.gioTraToiDa) || { h: 18, m: 30 };
+        const phuPhiMacDinh = Number(form.dataset.phuPhiNgoaiGio || 100000);
+
+        const nhanMin = d1.getHours() * 60 + d1.getMinutes();
+        const traMin = d2.getHours() * 60 + d2.getMinutes();
+        const ngoaiGioNhan = nhanMin < timeToMinutes(gioNhanToiThieu) || nhanMin > timeToMinutes(gioNhanToiDa);
+        const ngoaiGioTra = traMin > timeToMinutes(gioTraToiDa);
+
+        if (ngoaiGioNhan || ngoaiGioTra) {
+            currentExtraFee = phuPhiMacDinh;
+            if (extraFeeRowEl) extraFeeRowEl.classList.add('show');
+            if (extraFeeValueEl) extraFeeValueEl.textContent = formatTienVND(currentExtraFee);
+            return currentExtraFee;
+        } else {
+            currentExtraFee = 0;
+            if (extraFeeRowEl) extraFeeRowEl.classList.remove('show');
+            return 0;
+        }
+    }
+
+    // ===== Hien/an banner canh bao "phong da co khach dat/dang o" =====
+    // Ap dung cho ca 3 trang thai don: Da nhan phong, Cho xac nhan, Da xac nhan
+    // (giong het logic validateRoomBookingGuard() o PhongController), khong
+    // chi rieng "Da nhan phong" nhu truoc, de tranh cho phep dat trung lich
+    // voi don dang "Cho xac nhan" / "Da xac nhan".
+    function applyGuardBanner() {
+        const form = document.getElementById('quickBookingForm');
+        if (!form) return;
+        const banner = document.getElementById('booking-guard-banner');
+        const bannerTitle = document.getElementById('guard-banner-title');
+        const bannerDates = document.getElementById('guard-banner-dates');
+        const ngayNhanEl = document.getElementById('ngay-nhan');
+        if (!banner) return;
+        const trangThaiDon = form.dataset.trangThaiDon || '';
+        const ngayBatDauKhoa = form.dataset.ngayBatDauKhoa || '';
+        const ngayKetThucKhoa = form.dataset.ngayKetThucKhoa || '';
+
+        if (laTrangThaiBiKhoa(trangThaiDon) && ngayKetThucKhoa) {
+            const tu = formatDate(ngayBatDauKhoa || ngayKetThucKhoa);
+            const den = formatDate(ngayKetThucKhoa);
+
+            if (bannerTitle) {
+                bannerTitle.textContent = (trangThaiDon === 'Da nhan phong')
+                    ? 'Phòng đang có khách sử dụng'
+                    : 'Phòng đã có khách đặt trước (chờ nhận phòng)';
+            }
+            if (bannerDates) bannerDates.textContent = 'Khoảng đã được đặt: ' + (tu ? tu + ' → ' : '') + den;
+            banner.classList.add('show');
+
+            const minNhan = addDaysIso(ngayKetThucKhoa, 1);
+            if (ngayNhanEl) {
+                ngayNhanEl.min = minNhan + 'T00:00';
+                if (!ngayNhanEl.value) {
+                    ngayNhanEl.value = minNhan + 'T08:30';
+                }
+            }
+        } else {
+            banner.classList.remove('show');
+            // FIX: khi chuyen sang chon 1 phong khac khong bi khoa, phai go
+            // thuoc tinh "min" cua truoc do di, neu khong ngay nhan phong se
+            // van bi gioi han theo phong da chon truoc, du phong moi dang trong.
+            if (ngayNhanEl) {
+                ngayNhanEl.removeAttribute('min');
+            }
+        }
+    }
+
+    function showToast(message, opts) {
+        opts = opts || {};
+        const type = opts.type || 'warning';
+        const title = opts.title || '';
+        const container = document.getElementById('bookingToastContainer');
+        if (!container) return;
+        const iconMap = { warning: 'fa-circle-exclamation', info: 'fa-circle-info', error: 'fa-circle-xmark' };
+        const el = document.createElement('div');
+        el.className = 'booking-toast toast-' + type;
+        el.innerHTML =
+            '<i class="fa-solid ' + (iconMap[type] || 'fa-circle-info') + ' toast-icon"></i>' +
+            '<div class="toast-body">' +
+            (title ? '<div class="toast-title">' + escapeHtml(title) + '</div>' : '') +
+            '<div class="toast-message">' + escapeHtml(message) + '</div>' +
+            '</div>' +
+            '<button type="button" class="toast-close" aria-label="Đóng">&times;</button>';
+        container.appendChild(el);
+        requestAnimationFrame(function () { el.classList.add('show'); });
+        const close = function () {
+            el.classList.remove('show');
+            setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 400);
+        };
+        el.querySelector('.toast-close').addEventListener('click', close);
+        setTimeout(close, 5000);
+    }
+    function escapeHtml(s) {
+        return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    // Dem so dem dua tren ngay lich (bo qua gio, tranh loi mui gio)
+    // Vi du: nhan 01/08 12:30 SA, tra 06/08 6:30 CH => 5 dem (06 - 01 = 5)
+    function tinhSoDem(ngayNhanStr, ngayTraStr) {
+        if (!ngayNhanStr || !ngayTraStr) return 0;
+        const d1Str = String(ngayNhanStr).substring(0, 10); // yyyy-MM-dd
+        const d2Str = String(ngayTraStr).substring(0, 10);
+        const d1 = new Date(d1Str + 'T00:00:00');
+        const d2 = new Date(d2Str + 'T00:00:00');
+        if (isNaN(d1.getTime()) || isNaN(d2.getTime())) return 0;
+        const diffMs = d2.getTime() - d1.getTime();
+        return Math.round(diffMs / 86400000);
+    }
+
     function tinhGia() {
         const ngayNhan = document.querySelector('input[name="ngayNhan"]').value;
         const ngayTra = document.querySelector('input[name="ngayTra"]').value;
         if (!ngayNhan || !ngayTra) return;
 
-        const d1 = new Date(ngayNhan);
-        const d2 = new Date(ngayTra);
-        const soNgay = Math.ceil((d2 - d1) / 86400000);
+        const soNgay = tinhSoDem(ngayNhan, ngayTra);
         if (soNgay <= 0) return;
 
         const giaCoBan = parseGia(giaCoBanEl.textContent);
+        const phiCoBan = giaCoBan * soNgay;
+        const extraFee = tinhPhuPhiExtra();
+        const tong = phiCoBan + extraFee;
         soNgayEl.textContent = soNgay + ' đêm';
-        tongEl.textContent = formatVND(giaCoBan * soNgay);
+        tongEl.textContent = formatVND(tong);
+
+        // Toast khi phụ phí vừa xuất hiện
+        if (extraFee > 0 && lastExtraFee === 0) {
+            const form = document.getElementById('quickBookingForm');
+            const gioNhanToiThieu = parseTime(form && form.dataset.gioNhanToiThieu) || { h: 8, m: 30 };
+            const gioNhanToiDa = parseTime(form && form.dataset.gioNhanToiDa) || { h: 11, m: 0 };
+            const gioTraToiDa = parseTime(form && form.dataset.gioTraToiDa) || { h: 18, m: 30 };
+            showToast('Bạn chọn giờ ngoài khung ' + formatTime(gioNhanToiThieu) + ' - ' + formatTime(gioNhanToiDa) +
+                ' (nhận phòng) hoặc sau ' + formatTime(gioTraToiDa) + ' (trả phòng). Hệ thống sẽ cộng thêm phụ phí.', {
+                type: 'warning',
+                title: 'Phụ phí ngoài giờ +' + extraFee.toLocaleString('vi-VN') + ' VND'
+            });
+        }
+        lastExtraFee = extraFee;
     }
 
-    document.querySelector('input[name="ngayNhan"]').addEventListener('change', tinhGia);
-    document.querySelector('input[name="ngayTra"]').addEventListener('change', tinhGia);
+    // ===== Kiem tra ngay nhan co trung voi khoang dang bi khoa cua don cu
+    // khong (ap dung cho ca 3 trang thai don bi khoa) =====
+    function kiemTraTrungLichVaCanhBao() {
+        const form = document.getElementById('quickBookingForm');
+        if (!form) return;
+        const trangThaiDon = form.dataset.trangThaiDon || '';
+        const ngayKetThucKhoa = form.dataset.ngayKetThucKhoa || '';
+        const ngayNhanEl = document.getElementById('ngay-nhan');
+        if (laTrangThaiBiKhoa(trangThaiDon) && ngayKetThucKhoa && ngayNhanEl && ngayNhanEl.value) {
+            const chosen = new Date(ngayNhanEl.value);
+            const locked = new Date(ngayKetThucKhoa + 'T23:59:59');
+            if (chosen <= locked) {
+                showToast('Ngày nhận phòng phải sau ngày trả phòng của đơn đang giữ (' + formatDate(ngayKetThucKhoa) +
+                    '). Vui lòng chọn từ ' + formatDate(addDaysIso(ngayKetThucKhoa, 1)) + ' trở đi.', {
+                    type: 'error',
+                    title: 'Ngày nhận bị trùng đơn cũ'
+                });
+            }
+        }
+    }
+
+    // Nghe ca 'input' lan 'change' de cap nhat gia/phu phi/canh bao ngay khi
+    // nguoi dung dang go, khong can doi den luc blur khoi o input.
+    const ngayNhanInputEl = document.querySelector('input[name="ngayNhan"]');
+    const ngayTraInputEl = document.querySelector('input[name="ngayTra"]');
+    ['input', 'change'].forEach(function (evt) {
+        ngayNhanInputEl.addEventListener(evt, tinhGia);
+        ngayNhanInputEl.addEventListener(evt, applyGuardBanner);
+        ngayNhanInputEl.addEventListener(evt, kiemTraTrungLichVaCanhBao);
+        ngayTraInputEl.addEventListener(evt, tinhGia);
+    });
 
     function readRoomCart() {
         try {
@@ -785,14 +1124,32 @@
             floor: button.dataset.tang,
             price: Number(button.dataset.gia || 0),
             typeName: button.dataset.loai || '',
+            sucChua: Number(button.dataset.sucChua || 0),
+            // Du lieu guard: de trang gio-hang biet phong nay co dang bi
+            // khoa (da co khach su dung / da co don giu cho) hay khong, va
+            // tinh duoc phu phi ngoai gio + de xuat ngay nhan phong chung
+            // cho ca gio hang (dua tren phong co han tra xa nhat).
+            trangThaiDon: button.dataset.trangThaiDon || '',
+            ngayBatDauKhoa: button.dataset.ngayBatDauKhoa || '',
+            ngayKetThucKhoa: button.dataset.ngayKetThucKhoa || '',
+            gioNhanToiThieu: button.dataset.gioNhanToiThieu || '08:30',
+            gioNhanToiDa: button.dataset.gioNhanToiDa || '11:00',
+            gioTraToiDa: button.dataset.gioTraToiDa || '18:30',
+            phuPhiNgoaiGio: Number(button.dataset.phuPhiNgoaiGio || 100000),
             image: 'https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=400&q=80'
         };
         const cart = readRoomCart();
-        const exists = cart.some(room => String(room.id) === String(item.id));
+        const idx = cart.findIndex(room => String(room.id) === String(item.id));
+        const exists = idx !== -1;
         if (!exists) {
             cart.push(item);
-            localStorage.setItem('hotelRoomCart', JSON.stringify(cart));
+        } else {
+            // Cap nhat lai du lieu guard/gia moi nhat cho phong da co san trong
+            // gio, phong khi trang thai dat phong cua no da thay doi tu lan
+            // truoc (vi du: luc truoc con trong, gio da co khach dat).
+            cart[idx] = Object.assign({}, cart[idx], item);
         }
+        localStorage.setItem('hotelRoomCart', JSON.stringify(cart));
         button.textContent = exists ? 'Đã Có' : 'Đã Thêm';
         setTimeout(() => button.textContent = 'Thêm Vào Danh Sách', 1200);
     }
@@ -820,10 +1177,36 @@
         document.getElementById('selected-room-title').textContent = soPhong ? 'Phòng ' + soPhong + ' đã được chọn' : 'Đã chọn phòng';
         document.getElementById('selected-room-detail').textContent = 'Tầng ' + tang + '  ' + giaLabel + ' VND/đêm';
         giaCoBanEl.textContent = giaLabel + ' VND';
+
+        // ===== Lưu guard data vào form để handler bên dưới dùng =====
+        // FIX: reset het du lieu guard cua phong truoc do truoc, roi moi gan
+        // du lieu cua phong vua chon, tranh truong hop con sot du lieu cu
+        // (vi du chuyen tu phong dang bi khoa sang phong dang trong).
+        const form = document.getElementById('quickBookingForm');
+        if (form) {
+            form.dataset.trangThaiDon = button.dataset.trangThaiDon || '';
+            form.dataset.ngayBatDauKhoa = button.dataset.ngayBatDauKhoa || '';
+            form.dataset.ngayKetThucKhoa = button.dataset.ngayKetThucKhoa || '';
+            form.dataset.gioNhanToiThieu = button.dataset.gioNhanToiThieu || '';
+            form.dataset.gioNhanToiDa = button.dataset.gioNhanToiDa || '';
+            form.dataset.gioTraToiDa = button.dataset.gioTraToiDa || '';
+            form.dataset.phuPhiNgoaiGio = button.dataset.phuPhiNgoaiGio || '100000';
+        }
+
+        // Reset ngay nhan/tra da nhap truoc do de khong bi dinh gioi han
+        // "min" cua phong khac, ngoai tru truong hop applyGuardBanner() se tu
+        // dien lai ngay mac dinh neu phong moi dang bi khoa.
+        const ngayNhanInput = document.querySelector('input[name="ngayNhan"]');
+        if (ngayNhanInput) {
+            ngayNhanInput.removeAttribute('min');
+        }
+
+        applyGuardBanner();
+        kiemTraTrungLichVaCanhBao();
         tinhGia();
+        tinhPhuPhiExtra();
 
         document.getElementById('selectedRoomBox').scrollIntoView({ behavior: 'smooth', block: 'center' });
-        const ngayNhanInput = document.querySelector('input[name="ngayNhan"]');
         if (ngayNhanInput) {
             setTimeout(() => ngayNhanInput.focus(), 350);
         }
@@ -917,9 +1300,12 @@
                 errNgayTra.textContent = 'Vui lòng chọn ngày trả phòng.';
                 return { ok: false, lyDo: 'Chua chon ngay tra phong.' };
             }
-            const d1 = new Date(v1);
-            const d2 = new Date(v2);
-            const diffDays = Math.round((d2 - d1) / 86400000);
+            // Dem theo ngay lich (bo qua gio, tranh loi mui gio/24h)
+            const d1Str = v1.substring(0, 10);
+            const d2Str = v2.substring(0, 10);
+            const d1 = new Date(d1Str + 'T00:00:00');
+            const d2 = new Date(d2Str + 'T00:00:00');
+            const diffDays = Math.round((d2.getTime() - d1.getTime()) / 86400000);
             if (diffDays < 1) {
                 showError(grpNgayTra);
                 errNgayTra.textContent = 'Ngày trả phòng phải cách ngày nhận phòng ít nhất 1 ngày.';
@@ -934,6 +1320,23 @@
                     showError(grpNguoiLon);
                     errNguoi.textContent = 'Số lượng người (' + (nl + te) + ') vượt quá sức chứa của phòng (' + sucChuaToiDa + ' người).';
                     return { ok: false, lyDo: 'So luong nguoi vuot qua suc chua.' };
+                }
+            }
+
+            // 4. Ngay nhan khong duoc trung/nam trong khoang dang bi khoa boi
+            // don cu (Da nhan phong / Cho xac nhan / Da xac nhan). Day la
+            // buoc validate quan trong nhat theo yeu cau: kiem tra xem phong
+            // dang chon co khach nao dang giu cho tu truoc hay khong.
+            const trangThaiDon = form.dataset.trangThaiDon || '';
+            const ngayKetThucKhoa = form.dataset.ngayKetThucKhoa || '';
+            if (laTrangThaiBiKhoa(trangThaiDon) && ngayKetThucKhoa) {
+                const chosenNhan = new Date(v1);
+                const locked = new Date(ngayKetThucKhoa + 'T23:59:59');
+                if (chosenNhan <= locked) {
+                    showError(grpNgayNhan);
+                    errNgayNhan.textContent = 'Phòng này đang có khách giữ chỗ đến hết ' + formatDate(ngayKetThucKhoa) +
+                        '. Vui lòng chọn ngày nhận phòng từ ' + formatDate(addDaysIso(ngayKetThucKhoa, 1)) + ' trở đi.';
+                    return { ok: false, lyDo: 'Ngay nhan trung voi khoang dang bi khoa cua don cu.' };
                 }
             }
 
@@ -978,6 +1381,13 @@
             if (!kq.ok) {
                 e.preventDefault();
                 capNhatTrangThaiNut();
+                return;
+            }
+            // Cap nhat gia tri phu phi vao hidden input truoc khi submit
+            const hiddenPhuPhi = document.getElementById('hidden-tong-phu-phi');
+            if (hiddenPhuPhi) {
+                const phuPhiValue = (typeof currentExtraFee !== 'undefined') ? currentExtraFee : 0;
+                hiddenPhuPhi.value = phuPhiValue;
             }
         });
     })();

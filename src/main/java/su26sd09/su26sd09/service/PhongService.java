@@ -3,10 +3,13 @@ package su26sd09.su26sd09.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import su26sd09.su26sd09.dto.RoomBookingGuardDTO;
+import su26sd09.su26sd09.entity.DatPhong;
 import su26sd09.su26sd09.entity.LoaiPhong;
 import su26sd09.su26sd09.entity.Phong;
 import su26sd09.su26sd09.entity.TienNghi;
 import su26sd09.su26sd09.entity.TienNghiPhong;
+import su26sd09.su26sd09.repository.DatPhongRepo;
 import su26sd09.su26sd09.repository.LoaiPhongRepository;
 import su26sd09.su26sd09.repository.PhongRepository;
 import su26sd09.su26sd09.repository.TienNghiPhongRepository;
@@ -14,9 +17,16 @@ import su26sd09.su26sd09.repository.TienNghiRepository;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+import su26sd09.su26sd09.dto.RoomBookingGuardDTO;
+
+import static org.thymeleaf.util.StringUtils.contains;
 
 @Service
 public class PhongService {
@@ -32,6 +42,9 @@ public class PhongService {
 
     @Autowired
     private TienNghiPhongRepository tienNghiPhongRepository;
+
+    @Autowired
+    private DatPhongRepo datPhongRepo;
 
     public List<Phong> search(String keyword) {
         return phongRepository.search(keyword);
@@ -226,7 +239,166 @@ public class PhongService {
         }
     }
 
-    private boolean contains(String value, String keyword) {
-        return value != null && value.toLowerCase(Locale.ROOT).contains(keyword);
+    /**
+     * Xây map ràng buộc đặt phòng cho từng phòng trong danh sách.
+     * Phòng "Trong" -> cho phép đặt, không ràng buộc.
+     * Phòng "Dang su dung":
+     *  - Đơn Da nhan phong -> coTheDat = true, set khoảng ngày bị gạch chéo.
+     *  - Đơn Da tra phong -> coTheDat = true, áp dụng ràng buộc giờ + phụ phí.
+     *  - Khác -> coTheDat = false.
+     */
+    public Map<Integer, RoomBookingGuardDTO> buildRoomGuards(List<Phong> phongs) {
+        Map<Integer, RoomBookingGuardDTO> map = new HashMap<>();
+        if (phongs == null) {
+            return map;
+        }
+        for (Phong phong : phongs) {
+            map.put(phong.getMaPhong(), buildSingleRoomGuard(phong));
+        }
+        return map;
+    }
+
+    /** Trả về guard cho 1 phòng cụ thể. */
+    public RoomBookingGuardDTO buildRoomGuardFor(int maPhong) {
+        System.out.println("buildRoomGuardFor: " + maPhong);
+        Phong phong = findById(maPhong);
+        if (phong == null) {
+            return new RoomBookingGuardDTO(
+                    null, null, null, null,
+                    LocalTime.of(8, 30), LocalTime.of(11, 0), LocalTime.of(18, 30),
+                    new BigDecimal("100000"),
+                    false
+            );
+        }
+        return buildSingleRoomGuard(phong);
+    }
+
+    private RoomBookingGuardDTO buildSingleRoomGuard(Phong phong) {
+
+        String trangThai = phong.getTrangThai();
+
+        // Không có trạng thái -> chặn
+        if (trangThai == null) {
+            return blockedGuard(null, null);
+        }
+
+        // Phòng trống -> đặt bình thường
+        if ("Trong".equalsIgnoreCase(trangThai)) {
+            return RoomBookingGuardDTO.empty(trangThai);
+        }
+
+        // Chỉ xử lý guard cho 2 trạng thái này
+        if (!"Dang su dung".equalsIgnoreCase(trangThai)
+                && !"Da dat truoc".equalsIgnoreCase(trangThai)) {
+            return blockedGuard(trangThai, null);
+        }
+
+        Optional<DatPhong> optional = findLatestBooking(phong.getMaPhong());
+
+        if (optional.isEmpty()) {
+            System.out.println("Khong tim thay DatPhong cho phong " + phong.getSoPhong());
+            return blockedGuard(trangThai, null);
+        }
+
+        DatPhong dp = optional.get();
+        String trangThaiDon = dp.getTrangThai();
+
+        System.out.println("========== GUARD ==========");
+        System.out.println("Phong: " + phong.getSoPhong());
+        System.out.println("Trang thai phong: " + trangThai);
+        System.out.println("Don tim duoc: " + dp.getId());
+        System.out.println("Trang thai don: " + trangThaiDon);
+
+        // Các trạng thái phải khóa lịch
+        if ("Da nhan phong".equals(trangThaiDon)
+                || "Cho xac nhan".equals(trangThaiDon)
+                || "Da xac nhan".equals(trangThaiDon)) {
+
+            return new RoomBookingGuardDTO(
+                    trangThai,
+                    trangThaiDon,
+                    dp.getNgaydatPhong(),
+                    dp.getNgaytraPhong(),
+                    LocalTime.of(8, 30),
+                    LocalTime.of(11, 0),
+                    LocalTime.of(18, 30),
+                    new BigDecimal("100000"),
+                    true
+            );
+        }
+
+        // Khách đã trả phòng -> chỉ áp dụng rule giờ
+        if ("Da tra phong".equals(trangThaiDon)) {
+
+            return new RoomBookingGuardDTO(
+                    trangThai,
+                    trangThaiDon,
+                    null,
+                    null,
+                    LocalTime.of(8, 30),
+                    LocalTime.of(11, 0),
+                    LocalTime.of(18, 30),
+                    new BigDecimal("100000"),
+                    true
+            );
+        }
+
+        // Các trạng thái khác
+        return blockedGuard(trangThai, trangThaiDon);
+    }
+
+    private RoomBookingGuardDTO blockedGuard(String trangThaiPhong, String trangThaiDon) {
+        return new RoomBookingGuardDTO(
+                trangThaiPhong, trangThaiDon, null, null,
+                LocalTime.of(8, 30), LocalTime.of(11, 0), LocalTime.of(18, 30),
+                new BigDecimal("100000"),
+                false
+        );
+    }
+
+    /**
+     * Tính phụ phí ngoài giờ cho 1 phòng dựa trên guard và khoảng ngày đặt.
+     * Tái sử dụng cùng rule với PhongController.calculateExtraFee() và GioHangController.calculateExtraFee():
+     *   - giờ nhận ngoài [gioNhanToiThieu, gioNhanToiDa] -> cộng phuPhiNgoaiGioVND
+     *   - giờ trả sau gioTraToiDa                       -> cộng phuPhiNgoaiGioVND
+     * Nếu trong khoảng hợp lệ, trả về ZERO.
+     */
+    public BigDecimal calculateExtraFeeFor(int maPhong, LocalDateTime ngayNhan, LocalDateTime ngayTra) {
+        if (ngayNhan == null || ngayTra == null) {
+            return BigDecimal.ZERO;
+        }
+        RoomBookingGuardDTO guard = buildRoomGuardFor(maPhong);
+        if (guard == null) {
+            return BigDecimal.ZERO;
+        }
+
+        LocalTime gioNhan = ngayNhan.toLocalTime();
+        LocalTime gioTra = ngayTra.toLocalTime();
+        boolean ngoaiGioNhan = gioNhan.isBefore(guard.getGioNhanToiThieu())
+                || gioNhan.isAfter(guard.getGioNhanToiDa());
+        boolean ngoaiGioTra = gioTra.isAfter(guard.getGioTraToiDa());
+        return (ngoaiGioNhan || ngoaiGioTra) ? guard.getPhuPhiNgoaiGioVND() : BigDecimal.ZERO;
+    }
+
+    private Optional<DatPhong> findLatestBooking(int maPhong) {
+
+        List<DatPhong> list = datPhongRepo.findRecentBookingsForPhong(maPhong);
+
+        System.out.println("===== FIND LATEST BOOKING =====");
+        for (DatPhong dp : list) {
+            System.out.println(
+                    dp.getId()
+                            + " | "
+                            + dp.getTrangThai()
+                            + " | "
+                            + dp.getNgayTao()
+            );
+        }
+
+        if (list == null || list.isEmpty()) {
+            return Optional.empty();
+        }
+
+        return Optional.of(list.get(0));
     }
 }

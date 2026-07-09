@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Danh Sách Đặt Phòng</title>
     <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         .cart-wrapper {
             padding: 44px 5% 70px;
@@ -95,6 +96,97 @@
             padding: 10px 12px;
             width: 100%;
         }
+        .cart-form-grid input.is-invalid,
+        .cart-form-grid select.is-invalid {
+            border-color: #e74c3c;
+            background-color: #fff5f5;
+        }
+        .cart-field-error {
+            color: #e74c3c;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 4px;
+            min-height: 14px;
+        }
+        .cart-banner {
+            border-radius: 4px;
+            margin-bottom: 16px;
+            padding: 12px 16px;
+            font-size: 14px;
+        }
+        .cart-banner.error {
+            background: #fdecea;
+            border: 1px solid #f5c2c0;
+            color: #b3261e;
+        }
+        .cart-banner.warning {
+            background: #fff8e1;
+            border: 1px solid #ffe082;
+            color: #8a6d00;
+        }
+        .cart-meta strong.capacity {
+            color: var(--sky-dark);
+        }
+
+        /* ===== Datetime field (native datetime-local, styled) ===== */
+        .datetime-field {
+            position: relative;
+        }
+        .datetime-field input[type="datetime-local"] {
+            appearance: none;
+            -webkit-appearance: none;
+            background: #fff;
+            cursor: pointer;
+            font-size: 14px;
+            font-family: inherit;
+            transition: border-color .15s ease, box-shadow .15s ease;
+        }
+        .datetime-field input[type="datetime-local"]:hover {
+            border-color: var(--sky-primary);
+        }
+        .datetime-field input[type="datetime-local"]:focus {
+            border-color: var(--sky-primary);
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15);
+            outline: none;
+        }
+        .datetime-field input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+            cursor: pointer;
+            filter: invert(48%) sepia(60%) saturate(1000%) hue-rotate(175deg);
+            opacity: 0.85;
+            padding: 2px;
+        }
+        .datetime-field input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
+            opacity: 1;
+        }
+        .datetime-hint {
+            color: var(--text-gray);
+            font-size: 11.5px;
+            margin-top: 4px;
+        }
+        .datetime-hint.locked {
+            color: #b3261e;
+            font-weight: 600;
+        }
+
+        /* ===== Booking guard banner (phòng đang có khách / đã có khách đặt
+           trước) - dong bo giao dien voi room-detail.html va phong-theo-loai.html ===== */
+        .booking-guard-banner {
+            background: #fff8e1;
+            border: 1px solid #ffe082;
+            border-left: 4px solid #e67e22;
+            color: #8a6d00;
+            border-radius: 4px;
+            padding: 12px 14px;
+            margin-bottom: 14px;
+            font-size: 13px;
+            line-height: 1.55;
+            display: none;
+        }
+        .booking-guard-banner.show { display: flex; gap: 10px; align-items: flex-start; }
+        .booking-guard-banner i { color: #e67e22; font-size: 16px; margin-top: 1px; flex-shrink: 0; }
+        .booking-guard-banner strong { color: #6b4f00; }
+        .booking-guard-banner .guard-dates { display: block; margin-top: 4px; color: #8a6d00; font-size: 12px; }
+
         @media (max-width: 900px) {
             .cart-layout { grid-template-columns: 1fr; }
         }
@@ -122,6 +214,77 @@
                 gap: 12px;
             }
         }
+
+        /* ===== Phụ phí ngoài giờ (dòng trong tóm tắt giỏ hàng) - mau do
+           giong het cac trang phong-theo-loai / room-detail ===== */
+        .cart-summary-row.extra-fee-row,
+        .cart-summary-row.extra-fee-row strong {
+            color: #c0392b;
+        }
+
+        /* ===== Toast (góc phải màn hình) - dong bo voi cac trang khac ===== */
+        .booking-toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: 360px;
+            pointer-events: none;
+        }
+        .booking-toast {
+            pointer-events: auto;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 12px 14px;
+            border-radius: 4px;
+            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.15);
+            font-size: 13.5px;
+            line-height: 1.5;
+            transform: translateX(120%);
+            opacity: 0;
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease;
+            cursor: default;
+        }
+        .booking-toast.show { transform: translateX(0); opacity: 1; }
+        .booking-toast .toast-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+        .booking-toast .toast-body { flex: 1; min-width: 0; }
+        .booking-toast .toast-title { font-weight: 700; margin-bottom: 2px; }
+        .booking-toast .toast-close {
+            background: transparent;
+            border: 0;
+            color: inherit;
+            opacity: 0.6;
+            cursor: pointer;
+            font-size: 18px;
+            padding: 0 4px;
+            line-height: 1;
+        }
+        .booking-toast .toast-close:hover { opacity: 1; }
+        .booking-toast.toast-warning {
+            background: #fff8e1;
+            border: 1px solid #ffe082;
+            border-left: 4px solid #e67e22;
+            color: #6b4f00;
+        }
+        .booking-toast.toast-warning .toast-icon { color: #e67e22; }
+        .booking-toast.toast-info {
+            background: #ebf5fb;
+            border: 1px solid #bbdefb;
+            border-left: 4px solid #2196F3;
+            color: #1a4a72;
+        }
+        .booking-toast.toast-info .toast-icon { color: #2196F3; }
+        .booking-toast.toast-error {
+            background: #fdecea;
+            border: 1px solid #f5c2c0;
+            border-left: 4px solid #e74c3c;
+            color: #922b21;
+        }
+        .booking-toast.toast-error .toast-icon { color: #e74c3c; }
     </style>
 </head>
 <body>
@@ -132,6 +295,8 @@
     <div th:if="${bookingSuccess}" class="admin-message success" th:text="${bookingSuccess}"></div>
     <div th:if="${bookingError}" class="admin-message error" th:text="${bookingError}"></div>
     <div id="bookingSuccessFlag" th:if="${bookingSuccess}" hidden></div>
+
+    <div id="validationBanner" class="cart-banner error" style="display:none;"></div>
 
     <div class="cart-layout">
         <section class="cart-panel">
@@ -146,17 +311,28 @@
                 <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
                 <div id="roomInputs"></div>
 
-                <div>
+                <div class="booking-guard-banner" id="booking-guard-banner">
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                    <div>
+                        <strong id="guard-banner-title">Phòng đang có khách sử dụng</strong>
+                        <div class="guard-dates" id="guard-banner-dates"></div>
+                        <div class="guard-dates" id="guard-banner-note">Ngày nhận phòng mới phải cách ngày trả phòng của đơn đó ít nhất 1 ngày.</div>
+                    </div>
+                </div>
+
+                <div class="datetime-field">
                     <label>Ngày nhận phòng</label>
                     <input type="datetime-local" name="ngayNhan" id="ngayNhan" required>
+                    <div class="datetime-hint" id="ngayNhanHint"></div>
                 </div>
-                <div>
+                <div class="datetime-field">
                     <label>Ngày trả phòng</label>
                     <input type="datetime-local" name="ngayTra" id="ngayTra" required>
+                    <div class="cart-field-error" id="ngayError"></div>
                 </div>
                 <div>
                     <label>Người lớn</label>
-                    <select name="nguoiLon">
+                    <select name="nguoiLon" id="nguoiLon">
                         <option value="1">1</option>
                         <option value="2" selected>2</option>
                         <option value="3">3</option>
@@ -165,15 +341,19 @@
                 </div>
                 <div>
                     <label>Trẻ em</label>
-                    <select name="treEm">
+                    <select name="treEm" id="treEm">
                         <option value="0" selected>0</option>
                         <option value="1">1</option>
                         <option value="2">2</option>
                     </select>
+                    <div class="cart-field-error" id="peopleError"></div>
                 </div>
                 <div class="form-field full">
-                    <label>CCCD người đặt (đại diện đơn)</label>
+                    <label>CCCD người đặt (đại diện đơn) <span style="color:#e74c3c;">*</span></label>
                     <input type="text" name="ma_cccd" maxlength="12" pattern="[0-9]{12}" required>
+                    <div id="cccd-dai-dien-note" class="cart-field-error" style="display:none; color: var(--text-gray); font-weight: 500; text-transform: none;">
+                        Đặt 2 phòng trở lên: vui lòng nhập thêm CCCD cho từng phòng bên dưới.
+                    </div>
                 </div>
 
                 <div id="cccd-tung-phong"></div>
@@ -184,8 +364,16 @@
                         <strong id="roomCount">0</strong>
                     </div>
                     <div class="cart-summary-row">
+                        <span>Sức chứa tối đa</span>
+                        <strong id="capacityTotal">0 người</strong>
+                    </div>
+                    <div class="cart-summary-row">
                         <span>Số đêm</span>
                         <strong id="nightCount">-</strong>
+                    </div>
+                    <div class="cart-summary-row extra-fee-row" id="extraFeeRow" style="display:none;">
+                        <span>Phụ phí ngoài giờ</span>
+                        <strong id="extraFeeTotal">0 VND</strong>
                     </div>
                     <div class="cart-summary-row cart-summary-total">
                         <span>Tổng tiền</span>
@@ -204,17 +392,68 @@
     <p>&copy; 2026 Hotel. All rights reserved.</p>
 </footer>
 
+<div class="booking-toast-container" id="bookingToastContainer" aria-live="polite"></div>
+
 <script>
     const CART_KEY = 'hotelRoomCart';
     const cartItemsEl = document.getElementById('cartItems');
     const cartEmptyEl = document.getElementById('cartEmpty');
     const roomInputsEl = document.getElementById('roomInputs');
     const roomCountEl = document.getElementById('roomCount');
+    const capacityTotalEl = document.getElementById('capacityTotal');
     const nightCountEl = document.getElementById('nightCount');
     const cartTotalEl = document.getElementById('cartTotal');
     const checkoutButton = document.getElementById('checkoutButton');
+    const checkoutForm = document.getElementById('checkoutForm');
     const ngayNhanEl = document.getElementById('ngayNhan');
     const ngayTraEl = document.getElementById('ngayTra');
+    const nguoiLonEl = document.getElementById('nguoiLon');
+    const treEmEl = document.getElementById('treEm');
+    const ngayNhanHintEl = document.getElementById('ngayNhanHint');
+
+    // ===== Cac trang thai don duoc coi la "dang khoa lich" cho 1 phong =====
+    // Phai trung voi validateRoomBookingGuard() ben GioHangController /
+    // PhongController va buildSingleRoomGuard() ben PhongService: mot phong
+    // dang bi giu boi don "Cho xac nhan", "Da xac nhan" hoac "Da nhan phong"
+    // thi khach moi chi duoc chon ngay nhan SAU ngay tra du kien cua don do.
+    const TRANG_THAI_DON_BI_KHOA = ['Da nhan phong', 'Cho xac nhan', 'Da xac nhan'];
+    function laTrangThaiBiKhoa(trangThaiDon) {
+        return TRANG_THAI_DON_BI_KHOA.indexOf(trangThaiDon) !== -1;
+    }
+
+    // Theo doi phu phi ngoai gio lan tinh truoc, de chi bat toast canh bao
+    // dung 1 lan khi phu phi VUA xuat hien (chuyen tu 0 sang > 0), khong bi
+    // lap lai lien tuc moi lan renderCart().
+    let lastExtraFee = 0;
+
+    function showToast(message, opts) {
+        opts = opts || {};
+        const type = opts.type || 'warning';
+        const title = opts.title || '';
+        const container = document.getElementById('bookingToastContainer');
+        if (!container) return;
+        const iconMap = { warning: 'fa-circle-exclamation', info: 'fa-circle-info', error: 'fa-circle-xmark' };
+        const el = document.createElement('div');
+        el.className = 'booking-toast toast-' + type;
+        el.innerHTML =
+            '<i class="fa-solid ' + (iconMap[type] || 'fa-circle-info') + ' toast-icon"></i>' +
+            '<div class="toast-body">' +
+            (title ? '<div class="toast-title">' + escapeHtml(title) + '</div>' : '') +
+            '<div class="toast-message">' + escapeHtml(message) + '</div>' +
+            '</div>' +
+            '<button type="button" class="toast-close" aria-label="Đóng">&times;</button>';
+        container.appendChild(el);
+        requestAnimationFrame(function () { el.classList.add('show'); });
+        const close = function () {
+            el.classList.remove('show');
+            setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 400);
+        };
+        el.querySelector('.toast-close').addEventListener('click', close);
+        setTimeout(close, opts.duration || 5000);
+    }
+    function escapeHtml(s) {
+        return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
 
     if (document.getElementById('bookingSuccessFlag')) {
         localStorage.removeItem(CART_KEY);
@@ -236,6 +475,178 @@
         return Number(value || 0).toLocaleString('vi-VN') + ' VND';
     }
 
+    function pad2(n) {
+        return String(n).padStart(2, '0');
+    }
+
+    function formatDateTimeLocal(date, hour, minute) {
+        return date.getFullYear() + '-' + pad2(date.getMonth() + 1) + '-' + pad2(date.getDate())
+            + 'T' + pad2(hour) + ':' + pad2(minute);
+    }
+
+    function formatDisplayDate(date) {
+        return pad2(date.getDate()) + '/' + pad2(date.getMonth() + 1) + '/' + date.getFullYear();
+    }
+
+    function startOfDay(date) {
+        return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    }
+
+    /**
+     * Lấy danh sách khoảng ngày đang bị KHÓA (không cho chọn ngày nhận trùng/trước)
+     * từ giỏ hàng. Một phòng bị khóa khi đơn đặt phòng liên kết với nó VẪN CÒN
+     * HIỆU LỰC, tức trangThaiDon thuộc {Da nhan phong, Cho xac nhan, Da xac nhan}.
+     * Phòng vẫn cho phép đặt (không disable), chỉ là phải đợi sau ngày trả của
+     * đơn cũ - đúng như một khách sạn thật vẫn nhận đặt trước cho phòng đang có khách.
+     *
+     * end = khóa đến hết ngày ngayKetThucKhoa (ngày trả phòng dự kiến/hiện tại của đơn cũ).
+     * Ngày nhận phòng mới phải LỚN HƠN end ít nhất 1 ngày (không được trùng ngày trả).
+     */
+    function getCartLockedRanges() {
+        return readCart()
+            .filter(item => laTrangThaiBiKhoa(item.trangThaiDon) && item.ngayKetThucKhoa)
+            .map(item => {
+                const end = new Date(item.ngayKetThucKhoa);
+                const start = item.ngayBatDauKhoa ? new Date(item.ngayBatDauKhoa) : end;
+                if (isNaN(start.getTime()) || isNaN(end.getTime())) return null;
+                return {
+                    start: startOfDay(start),
+                    end: startOfDay(end),
+                    roomNumber: item.roomNumber || item.id,
+                    trangThaiDon: item.trangThaiDon
+                };
+            })
+            .filter(Boolean);
+    }
+
+    /**
+     * Trong nhieu phong dang bi khoa cung luc, phong nao co ngay tra (end)
+     * XA NHAT se la phong quyet dinh ngay nhan phong som nhat co the chon
+     * cho ca gio hang (vi ca gio hang dung chung 1 ngay nhan/tra). Vi du:
+     * phong A tra 01/08, phong B tra 04/08 => phai doi den sau 04/08 (phong B)
+     * moi dat duoc ca 2 phong cung luc.
+     */
+    function getFurthestLockedRange(ranges) {
+        if (!ranges.length) return null;
+        return ranges.reduce((furthest, r) => (!furthest || r.end.getTime() > furthest.end.getTime()) ? r : furthest, null);
+    }
+
+    function isDateLocked(date, ranges) {
+        const day = startOfDay(date).getTime();
+        return ranges.some(r => day >= r.start.getTime() && day <= r.end.getTime());
+    }
+
+    /**
+     * true nếu "date" trùng đúng ngày trả phòng bị khóa (ranges[].end) trở về trước.
+     * Dùng để chặn riêng trường hợp "nhập ngày nhận TRÙNG hoặc TRƯỚC ngày trả phòng của đơn cũ".
+     */
+    function isSameOrBeforeLockedEnd(date, ranges) {
+        const day = startOfDay(date).getTime();
+        return ranges.some(r => day <= r.end.getTime());
+    }
+
+    function applyDefaultAfterLocked() {
+        const ranges = getCartLockedRanges();
+        const banner = document.getElementById('booking-guard-banner');
+        const bannerTitle = document.getElementById('guard-banner-title');
+        const bannerDates = document.getElementById('guard-banner-dates');
+
+        if (!ranges.length) {
+            if (banner) banner.classList.remove('show');
+            if (ngayNhanHintEl) {
+                ngayNhanHintEl.textContent = '';
+                ngayNhanHintEl.classList.remove('locked');
+            }
+            ngayNhanEl.removeAttribute('min');
+            return;
+        }
+
+        // Phong co han tra xa nhat se quyet dinh ngay nhan phong de xuat
+        // chung cho ca gio hang.
+        const furthest = getFurthestLockedRange(ranges);
+        const latestEnd = furthest.end;
+        const nextCheckin = new Date(latestEnd.getFullYear(), latestEnd.getMonth(), latestEnd.getDate() + 1, 8, 30);
+
+        const current = ngayNhanEl.value ? new Date(ngayNhanEl.value) : null;
+        if (!current || isSameOrBeforeLockedEnd(current, ranges)) {
+            ngayNhanEl.value = formatDateTimeLocal(nextCheckin, 8, 30);
+        }
+        const checkout = ngayTraEl.value ? new Date(ngayTraEl.value) : null;
+        if (!checkout || checkout <= new Date(ngayNhanEl.value)) {
+            const nextCheckout = new Date(nextCheckin.getFullYear(), nextCheckin.getMonth(), nextCheckin.getDate() + 1, 18, 0);
+            ngayTraEl.value = formatDateTimeLocal(nextCheckout, 18, 0);
+        }
+        // set min cho input để trình duyệt tự chặn chọn ngày trước đó
+        ngayNhanEl.min = formatDateTimeLocal(nextCheckin, 0, 0);
+
+        // ===== Banner canh bao (giong het room-detail.html / phong-theo-loai.html) =====
+        if (banner) {
+            banner.classList.add('show');
+            if (ranges.length > 1) {
+                // Liet ke tat ca cac phong dang bi khoa, sap xep theo han tra tang dan,
+                // de khach hieu vi sao he thong lai chon moc ngay dua tren phong nao.
+                const dsPhong = ranges
+                    .slice()
+                    .sort((a, b) => a.end.getTime() - b.end.getTime())
+                    .map(r => 'Phòng ' + r.roomNumber + ' (hết ' + formatDisplayDate(r.end) + ')')
+                    .join(', ');
+                if (bannerTitle) bannerTitle.textContent = 'Có ' + ranges.length + ' phòng trong giỏ đang được giữ chỗ';
+                if (bannerDates) {
+                    bannerDates.textContent = dsPhong + '. Phòng ' + furthest.roomNumber + ' có ngày trả muộn nhất, '
+                        + 'nên ngày nhận phòng chung cho cả giỏ cần chọn từ ' + formatDisplayDate(nextCheckin) + ' trở đi.';
+                }
+            } else {
+                if (bannerTitle) {
+                    bannerTitle.textContent = furthest.trangThaiDon === 'Da nhan phong'
+                        ? 'Phòng đang có khách sử dụng'
+                        : 'Phòng đã có khách đặt trước';
+                }
+                if (bannerDates) {
+                    bannerDates.textContent = 'Phòng ' + furthest.roomNumber + ' đã được giữ đến hết ngày ' + formatDisplayDate(latestEnd) + '.';
+                }
+            }
+        }
+
+        // Giu lai o hint nho (mau do) duoi truong Ngay nhan phong, chi dung
+        // de bao ngay dang chon van con trung lich (khi khach tu tay sua lai
+        // ngay sau khi banner da tinh gia tri mac dinh).
+        updateNgayNhanHint();
+    }
+
+    function updateNgayNhanHint() {
+        if (!ngayNhanHintEl) return;
+        const ranges = getCartLockedRanges();
+        if (!ranges.length) {
+            ngayNhanHintEl.classList.remove('locked');
+            ngayNhanHintEl.textContent = '';
+            return;
+        }
+        const furthest = getFurthestLockedRange(ranges);
+        const latestEnd = furthest.end;
+        const nextCheckin = new Date(latestEnd.getFullYear(), latestEnd.getMonth(), latestEnd.getDate() + 1, 8, 30);
+        const chosen = ngayNhanEl.value ? new Date(ngayNhanEl.value) : null;
+        if (chosen && isSameOrBeforeLockedEnd(chosen, ranges)) {
+            ngayNhanHintEl.classList.add('locked');
+            ngayNhanHintEl.textContent = 'Vui lòng chọn ngày nhận phòng từ ' + formatDisplayDate(nextCheckin) + ' trở đi.';
+        } else {
+            ngayNhanHintEl.classList.remove('locked');
+            ngayNhanHintEl.textContent = '';
+        }
+    }
+
+    function getExtraFeeTotal() {
+        if (!ngayNhanEl.value || !ngayTraEl.value) return 0;
+        const ngayNhan = new Date(ngayNhanEl.value);
+        const ngayTra = new Date(ngayTraEl.value);
+        if (isNaN(ngayNhan.getTime()) || isNaN(ngayTra.getTime())) return 0;
+        const nhanMinutes = ngayNhan.getHours() * 60 + ngayNhan.getMinutes();
+        const traMinutes = ngayTra.getHours() * 60 + ngayTra.getMinutes();
+        const ngoaiGioNhan = nhanMinutes < 8 * 60 + 30 || nhanMinutes > 11 * 60;
+        const ngoaiGioTra = traMinutes > 18 * 60 + 30;
+        if (!ngoaiGioNhan && !ngoaiGioTra) return 0;
+        return readCart().reduce((sum, item) => sum + Number(item.phuPhiNgoaiGio || 100000), 0);
+    }
+
     function getNightCount() {
         if (!ngayNhanEl.value || !ngayTraEl.value) {
             return null;
@@ -246,39 +657,275 @@
         return diff > 0 ? diff : 0;
     }
 
+    function getTotalCapacity() {
+        return readCart().reduce((sum, item) => sum + Number(item.sucChua || 0), 0);
+    }
+
+    function getTotalPeople() {
+        const nl = Number((document.getElementById('nguoiLon') || {}).value || 0);
+        const te = Number((document.getElementById('treEm') || {}).value || 0);
+        return nl + te;
+    }
+
+    /**
+     * Validate form gio-hang.
+     * @returns {{ ok: boolean, errors: string[] }}
+     *   ok = true nếu mọi thứ hợp lệ (được submit).
+     *   errors = mảng thông báo lỗi tiếng Việt để hiển thị.
+     */
+    function validateForm() {
+        const errors = [];
+        const items = readCart();
+        const ngayNhan = ngayNhanEl.value;
+        const ngayTra = ngayTraEl.value;
+        const ngayErrorEl = document.getElementById('ngayError');
+        const peopleErrorEl = document.getElementById('peopleError');
+        const banner = document.getElementById('validationBanner');
+
+        // Reset UI lỗi
+        if (ngayErrorEl) ngayErrorEl.textContent = '';
+        if (peopleErrorEl) peopleErrorEl.textContent = '';
+        ngayNhanEl.classList.remove('is-invalid');
+        ngayTraEl.classList.remove('is-invalid');
+        if (nguoiLonEl) nguoiLonEl.classList.remove('is-invalid');
+        if (treEmEl) treEmEl.classList.remove('is-invalid');
+        if (banner) {
+            banner.style.display = 'none';
+            banner.textContent = '';
+        }
+
+        // 1) Phải có ít nhất 1 phòng
+        if (items.length === 0) {
+            errors.push('Giỏ hàng đang trống. Vui lòng thêm phòng trước khi đặt.');
+        }
+
+        // 2) Ngày nhận / trả phải có giá trị
+        if (!ngayNhan || !ngayTra) {
+            errors.push('Vui lòng chọn ngày nhận phòng và ngày trả phòng.');
+            ngayNhanEl.classList.add('is-invalid');
+            ngayTraEl.classList.add('is-invalid');
+            if (ngayErrorEl) ngayErrorEl.textContent = 'Vui lòng chọn đầy đủ ngày nhận và ngày trả.';
+        } else {
+            // 3) Ngày trả phải > ngày nhận (ít nhất 1 đêm)
+            const start = new Date(ngayNhan);
+            const end = new Date(ngayTra);
+            if (!(end > start)) {
+                errors.push('Ngày trả phòng phải sau ngày nhận phòng.');
+                ngayNhanEl.classList.add('is-invalid');
+                ngayTraEl.classList.add('is-invalid');
+                if (ngayErrorEl) ngayErrorEl.textContent = 'Ngày trả phải sau ngày nhận phòng.';
+            } else {
+                // Tính số đêm theo ngày (bỏ phần giờ)
+                const startDay = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+                const endDay = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+                const diffDays = Math.round((endDay - startDay) / 86400000);
+                if (diffDays < 1) {
+                    errors.push('Ngày trả phòng phải cách ngày nhận phòng ít nhất 1 ngày.');
+                    ngayNhanEl.classList.add('is-invalid');
+                    ngayTraEl.classList.add('is-invalid');
+                    if (ngayErrorEl) ngayErrorEl.textContent = 'Ngày trả phải cách ngày nhận ít nhất 1 ngày.';
+                }
+
+                // 3b) Kiểm tra khóa: phòng đang có đơn Da nhan phong / Cho xac nhan / Da xac nhan
+                // (chưa "Da tra phong") => ngày nhận mới phải CÁCH ngày trả phòng khóa của
+                // TỪNG phòng ít nhất 1 ngày, tức không được TRÙNG hoặc TRƯỚC ngày trả phòng khóa đó.
+                // Vì cả giỏ dùng chung 1 ngày nhận, nên phải thỏa mãn phòng có ngày trả xa nhất.
+                let phongTrungLichXaNhat = null;
+                items.forEach(item => {
+                    if (laTrangThaiBiKhoa(item.trangThaiDon) && item.ngayKetThucKhoa) {
+                        const lockedEnd = new Date(item.ngayKetThucKhoa);
+                        if (!isNaN(lockedEnd.getTime())) {
+                            const lockedEndDay = startOfDay(lockedEnd);
+                            const startDayOnly = startOfDay(start);
+                            if (startDayOnly.getTime() <= lockedEndDay.getTime()) {
+                                if (!phongTrungLichXaNhat || lockedEndDay.getTime() > phongTrungLichXaNhat.end.getTime()) {
+                                    phongTrungLichXaNhat = { end: lockedEndDay, roomNumber: item.roomNumber || item.id };
+                                }
+                            }
+                        }
+                    }
+                });
+                if (phongTrungLichXaNhat) {
+                    const tuNgay = new Date(phongTrungLichXaNhat.end.getFullYear(), phongTrungLichXaNhat.end.getMonth(), phongTrungLichXaNhat.end.getDate() + 1);
+                    errors.push('Phòng ' + phongTrungLichXaNhat.roomNumber + ' đang có khách/đã có khách đặt trước đến hết ngày '
+                        + formatDisplayDate(phongTrungLichXaNhat.end) + '. Vì đây là phòng có lịch xa nhất trong giỏ, ngày nhận phòng chung cần chọn từ '
+                        + formatDisplayDate(tuNgay) + ' trở đi.');
+                    ngayNhanEl.classList.add('is-invalid');
+                    if (ngayErrorEl) ngayErrorEl.textContent = 'Có phòng đang được giữ chỗ, cần cách ngày trả phòng cũ ít nhất 1 ngày.';
+                }
+            }
+        }
+
+        // 4) Số người tối đa: tổng người lớn + trẻ em không vượt quá tổng sức chứa các phòng
+        if (items.length > 0) {
+            const totalCapacity = getTotalCapacity();
+            const totalPeople = getTotalPeople();
+            if (totalCapacity > 0 && totalPeople > totalCapacity) {
+                errors.push('Tổng số người (' + totalPeople + ') vượt quá sức chứa của các phòng trong giỏ (' + totalCapacity + ' người).');
+                if (peopleErrorEl) peopleErrorEl.textContent = 'Vượt sức chứa (' + totalPeople + '/' + totalCapacity + ').';
+                if (nguoiLonEl) nguoiLonEl.classList.add('is-invalid');
+                if (treEmEl) treEmEl.classList.add('is-invalid');
+            }
+        }
+
+        return { ok: errors.length === 0, errors: errors };
+    }
+
+    function showValidationBanner(errors) {
+        const banner = document.getElementById('validationBanner');
+        if (!banner) return;
+        if (errors.length === 0) {
+            banner.style.display = 'none';
+            banner.textContent = '';
+            return;
+        }
+        banner.style.display = 'block';
+        banner.innerHTML = '<strong>Không thể xác nhận:</strong><ul style="margin:6px 0 0 18px; padding:0;">'
+            + errors.map(e => '<li>' + e + '</li>').join('')
+            + '</ul>';
+        banner.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function refreshValidation() {
+        const result = validateForm();
+        if (!result.ok) {
+            checkoutButton.disabled = true;
+            checkoutButton.title = result.errors.join(' | ');
+        } else {
+            checkoutButton.disabled = false;
+            checkoutButton.title = '';
+        }
+    }
+
+    // Cập nhật cảnh báo real-time về sức chứa ngay khi đổi combobox
+    // Theo doi trang thai "vuot suc chua" lan truoc, de toast canh bao chi
+    // bat 1 lan khi VUA vuot qua gioi han (khong lap lai lien tuc moi lan
+    // doi combobox trong khi van dang vuot).
+    let capacityOverLimitToastShown = false;
+
+    function refreshPeopleCapacity() {
+        const items = readCart();
+        const peopleErrorEl = document.getElementById('peopleError');
+        if (nguoiLonEl) nguoiLonEl.classList.remove('is-invalid');
+        if (treEmEl) treEmEl.classList.remove('is-invalid');
+        if (peopleErrorEl) {
+            peopleErrorEl.textContent = '';
+            peopleErrorEl.style.color = '';
+        }
+        if (items.length === 0) {
+            capacityOverLimitToastShown = false;
+            return;
+        }
+
+        const totalCapacity = getTotalCapacity();
+        const totalPeople = getTotalPeople();
+        // Lấy sức chứa thấp nhất trong giỏ để báo cụ thể phòng đang giới hạn
+        const minCapacity = items.reduce((min, it) => {
+            const v = Number(it.sucChua || 0);
+            return v > 0 && (min === 0 || v < min) ? v : min;
+        }, 0);
+        const maxAllowed = totalCapacity;
+        const vuotSucChua = maxAllowed > 0 && totalPeople > maxAllowed;
+
+        if (vuotSucChua) {
+            if (peopleErrorEl) {
+                peopleErrorEl.textContent = 'Số lượng người (' + totalPeople + ') vượt quá tổng sức chứa của phòng ('
+                    + maxAllowed + '). Vui lòng chọn lại số lượng hoặc thêm phòng.';
+                peopleErrorEl.style.color = '#e74c3c';
+            }
+            if (nguoiLonEl) nguoiLonEl.classList.add('is-invalid');
+            if (treEmEl) treEmEl.classList.add('is-invalid');
+
+            if (!capacityOverLimitToastShown) {
+                showToast('Tổng số người (' + totalPeople + ') vượt quá tổng sức chứa của ' + items.length
+                    + ' phòng trong danh sách (tối đa ' + maxAllowed + ' người). Vui lòng giảm số lượng người hoặc thêm phòng khác.', {
+                    type: 'warning',
+                    title: 'Vượt sức chứa phòng',
+                    duration: 10000
+                });
+                capacityOverLimitToastShown = true;
+            }
+        } else {
+            capacityOverLimitToastShown = false;
+        }
+    }
+
     function removeRoom(id) {
         const items = readCart().filter(item => String(item.id) !== String(id));
         writeCart(items);
+        applyDefaultAfterLocked();
         renderCart();
+        refreshValidation();
+        refreshPeopleCapacity();
     }
 
     function clearCart() {
         writeCart([]);
+        applyDefaultAfterLocked();
         renderCart();
+        refreshValidation();
+        refreshPeopleCapacity();
     }
 
     function renderCart() {
         const items = readCart();
         const nights = getNightCount();
         const subtotal = items.reduce((sum, item) => sum + Number(item.price || 0), 0);
-        const total = subtotal * (nights || 1);
+        const extraFee = getExtraFeeTotal();
+        const total = subtotal * (nights || 1) + extraFee;
+        const totalCapacity = getTotalCapacity();
+        const extraFeeRow = document.getElementById('extraFeeRow');
+        const extraFeeTotalEl = document.getElementById('extraFeeTotal');
 
         cartItemsEl.innerHTML = '';
         roomInputsEl.innerHTML = '';
         cartEmptyEl.style.display = items.length ? 'none' : 'block';
-        checkoutButton.disabled = items.length === 0;
         roomCountEl.textContent = items.length;
+        if (items.length === 0) {
+            capacityTotalEl.textContent = '0 người';
+        } else if (totalCapacity <= 0) {
+            capacityTotalEl.textContent = 'Không rõ';
+        } else {
+            capacityTotalEl.textContent = totalCapacity + ' người';
+        }
         nightCountEl.textContent = nights === null ? '-' : nights;
+        if (extraFee > 0) {
+            extraFeeTotalEl.textContent = formatVND(extraFee);
+            extraFeeRow.style.display = '';
+        } else {
+            extraFeeRow.style.display = 'none';
+        }
+
+        // Toast canh bao khi phu phi ngoai gio VUA xuat hien (0 -> > 0)
+        if (extraFee > 0 && lastExtraFee === 0) {
+            showToast('Bạn chọn giờ nhận phòng ngoài khung 08:30 - 11:00 hoặc giờ trả phòng sau 18:30. ' +
+                'Hệ thống sẽ cộng thêm phụ phí ngoài giờ cho các phòng trong giỏ hàng.', {
+                type: 'warning',
+                title: 'Phụ phí ngoài giờ +' + extraFee.toLocaleString('vi-VN') + ' VND'
+            });
+        }
+        lastExtraFee = extraFee;
         cartTotalEl.textContent = items.length ? formatVND(total) : '0 VND';
 
         items.forEach(item => {
+            const sucChua = Number(item.sucChua || 0);
             const row = document.createElement('div');
             row.className = 'cart-item';
+            const sucChuaText = sucChua > 0
+                ? sucChua + ' người'
+                : (item.sucChua === 0 || item.sucChua === undefined || item.sucChua === null
+                    ? 'Chưa cập nhật'
+                    : sucChua + ' người');
+            const guardNote = item.trangThaiDon === 'Da tra phong'
+                ? '<div class="cart-meta" style="color:#8a6d00;">Có thể phát sinh phụ phí ngoài giờ.</div>'
+                : '';
             row.innerHTML = `
                 <img src="${item.image || 'https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=400&q=80'}" alt="">
                 <div>
                     <strong>Phòng ${item.roomNumber || item.id}</strong>
                     <div class="cart-meta">${item.typeName || ''} ${item.floor ? ' - Tầng ' + item.floor : ''}</div>
+                    <div class="cart-meta"><strong class="capacity">Sức chứa: ${sucChuaText}</strong></div>
+                    ${guardNote}
                     <div class="cart-price">${formatVND(item.price)} / đêm</div>
                 </div>
                 <button type="button" class="admin-btn small danger" onclick="removeRoom('${item.id}')">Xóa</button>
@@ -293,26 +940,66 @@
         });
 
         const cccdContainer = document.getElementById('cccd-tung-phong');
+        const cccdDaiDienNote = document.getElementById('cccd-dai-dien-note');
         cccdContainer.innerHTML = '';
-        items.forEach(item => {
-            const div = document.createElement('div');
-            div.className = 'form-field full';
-            div.style.marginBottom = '10px';
-            div.innerHTML = `
-                <label>CCCD khách ở Phòng ${item.roomNumber || item.id}</label>
-                <input type="text"
-                       name="cccdPhong_${item.id}"
-                       maxlength="12" pattern="[0-9]{12}"
-                       placeholder="12 số CCCD"
-                       required>
-            `;
-            cccdContainer.appendChild(div);
+        // CCCD người đại diện LUÔN bắt buộc phải nhập, bất kể số phòng
+        const cccdDaiDien = document.querySelector('input[name="ma_cccd"]');
+        if (cccdDaiDien) cccdDaiDien.setAttribute('required', 'required');
+        if (items.length >= 2) {
+            // Khi có từ 2 phòng trở lên: sinh thêm input CCCD cho từng phòng
+            // (CCCD đại diện vẫn bắt buộc để xác định người chịu trách nhiệm chính của đơn)
+            if (cccdDaiDienNote) cccdDaiDienNote.style.display = 'block';
+            items.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'form-field full';
+                div.style.marginBottom = '10px';
+                div.innerHTML = `
+                    <label>CCCD khách ở Phòng ${item.roomNumber || item.id}</label>
+                    <input type="text"
+                           name="cccdPhong_${item.id}"
+                           maxlength="12" pattern="[0-9]{12}"
+                           placeholder="12 số CCCD"
+                           required>
+                `;
+                cccdContainer.appendChild(div);
+            });
+        } else {
+            // Khi chỉ có 1 phòng: dùng CCCD đại diện duy nhất, không sinh input per-phòng
+            if (cccdDaiDienNote) cccdDaiDienNote.style.display = 'none';
+        }
+    }
+
+    // Khi người dùng đổi ngày nhận/trả thủ công, kiểm tra ngay xem có rơi vào ngày khóa không
+    ngayNhanEl.addEventListener('change', () => {
+        renderCart();
+        refreshValidation();
+        refreshPeopleCapacity();
+        updateNgayNhanHint();
+    });
+    ngayNhanEl.addEventListener('input', () => {
+        refreshValidation();
+        updateNgayNhanHint();
+    });
+    ngayTraEl.addEventListener('change', () => { renderCart(); refreshValidation(); refreshPeopleCapacity(); });
+    ngayTraEl.addEventListener('input', () => { refreshValidation(); });
+    if (nguoiLonEl) nguoiLonEl.addEventListener('change', () => { renderCart(); refreshValidation(); refreshPeopleCapacity(); });
+    if (treEmEl) treEmEl.addEventListener('change', () => { renderCart(); refreshValidation(); refreshPeopleCapacity(); });
+
+    if (checkoutForm) {
+        checkoutForm.addEventListener('submit', function (e) {
+            const result = validateForm();
+            if (!result.ok) {
+                e.preventDefault();
+                showValidationBanner(result.errors);
+                return false;
+            }
         });
     }
 
-    ngayNhanEl.addEventListener('change', renderCart);
-    ngayTraEl.addEventListener('change', renderCart);
+    applyDefaultAfterLocked();
     renderCart();
+    refreshValidation();
+    refreshPeopleCapacity();
 </script>
 </body>
 </html>

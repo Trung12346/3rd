@@ -112,6 +112,7 @@
 
   <form th:action="@{/phong/dat-phong/thong-tin-khach/{id}(id=${datPhong.id})}" method="post">
     <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+    <input type="hidden" name="tongPhuPhiNgoaiGio" id="hidden-tong-phu-phi" th:value="${TongPhuPhi != null ? TongPhuPhi : 0}">
 
     <div class="booking-layout">
 
@@ -169,11 +170,19 @@
           </span>
         </div>
 
-        <!-- Tiền phòng -->
+        <!-- Tiền phòng (giá cơ bản = TienPhong - TongPhuPhi nếu có phụ phí) -->
         <div class="summary-line" style="margin-top:14px;">
           <span>Phòng</span>
           <strong id="summary-tien-phong"
-                  th:text="${'đ ' + #numbers.formatDecimal(TienPhong, 0, 'COMMA', 0, 'POINT')}">đ 0</strong>
+                  th:text="${'đ ' + #numbers.formatDecimal((TienPhong != null ? TienPhong : 0) - (TongPhuPhi != null ? TongPhuPhi : 0), 0, 'COMMA', 0, 'POINT')}">đ 0</strong>
+        </div>
+
+        <!-- Phụ phí ngoài giờ (chỉ hiển thị khi > 0) -->
+        <div class="summary-line" id="summary-row-phu-phi"
+             th:style="${TongPhuPhi != null and TongPhuPhi.compareTo(T(java.math.BigDecimal).ZERO) > 0} ? 'display:flex; color:#c0392b;' : 'display:none;'">
+          <span>Phụ phí ngoài giờ</span>
+          <strong id="summary-phu-phi"
+                  th:text="${'đ ' + #numbers.formatDecimal(TongPhuPhi != null ? TongPhuPhi : 0, 0, 'COMMA', 0, 'POINT')}">đ 0</strong>
         </div>
 
         <!-- Tiền dịch vụ -->

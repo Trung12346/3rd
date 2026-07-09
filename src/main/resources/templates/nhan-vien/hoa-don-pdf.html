@@ -58,6 +58,8 @@
         .items-table tr.row-sub td.right { color: #333; }
         .items-table tr.row-discount td { color: #c0392b; border-bottom: 1px solid #eef2f5; }
         .items-table tr.row-discount td.right { color: #c0392b; }
+        .items-table tr.row-phuthu td { color: #c2410c; border-bottom: 1px solid #eef2f5; }
+        .items-table tr.row-phuthu td.right { color: #c2410c; }
 
         /* ── TOTALS ── */
         .totals { margin: 0 20px; border-top: 2px solid #1a5276; padding: 12px 0 6px; }
@@ -257,6 +259,16 @@
                         ? #numbers.formatDecimal(hoaDon.tienPhong, 0, 'COMMA', 0, 'POINT')
                         : '0'}">
                     2.400.000
+                </td>
+            </tr>
+
+            <!-- Phụ phí ngoài giờ (chỉ hiện nếu > 0) -->
+            <tr class="row-phuthu"
+                th:if="${tongPhuThu != null and tongPhuThu.compareTo(T(java.math.BigDecimal).ZERO) > 0}">
+                <td>Phụ phí ngoài giờ</td>
+                <td class="right"
+                    th:text="${'+ ' + #numbers.formatDecimal(tongPhuThu, 0, 'COMMA', 0, 'POINT')}">
+                    + 100.000
                 </td>
             </tr>
 
