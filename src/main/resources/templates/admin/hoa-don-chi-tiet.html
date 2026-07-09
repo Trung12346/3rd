@@ -109,6 +109,11 @@
             color: #C0392B;
         }
 
+        .summary-row.phuthu .summary-label,
+        .summary-row.phuthu .summary-value {
+            color: #c2410c;
+        }
+
         .summary-row.total {
             border-top: 2px solid var(--sky-primary);
             margin-top: 6px;
@@ -383,6 +388,10 @@
             <div class="summary-row">
                 <span class="summary-label">Tiền phòng</span>
                 <span class="summary-value" th:text="${#numbers.formatDecimal(hoaDon.tienPhong, 0, 'COMMA', 0, 'POINT')} + ' VND'"></span>
+            </div>
+            <div class="summary-row phuthu" th:if="${tongPhuThu != null and tongPhuThu.signum() > 0}">
+                <span class="summary-label">Phụ phí ngoài giờ</span>
+                <span class="summary-value" th:text="'+ ' + ${#numbers.formatDecimal(tongPhuThu, 0, 'COMMA', 0, 'POINT')} + ' VND'"></span>
             </div>
             <div class="summary-row">
                 <span class="summary-label">Tiền dịch vụ</span>

@@ -23,11 +23,12 @@ public class AdminQLDVController {
     public String index(
             @RequestParam(name = "keyword", defaultValue = "") String keyword,
             @RequestParam(name = "trangThai", defaultValue = "") String trangThai,
+            @RequestParam(name = "loaiDichVu",defaultValue = "") String LoaiDichVu,
             Model model) {
         Dich_vu dv = new Dich_vu();
         dv.setHoat_dong(true);
 
-        loadFormAndList(model, dv, keyword, trangThai, "Thêm dịch vụ");
+        loadFormAndList(model, dv, keyword, trangThai, LoaiDichVu,"Thêm dịch vụ");
         return "admin/dich-vu-list";
     }
 
@@ -36,6 +37,7 @@ public class AdminQLDVController {
             @PathVariable("id") Integer id,
             @RequestParam(name = "keyword", defaultValue = "") String keyword,
             @RequestParam(name = "trangThai", defaultValue = "") String trangThai,
+            @RequestParam(name = "loaiDichVu" , defaultValue = "") String loaiDichVu,
             Model model,
             RedirectAttributes redirectAttributes
     ) {
@@ -44,7 +46,7 @@ public class AdminQLDVController {
             redirectAttributes.addFlashAttribute("error", "Không tìm thấy dịch vụ");
             return "redirect:/nhan-su/admin/dich-vu";
         }
-        loadFormAndList(model, dv, keyword, trangThai, "Cập nhật dịch vụ");
+        loadFormAndList(model, dv, keyword, trangThai, loaiDichVu,"Cập nhật dịch vụ");
         return "admin/dich-vu-list";
     }
 
@@ -66,8 +68,8 @@ public class AdminQLDVController {
         return "redirect:/nhan-su/admin/dich-vu";
     }
 
-    private void loadFormAndList(Model model, Dich_vu dv, String keyword, String trangThai, String title) {
-        List<Dich_vu> dichVus = dichVuService.search(keyword, trangThai);
+    private void loadFormAndList(Model model, Dich_vu dv, String keyword, String trangThai, String loaiDichVu,String title) {
+        List<Dich_vu> dichVus = dichVuService.search(keyword, trangThai,loaiDichVu);
         Map<Integer, Long> soLuongSuDung = dichVuService.soLuongSuDungTheoDichVu();
         Dich_vu topDichVu = dichVuService.dichVuDuocSuDungNhieuNhat();
         long topSoLuong = topDichVu != null ? soLuongSuDung.getOrDefault(topDichVu.getId(), 0L) : 0L;
@@ -78,6 +80,7 @@ public class AdminQLDVController {
         model.addAttribute("keyword", keyword);
         model.addAttribute("trangThai", trangThai);
         model.addAttribute("title", title);
+        model.addAttribute("loaiDichVu", loaiDichVu);
 
         model.addAttribute("soLuongSuDung", soLuongSuDung);
         model.addAttribute("tongSoDichVu", dichVuService.countAll());

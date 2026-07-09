@@ -194,7 +194,8 @@
 </section>
 
 <main class="rooms-container">
-    <div class="room-card" th:each="p : ${phongs}">
+    <div class="room-card" th:each="p : ${phongs}"
+         th:with="guard=${bookingGuardByPhong != null ? bookingGuardByPhong[p.maPhong] : null}, coTheDat=${guard != null and guard.coTheDat}">
         <div class="room-img">
             <img src="https://images.unsplash.com/photo-1611892440504-42a792e24d32?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
                  th:alt="${p.soPhong}">
@@ -235,14 +236,19 @@
                 </a>
                 <button type="button"
                         class="btn btn-filled room-save-btn"
-                        th:disabled="${p.trangThai != 'Trong'}"
+                        th:disabled="${!coTheDat}"
                         th:data-ma-phong="${p.maPhong}"
                         th:data-so-phong="${p.soPhong}"
                         th:data-tang="${p.soTang}"
                         th:data-gia="${p.giaMoiDem}"
                         th:data-loai="${tenLoaiTheoPhong[p.maPhong]}"
+                        th:data-suc-chua="${p.loaiPhong != null ? p.loaiPhong.sucChuaToiDa : 0}"
+                        th:data-trang-thai-don="${guard != null ? guard.trangThaiDonGanNhat : ''}"
+                        th:data-ngay-bat-dau-khoa="${guard != null and guard.ngayBatDauKhoa != null ? guard.ngayBatDauKhoa : ''}"
+                        th:data-ngay-ket-thuc-khoa="${guard != null and guard.ngayKetThucKhoa != null ? guard.ngayKetThucKhoa : ''}"
+                        th:data-phu-phi-ngoai-gio="${guard != null ? guard.phuPhiNgoaiGioVND : 0}"
                         onclick="luuPhongVaoGio(event, this)"
-                        th:text="${p.trangThai == 'Trong'} ? 'Thêm Vào Danh Sách' : 'Không Khả Dụng'">
+                        th:text="${coTheDat} ? 'Thêm Vào Danh Sách' : 'Không Khả Dụng'">
                     Thêm Vào Danh Sách
                 </button>
             </div>
@@ -282,6 +288,11 @@
             floor: button.dataset.tang,
             price: Number(button.dataset.gia || 0),
             typeName: button.dataset.loai || '',
+            sucChua: Number(button.dataset.sucChua || 0),
+            trangThaiDon: button.dataset.trangThaiDon || '',
+            ngayBatDauKhoa: button.dataset.ngayBatDauKhoa || '',
+            ngayKetThucKhoa: button.dataset.ngayKetThucKhoa || '',
+            phuPhiNgoaiGio: Number(button.dataset.phuPhiNgoaiGio || 0),
             image: 'https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=400&q=80'
         };
         const cart = readRoomCart();

@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Xác nhận dịch vụ</title>
     <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body { background: #fafafa; }
         .booking-shell { margin: 0 auto; max-width: 1120px; padding: 42px 5% 70px; }
@@ -80,6 +81,29 @@
             display: block;
         }
         .addon-soluong input[type="number"]:focus { border-color: var(--sky-primary); outline: none; }
+        .addon-soluong input[type="datetime-local"] {
+            border: 1px solid #d1d5db;
+            border-radius: 2px;
+            font-size: 14px;
+            padding: 6px 10px;
+            width: 100%;
+            display: block;
+        }
+        .addon-soluong input[type="datetime-local"]:focus { border-color: var(--sky-primary); outline: none; }
+        .addon-soluong input[type="datetime-local"].has-error { border-color: #E74C3C; background: #FFF5F4; }
+        .addon-soluong .ngay-su-dung-hint {
+            font-size: 11px;
+            color: #9ca3af;
+            margin-top: 4px;
+        }
+        .addon-soluong .ngay-su-dung-error {
+            display: none;
+            font-size: 11px;
+            color: #E74C3C;
+            margin-top: 4px;
+            font-weight: 600;
+        }
+        .addon-soluong .ngay-su-dung-error.show { display: block; }
 
         /* Tóm tắt */
         .summary-line, .summary-total { display: flex; justify-content: space-between; margin-bottom: 12px; }
@@ -135,7 +159,58 @@
         }
         .back-btn { background: #fff; border: 1px solid var(--sky-primary); color: var(--sky-primary); }
         .continue-btn { background: var(--sky-primary); border: 1px solid var(--sky-primary); color: #fff; cursor: pointer; }
+        .continue-btn:disabled { background: #bdc3c7; border-color: #bdc3c7; cursor: not-allowed; opacity: .8; }
         .booking-message.error { background: #fff1f1; color: #b42318; font-weight: 600; margin-bottom: 18px; padding: 12px 14px; }
+
+        /* ===== Toast (góc phải màn hình) ===== */
+        .booking-toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: 360px;
+            pointer-events: none;
+        }
+        .booking-toast {
+            pointer-events: auto;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 12px 14px;
+            border-radius: 4px;
+            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.15);
+            font-size: 13.5px;
+            line-height: 1.5;
+            transform: translateX(120%);
+            opacity: 0;
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease;
+            cursor: default;
+        }
+        .booking-toast.show { transform: translateX(0); opacity: 1; }
+        .booking-toast .toast-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+        .booking-toast .toast-body { flex: 1; min-width: 0; }
+        .booking-toast .toast-title { font-weight: 700; margin-bottom: 2px; }
+        .booking-toast .toast-close {
+            background: transparent;
+            border: 0;
+            color: inherit;
+            opacity: 0.6;
+            cursor: pointer;
+            font-size: 18px;
+            padding: 0 4px;
+            line-height: 1;
+        }
+        .booking-toast .toast-close:hover { opacity: 1; }
+        .booking-toast.toast-warning {
+            background: #fff8e1;
+            border: 1px solid #ffe082;
+            border-left: 4px solid #e67e22;
+            color: #6b4f00;
+        }
+        .booking-toast.toast-warning .toast-icon { color: #e67e22; }
 
         @media (max-width: 900px) {
             .booking-stepper, .booking-layout, .booking-actions, .addon-grid { grid-template-columns: 1fr; }
@@ -159,7 +234,7 @@
 
     <div th:if="${bookingError}" class="booking-message error" th:text="${bookingError}"></div>
 
-    <form th:action="@{/phong/dat-phong/xac-nhan/{id}(id=${datPhong.id})}" method="post">
+    <form th:action="@{/phong/dat-phong/xac-nhan/{id}(id=${datPhong.id})}" method="post" id="xacNhanDichVuForm">
         <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
         <input type="hidden" name="maDatPhong" th:value="${datPhong.id}">
         <input type="hidden" name="tongTienPhong" id="hidden-tien-phong" th:value="${TienPhong}">
@@ -167,6 +242,7 @@
         <input type="hidden" name="tongTienGiam" id="hidden-tien-giam" th:value="${TienGiam != null ? TienGiam : 0}">
         <input type="hidden" name="maKhuyenMai" id="promoIdHidden" th:value="${datPhong.km != null ? datPhong.km.id : ''}">
         <input type="hidden" name="tongCong" id="hidden-tong-cong" th:value="${TongSauGiam != null ? TongSauGiam : TongTien}">
+        <input type="hidden" name="tongPhuPhiNgoaiGio" id="hidden-tong-phu-phi" th:value="${TongPhuPhi != null ? TongPhuPhi : 0}">
 
         <div class="booking-layout">
             <section>
@@ -217,9 +293,10 @@
                                     <input type="number" th:name="${'soLuong_' + dv.id}" min="1"
                                            th:value="${dichVuDaChonMap != null and dichVuDaChonMap.containsKey(dv.id) ? dichVuDaChonMap.get(dv.id).soluong : 1}">
                                     <label style="margin-top:8px; display:block;">Ngày sử dụng</label>
-                                    <input type="datetime-local" th:name="${'ngaySuDung_' + dv.id}"
+                                    <input type="datetime-local" class="ngay-su-dung-input" th:name="${'ngaySuDung_' + dv.id}"
                                            th:value="${dichVuDaChonMap != null and dichVuDaChonMap.containsKey(dv.id) and dichVuDaChonMap.get(dv.id).ngay_su_dung != null ? #temporals.format(dichVuDaChonMap.get(dv.id).ngay_su_dung, 'yyyy-MM-dd''T''HH:mm') : ''}">
-
+                                    <div class="ngay-su-dung-hint">Chỉ được chọn trong khoảng thời gian lưu trú</div>
+                                    <div class="ngay-su-dung-error">Ngày sử dụng phải nằm trong khoảng ngày nhận và trả phòng.</div>
                                 </div>
                             </div>
                         </label>
@@ -242,11 +319,19 @@
                     </span>
                 </div>
 
-                <!-- Tiền phòng -->
+                <!-- Tiền phòng (giá cơ bản = TienPhong - TongPhuPhi nếu có phụ phí) -->
                 <div class="summary-line" style="margin-top:14px;">
                     <span>Phòng</span>
                     <strong id="summary-tien-phong"
-                            th:text="${'đ ' + #numbers.formatDecimal(TienPhong, 0, 'COMMA', 0, 'POINT')}">đ 0</strong>
+                            th:text="${'đ ' + #numbers.formatDecimal((TienPhong != null ? TienPhong : 0) - (TongPhuPhi != null ? TongPhuPhi : 0), 0, 'COMMA', 0, 'POINT')}">đ 0</strong>
+                </div>
+
+                <!-- Phụ phí ngoài giờ (chỉ hiển thị khi > 0) -->
+                <div class="summary-line" id="summary-row-phu-phi"
+                     th:style="${TongPhuPhi != null and TongPhuPhi.compareTo(T(java.math.BigDecimal).ZERO) > 0} ? 'display:flex; color:#c0392b;' : 'display:none;'">
+                    <span>Phụ phí ngoài giờ</span>
+                    <strong id="summary-phu-phi"
+                            th:text="${'đ ' + #numbers.formatDecimal(TongPhuPhi != null ? TongPhuPhi : 0, 0, 'COMMA', 0, 'POINT')}">đ 0</strong>
                 </div>
 
                 <!-- Tiền dịch vụ -->
@@ -302,17 +387,140 @@
 
         <div class="booking-actions">
             <a href="/gio-hang" class="back-btn">Trở về</a>
-            <button type="submit" class="continue-btn">Tiếp tục</button>
+            <button type="submit" class="continue-btn" id="btnTiepTuc">Tiếp tục</button>
         </div>
     </form>
 </main>
 
+<div class="booking-toast-container" id="bookingToastContainer" aria-live="polite"></div>
+
 <script th:inline="javascript">
     const tienPhong = /*[[${TienPhong}]]*/ 0;
+    const tongPhuPhi = /*[[${TongPhuPhi != null ? TongPhuPhi : 0}]]*/ 0;
     window.__KM_LIST__ = JSON.parse(/*[[${kmJson}]]*/ '[]');
+
+    // ===== Khoảng ngày nhận / trả phòng (dùng để ràng buộc "Ngày sử dụng" dịch vụ) =====
+    const ngayNhanPhongStr = /*[[${datPhong.ngaydatPhong != null ? #temporals.format(datPhong.ngaydatPhong, 'yyyy-MM-dd''T''HH:mm') : ''}]]*/ '';
+    const ngayTraPhongStr  = /*[[${datPhong.ngaytraPhong != null ? #temporals.format(datPhong.ngaytraPhong, 'yyyy-MM-dd''T''HH:mm') : ''}]]*/ '';
 
     function formatTien(soTien) {
         return Number(soTien).toLocaleString('vi-VN');
+    }
+
+    function formatNgayHienThi(iso) {
+        if (!iso) return '';
+        const [datePart, timePart] = iso.split('T');
+        if (!datePart) return iso;
+        const [y, m, d] = datePart.split('-');
+        return d + '/' + m + '/' + y + (timePart ? ' ' + timePart : '');
+    }
+
+    // ===== TOAST =====
+    function showToast(message, opts) {
+        opts = opts || {};
+        const type = opts.type || 'warning';
+        const title = opts.title || '';
+        const container = document.getElementById('bookingToastContainer');
+        if (!container) return;
+
+        const iconMap = { warning: 'fa-circle-exclamation', info: 'fa-circle-info', error: 'fa-circle-xmark' };
+        const el = document.createElement('div');
+        el.className = 'booking-toast toast-' + type;
+        el.innerHTML =
+            '<i class="fa-solid ' + (iconMap[type] || 'fa-circle-info') + ' toast-icon"></i>' +
+            '<div class="toast-body">' +
+            (title ? '<div class="toast-title">' + escapeHtml(title) + '</div>' : '') +
+            '<div class="toast-message">' + escapeHtml(message) + '</div>' +
+            '</div>' +
+            '<button type="button" class="toast-close" aria-label="Đóng">&times;</button>';
+        container.appendChild(el);
+        requestAnimationFrame(function () { el.classList.add('show'); });
+
+        const close = function () {
+            el.classList.remove('show');
+            setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 400);
+        };
+        el.querySelector('.toast-close').addEventListener('click', close);
+        setTimeout(close, 5000);
+    }
+    function escapeHtml(s) {
+        return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    // ===== Xử lý input "Ngày sử dụng" theo từng addon =====
+    function thietLapNgaySuDung(card, tuDongDien) {
+        const ngayInput = card.querySelector('.ngay-su-dung-input');
+        if (!ngayInput) return;
+
+        // Ràng buộc min/max theo ngày nhận / trả phòng (chặn ở date-picker của trình duyệt,
+        // nhưng người dùng vẫn có thể gõ tay ra ngoài khoảng -> sẽ được cảnh báo bằng toast bên dưới)
+        if (ngayNhanPhongStr) ngayInput.min = ngayNhanPhongStr;
+        if (ngayTraPhongStr) ngayInput.max = ngayTraPhongStr;
+
+        // Tự động điền ngày nhận phòng khi vừa tick chọn dịch vụ và ô đang trống
+        if (tuDongDien && !ngayInput.value && ngayNhanPhongStr) {
+            ngayInput.value = ngayNhanPhongStr;
+        }
+
+        kiemTraNgaySuDung(ngayInput, false);
+    }
+
+    // hienToast = true khi nên bắn toast (do người dùng vừa thao tác),
+    // false khi chỉ đang thiết lập/khởi tạo (tránh spam toast lúc load trang)
+    function kiemTraNgaySuDung(ngayInput, hienToast) {
+        const errEl = ngayInput.closest('.addon-soluong').querySelector('.ngay-su-dung-error');
+        const checkbox = ngayInput.closest('.addon-card').querySelector('input[type="checkbox"]');
+        const tenDichVu = checkbox.dataset.ten || 'Dịch vụ';
+
+        if (!checkbox.checked) {
+            ngayInput.classList.remove('has-error');
+            if (errEl) errEl.classList.remove('show');
+            ngayInput.dataset.daBaoLoi = '';
+            return true;
+        }
+
+        if (!ngayInput.value) {
+            ngayInput.classList.add('has-error');
+            if (errEl) { errEl.textContent = 'Vui lòng chọn ngày sử dụng.'; errEl.classList.add('show'); }
+            return false;
+        }
+
+        // KHÔNG tự động kẹp giá trị nữa - chỉ cảnh báo, để người dùng tự sửa
+        let hopLe = true;
+        if (ngayNhanPhongStr && ngayInput.value < ngayNhanPhongStr) hopLe = false;
+        if (ngayTraPhongStr && ngayInput.value > ngayTraPhongStr) hopLe = false;
+
+        if (!hopLe) {
+            ngayInput.classList.add('has-error');
+            if (errEl) {
+                errEl.textContent = 'Ngày sử dụng phải nằm trong khoảng ngày nhận và trả phòng.';
+                errEl.classList.add('show');
+            }
+            // Chỉ bắn toast 1 lần cho tới khi người dùng sửa lại đúng, tránh spam mỗi lần gõ
+            if (hienToast && ngayInput.dataset.daBaoLoi !== '1') {
+                showToast(
+                    tenDichVu + ': ngày sử dụng phải nằm trong khoảng ' +
+                    formatNgayHienThi(ngayNhanPhongStr) + ' → ' + formatNgayHienThi(ngayTraPhongStr) +
+                    '. Vui lòng chỉnh lại thời gian sử dụng dịch vụ.',
+                    { type: 'warning', title: 'Ngày sử dụng dịch vụ không hợp lệ' }
+                );
+                ngayInput.dataset.daBaoLoi = '1';
+            }
+            return false;
+        }
+
+        ngayInput.classList.remove('has-error');
+        if (errEl) errEl.classList.remove('show');
+        ngayInput.dataset.daBaoLoi = '';
+        return true;
+    }
+
+    function kiemTraTatCaNgaySuDung(hienToast) {
+        let tatCaHopLe = true;
+        document.querySelectorAll('.ngay-su-dung-input').forEach(function (ngayInput) {
+            if (!kiemTraNgaySuDung(ngayInput, hienToast)) tatCaHopLe = false;
+        });
+        return tatCaHopLe;
     }
 
     function timKhuyenMai() {
@@ -382,6 +590,7 @@
         document.getElementById('hidden-tien-dich-vu').value        = tongDichVu;
         document.getElementById('hidden-tien-giam').value           = Math.round(tienGiam);
         document.getElementById('hidden-tong-cong').value           = tongCong;
+        document.getElementById('hidden-tong-phu-phi').value        = Math.round(tongPhuPhi);
 
         const rowGiam = document.getElementById('summary-row-giam');
         const promoInfo = document.getElementById('promoInfo');
@@ -413,6 +622,15 @@
                 itemsEl.appendChild(row);
             });
         }
+
+        capNhatTrangThaiNutTiepTuc();
+    }
+
+    function capNhatTrangThaiNutTiepTuc() {
+        const btn = document.getElementById('btnTiepTuc');
+        if (!btn) return;
+        const hopLe = kiemTraTatCaNgaySuDung(false);
+        btn.disabled = !hopLe;
     }
 
     document.querySelectorAll('.addon-card input[type="checkbox"]').forEach(function (cb) {
@@ -424,25 +642,50 @@
             if (this.checked) {
                 soLuongDiv.style.display = 'block';
                 card.classList.add('checked');
+                // Tự động điền ngày sử dụng = ngày nhận phòng + ràng buộc min/max
+                thietLapNgaySuDung(card, true);
             } else {
                 soLuongDiv.style.display = 'none';
                 slInput.value = 1;
                 card.classList.remove('checked');
+                thietLapNgaySuDung(card, false);
             }
             tinhLaiTongTien();
         });
 
+        const card = cb.closest('.addon-card');
         if (cb.checked) {
-            cb.closest('.addon-card').querySelector('.addon-soluong').style.display = 'block';
-            cb.closest('.addon-card').classList.add('checked');
+            card.querySelector('.addon-soluong').style.display = 'block';
+            card.classList.add('checked');
         }
+        // Luôn thiết lập min/max cho mọi input ngày sử dụng ngay khi tải trang
+        thietLapNgaySuDung(card, false);
     });
 
     document.querySelectorAll('.addon-soluong input[type="number"]').forEach(function (input) {
         input.addEventListener('input', tinhLaiTongTien);
     });
 
+    document.querySelectorAll('.ngay-su-dung-input').forEach(function (ngayInput) {
+        ngayInput.addEventListener('change', function () {
+            kiemTraNgaySuDung(ngayInput, true);
+            capNhatTrangThaiNutTiepTuc();
+        });
+        ngayInput.addEventListener('input', function () {
+            kiemTraNgaySuDung(ngayInput, true);
+            capNhatTrangThaiNutTiepTuc();
+        });
+    });
+
     document.getElementById('promoInput').addEventListener('input', tinhLaiTongTien);
+
+    // Chặn submit nếu còn dịch vụ có ngày sử dụng không hợp lệ
+    document.getElementById('xacNhanDichVuForm').addEventListener('submit', function (e) {
+        if (!kiemTraTatCaNgaySuDung(true)) {
+            e.preventDefault();
+            capNhatTrangThaiNutTiepTuc();
+        }
+    });
 
     tinhLaiTongTien();
 </script>

@@ -311,6 +311,27 @@
         color: #666;
     }
 
+    .loai-badge {
+        border-radius: 999px;
+        display: inline-block;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 4px 10px;
+        white-space: nowrap;
+    }
+
+    .loai-badge.thuong {
+        background: #EFF6FF;
+        color: #1D4ED8;
+        border: 1px solid #BFDBFE;
+    }
+
+    .loai-badge.phat-sinh {
+        background: #FEF2F2;
+        color: #B91C1C;
+        border: 1px solid #FECACA;
+    }
+
     .usage-badge {
         background: #FEF5E7;
         border: 1px solid #FBE3B4;
@@ -427,6 +448,14 @@
         </div>
 
         <div class="admin-field">
+          <label>Loại dịch vụ</label>
+          <select th:field="*{loaiDv}">
+            <option value="THUONG">Dịch vụ thường</option>
+            <option value="PHAT_SINH">Dịch vụ phát sinh</option>
+          </select>
+        </div>
+
+        <div class="admin-field">
           <label>Hoạt động</label>
           <select th:field="*{hoat_dong}">
             <option th:value="true">Có</option>
@@ -449,6 +478,7 @@
 
     <form th:action="@{/nhan-su/admin/dich-vu}" method="get" class="search-row">
       <input type="hidden" name="trangThai" th:value="${trangThai}">
+      <input type="hidden" name="loaiDichVu" th:value="${loaiDichVu}">
       <input type="text"
              name="keyword"
              placeholder="Tìm theo tên dịch vụ..."
@@ -459,13 +489,25 @@
     <div class="filter-row">
       <a class="admin-btn filter small"
          th:classappend="${trangThai == ''} ? 'active'"
-         th:href="@{/nhan-su/admin/dich-vu(keyword=${keyword}, trangThai='')}">Tất cả</a>
+         th:href="@{/nhan-su/admin/dich-vu(keyword=${keyword}, trangThai='', loaiDichVu=${loaiDichVu})}">Tất cả</a>
       <a class="admin-btn filter small"
          th:classappend="${trangThai == 'active'} ? 'active'"
-         th:href="@{/nhan-su/admin/dich-vu(keyword=${keyword}, trangThai='active')}">Đang hoạt động</a>
+         th:href="@{/nhan-su/admin/dich-vu(keyword=${keyword}, trangThai='active', loaiDichVu=${loaiDichVu})}">Đang hoạt động</a>
       <a class="admin-btn filter small"
          th:classappend="${trangThai == 'inactive'} ? 'active'"
-         th:href="@{/nhan-su/admin/dich-vu(keyword=${keyword}, trangThai='inactive')}">Ngừng hoạt động</a>
+         th:href="@{/nhan-su/admin/dich-vu(keyword=${keyword}, trangThai='inactive', loaiDichVu=${loaiDichVu})}">Ngừng hoạt động</a>
+    </div>
+
+    <div class="filter-row">
+      <a class="admin-btn filter small"
+         th:classappend="${loaiDichVu == ''} ? 'active'"
+         th:href="@{/nhan-su/admin/dich-vu(keyword=${keyword}, trangThai=${trangThai}, loaiDichVu='')}">Tất cả loại</a>
+      <a class="admin-btn filter small"
+         th:classappend="${loaiDichVu == 'THUONG'} ? 'active'"
+         th:href="@{/nhan-su/admin/dich-vu(keyword=${keyword}, trangThai=${trangThai}, loaiDichVu='THUONG')}">Dịch vụ thường</a>
+      <a class="admin-btn filter small"
+         th:classappend="${loaiDichVu == 'PHAT_SINH'} ? 'active'"
+         th:href="@{/nhan-su/admin/dich-vu(keyword=${keyword}, trangThai=${trangThai}, loaiDichVu='PHAT_SINH')}">Dịch vụ phát sinh</a>
     </div>
 
     <div class="admin-table-wrap">
@@ -476,6 +518,7 @@
           <th>Tên dịch vụ</th>
           <th>Giá</th>
           <th>Đơn vị</th>
+          <th>Loại</th>
           <th>Lượt sử dụng</th>
           <th>Hoạt động</th>
           <th>Thao tác</th>
@@ -488,6 +531,10 @@
           <td th:text="${#numbers.formatDecimal(dv.gia, 0, 'COMMA', 0, 'POINT')} + ' đ'"></td>
           <td th:text="${dv.donVi != null and !dv.donVi.isEmpty() ? dv.donVi : '-'}"></td>
           <td>
+            <span th:if="${dv.loaiDv  == 'PHAT_SINH'}" class="loai-badge phat-sinh">Phát sinh</span>
+            <span th:unless="${dv.loaiDv  == 'PHAT_SINH'}" class="loai-badge thuong">Dịch vụ thường</span>
+          </td>
+          <td>
             <span class="usage-badge" th:if="${soLuongSuDung[dv.id] != null}" th:text="${soLuongSuDung[dv.id]} + ' lượt'"></span>
             <span class="no-amenity" th:if="${soLuongSuDung[dv.id] == null}">Chưa dùng</span>
           </td>
@@ -498,7 +545,7 @@
           <td>
             <div class="row-actions">
               <a class="admin-btn small outline"
-                 th:href="@{/nhan-su/admin/dich-vu/edit/{id}(id=${dv.id}, keyword=${keyword}, trangThai=${trangThai})}">
+                 th:href="@{/nhan-su/admin/dich-vu/edit/{id}(id=${dv.id}, keyword=${keyword}, trangThai=${trangThai}, loaiDichVu=${loaiDichVu})}">
                 Sửa
               </a>
               <form th:action="@{/nhan-su/admin/dich-vu/delete/{id}(id=${dv.id})}"
@@ -511,7 +558,7 @@
           </td>
         </tr>
         <tr th:if="${dichVus.isEmpty()}">
-          <td colspan="7">
+          <td colspan="8">
             <div class="empty-state">
               <p>Không tìm thấy dịch vụ nào phù hợp.</p>
             </div>

@@ -1,0 +1,161 @@
+<!--
+    Fragment: tienthua-card
+    Muc dich: Hien thi card "Tien thua" tu tinh tren trang chi tiet hoa don.
+               Nhap so tien khach dua, he thong tu tinh tien thua.
+    Cach dung:
+        <div th:replace="~{fragments/tienthua-card :: tienthuaCard}"></div>
+    Model attributes chap nhan (uu tien theo thu tu):
+        1. tongTien    + daThu       (checkout flow)
+        2. hoaDon (dung hoaDon.tongTien + hoaDon.daThanhToan)
+    Khong can sua entity hay controller - chi can include fragment.
+-->
+<style>
+    .tienthua-card {
+        max-width: 480px;
+        margin: 16px 0 6px 0;
+        border: 1px solid #e5e5e5;
+        border-radius: 10px;
+        padding: 16px 20px;
+        background: #FAFBFD;
+    }
+    .tienthua-card h3 {
+        margin: 0 0 12px 0;
+        font-size: 15px;
+        font-weight: 600;
+        color: #1a1a1a;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .tienthua-card h3 i { color: #378ADD; font-size: 18px; }
+
+    .tienthua-form {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: flex-end;
+    }
+    .tienthua-form .admin-field { margin-bottom: 0; min-width: 180px; flex: 1; }
+
+    .tienthua-result {
+        margin-top: 12px;
+        padding: 12px 14px;
+        border-radius: 8px;
+        background: #fff;
+        border: 1px dashed #d0d7de;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 14px;
+        color: #333;
+    }
+    .tienthua-result .label { color: #6b6b6b; }
+    .tienthua-result .value { font-weight: 700; }
+
+    .tienthua-result.is-excess {
+        background: #FFF7E6;
+        border-color: #BA7517;
+        border-style: solid;
+    }
+    .tienthua-result.is-excess .value { color: #B45309; }
+
+    .tienthua-result.is-short {
+        background: #FCEBEB;
+        border-color: #E24B4A;
+        border-style: solid;
+    }
+    .tienthua-result.is-short .value { color: #791F1F; }
+
+    .tienthua-result.is-exact {
+        background: #EAF3DE;
+        border-color: #639922;
+        border-style: solid;
+    }
+    .tienthua-result.is-exact .value { color: #27500A; }
+
+    .tienthua-helper {
+        font-size: 12px;
+        color: #6b6b6b;
+        margin-top: 8px;
+        line-height: 1.5;
+    }
+</style>
+
+<div class="tienthua-card" th:fragment="tienthuaCard">
+    <h3>
+        <i class="ti ti-cash"></i>
+        Tính Tiền Thừa
+    </h3>
+
+    <div class="tienthua-form">
+        <div class="admin-field">
+            <label>Số tiền khách đưa (VND)</label>
+            <input type="number"
+                   id="soTienKhachDua"
+                   min="0"
+                   step="1000"
+                   placeholder="Nhập số tiền khách đưa"
+                   oninput="tinhTienThua()">
+        </div>
+    </div>
+
+    <div class="tienthua-result" id="tienthuaResult">
+        <span class="label">Tiền thừa trả khách</span>
+        <span class="value" id="tienthuaValue">— VND</span>
+    </div>
+
+    <div class="tienthua-helper"
+         th:with="
+             _tongTien=${tongTien != null ? tongTien : (hoaDon != null and hoaDon.tongTien != null ? hoaDon.tongTien : null)},
+             _daThanhToan=${daThu != null ? daThu : (hoaDon != null and hoaDon.daThanhToan != null ? hoaDon.daThanhToan : null)}">
+        Nhập số tiền khách đưa để hệ thống tự tính tiền thừa.
+        <span th:if="${_tongTien != null}">
+            Tổng phải thu: <strong th:text="${#numbers.formatDecimal(_tongTien, 0, 'COMMA', 0, 'POINT') + ' VND'}">0 VND</strong>.
+        </span>
+        <span th:if="${_daThanhToan != null and _daThanhToan.compareTo(T(java.math.BigDecimal).ZERO) > 0}">
+            Đã thu trước: <strong th:text="${#numbers.formatDecimal(_daThanhToan, 0, 'COMMA', 0, 'POINT') + ' VND'}">0 VND</strong>.
+        </span>
+    </div>
+</div>
+
+<script th:inline="javascript">
+    (function () {
+        var tongTien = /*[[${tongTien != null ? tongTien : (hoaDon != null && hoaDon.tongTien != null ? hoaDon.tongTien : 0)}]]*/ 0;
+        var daThanhToan = /*[[${daThu != null ? daThu : (hoaDon != null && hoaDon.daThanhToan != null ? hoaDon.daThanhToan : 0)}]]*/ 0;
+
+        // Tinh so tien con phai thu = tongTien - daThanhToan
+        var conPhaiThu = (Number(tongTien) || 0) - (Number(daThanhToan) || 0);
+        if (conPhaiThu < 0) conPhaiThu = 0;
+
+        window.tinhTienThua = function () {
+            var input = document.getElementById('soTienKhachDua');
+            var result = document.getElementById('tienthuaResult');
+            var value = document.getElementById('tienthuaValue');
+            if (!input || !result || !value) return;
+
+            var khachDua = parseFloat(input.value);
+            if (isNaN(khachDua) || khachDua < 0) {
+                value.textContent = '— VND';
+                result.className = 'tienthua-result';
+                return;
+            }
+
+            // Tien thua = so tien khach dua - so tien con phai thu
+            var tienThua = khachDua - conPhaiThu;
+            var fmt = function (n) {
+                return new Intl.NumberFormat('vi-VN').format(Math.round(n)) + ' VND';
+            };
+
+            if (tienThua > 0) {
+                value.textContent = '+ ' + fmt(tienThua);
+                result.className = 'tienthua-result is-excess';
+            } else if (tienThua < 0) {
+                value.textContent = '- ' + fmt(Math.abs(tienThua));
+                result.className = 'tienthua-result is-short';
+            } else {
+                value.textContent = fmt(0) + ' (đủ)';
+                result.className = 'tienthua-result is-exact';
+            }
+        };
+    })();
+</script>

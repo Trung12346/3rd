@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import su26sd09.su26sd09.dto.RoomBookingGuardDTO;
 import su26sd09.su26sd09.entity.ChiTietDatPhong;
 import su26sd09.su26sd09.entity.DatPhong;
 import su26sd09.su26sd09.entity.KhachHang;
@@ -20,9 +21,9 @@ import su26sd09.su26sd09.service.NguoiDungService;
 import su26sd09.su26sd09.service.PhongService;
 
 import java.math.BigDecimal;
-import java.math.MathContext;
-import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -52,8 +53,8 @@ public class GioHangController {
     @PostMapping("/checkout")
     public String checkoutCart(
             @RequestParam("roomIds") List<Integer> roomIds,
-            @RequestParam("ngayNhan") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDateTime ngayNhan,
-            @RequestParam("ngayTra")  @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDateTime ngayTra,
+            @RequestParam("ngayNhan") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime ngayNhan,
+            @RequestParam("ngayTra")  @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime ngayTra,
             @RequestParam("nguoiLon") Integer nguoiLon,
             @RequestParam("treEm")    Integer treEm,
             @RequestParam(value = "ma_cccd",required = false) String ma_cccd,
@@ -61,6 +62,53 @@ public class GioHangController {
             RedirectAttributes redirectAttributes,
             Authentication authentication
     ) {
+        if (roomIds == null || roomIds.isEmpty()) {
+            redirectAttributes.addFlashAttribute("bookingError", "Gio hang dang trong. Vui long chon phong truoc khi dat.");
+            return "redirect:/gio-hang";
+        }
+
+        long soDem = ChronoUnit.DAYS.between(ngayNhan.toLocalDate(), ngayTra.toLocalDate());
+        if (soDem < 1) {
+            redirectAttributes.addFlashAttribute("bookingError", "Ngay tra phong phai sau ngay nhan phong it nhat 1 ngay.");
+            return "redirect:/gio-hang";
+        }
+
+        List<Phong> ListPhong = new ArrayList<>();
+        int tongSucChua = 0;
+        for (int p : roomIds) {
+            Phong phong = PhongService.findPhongById(p);
+            if (phong == null) {
+                redirectAttributes.addFlashAttribute("bookingError", "Co phong khong ton tai trong gio hang. Vui long chon lai.");
+                return "redirect:/gio-hang";
+            }
+
+            RoomBookingGuardDTO guard = PhongService.buildRoomGuardFor(p);
+            String guardError = validateRoomBookingGuard(guard, ngayNhan,ngayTra);
+            System.out.println("===== USER INPUT =====");
+            System.out.println("Ngay nhan: " + ngayNhan);
+            System.out.println("Ngay tra  : " + ngayTra);
+
+            System.out.println("===== GUARD =====");
+            System.out.println("Bat dau khoa : " + guard.getNgayBatDauKhoa());
+            System.out.println("Ket thuc khoa: " + guard.getNgayKetThucKhoa());
+            if (guardError != null) {
+                redirectAttributes.addFlashAttribute("bookingError", "Phong " + phong.getSoPhong() + ": " + guardError);
+                return "redirect:/gio-hang";
+            }
+
+            if (phong.getLoaiPhong() != null) {
+                tongSucChua += phong.getLoaiPhong().getSucChuaToiDa();
+            }
+            ListPhong.add(phong);
+        }
+
+        int tongNguoi = (nguoiLon != null ? nguoiLon : 0) + (treEm != null ? treEm : 0);
+        if (tongSucChua > 0 && tongNguoi > tongSucChua) {
+            redirectAttributes.addFlashAttribute("bookingError",
+                    "So luong nguoi (" + tongNguoi + ") vuot qua suc chua cua cac phong trong gio (" + tongSucChua + " nguoi).");
+            return "redirect:/gio-hang";
+        }
+
         authentication = SecurityContextHolder.getContext().getAuthentication();
         String email;
         if (authentication != null && authentication.isAuthenticated() && !isNhanVienOrAdmin(authentication)) {
@@ -86,19 +134,13 @@ public class GioHangController {
         datPhong.setNgaytraPhong(ngayTra);
         datPhong.setSonguoiLon(nguoiLon);
         datPhong.setSotreEm(treEm);
-        datPhong.setYeuCauThem(null);
+        datPhong.setYeuCauThem(buildGuardNotes(ListPhong, ngayNhan, ngayTra));
         datPhong.setTrangThai("Chua thanh toan");
         datPhong.setNgayTao(LocalDateTime.now());
         datPhong.setNgayCapNhat(null);
         datPhong.setSdt(null);
         datPhongService.save(datPhong);
-        List<Phong> ListPhong = new ArrayList<>();
-        MathContext mc = new MathContext(4, RoundingMode.HALF_UP);
-        for(int p : roomIds){
-           System.out.println("cac phong dat la: "+p);
-           ListPhong.add(PhongService.findPhongById(p));
-       }
-        int resThue  = ngayTra.getDayOfYear() - ngayNhan.getDayOfYear();
+        long resThue  = soDem;
         BigDecimal amount = BigDecimal.ZERO;
         for(Phong p : ListPhong){
            if (p == null){
@@ -116,18 +158,78 @@ public class GioHangController {
         for(Phong p : ListPhong){
             BigDecimal amount2 = p.getGiaMoiDem();
             amount2 = amount2.multiply(BigDecimal.valueOf(resThue));
+            amount2 = amount2.add(calculateExtraFee(PhongService.buildRoomGuardFor(p.getMaPhong()), ngayNhan, ngayTra));
             ChiTietDatPhong chiTietDatPhong = new ChiTietDatPhong();
             chiTietDatPhong.setP(p);
             chiTietDatPhong.setGiaMoiDem(p.getGiaMoiDem());
             chiTietDatPhong.setMa_cccd(cccdTheoPhong.get(p.getMaPhong()));
             System.out.println("ma_cccd cua phong: "+p.getMaPhong() + "la: "+cccdTheoPhong.get(p.getMaPhong()));
             chiTietDatPhong.setGiaKhiDat(amount2);
+            chiTietDatPhong.setPhuPhi(calculateExtraFee(PhongService.buildRoomGuardFor(p.getMaPhong()), ngayNhan, ngayTra));
             chiTietDatPhong.setD(datPhong);
             System.out.println("Cac phong: "+p.getSoPhong()+"Gia la: "+amount2);
 
             chiTietDatPhongService.save(chiTietDatPhong);
         }
         return "redirect:/phong/dat-phong/xac-nhan/"+datPhong.getId();
+    }
+
+    private String validateRoomBookingGuard(RoomBookingGuardDTO guard,
+                                            LocalDateTime ngayNhan,
+                                            LocalDateTime ngayTra) {
+
+        if (guard == null || !guard.isCoTheDat()) {
+            return "Phong khong kha dung, vui long chon phong khac.";
+        }
+
+        String trangThaiDon = guard.getTrangThaiDonGanNhat();
+
+        // Có khách đang ở hoặc đã có người đặt trước
+        if (("Da nhan phong".equals(trangThaiDon)
+                || "Cho xac nhan".equals(trangThaiDon)
+                || "Da xac nhan".equals(trangThaiDon))
+                && guard.getNgayKetThucKhoa() != null
+                && !ngayNhan.isAfter(guard.getNgayKetThucKhoa())) {
+
+            return "Phong da co lich dat. Ngay nhan phong phai sau "
+                    + guard.getNgayKetThucKhoa().toLocalDate()
+                    + ".";
+        }
+
+        return null;
+    }
+
+    private String buildGuardNotes(List<Phong> phongs, LocalDateTime ngayNhan, LocalDateTime ngayTra) {
+        List<String> notes = new ArrayList<>();
+        for (Phong phong : phongs) {
+            RoomBookingGuardDTO guard = PhongService.buildRoomGuardFor(phong.getMaPhong());
+            if (guard == null) {
+                continue;
+            }
+
+            BigDecimal phuPhi = calculateExtraFee(guard, ngayNhan, ngayTra);
+            if (BigDecimal.ZERO.compareTo(phuPhi) < 0) {
+                notes.add("[PHU_PHI_NGOAI_GIO_PHONG_" + phong.getMaPhong() + "="
+                        + phuPhi.toPlainString() + "]");
+            }
+        }
+
+        if (notes.isEmpty()) {
+            return null;
+        }
+        return String.join(" ", notes);
+    }
+
+    private BigDecimal calculateExtraFee(RoomBookingGuardDTO guard, LocalDateTime ngayNhan, LocalDateTime ngayTra) {
+        if (guard == null) {
+            return BigDecimal.ZERO;
+        }
+
+        LocalTime gioNhan = ngayNhan.toLocalTime();
+        LocalTime gioTra = ngayTra.toLocalTime();
+        boolean ngoaiGioNhan = gioNhan.isBefore(guard.getGioNhanToiThieu()) || gioNhan.isAfter(guard.getGioNhanToiDa());
+        boolean ngoaiGioTra = gioTra.isAfter(guard.getGioTraToiDa());
+        return (ngoaiGioNhan || ngoaiGioTra) ? guard.getPhuPhiNgoaiGioVND() : BigDecimal.ZERO;
     }
 
     private boolean isNhanVienOrAdmin(Authentication authentication) {

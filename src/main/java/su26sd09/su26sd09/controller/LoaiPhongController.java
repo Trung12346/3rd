@@ -12,6 +12,7 @@ import su26sd09.su26sd09.entity.LoaiPhong;
 import su26sd09.su26sd09.entity.Phong;
 import su26sd09.su26sd09.service.PhongService;
 
+import java.time.LocalTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -94,6 +95,9 @@ public class LoaiPhongController {
         model.addAttribute("tienNghiTheoPhong", tienNghiTheoPhong);
         model.addAttribute("loaiPhongs", tatCaLoaiPhong);
         model.addAttribute("anhLoaiPhong", anhLoaiPhong);
+        model.addAttribute("bookingGuardByPhong", phongService.buildRoomGuards(phongs));
+        model.addAttribute("gioNhanToiDaMacDinh", LocalTime.of(11,0));
+        model.addAttribute("gioTraToiDaMacDinh", LocalTime.of(18,30));
         return "phong-theo-loai";
     }
 

@@ -40,10 +40,10 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/nhan-su/login").permitAll()
                         .requestMatchers("/api/auth/**", "/verify-email",
-                                "/*.css", "/*.js", "/*.jpg", "/*.png", "/Register",
+                                "/*.css", "/*.js", "/*.jpg", "/*.png", "/Register", "/nhan-su/dat-phong", "/nhan-su/dat-phong/**",
                                 "/nhan-su/dat-phong-quay/**")
                         .hasAnyRole("STAFF", "ADMIN")
-                        .requestMatchers("/nhan-su/**").hasRole("ADMIN")
+                        .requestMatchers("/nhan-su/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form

@@ -88,6 +88,85 @@
         .room-price  { font-size: 13px; font-weight: 700; color: #0f766e; margin-top: 8px; }
         .room-empty  { color: #999; font-size: 13px; grid-column: 1/-1; padding: 20px; text-align: center; }
 
+        /* Thanh tìm kiếm phòng theo thời gian nhận phòng mong muốn */
+        .room-search-bar {
+            display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap;
+            margin-bottom: 16px; padding: 14px 16px; background: #f8fafc;
+            border: 1px solid #e2e8f0; border-radius: 8px;
+        }
+        .room-search-bar .form-field { flex: 1; min-width: 220px; margin-bottom: 0; }
+        .room-search-bar .form-field label { margin-bottom: 5px; }
+        .room-search-btn {
+            background: var(--sky-primary); color: #fff; border: none; border-radius: 6px;
+            padding: 10px 18px; font-size: 13px; font-weight: 700; cursor: pointer;
+            white-space: nowrap; transition: background .15s;
+        }
+        .room-search-btn:hover { background: #1565c0; }
+        .room-search-clear {
+            background: #fff; color: #64748b; border: 1px solid #d1d5db; border-radius: 6px;
+            padding: 10px 14px; font-size: 13px; font-weight: 600; cursor: pointer;
+            white-space: nowrap;
+        }
+        .room-search-clear:hover { border-color: #94a3b8; color: #374151; }
+        .room-search-hint { font-size: 11px; color: #94a3b8; width: 100%; margin-top: -4px; }
+
+        /* Trạng thái phòng trên thẻ */
+        .room-status-badge {
+            display: inline-block; font-size: 10px; font-weight: 700; border-radius: 999px;
+            padding: 2px 8px; margin-left: 6px; vertical-align: middle; text-transform: uppercase;
+        }
+        .room-status-badge.trong { background: #ecfdf5; color: #15803d; border: 1px solid #bbf7d0; }
+        .room-status-badge.dang-su-dung { background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; }
+
+        .room-card.dang-su-dung { border-style: dashed; }
+        .room-card.locked { opacity: .45; cursor: not-allowed; }
+        .room-card.locked:hover { border-color: #e2e8f0; background: none; }
+
+        .room-return-info {
+            font-size: 11px; color: #c2410c; font-weight: 600; margin-top: 6px;
+            background: #fff7ed; border-radius: 4px; padding: 3px 6px; display: inline-block;
+        }
+        .room-match-tag {
+            position: absolute; top: 8px; left: 10px; background: #16a34a; color: #fff;
+            font-size: 10px; font-weight: 700; border-radius: 4px; padding: 2px 6px;
+        }
+
+        /* Thông báo cần thời gian vệ sinh phòng */
+        .cleaning-notice {
+            margin-top: 10px; padding: 10px 14px; border-radius: 6px; font-size: 12px;
+            background: #fffbeb; border: 1px solid #fde68a; color: #92400e; display: none;
+        }
+        .cleaning-notice.show { display: block; }
+
+        /* Toast cảnh báo (giống style "Phụ phí ngoài giờ") — dùng khi phòng không thể đặt hoặc các cảnh báo khác */
+        .room-toast-wrap {
+            position: fixed; top: 24px; right: 24px; z-index: 3000;
+            display: flex; flex-direction: column; gap: 10px; max-width: 360px;
+        }
+        .room-toast {
+            display: flex; align-items: flex-start; gap: 10px;
+            background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px;
+            padding: 14px 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+            animation: roomToastIn .18s ease-out;
+        }
+        .room-toast-icon {
+            flex-shrink: 0; width: 20px; height: 20px; border-radius: 50%;
+            background: #f59e0b; color: #fff; font-size: 13px; font-weight: 700;
+            display: flex; align-items: center; justify-content: center; margin-top: 1px;
+        }
+        .room-toast-body { flex: 1; }
+        .room-toast-title { font-size: 13px; font-weight: 700; color: #92400e; margin-bottom: 3px; }
+        .room-toast-desc  { font-size: 12px; color: #92400e; line-height: 1.5; }
+        .room-toast-close {
+            background: none; border: none; color: #c2843a; font-size: 15px;
+            cursor: pointer; line-height: 1; padding: 2px; flex-shrink: 0;
+        }
+        .room-toast-close:hover { color: #92400e; }
+        @keyframes roomToastIn {
+            from { opacity: 0; transform: translateY(-6px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
         .room-grid::-webkit-scrollbar { width: 5px; }
         .room-grid::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 3px; }
         .room-grid::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
@@ -210,6 +289,8 @@
 
 <div th:replace="~{fragments/headers/app-header :: appHeader}"></div>
 
+<div class="room-toast-wrap" id="roomToastWrap"></div>
+
 <main class="quay-shell">
     <div class="quay-header">
         <h1>
@@ -284,19 +365,40 @@
                         <span class="badge-count" id="room-badge">0</span>
                         <span style="margin-left:auto;font-size:12px;font-weight:400;color:#888;" id="room-count-label"></span>
                     </div>
+
+                    <!-- Thanh tìm phòng theo thời gian nhận phòng mong muốn -->
+                    <div class="room-search-bar">
+                        <div class="form-field">
+                            <label>Tìm phòng theo giờ nhận mong muốn</label>
+                            <input type="datetime-local" id="roomSearchTime">
+                        </div>
+                        <button type="button" class="room-search-btn" id="roomSearchBtn">Tìm Phòng</button>
+                        <button type="button" class="room-search-clear" id="roomSearchClearBtn">Xóa Lọc</button>
+                        <div class="room-search-hint">
+                            Ưu tiên hiển thị phòng trống trước, sau đó là phòng sắp trả gần thời điểm bạn chọn nhất.
+                            Nếu chọn phòng đang sắp trả, hệ thống sẽ tự cộng thêm 1 giờ vệ sinh vào giờ nhận phòng.
+                        </div>
+                    </div>
+
                     <div class="room-grid" id="roomGrid">
                         <div th:each="p : ${phongTrongList}"
                              class="room-card"
+                             th:classappend="${p.trangThai == 'Dang su dung'} ? 'dang-su-dung'"
                              th:attr="data-ma-phong=${p.maPhong},
                                       data-so-phong=${p.soPhong},
                                       data-gia=${p.giaMoiDem},
                                       data-loai=${p.loaiPhong != null ? p.loaiPhong.tenLoai : ''},
                                       data-tang=${p.soTang},
                                       data-suc-chua=${p.loaiPhong.sucChuaToiDa != null ? p.loaiPhong.sucChuaToiDa : ''},
-                                      data-mo-ta=${p.moTa != null ? p.moTa : ''}">
+                                      data-mo-ta=${p.moTa != null ? p.moTa : ''},
+                                      data-trang-thai=${p.trangThai}">
                             <!-- checkbox ẩn, chỉ để form submit -->
                             <input type="checkbox" name="maPhongList" th:value="${p.maPhong}">
-                            <div class="room-number" th:text="'Phòng ' + ${p.soPhong}">Phòng 101</div>
+                            <div class="room-number">
+                                <span th:text="'Phòng ' + ${p.soPhong}">Phòng 101</span>
+                                <span th:if="${p.trangThai == 'Trong'}" class="room-status-badge trong">Trống</span>
+                                <span th:if="${p.trangThai == 'Dang su dung'}" class="room-status-badge dang-su-dung">Đang sử dụng</span>
+                            </div>
                             <div class="room-loai"   th:text="${p.loaiPhong != null ? p.loaiPhong.tenLoai : 'Standard'}">Standard</div>
                             <div class="room-meta">
                                 <span th:text="'Tầng ' + ${p.soTang}">Tầng 1</span>
@@ -310,10 +412,17 @@
                                  th:text="${#numbers.formatDecimal(p.giaMoiDem,0,'COMMA',0,'POINT') + ' VND/đêm'}">
                                 500.000 VND/đêm
                             </div>
+                            <!-- Giờ trả dự kiến (nếu phòng đang có khách) — điền bằng JS từ roomStatusJson để format đẹp -->
+                            <div class="room-return-info" style="display:none;"></div>
                         </div>
                         <div th:if="${phongTrongList == null or phongTrongList.isEmpty()}" class="room-empty">
-                            Không có phòng trống.
+                            Không có phòng nào.
                         </div>
+                    </div>
+
+                    <div class="cleaning-notice" id="cleaningNotice">
+                        ⚠ Phòng bạn vừa chọn đang sắp trả — hệ thống đã tự cộng thêm <strong>1 giờ</strong> vào giờ nhận phòng.
+                        Phòng cần ít nhất 1 tiếng để dọn dẹp / vệ sinh trước khi bàn giao cho khách mới.
                     </div>
 
                     <!-- ========== THÊM MỚI: CCCD theo từng phòng đã chọn ========== -->
@@ -382,6 +491,7 @@
                 <!-- Danh sách KM active: server đã convert sang JSON string -->
                 <script th:inline="javascript">
                     window.__KM_LIST__ = JSON.parse(/*[[${kmJson}]]*/ '[]');
+                    window.__ROOM_STATUS__ = JSON.parse(/*[[${roomStatusJson}]]*/ '[]');
                 </script>
 
             </section>
@@ -681,15 +791,201 @@
         }
     }
 
+    /* ===== TRẠNG THÁI PHÒNG + GIỜ TRẢ DỰ KIẾN ===== */
+    const ROOM_STATUS = window.__ROOM_STATUS__ || [];
+    const ROOM_STATUS_MAP = {};
+    ROOM_STATUS.forEach(function(r) { ROOM_STATUS_MAP[r.maPhong] = r; });
+
+    function fmtDateTime(iso) {
+        if (!iso) return '';
+        const d = new Date(iso);
+        if (isNaN(d.getTime())) return '';
+        const pad = function(n) { return String(n).padStart(2, '0'); };
+        return pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + '/' + d.getFullYear()
+            + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+    }
+
+    /* Hiển thị "giờ trả dự kiến" trên các phòng đang sử dụng */
+    document.querySelectorAll('.room-card').forEach(function(card) {
+        const maPhong = card.dataset.maPhong;
+        const info = ROOM_STATUS_MAP[maPhong];
+        const returnEl = card.querySelector('.room-return-info');
+        if (info && info.trangThai === 'Dang su dung' && info.ngayTraDuKien) {
+            returnEl.textContent = 'Dự kiến trả: ' + fmtDateTime(info.ngayTraDuKien);
+            returnEl.style.display = 'inline-block';
+        }
+        // Chỉ khóa phòng khi server (RoomBookingGuardDTO.coTheDat) xác nhận KHÔNG thể đặt được
+        // — ví dụ phòng "Dang su dung" nhưng không phải đơn "Da nhan phong"/"Da tra phong" hợp lệ.
+        if (info && info.coTheDat === false) {
+            card.classList.add('locked');
+        }
+    });
+
+    /** Hiện banner cảnh báo dạng toast (giống banner "Phụ phí ngoài giờ"), tự ẩn sau vài giây. */
+    function showRoomToast(title, desc, autoHideMs) {
+        const wrap = document.getElementById('roomToastWrap');
+        const toast = document.createElement('div');
+        toast.className = 'room-toast';
+        toast.innerHTML =
+            '<div class="room-toast-icon">!</div>' +
+            '<div class="room-toast-body">' +
+                '<div class="room-toast-title"></div>' +
+                '<div class="room-toast-desc"></div>' +
+            '</div>' +
+            '<button type="button" class="room-toast-close" aria-label="Đóng">&times;</button>';
+        toast.querySelector('.room-toast-title').textContent = title;
+        toast.querySelector('.room-toast-desc').textContent = desc;
+        toast.querySelector('.room-toast-close').addEventListener('click', function() {
+            toast.remove();
+        });
+        wrap.appendChild(toast);
+        if (autoHideMs) {
+            setTimeout(function() { toast.remove(); }, autoHideMs);
+        }
+    }
+
     /* ===== ROOM CARDS — dùng div, không dùng label ===== */
     document.querySelectorAll('.room-card').forEach(function(card) {
         card.addEventListener('click', function() {
+            if (this.classList.contains('locked')) {
+                showRoomToast(
+                    'Phòng này hiện không thể đặt',
+                    'Phòng đang có khách và không xác định được lịch trả rõ ràng, vui lòng chọn phòng khác.',
+                    6000
+                );
+                return;
+            }
+
+            const wasSelected = this.classList.contains('selected');
             this.classList.toggle('selected');
             const cb = this.querySelector('input[type="checkbox"]');
             if (cb) cb.checked = !cb.checked;
+
+            /* Nếu vừa CHỌN 1 phòng đang "Dang su dung" (sắp trả) -> tự cộng 1h vệ sinh vào giờ nhận phòng + báo toast */
+            if (!wasSelected && this.classList.contains('selected') && this.classList.contains('dang-su-dung')) {
+                capNhatGioNhanChoVeSinh(this);
+                showRoomToast(
+                    'Phòng cần thời gian vệ sinh',
+                    'Phòng bạn vừa chọn đang sắp trả — hệ thống đã tự cộng thêm 1 giờ vào giờ nhận phòng để dọn dẹp / vệ sinh trước khi bàn giao cho khách mới.',
+                    8000
+                );
+            }
+
             renderCccdInputs();   /* THÊM MỚI */
+            capNhatCanhBaoVeSinh();
             tinhTong();
         });
+    });
+
+    /** Tự cộng thêm 1 giờ vào ô "Ngày nhận phòng" (nếu là input datetime, chỉ áp dụng khi có giờ cụ thể).
+     *  Do form chính dùng input type="date" (chỉ có ngày), việc "cộng 1h" được phản ánh qua
+     *  thanh tìm kiếm phòng (roomSearchTime) và cảnh báo vệ sinh; đồng thời gợi ý giờ nhận tối thiểu
+     *  cho nhân viên thông qua thông báo hiển thị bên dưới khu vực chọn phòng. */
+    function capNhatGioNhanChoVeSinh(card) {
+        const searchInput = document.getElementById('roomSearchTime');
+        const info = ROOM_STATUS_MAP[card.dataset.maPhong];
+        if (!info || !info.ngayTraDuKien) return;
+
+        const gioTra = new Date(info.ngayTraDuKien);
+        const gioNhanToiThieu = new Date(gioTra.getTime() + 60 * 60 * 1000); // +1 giờ vệ sinh
+
+        // Nếu nhân viên đang dùng ô tìm kiếm giờ nhận, tự cập nhật thành giờ sau khi vệ sinh xong
+        if (searchInput) {
+            const pad = function(n) { return String(n).padStart(2, '0'); };
+            const isoLocal = gioNhanToiThieu.getFullYear() + '-' + pad(gioNhanToiThieu.getMonth() + 1) + '-' + pad(gioNhanToiThieu.getDate())
+                + 'T' + pad(gioNhanToiThieu.getHours()) + ':' + pad(gioNhanToiThieu.getMinutes());
+            searchInput.value = isoLocal;
+        }
+
+        // Đồng bộ ngày nhận phòng (input date) sang đúng ngày của giờ nhận tối thiểu sau vệ sinh
+        const ngayNhanInput = document.getElementById('ngay-nhan');
+        if (ngayNhanInput) {
+            const pad = function(n) { return String(n).padStart(2, '0'); };
+            ngayNhanInput.value = gioNhanToiThieu.getFullYear() + '-' + pad(gioNhanToiThieu.getMonth() + 1) + '-' + pad(gioNhanToiThieu.getDate());
+        }
+    }
+
+    /** Hiện/ẩn thông báo "cần ít nhất 1 tiếng vệ sinh" khi có phòng đang sử dụng được chọn. */
+    function capNhatCanhBaoVeSinh() {
+        const notice = document.getElementById('cleaningNotice');
+        const coPhongDangSuDungDuocChon = Array.from(document.querySelectorAll('.room-card.selected'))
+            .some(function(c) { return c.classList.contains('dang-su-dung'); });
+        notice.classList.toggle('show', coPhongDangSuDungDuocChon);
+    }
+
+    /* ===== TÌM KIẾM / SẮP XẾP PHÒNG THEO GIỜ NHẬN MONG MUỐN ===== */
+    function timKiemPhong() {
+        const searchVal = document.getElementById('roomSearchTime').value;
+        const grid = document.getElementById('roomGrid');
+        const cards = Array.from(grid.querySelectorAll('.room-card'));
+
+        if (!searchVal) {
+            // Không lọc: về lại thứ tự mặc định (phòng trống trước)
+            cards.sort(function(a, b) {
+                const aTrong = a.dataset.trangThai === 'Trong' ? 0 : 1;
+                const bTrong = b.dataset.trangThai === 'Trong' ? 0 : 1;
+                return aTrong - bTrong;
+            });
+            cards.forEach(function(c) {
+                c.style.display = '';
+                c.querySelector('.room-match-tag') && c.querySelector('.room-match-tag').remove();
+            });
+            cards.forEach(function(c) { grid.appendChild(c); });
+            return;
+        }
+
+        const gioMongMuon = new Date(searchVal);
+
+        cards.forEach(function(c) {
+            const oldTag = c.querySelector('.room-match-tag');
+            if (oldTag) oldTag.remove();
+        });
+
+        // Phân loại: phòng trống (ưu tiên 0) và phòng đang dùng sắp trả (ưu tiên theo độ gần thời điểm mong muốn)
+        cards.forEach(function(c) {
+            const info = ROOM_STATUS_MAP[c.dataset.maPhong];
+            if (c.dataset.trangThai === 'Trong') {
+                c.dataset.matchScore = '0';
+                c.dataset.matchLabel = 'Phòng trống';
+            } else if (info && info.ngayTraDuKien) {
+                const gioTraCongVeSinh = new Date(new Date(info.ngayTraDuKien).getTime() + 60 * 60 * 1000);
+                if (gioTraCongVeSinh <= gioMongMuon) {
+                    // Phòng đã kịp trả + vệ sinh trước giờ khách mong muốn -> đặt được, ưu tiên theo độ gần
+                    const khoangCach = Math.abs(gioMongMuon - gioTraCongVeSinh);
+                    c.dataset.matchScore = String(1000000000 - Math.min(khoangCach, 999999999));
+                    c.dataset.matchLabel = 'Sắp trả · sẵn sàng lúc ' + fmtDateTime(gioTraCongVeSinh.toISOString());
+                } else {
+                    // Chưa kịp vệ sinh xong trước giờ khách muốn nhận -> vẫn cho chọn nhưng xếp cuối
+                    c.dataset.matchScore = '-1';
+                    c.dataset.matchLabel = 'Chưa sẵn sàng trước ' + fmtDateTime(gioMongMuon.toISOString());
+                }
+            } else {
+                c.dataset.matchScore = '-2';
+                c.dataset.matchLabel = '';
+            }
+        });
+
+        cards.sort(function(a, b) {
+            return parseFloat(b.dataset.matchScore) - parseFloat(a.dataset.matchScore);
+        });
+
+        cards.forEach(function(c) {
+            grid.appendChild(c);
+            c.style.display = '';
+            if (c.dataset.matchLabel && c.dataset.trangThai !== 'Trong') {
+                const tag = document.createElement('div');
+                tag.className = 'room-match-tag';
+                tag.textContent = c.dataset.matchLabel;
+                c.style.position = 'relative';
+                c.appendChild(tag);
+            }
+        });
+    }
+
+    document.getElementById('roomSearchBtn').addEventListener('click', timKiemPhong);
+    document.getElementById('roomSearchClearBtn').addEventListener('click', function() {
+        document.getElementById('roomSearchTime').value = '';
+        timKiemPhong();
     });
 
     /* ===== ADDON ===== */

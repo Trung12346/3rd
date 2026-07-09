@@ -12,12 +12,14 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import su26sd09.su26sd09.dto.RoomBookingGuardDTO;
 import su26sd09.su26sd09.entity.*;
 import su26sd09.su26sd09.service.*;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -117,11 +119,20 @@ public class AdminDatPhongController {
 
         model.addAttribute("hoaDon", hoaDonService.findByDatPhongId(id)); // <-- đã thêm chưa?
 
+        // Tinh tong phu phi ngoai gio tu cac phong trong don
+        BigDecimal tongPhuThu = BigDecimal.ZERO;
+        for (ChiTietDatPhong ct : chiTietDatPhongList) {
+            if (ct != null && ct.getPhuPhi() != null && ct.getPhuPhi().signum() > 0) {
+                tongPhuThu = tongPhuThu.add(ct.getPhuPhi());
+            }
+        }
+
         model.addAttribute("datPhong", datPhong);
         model.addAttribute("chiTietDatPhongList", chiTietDatPhongList);
         model.addAttribute("chiTietDichVuList", chiTietDichVuList);
         model.addAttribute("dichVuList", dichVuService.findAll());
         model.addAttribute("kmJson", buildKhuyenMaiJson());
+        model.addAttribute("tongPhuThu", tongPhuThu);
 
         return "admin/chi-tiet-dat-phong";
     }
@@ -141,6 +152,11 @@ public class AdminDatPhongController {
                                         @RequestParam(value = "tongCong", required = false) BigDecimal tongCong,
                                         @RequestParam(value = "maKhuyenMai", required = false) Integer maKhuyenMai,
                                         @RequestParam(value = "dichVuIds", required = false) List<Integer> dichVuIds,
+                                        @RequestParam(value = "phatSinhTen", required = false) List<String> phatSinhTenList,
+                                        @RequestParam(value = "phatSinhDonGia", required = false) List<String> phatSinhDonGiaList,
+                                        @RequestParam(value = "phatSinhSoLuong", required = false) List<String> phatSinhSoLuongList,
+                                        @RequestParam(value = "phatSinhNgay", required = false) List<String> phatSinhNgayList,
+                                        @RequestParam(value = "phatSinhGhiChu", required = false) List<String> phatSinhGhiChuList,
                                         @RequestParam Map<String, String> allParams,
                                         RedirectAttributes redirectAttributes) {
         DatPhong datPhong = datPhongService.findById(id);
@@ -148,7 +164,8 @@ public class AdminDatPhongController {
             redirectAttributes.addFlashAttribute("error", "Khong tim thay don dat phong #" + id);
             return "redirect:/nhan-su/admin/dat-phong";
         }
-        List<String> loiCapNhat = validateChiTietDatPhong(ngayNhan, ngayTra, nguoiLon, treEm, dichVuIds, allParams);
+        List<String> loiCapNhat = validateChiTietDatPhong(ngayNhan, ngayTra, nguoiLon, treEm, dichVuIds,
+                phatSinhTenList, phatSinhDonGiaList, phatSinhGhiChuList, allParams);
         if (!loiCapNhat.isEmpty()) {
             redirectAttributes.addFlashAttribute("soLoi", loiCapNhat.size());
             redirectAttributes.addFlashAttribute("loiCapNhat", String.join(" ", loiCapNhat));
@@ -165,7 +182,9 @@ public class AdminDatPhongController {
         datPhongService.save(datPhong);
 
         capNhatGiaPhongTheoNgay(id, ngayNhan, ngayTra);
-        capNhatDichVuDatPhong(datPhong, dichVuIds, allParams);
+        capNhatDichVuDatPhong(datPhong, dichVuIds,
+                phatSinhTenList, phatSinhDonGiaList, phatSinhSoLuongList, phatSinhNgayList, phatSinhGhiChuList,
+                allParams);
         capNhatHoaDonNeuCo(id, tongTienPhong, tongTienDichVu, tongTienGiam, tongTienVat, tongCong, km);
 
         redirectAttributes.addFlashAttribute("thanhCongCapNhat", "Cap nhat chi tiet dat phong #" + id + " thanh cong.");
@@ -176,7 +195,12 @@ public class AdminDatPhongController {
         long soDem = Math.max(1, ChronoUnit.DAYS.between(ngayNhan.toLocalDate(), ngayTra.toLocalDate()));
         for (ChiTietDatPhong chiTiet : chiTietDatPhongService.findByDatPhongId(maDatPhong)) {
             BigDecimal giaMoiDem = chiTiet.getGiaMoiDem() != null ? chiTiet.getGiaMoiDem() : BigDecimal.ZERO;
+            int maPhong = chiTiet.getP() != null ? chiTiet.getP().getMaPhong() : 0;
+            BigDecimal phuPhiNgoaiGio = maPhong > 0
+                    ? phongService.calculateExtraFeeFor(maPhong, ngayNhan, ngayTra)
+                    : BigDecimal.ZERO;
             chiTiet.setGiaKhiDat(giaMoiDem.multiply(BigDecimal.valueOf(soDem)));
+            chiTiet.setPhuPhi(phuPhiNgoaiGio);
             chiTietDatPhongService.save(chiTiet);
         }
     }
@@ -184,6 +208,18 @@ public class AdminDatPhongController {
     private List<String> validateChiTietDatPhong(LocalDateTime ngayNhan, LocalDateTime ngayTra,
                                                  Integer nguoiLon, Integer treEm,
                                                  List<Integer> dichVuIds, Map<String, String> allParams) {
+        return validateChiTietDatPhong(ngayNhan, ngayTra, nguoiLon, treEm, dichVuIds,
+                null, null, null, allParams);
+    }
+
+    /** Phiên bản mở rộng: validate cả dịch vụ thường + dịch vụ phát sinh. */
+    private List<String> validateChiTietDatPhong(LocalDateTime ngayNhan, LocalDateTime ngayTra,
+                                                 Integer nguoiLon, Integer treEm,
+                                                 List<Integer> dichVuIds,
+                                                 List<String> phatSinhTenList,
+                                                 List<String> phatSinhDonGiaList,
+                                                 List<String> phatSinhGhiChuList,
+                                                 Map<String, String> allParams) {
         List<String> errors = new ArrayList<>();
         if (ngayNhan == null || ngayTra == null || !ngayTra.isAfter(ngayNhan)) {
             errors.add("Ngay tra phong phai sau ngay nhan phong.");
@@ -207,30 +243,110 @@ public class AdminDatPhongController {
                 }
             }
         }
+        // Validate dịch vụ phát sinh: nếu có tên thì bắt buộc đơn giá > 0 và ghi chú không rỗng
+        if (phatSinhTenList != null && phatSinhDonGiaList != null) {
+            int soPhatSinh = phatSinhTenList.size();
+            for (int i = 0; i < soPhatSinh; i++) {
+                String ten = phatSinhTenList.get(i);
+                if (ten == null || ten.isBlank()) continue;
+                String donGiaStr = i < phatSinhDonGiaList.size() ? phatSinhDonGiaList.get(i) : null;
+                String ghiChu = (phatSinhGhiChuList != null && i < phatSinhGhiChuList.size())
+                        ? phatSinhGhiChuList.get(i) : null;
+                BigDecimal donGia = null;
+                try {
+                    donGia = (donGiaStr == null || donGiaStr.isBlank()) ? null : new BigDecimal(donGiaStr);
+                } catch (NumberFormatException ex) {
+                    donGia = null;
+                }
+                if (donGia == null || donGia.signum() <= 0) {
+                    errors.add("Dich vu phat sinh '" + ten + "' can co don gia hop le (>0).");
+                }
+                if (ghiChu == null || ghiChu.isBlank()) {
+                    errors.add("Dich vu phat sinh '" + ten + "' can co ghi chu / ly do cu the.");
+                }
+            }
+        }
         return errors;
     }
 
     private void capNhatDichVuDatPhong(DatPhong datPhong, List<Integer> dichVuIds, Map<String, String> allParams) {
+        capNhatDichVuDatPhong(datPhong, dichVuIds, null, null, null, null, null, allParams);
+    }
+
+    /** Phiên bản mở rộng: lưu cả dịch vụ thường + dịch vụ phát sinh.
+     *  - Dịch vụ thường: dùng giá cố định từ catalog dich_vu.
+     *  - Dịch vụ phát sinh: tự tạo/cập nhật 1 row master Dich_vu (loaiDichVu=PHAT_SINH) theo (tên + đơn giá)
+     *    rồi gắn vào chi_tiet_dich_vu. Trùng tên + đơn giá sẽ dùng lại cùng 1 row master để thống kê "Lượt sử dụng" chính xác. */
+    private void capNhatDichVuDatPhong(DatPhong datPhong, List<Integer> dichVuIds,
+                                        List<String> phatSinhTenList,
+                                        List<String> phatSinhDonGiaList,
+                                        List<String> phatSinhSoLuongList,
+                                        List<String> phatSinhNgayList,
+                                        List<String> phatSinhGhiChuList,
+                                        Map<String, String> allParams) {
         chiTietDichVuService.deleteByDatPhongId(datPhong.getId());
-        if (dichVuIds == null) {
-            return;
+
+        // ===== 1) Dịch vụ THƯỜNG (catalog có sẵn) =====
+        if (dichVuIds != null) {
+            for (Integer maDichVu : dichVuIds) {
+                var dichVu = dichVuService.findById(maDichVu);
+                if (dichVu == null) {
+                    continue;
+                }
+
+                int soLuong = parseIntOrDefault(allParams.get("soLuong_" + maDichVu), 1);
+                LocalDateTime ngaySuDung = parseDateTimeOrNow(allParams.get("ngaySuDung_" + maDichVu));
+
+                Chi_tiet_dich_vu chiTiet = new Chi_tiet_dich_vu();
+                chiTiet.setDatPhong(datPhong);
+                chiTiet.setDv(dichVu);
+                chiTiet.setSoluong(soLuong);
+                chiTiet.setNgay_su_dung(ngaySuDung);
+                chiTiet.setDonGia(dichVu.getGia().multiply(BigDecimal.valueOf(soLuong)));
+                chiTietDichVuService.save(chiTiet);
+            }
         }
 
-        for (Integer maDichVu : dichVuIds) {
-            var dichVu = dichVuService.findById(maDichVu);
-            if (dichVu == null) {
-                continue;
-            }
+        // ===== 2) Dịch vụ PHÁT SINH (nhập tay, master tự tạo/cập nhật theo tên + đơn giá) =====
+        if (phatSinhTenList == null || phatSinhTenList.isEmpty()) {
+            return;
+        }
+        int soPhatSinh = phatSinhTenList.size();
+        for (int i = 0; i < soPhatSinh; i++) {
+            String ten = phatSinhTenList.get(i);
+            if (ten == null || ten.isBlank()) continue;
 
-            int soLuong = parseIntOrDefault(allParams.get("soLuong_" + maDichVu), 1);
-            LocalDateTime ngaySuDung = parseDateTimeOrNow(allParams.get("ngaySuDung_" + maDichVu));
+            String donGiaStr = (phatSinhDonGiaList != null && i < phatSinhDonGiaList.size())
+                    ? phatSinhDonGiaList.get(i) : null;
+            String soLuongStr = (phatSinhSoLuongList != null && i < phatSinhSoLuongList.size())
+                    ? phatSinhSoLuongList.get(i) : null;
+            String ngayStr = (phatSinhNgayList != null && i < phatSinhNgayList.size())
+                    ? phatSinhNgayList.get(i) : null;
+            String ghiChu = (phatSinhGhiChuList != null && i < phatSinhGhiChuList.size())
+                    ? phatSinhGhiChuList.get(i) : null;
+
+            BigDecimal donGia;
+            try {
+                donGia = (donGiaStr == null || donGiaStr.isBlank()) ? null : new BigDecimal(donGiaStr);
+            } catch (NumberFormatException ex) {
+                continue; // validate đã chặn trước, an toàn thì skip
+            }
+            if (donGia == null || donGia.signum() <= 0) continue;
+
+            int soLuong = parseIntOrDefault(soLuongStr, 1);
+            LocalDateTime ngaySuDung = parseDateTimeOrNow(ngayStr);
+
+            // Tìm dịch vụ phát sinh đã có (cùng tên + cùng đơn giá) — nếu có thì dùng lại
+            var dichVuPhatSinh = dichVuService.findPhatSinhTheoTenVaGia(ten, donGia)
+                    .orElseGet(() -> dichVuService.taoDichVuPhatSinhMoi(ten, donGia));
 
             Chi_tiet_dich_vu chiTiet = new Chi_tiet_dich_vu();
             chiTiet.setDatPhong(datPhong);
-            chiTiet.setDv(dichVu);
+            chiTiet.setDv(dichVuPhatSinh);
             chiTiet.setSoluong(soLuong);
             chiTiet.setNgay_su_dung(ngaySuDung);
-            chiTiet.setDonGia(dichVu.getGia().multiply(BigDecimal.valueOf(soLuong)));
+            chiTiet.setDonGia(donGia.multiply(BigDecimal.valueOf(soLuong)));
+            chiTiet.setGhichu(ghiChu); // ghi chú lý do cụ thể lưu ở line item
             chiTietDichVuService.save(chiTiet);
         }
     }
@@ -402,24 +518,42 @@ public class AdminDatPhongController {
         DatPhong dp = datPhongService.findById(id);
 
         if (dp == null) {
-            redirectAttributes.addFlashAttribute("error", "khong tim thay don dat phong");
+            redirectAttributes.addFlashAttribute("error", "Khong tim thay don dat phong");
             return "redirect:/nhan-su/admin/dat-phong";
         }
 
         if (dp.getMa_cccd() == null || dp.getMa_cccd().isEmpty()) {
-            redirectAttributes.addFlashAttribute("error", "don dat phong chua co CCCD");
+            redirectAttributes.addFlashAttribute("error", "Don dat phong chua co CCCD");
             return "redirect:/nhan-su/admin/dat-phong";
         }
 
         dp.setTrangThai(trangThai);
         datPhongService.save(dp);
 
-        if ("Da tra phong".equals(dp.getTrangThai())) {
-            List<ChiTietDatPhong> chiTietDatPhongs = chiTietDatPhongService.findByDatPhongId(id);
+        List<ChiTietDatPhong> chiTietDatPhongs =
+                chiTietDatPhongService.findByDatPhongId(id);
+
+        // Khi khách nhận phòng
+        if ("Da nhan phong".equals(trangThai)) {
+
+            for (ChiTietDatPhong ctdp : chiTietDatPhongs) {
+
+                Phong p = ctdp.getP();
+                p.setTrangThai("Dang su dung");
+
+                phongService.save1(p);
+            }
+        }
+
+
+        if ("Da tra phong".equals(trangThai)) {
             for (ChiTietDatPhong ctdp : chiTietDatPhongs) {
                 Phong p = ctdp.getP();
-                p.setTrangThai("Trong");
-                System.out.println("Phong da chuyen trang thai: " + p.getSoPhong() + " Trang thai cu: " + p.getTrangThai());
+                if (datPhongService.hasBookingNotCheckout(p.getMaPhong(), dp.getId())) {
+                    p.setTrangThai("Da dat truoc");
+                } else {
+                    p.setTrangThai("Trong");
+                }
 
                 phongService.save1(p);
             }

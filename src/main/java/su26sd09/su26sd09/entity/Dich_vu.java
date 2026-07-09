@@ -33,6 +33,9 @@ public class Dich_vu {
     @Column(name = "hoat_dong")
     private Boolean hoat_dong;
 
+    @Column(name = "loai_dich_vu")
+    private String loaiDv;
+
     @OneToMany(mappedBy = "dv",cascade = CascadeType.ALL)
     private List<Chi_tiet_dich_vu> chiTietDichVus;
 }

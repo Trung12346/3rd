@@ -4,14 +4,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import su26sd09.su26sd09.entity.ChiTietDatPhong;
 import su26sd09.su26sd09.entity.DatPhong;
 import su26sd09.su26sd09.entity.HoaDon;
 import su26sd09.su26sd09.entity.Phong;
 import su26sd09.su26sd09.repository.DatPhongRepo;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 
@@ -20,6 +25,9 @@ public class DatPhongService {
 
     @Autowired
     DatPhongRepo repo;
+
+    @Autowired
+    ChiTietDatPhongService chiTietDatPhongService;
 
 
 
@@ -65,6 +73,18 @@ public class DatPhongService {
         List<Phong> result = repo.findPhongByDatPhongId(maDatPhong);
         System.out.println("Result size: " + result.size());
         return result;
+    }
+
+    /**
+     * Lấy đơn DatPhong gần nhất còn liên quan tới phòng (Da nhan phong / Da tra phong).
+     * Dùng để suy ra ràng buộc đặt phòng ở phía client.
+     */
+    public Optional<DatPhong> findLatestEffectiveBookingForPhong(int maPhong) {
+        List<DatPhong> list = repo.findRecentBookingsForPhong(maPhong);
+        if (list == null || list.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(list.get(0));
     }
     public List<DatPhong> search(
             Integer maDatPhong, String tenKhach, Integer maNhanVien, String ma_cccd,
@@ -138,4 +158,55 @@ public class DatPhongService {
     public DatPhong findById(int id){
         return repo.findById(id).orElse(null);
     }
+
+    /**
+     * Tính số đêm giữa ngaydatPhong và ngaytraPhong của 1 đơn đặt phòng.
+     * Trả về tối thiểu 1.
+     */
+    public int soDemFromDatPhong(int maDatPhong) {
+        DatPhong dp = findById(maDatPhong);
+        if (dp == null || dp.getNgaydatPhong() == null || dp.getNgaytraPhong() == null) {
+            return 1;
+        }
+        long soDem = ChronoUnit.DAYS.between(dp.getNgaydatPhong().toLocalDate(), dp.getNgaytraPhong().toLocalDate());
+        return (int) Math.max(1, soDem);
+    }
+
+    /**
+     * Tổng phụ phí ngoài giờ của 1 đơn đặt phòng = sum(giaKhiDat - giaMoiDem * soDem) cho mỗi phòng.
+     * Chỉ cộng những phần dương (phòng không có phụ phí -> 0).
+     * Nếu không tính được thì trả về ZERO.
+     */
+    public BigDecimal sumExtraFeeForDatPhong(int maDatPhong) {
+        try {
+            List<ChiTietDatPhong> listCt = chiTietDatPhongService.findByDatPhongId(maDatPhong);
+            if (listCt == null || listCt.isEmpty()) {
+                return BigDecimal.ZERO;
+            }
+            int soDem = soDemFromDatPhong(maDatPhong);
+            BigDecimal total = BigDecimal.ZERO;
+            for (ChiTietDatPhong ct : listCt) {
+                if (ct == null) continue;
+                BigDecimal giaMoiDem = ct.getGiaMoiDem();
+                BigDecimal giaKhiDat = ct.getGiaKhiDat();
+                if (giaMoiDem == null || giaKhiDat == null) continue;
+                BigDecimal baseline = giaMoiDem.multiply(BigDecimal.valueOf(soDem));
+                BigDecimal phuPhi = giaKhiDat.subtract(baseline);
+                if (phuPhi.compareTo(BigDecimal.ZERO) > 0) {
+                    total = total.add(phuPhi);
+                }
+            }
+            return total.setScale(0, RoundingMode.HALF_UP);
+        } catch (Exception e) {
+            return BigDecimal.ZERO;
+        }
+
+    }
+        public boolean findPendingBookingsByPhong(Integer maPhong){
+            return repo.findPendingBookingsByPhong(maPhong) > 0;
+        }
+    public boolean hasBookingNotCheckout(Integer maPhong, Integer maDatPhong) {
+        return repo.existsBookingNotCheckout(maPhong, maDatPhong) ;
+    }
+
 }

@@ -260,6 +260,9 @@ public class VnpayService {
 
         for (ChiTietDatPhong ctdp : chiTietDatPhong) {
             Phong p = ctdp.getP();
+            if (datPhongService.findPendingBookingsByPhong(p.getMaPhong())){
+                p.setTrangThai("Dang su dung");
+            }
             p.setTrangThai("Dang su dung");
             phongService.save1(p);
         }

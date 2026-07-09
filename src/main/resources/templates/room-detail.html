@@ -187,6 +187,100 @@
       cursor: not-allowed !important;
       opacity: 0.7;
     }
+
+    /* ===== Booking guard banner (phòng đang có khách / vừa trả) ===== */
+    .booking-guard-banner {
+      background: #fff8e1;
+      border: 1px solid #ffe082;
+      border-left: 4px solid #e67e22;
+      color: #8a6d00;
+      border-radius: 4px;
+      padding: 12px 14px;
+      margin-bottom: 14px;
+      font-size: 13px;
+      line-height: 1.55;
+      display: none;
+    }
+    .booking-guard-banner.show { display: flex; gap: 10px; align-items: flex-start; }
+    .booking-guard-banner i { color: #e67e22; font-size: 16px; margin-top: 1px; flex-shrink: 0; }
+    .booking-guard-banner strong { color: #6b4f00; }
+    .booking-guard-banner .guard-dates { display: block; margin-top: 4px; color: #8a6d00; font-size: 12px; }
+
+    /* ===== Phụ phí ngoài giờ (dòng trong widget-total) ===== */
+    .extra-fee-row {
+      display: none;
+      color: #c0392b;
+    }
+    .extra-fee-row.show { display: flex; }
+    .extra-fee-row strong { color: #c0392b; }
+
+    /* ===== Toast (góc phải màn hình) ===== */
+    .booking-toast-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-width: 360px;
+      pointer-events: none;
+    }
+    .booking-toast {
+      pointer-events: auto;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 12px 14px;
+      border-radius: 4px;
+      box-shadow: 0 6px 24px rgba(0, 0, 0, 0.15);
+      font-size: 13.5px;
+      line-height: 1.5;
+      transform: translateX(120%);
+      opacity: 0;
+      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease;
+      cursor: default;
+    }
+    .booking-toast.show { transform: translateX(0); opacity: 1; }
+    .booking-toast .toast-icon {
+      font-size: 18px;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .booking-toast .toast-body { flex: 1; min-width: 0; }
+    .booking-toast .toast-title { font-weight: 700; margin-bottom: 2px; }
+    .booking-toast .toast-close {
+      background: transparent;
+      border: 0;
+      color: inherit;
+      opacity: 0.6;
+      cursor: pointer;
+      font-size: 18px;
+      padding: 0 4px;
+      line-height: 1;
+    }
+    .booking-toast .toast-close:hover { opacity: 1; }
+    .booking-toast.toast-warning {
+      background: #fff8e1;
+      border: 1px solid #ffe082;
+      border-left: 4px solid #e67e22;
+      color: #6b4f00;
+    }
+    .booking-toast.toast-warning .toast-icon { color: #e67e22; }
+    .booking-toast.toast-info {
+      background: #ebf5fb;
+      border: 1px solid #bbdefb;
+      border-left: 4px solid #2196F3;
+      color: #1a4a72;
+    }
+    .booking-toast.toast-info .toast-icon { color: #2196F3; }
+    .booking-toast.toast-error {
+      background: #fdecea;
+      border: 1px solid #f5c2c0;
+      border-left: 4px solid #e74c3c;
+      color: #922b21;
+    }
+    .booking-toast.toast-error .toast-icon { color: #e74c3c; }
   </style>
 </head>
 <body>
@@ -249,7 +343,16 @@
   <div class="detail-sidebar">
     <div class="booking-widget">
       <h3>Thông Tin Đặt Phòng</h3>
-      <form action="/phong/dat-phong/quick" method="POST" id="quickBookingForm">
+      <form action="/phong/dat-phong/quick" method="POST" id="quickBookingForm"
+            th:data-trang-thai-don="${bookingGuard != null ? bookingGuard.trangThaiDonGanNhat : ''}"
+            th:data-ngay-bat-dau-khoa="${bookingGuard != null and bookingGuard.ngayBatDauKhoa != null ? #temporals.format(bookingGuard.ngayBatDauKhoa, 'yyyy-MM-dd') : ''}"
+            th:data-ngay-ket-thuc-khoa="${bookingGuard != null and bookingGuard.ngayKetThucKhoa != null ? #temporals.format(bookingGuard.ngayKetThucKhoa, 'yyyy-MM-dd') : ''}"
+            th:data-gio-nhan-toi-thieu="${bookingGuard != null ? bookingGuard.gioNhanToiThieu : '08:30'}"
+
+            th:data-gio-nhan-toi-da="${bookingGuard != null ? bookingGuard.gioNhanToiDa : '11:00'}"
+
+            th:data-gio-tra-toi-da="${bookingGuard != null ? bookingGuard.gioTraToiDa : '18:30'}"
+            th:data-phu-phi-ngoai-gio="${bookingGuard != null ? bookingGuard.phuPhiNgoaiGioVND : 100000}">
         <input type="hidden" name="maPhong" th:value="${phong != null ? phong.maPhong : 0}">
         <input type="hidden" name="maLoaiPhong" th:value="${loaiPhong != null ? loaiPhong.id : 0}">
         <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
@@ -257,6 +360,15 @@
         <div th:if="${bookingError != null}" class="form-error-banner">
           <i class="fa-solid fa-circle-exclamation"></i>
           <span th:text="${bookingError}">Số lượng người không hợp lệ.</span>
+        </div>
+
+        <div class="booking-guard-banner" id="booking-guard-banner">
+          <i class="fa-solid fa-circle-exclamation"></i>
+          <div>
+            <strong id="guard-banner-title">Phòng đang có khách sử dụng</strong>
+            <div class="guard-dates" id="guard-banner-dates"></div>
+            <div class="guard-dates" id="guard-banner-note">Ngày nhận phòng mới phải cách ngày trả phòng của đơn đó ít nhất 1 ngày.</div>
+          </div>
         </div>
 
         <div class="form-group" id="grp-ngay-nhan">
@@ -308,13 +420,17 @@
           <span>Tổng tiền:</span>
           <span style="color: var(--sky-primary); font-weight: 700;" id="tongTienValue">0 VND</span>
         </div>
+        <div class="widget-total extra-fee-row" id="extraFeeRow" style="display:none;">
+          <span>Phụ phí ngoài giờ:</span>
+          <strong id="extraFeeValue">0 VND</strong>
+        </div>
 
         <button type="submit"
                 id="btn-confirm-booking"
                 class="btn btn-filled"
                 style="width: 100%; padding: 15px; font-size: 16px;"
-                th:disabled="${phong == null or phong.trangThai != 'Trong'}">
-          <span th:text="${phong != null and phong.trangThai == 'Trong'} ? 'Đặt Phòng Ngay' : 'Phòng Không Khả Dụng'">Đặt Phòng Ngay</span>
+        >
+          <span >Đặt Phòng Ngay</span>
         </button>
         <button type="button"
                 class="btn btn-outline"
@@ -388,6 +504,8 @@
 <footer>
   <p>&copy; 2026 Hotel. All rights reserved.</p>
 </footer>
+
+<div class="booking-toast-container" id="bookingToastContainer" aria-live="polite"></div>
 
 <script src="/header-dropdown.js"></script>
 <script th:inline="javascript">
@@ -545,6 +663,11 @@
   // ===== TINH SO DEM VA TONG TIEN THEO NGAY NHAN / NGAY TRA =====
   const giaPhongGoc = /*[[${phong != null ? phong.giaMoiDem : 0}]]*/ 0;
 
+  // FIX: bien dung chung de luu phu phi ngoai gio hien tai, giup ham tinh
+  // tong tien (o duoi) cong dung phu phi vao tong, thay vi tinh rieng le
+  // khong lien quan nhu truoc (khien Tong tien bi thieu 100.000 VND phu phi).
+  let currentExtraFee = 0;
+
   function formatTienVND(n) {
     return Math.round(n).toLocaleString('vi-VN') + ' VND';
   }
@@ -574,7 +697,7 @@
       return;
     }
 
-    const tongTien = giaPhongGoc * soNgay;
+    const tongTien = giaPhongGoc * soNgay + currentExtraFee;
 
     soDemValue.textContent = soNgay + ' dem';
     tongTienValue.textContent = formatTienVND(tongTien);
@@ -583,7 +706,11 @@
     tongTienRow.style.display = 'flex';
   }
 
+  // FIX: nghe ca 'input' va 'change' de cap nhat so dem/tong tien theo thoi gian
+  // thuc, khong can doi den khi nguoi dung roi khoi (blur) o input datetime-local.
+  document.getElementById('ngayNhanInput').addEventListener('input', tinhSoDemVaTongTien);
   document.getElementById('ngayNhanInput').addEventListener('change', tinhSoDemVaTongTien);
+  document.getElementById('ngayTraInput').addEventListener('input', tinhSoDemVaTongTien);
   document.getElementById('ngayTraInput').addEventListener('change', tinhSoDemVaTongTien);
 
   // ===== Client-side validation cho dat phong nhanh =====
@@ -746,6 +873,225 @@
         capNhatTrangThaiNut();
       }
     });
+  })();
+
+  // =================================================================
+  // ===== GUARD + PHỤ PHÍ + TOAST (room-detail) =====
+  // =================================================================
+  (function () {
+    const form = document.getElementById('quickBookingForm');
+    if (!form) return;
+
+    const banner = document.getElementById('booking-guard-banner');
+    const bannerDates = document.getElementById('guard-banner-dates');
+    const ngayNhanEl = document.getElementById('ngayNhanInput');
+    const ngayTraEl = document.getElementById('ngayTraInput');
+    const extraFeeRow = document.getElementById('extraFeeRow');
+    const extraFeeValueEl = document.getElementById('extraFeeValue');
+    const giaPhongGocLocal = Number(/*[[${phong != null ? phong.giaMoiDem : 0}]]*/ 0);
+
+    const trangThaiDon = form.dataset.trangThaiDon || '';
+    const ngayBatDauKhoa = form.dataset.ngayBatDauKhoa || '';
+    const ngayKetThucKhoa = form.dataset.ngayKetThucKhoa || '';
+    const gioNhanToiThieu = parseTime(form.dataset.gioNhanToiThieu) || { h: 8, m: 30 };
+    const gioNhanToiDa = parseTime(form.dataset.gioNhanToiDa) || { h: 11, m: 0 };
+    const gioTraToiDa = parseTime(form.dataset.gioTraToiDa) || { h: 18, m: 30 };
+    const phuPhiMacDinh = Number(form.dataset.phuPhiNgoaiGio || 100000);
+
+    function parseTime(value) {
+      if (!value) return null;
+      const s = String(value);
+      const m = s.match(/(\d{1,2}):(\d{1,2})/);
+      if (m) return { h: parseInt(m[1], 10), m: parseInt(m[2], 10) };
+      return null;
+    }
+    function timeToMinutes(t) { return t ? (t.h * 60 + t.m) : 0; }
+    function pad2(n) { return String(n).padStart(2, '0'); }
+    function formatDate(iso) {
+      if (!iso) return '';
+      const parts = iso.split('-');
+      if (parts.length !== 3) return iso;
+      return parts[2] + '/' + parts[1] + '/' + parts[0];
+    }
+    function formatTime(t) {
+      if (!t) return '';
+      return pad2(t.h) + ':' + pad2(t.m);
+    }
+    function addDaysIso(iso, days) {
+      if (!iso) return '';
+      const d = new Date(iso + 'T00:00:00');
+      d.setDate(d.getDate() + days);
+      return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+    }
+    function startOfDayIso(iso) {
+      return iso + 'T00:00:00';
+    }
+
+    // ===== TOAST =====
+    function showToast(message, opts) {
+      opts = opts || {};
+      const type = opts.type || 'warning';
+      const title = opts.title || '';
+      const container = document.getElementById('bookingToastContainer');
+      if (!container) return;
+
+      const iconMap = { warning: 'fa-circle-exclamation', info: 'fa-circle-info', error: 'fa-circle-xmark' };
+      const el = document.createElement('div');
+      el.className = 'booking-toast toast-' + type;
+      el.innerHTML =
+              '<i class="fa-solid ' + (iconMap[type] || 'fa-circle-info') + ' toast-icon"></i>' +
+              '<div class="toast-body">' +
+              (title ? '<div class="toast-title">' + escapeHtml(title) + '</div>' : '') +
+              '<div class="toast-message">' + escapeHtml(message) + '</div>' +
+              '</div>' +
+              '<button type="button" class="toast-close" aria-label="Đóng">&times;</button>';
+      container.appendChild(el);
+      requestAnimationFrame(function () { el.classList.add('show'); });
+
+      const close = function () {
+        el.classList.remove('show');
+        setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 400);
+      };
+      el.querySelector('.toast-close').addEventListener('click', close);
+      setTimeout(close, 5000);
+    }
+    function escapeHtml(s) {
+      return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    // FIX (root cause): "let lastExtraFee" phai duoc khoi tao TRUOC khi
+    // applyGuardBanner() chay, vi applyGuardBanner() co the goi
+    // checkAndToastExtraFee() ngay lap tuc (khi trang co banner "phong dang
+    // co khach"). Neu khai bao "let lastExtraFee" nam SAU loi goi
+    // applyGuardBanner(), no se roi vao Temporal Dead Zone -> ReferenceError
+    // -> toan bo IIFE nay bi crash -> cac addEventListener ben duoi (dung de
+    // cap nhat phu phi khi doi ngay) KHONG BAO GIO duoc gan. Day chinh la
+    // nguyen nhan: trang co banner thi phu phi khong hien, trang khong co
+    // banner thi lai hien binh thuong.
+    let lastExtraFee = 0;
+
+    // ===== BANNER + DISABLED DATE RANGES =====
+    function applyGuardBanner() {
+      const biKhoa =
+              trangThaiDon === 'Cho xac nhan' ||
+              trangThaiDon === 'Da nhan phong';
+
+      if (biKhoa && ngayKetThucKhoa) {
+
+        const tu = formatDate(ngayBatDauKhoa || ngayKetThucKhoa);
+        const den = formatDate(ngayKetThucKhoa);
+
+        bannerDates.textContent =
+                'Khoảng đã được đặt: ' + tu + ' → ' + den;
+
+        banner.classList.add('show');
+
+        const minNhan = addDaysIso(ngayKetThucKhoa, 1);
+
+        ngayNhanEl.min = minNhan + 'T00:00';
+
+        ngayNhanEl.value = minNhan + 'T08:30';
+
+        const ngayTraMacDinh = addDaysIso(minNhan, 1);
+        ngayTraEl.value = ngayTraMacDinh + 'T11:00';
+
+        tinhSoDemVaTongTien();
+        checkAndToastExtraFee();
+      }
+      else{
+        banner.classList.remove('show');
+      }
+    }
+    applyGuardBanner();
+
+    // ===== TÍNH PHỤ PHÍ REAL-TIME =====
+    function tinhPhuPhi() {
+      if (!ngayNhanEl || !ngayTraEl) return 0;
+      const v1 = ngayNhanEl.value;
+      const v2 = ngayTraEl.value;
+      if (!v1 || !v2) {
+        extraFeeRow.classList.remove('show');
+        extraFeeRow.style.display = 'none';
+        currentExtraFee = 0;
+        tinhSoDemVaTongTien();
+        return 0;
+      }
+      const d1 = new Date(v1);
+      const d2 = new Date(v2);
+      if (isNaN(d1.getTime()) || isNaN(d2.getTime())) {
+        extraFeeRow.classList.remove('show');
+        extraFeeRow.style.display = 'none';
+        currentExtraFee = 0;
+        tinhSoDemVaTongTien();
+        return 0;
+      }
+      const nhanMin = d1.getHours() * 60 + d1.getMinutes();
+      const traMin = d2.getHours() * 60 + d2.getMinutes();
+      const ngoaiGioNhan = nhanMin < timeToMinutes(gioNhanToiThieu) || nhanMin > timeToMinutes(gioNhanToiDa);
+      const ngoaiGioTra = traMin > timeToMinutes(gioTraToiDa);
+
+      if (ngoaiGioNhan || ngoaiGioTra) {
+        const fee = phuPhiMacDinh;
+        extraFeeValueEl.textContent = fee.toLocaleString('vi-VN') + ' VND';
+        extraFeeRow.classList.add('show');
+        extraFeeRow.style.display = 'flex';
+        // FIX: cap nhat bien dung chung va tinh lai Tong tien de cong
+        // luon phu phi vao, thay vi de Tong tien va Phu phi tach roi.
+        currentExtraFee = fee;
+        tinhSoDemVaTongTien();
+        return fee;
+      } else {
+        extraFeeRow.classList.remove('show');
+        extraFeeRow.style.display = 'none';
+        currentExtraFee = 0;
+        tinhSoDemVaTongTien();
+        return 0;
+      }
+    }
+
+    // ===== TOAST KHI USER ĐỔI GIỜ =====
+    function checkAndToastExtraFee() {
+      const fee = tinhPhuPhi();
+      if (fee > 0 && lastExtraFee === 0) {
+        showToast('Bạn chọn giờ ngoài khung ' + formatTime(gioNhanToiThieu) + ' - ' + formatTime(gioNhanToiDa) +
+                ' (nhận phòng) hoặc sau ' + formatTime(gioTraToiDa) + ' (trả phòng). Hệ thống sẽ cộng thêm phụ phí.', {
+          type: 'warning',
+          title: 'Phụ phí ngoài giờ +' + fee.toLocaleString('vi-VN') + ' VND'
+        });
+      }
+      lastExtraFee = fee;
+    }
+
+    // FIX: gan ham xu ly rieng cho tung input va nghe ca 'input' lan 'change',
+    // de phu phi + toast cap nhat ngay khi nguoi dung dang go (khong can blur),
+    // dong bo voi tinhSoDemVaTongTien o tren.
+    function xuLyNgayNhanThayDoi() {
+      // Validate với guard
+      if (trangThaiDon === 'Da nhan phong' && ngayKetThucKhoa && ngayNhanEl.value) {
+        const chosen = new Date(ngayNhanEl.value);
+        const locked = new Date(ngayKetThucKhoa + 'T23:59:59');
+        if (chosen <= locked) {
+          showToast('Ngày nhận phòng phải sau ngày trả phòng của đơn đang ở (' + formatDate(ngayKetThucKhoa) +
+                  '). Vui lòng chọn từ ' + formatDate(addDaysIso(ngayKetThucKhoa, 1)) + ' trở đi.', {
+            type: 'error',
+            title: 'Ngày nhận bị trùng đơn cũ'
+          });
+        }
+      }
+      checkAndToastExtraFee();
+    }
+
+    if (ngayNhanEl) {
+      ngayNhanEl.addEventListener('input', xuLyNgayNhanThayDoi);
+      ngayNhanEl.addEventListener('change', xuLyNgayNhanThayDoi);
+    }
+    if (ngayTraEl) {
+      ngayTraEl.addEventListener('input', checkAndToastExtraFee);
+      ngayTraEl.addEventListener('change', checkAndToastExtraFee);
+    }
+
+    // Tính phụ phí lúc load trang (nếu đã có giá trị default)
+    checkAndToastExtraFee();
   })();
 </script>
 </body>

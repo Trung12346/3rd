@@ -360,8 +360,18 @@ public class NhanVienCheckoutController {
             return;
         }
 
+        // Tinh tong phu phi ngoai gio tu cac phong trong don
+        BigDecimal tongPhuThu = BigDecimal.ZERO;
+        List<ChiTietDatPhong> phongList = chiTietDatPhongService.findByDatPhongId(id);
+        for (ChiTietDatPhong ct : phongList) {
+            if (ct != null && ct.getPhuPhi() != null && ct.getPhuPhi().signum() > 0) {
+                tongPhuThu = tongPhuThu.add(ct.getPhuPhi());
+            }
+        }
+
         Context context = new Context();
         context.setVariable("hoaDon", hoaDon);
+        context.setVariable("tongPhuThu", tongPhuThu);
 
         String html = templateEngine.process("nhan-vien/hoa-don-pdf", context);
 

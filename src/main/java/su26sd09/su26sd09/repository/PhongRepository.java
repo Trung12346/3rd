@@ -3,6 +3,7 @@ package su26sd09.su26sd09.repository;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import su26sd09.su26sd09.entity.DatPhong;
 import su26sd09.su26sd09.entity.Phong;
 
 import java.util.List;
@@ -30,4 +31,11 @@ public interface PhongRepository extends JpaRepository<Phong, Integer> {
     List<Phong> findByHoatDongTrueOrderBySoPhongAsc();
 
     long countByLoaiPhongIdAndHoatDongTrueAndTrangThai(int loaiPhongId, String trangThai);
+    @Query("""
+select d
+from DatPhong d
+join ChiTietDatPhong c on c.d.id = d.id
+where c.p.maPhong = :id
+""")
+    List<DatPhong> findAllByPhong(@Param("id") Integer id);
 }
