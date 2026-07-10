@@ -5,6 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Đăng Nhập | Hotel</title>
     <link rel="stylesheet" href="/style.css">
+    <style>
+        .field-error {
+            color: red;
+            font-size: 0.8rem;
+        }
+    </style>
 </head>
 <body>
     <div th:replace="~{fragments/headers/app-header :: appHeader}"></div>
@@ -23,7 +29,7 @@
                     <label for="mat_khau_hash">Mật khẩu</label>
                     <input type="password" id="mat_khau_hash" name="password" placeholder="Nhập mật khẩu" required>
                 </div>
-                
+                <span class="field-error" th:if="${error == 'true'}">Email hoặc mật khẩu không chính xác.</span>
                 <button type="submit" class="btn-submit">Đăng Nhập</button>
             </form>
 
