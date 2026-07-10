@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="vi"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<body>
+<div th:fragment="cmsHeader" class="cms-topbar-shell">
+    <style>
+        .cms-topbar-shell {
+            --ct-blue: #3498DB;
+            --ct-blue-dark: #2980B9;
+            --ct-blue-light: #EBF5FB;
+            --ct-text: #2f3438;
+            --ct-muted: #667085;
+            --ct-border: #e0e0e0;
+
+            background: #ffffff;
+            border-bottom: 1px solid var(--ct-border);
+            box-shadow: 0 2px 12px rgba(15, 23, 42, 0.05);
+            color: var(--ct-text);
+            font-family: 'Montserrat', Arial, sans-serif;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .cms-topbar {
+            align-items: center;
+            display: flex;
+            gap: 16px;
+            min-height: 64px;
+            padding: 10px 24px 15px 32px;
+        }
+        .cms-topbar-menu-btn {
+            flex: 0 0 auto;
+            width: 36px;
+            height: 36px;
+            border: 1px solid var(--ct-border);
+            border-radius: 3px;
+            background: #fff;
+            color: var(--ct-text);
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.2s, border-color 0.2s;
+        }
+
+        .cms-topbar-menu-btn:hover { background: var(--ct-blue-light); border-color: var(--ct-blue); }
+
+        .cms-topbar-title { flex: 1 1 auto; min-width: 0;    margin-left:36px;
+        }
+
+        .cms-topbar-eyebrow {
+            display: block;
+            color: var(--ct-blue);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.6px;
+            text-transform: uppercase;
+            margin-bottom: 2px;
+        }
+
+        .cms-topbar-title h1 {
+            color: var(--ct-text);
+            font-family: 'Playfair Display', serif;
+            font-size: 21px;
+            font-weight: 700;
+            line-height: 1.2;
+            margin: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .cms-topbar-actions {
+            align-items: center;
+            display: flex;
+            flex: 0 0 auto;
+            gap: 14px;
+        }
+
+        .cms-topbar-link {
+            color: var(--ct-muted);
+            font-size: 12px;
+            font-weight: 600;
+            text-decoration: none;
+            text-transform: uppercase;
+            white-space: nowrap;
+            transition: color 0.2s;
+        }
+
+        .cms-topbar-link:hover { color: var(--ct-blue); }
+
+        .cms-topbar-account {
+            align-items: center;
+            display: flex;
+            gap: 10px;
+        }
+
+        .cms-topbar-avatar {
+            align-items: center;
+            background: var(--ct-blue-light);
+            border: 1px solid #cfe8fb;
+            border-radius: 50%;
+            color: var(--ct-blue-dark);
+            display: inline-flex;
+            flex: 0 0 34px;
+            font-size: 12px;
+            font-weight: 700;
+            height: 34px;
+            justify-content: center;
+            width: 34px;
+        }
+
+        .cms-topbar-account-text { display: none; }
+
+        .cms-topbar-account-text strong {
+            color: var(--ct-blue-dark);
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .cms-topbar-logout {
+            align-items: center;
+            border: 1px solid var(--ct-border);
+            border-radius: 3px;
+            color: var(--ct-text);
+            display: inline-flex;
+            font-size: 12px;
+            font-weight: 600;
+            justify-content: center;
+            min-height: 32px;
+            padding: 0 14px;
+            text-decoration: none;
+            text-transform: uppercase;
+            transition: border-color 0.2s, color 0.2s, background 0.2s;
+            white-space: nowrap;
+        }
+
+        .cms-topbar-logout:hover { background: #fff5f5; border-color: #e74c3c; color: #e74c3c; }
+
+        @media (min-width: 700px) {
+            .cms-topbar-account-text { display: grid; gap: 1px; }
+        }
+
+        @media (max-width: 560px) {
+            .cms-topbar { padding: 10px 14px; }
+            .cms-topbar-link { display: none; }
+        }
+    </style>
+
+    <header class="cms-topbar" aria-label="CMS topbar">
+        <button type="button" class="cms-topbar-menu-btn cms-sidebar-toggle-trigger" aria-label="Đóng/mở menu điều hướng">☰</button>
+
+        <div class="cms-topbar-title">
+            <span class="cms-topbar-eyebrow" sec:authorize="hasAuthority('ROLE_ADMIN')">Quản trị hệ thống</span>
+            <span class="cms-topbar-eyebrow" sec:authorize="hasAnyAuthority('ROLE_STAFF','ROLE_EMPLOYEE')">Khu vực nhân viên</span>
+            <h1 th:text="${pageTitle} ?: 'Bảng điều khiển'">Bảng điều khiển</h1>
+        </div>
+
+        <div class="cms-topbar-actions">
+<!--            <a th:href="@{/home}" class="cms-topbar-link" target="_blank" rel="noopener">Xem trang web ↗</a>-->
+            <div class="cms-topbar-account">
+                <span class="cms-topbar-avatar" aria-hidden="true" sec:authorize="hasAuthority('ROLE_ADMIN')">AD</span>
+                <span class="cms-topbar-avatar" aria-hidden="true" sec:authorize="hasAnyAuthority('ROLE_STAFF','ROLE_EMPLOYEE')">NV</span>
+                <span class="cms-topbar-account-text">
+                    <strong sec:authentication="name">user@email.com</strong>
+                </span>
+                <a th:href="@{/logout}" class="cms-topbar-logout">Đăng xuất</a>
+            </div>
+        </div>
+    </header>
+</div>
+</body>
+</html>

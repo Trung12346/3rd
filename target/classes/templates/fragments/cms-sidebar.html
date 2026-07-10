@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="vi"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<body>
+<div th:fragment="cmsSidebar">
+    <style>
+        #cms-sidebar {
+            --cms-blue: #3498DB;
+            --cms-blue-dark: #2980B9;
+            --cms-blue-light: #EBF5FB;
+            --cms-text: #2f3438;
+            --cms-muted: #8a94a3;
+            --cms-border: #e0e0e0;
+            --cms-w: 250px;
+            --cms-w-collapsed: 80px;
+
+            /* spacing scale — same scale used everywhere below, nothing arbitrary */
+            --cms-s1: 4px;
+            --cms-s2: 8px;
+            --cms-s3: 12px;
+            --cms-s4: 16px;
+            --cms-s5: 20px;
+            --cms-s6: 24px;
+            --cms-t: 200ms ease;
+
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1100;
+            display: flex;
+            flex-direction: column;
+            width: var(--cms-w);
+            height: 100vh;
+            background: #ffffff;
+            border-right: 1px solid var(--cms-border);
+            font-family: 'Montserrat', Arial, sans-serif;
+            transition: width var(--cms-t), transform var(--cms-t);
+            overflow: hidden;
+        }
+
+        #cms-sidebar.is-collapsed { width: var(--cms-w-collapsed); }
+
+        /* ===== Header / logo area =====
+           Left edge of the brand icon sits at 20px (--cms-s5).
+           This 20px becomes the alignment grid for the whole sidebar. */
+        .cms-sidebar-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: var(--cms-s3);
+            height: 72px;
+            padding: 0 var(--cms-s5);
+            border-bottom: 1px solid var(--cms-border);
+            flex: 0 0 auto;
+        }
+
+        .cms-sidebar-brand {
+            display: flex;
+            align-items: center;
+            gap: var(--cms-s3);
+            text-decoration: none;
+            min-width: 0;
+        }
+
+        .cms-sidebar-brand img {
+            height: 28px;
+            width: 28px;
+            object-fit: contain;
+            display: block;
+            flex: 0 0 auto;
+            border-radius: 6px;
+        }
+
+        .cms-sidebar-brand-text {
+            color: var(--cms-blue-dark);
+            font-weight: 700;
+            font-size: 14px;
+            letter-spacing: 0.2px;
+            line-height: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        #cms-sidebar.is-collapsed .cms-sidebar-brand-text { display: none; }
+
+        .cms-sidebar-toggle-trigger {
+            flex: 0 0 auto;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border: 1px solid var(--cms-border);
+            border-radius: var(--cms-s2);
+            background: #fff;
+            color: var(--cms-muted);
+            cursor: pointer;
+            padding: 0;
+            transition: background-color var(--cms-t), border-color var(--cms-t), color var(--cms-t);
+        }
+
+            .cms-sidebar-toggle-trigger svg {
+                width: 16px;
+                height: 16px;
+                display: block;
+            }
+
+        .cms-sidebar-toggle-trigger:hover {
+            background: var(--cms-blue-light);
+            border-color: var(--cms-blue);
+            color: var(--cms-blue-dark);
+        }
+        #cms-sidebar.is-collapsed .cms-sidebar-top {
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: auto;
+            padding: var(--cms-s4) var(--cms-s2);
+            gap: var(--cms-s3);
+        }
+
+        #cms-sidebar.is-collapsed .cms-sidebar-brand {
+            justify-content: center;
+        }
+        /* ===== Nav body ===== */
+        .cms-sidebar-nav {
+            flex: 1 1 auto;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: var(--cms-s5) 0 var(--cms-s6);
+        }
+
+        .cms-sidebar-nav::-webkit-scrollbar { width: 4px; }
+        .cms-sidebar-nav::-webkit-scrollbar-thumb { background: var(--cms-border); border-radius: 4px; }
+
+        /* Every group carries the SAME bottom margin — this is what creates
+           even top-to-bottom rhythm instead of some sections feeling cramped
+           and others feeling empty. */
+        .cms-nav-group {
+            margin: 0 0 var(--cms-s6);
+            display: flex;
+            flex-direction: column;
+            gap: var(--cms-s1);
+        }
+
+        .cms-nav-group:last-child { margin-bottom: 0; }
+
+        /* Label aligns to the same 20px left edge as the header brand and
+           the nav-link icons (12px link margin + 12px link padding = 20px). */
+        .cms-nav-label {
+            display: block;
+            padding: 0 var(--cms-s5) var(--cms-s3);
+            font-size: 10.5px;
+            font-weight: 700;
+            letter-spacing: 0.7px;
+            text-transform: uppercase;
+            color: var(--cms-muted);
+            opacity: 0.85;
+            white-space: nowrap;
+            line-height: 1.4;
+        }
+
+        #cms-sidebar.is-collapsed .cms-nav-label {
+            padding: 0 0 var(--cms-s3);
+            text-align: center;
+        }
+
+        /* ===== Nav items =====
+           margin-left/right (12px) + padding-left/right (12px) = 20px,
+           matching the header/label left edge exactly. */
+        .cms-nav-link {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: var(--cms-s3);
+            height: 40px;
+            margin: 0 var(--cms-s3);
+            padding: 0 var(--cms-s3);
+            border-radius: var(--cms-s2);
+            color: var(--cms-text);
+            font-size: 13.5px;
+            font-weight: 500;
+            line-height: 1;
+            text-decoration: none;
+            white-space: nowrap;
+            box-sizing: border-box;
+            transition: background-color var(--cms-t), color var(--cms-t);
+        }
+
+        .cms-nav-link:hover {
+            background: var(--cms-blue-light);
+            color: var(--cms-blue-dark);
+        }
+
+        .cms-nav-link.is-active {
+            background: var(--cms-blue-light);
+            color: var(--cms-blue-dark);
+            font-weight: 700;
+        }
+
+        .cms-nav-link.is-active::before {
+            content: "";
+            position: absolute;
+            left: -3px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 3px;
+            height: 56%;
+            border-radius: 3px;
+            background: var(--cms-blue);
+        }
+
+        /* Fixed icon box on a single vertical grid line — every icon,
+           regardless of its glyph's natural size, centers the same way.
+           Icons are line-style SVGs using currentColor, so they pick up
+           the muted default and the blue hover/active state automatically. */
+        .cms-nav-icon {
+            flex: 0 0 20px;
+            width: 20px;
+            height: 20px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--cms-muted);
+            transition: color var(--cms-t);
+        }
+
+        .cms-nav-icon svg {
+            width: 18px;
+            height: 18px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 1.8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            display: block;
+        }
+
+        .cms-nav-link:hover .cms-nav-icon,
+        .cms-nav-link.is-active .cms-nav-icon {
+            color: var(--cms-blue-dark);
+        }
+
+        .cms-nav-text {
+            flex: 1 1 auto;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            transition: color var(--cms-t);
+        }
+
+        #cms-sidebar.is-collapsed .cms-nav-link {
+            margin: 0 var(--cms-s3);
+            padding: 0;
+            justify-content: center;
+        }
+
+        #cms-sidebar.is-collapsed .cms-nav-link {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 6px;
+
+            height: auto;
+            min-height: 70px;
+            padding: 8px 4px;
+        }
+
+        #cms-sidebar.is-collapsed .cms-nav-icon {
+            width: 20px;
+            height: 20px;
+            flex: none;
+        }
+
+        #cms-sidebar.is-collapsed .cms-nav-icon svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        #cms-sidebar.is-collapsed .cms-nav-text {
+            display: block;
+            width: 100%;
+            text-align: center;
+
+            white-space: normal;
+            word-break: break-word;
+            overflow-wrap: break-word;
+
+            font-size: 10px;
+            line-height: 1.2;
+
+            overflow: visible;
+            text-overflow: unset;
+        }
+
+        /* ===== Bottom / logout ===== */
+        .cms-sidebar-bottom {
+            flex: 0 0 auto;
+            border-top: 1px solid var(--cms-border);
+            padding: var(--cms-s4) var(--cms-s5);
+        }
+
+        .cms-sidebar-logout {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--cms-s3);
+            height: 38px;
+            border: 1px solid var(--cms-border);
+            border-radius: var(--cms-s2);
+            color: var(--cms-text);
+            font-size: 12px;
+            font-weight: 600;
+            text-decoration: none;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            transition: border-color var(--cms-t), color var(--cms-t), background-color var(--cms-t);
+        }
+
+        .cms-sidebar-logout svg {
+            width: 15px;
+            height: 15px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 1.8;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            display: block;
+            flex: 0 0 auto;
+        }
+
+        .cms-sidebar-logout:hover {
+            background: #fff5f5;
+            border-color: #e74c3c;
+            color: #e74c3c;
+        }
+
+        #cms-sidebar.is-collapsed .cms-sidebar-bottom { padding: var(--cms-s4) var(--cms-s3); }
+        #cms-sidebar.is-collapsed .cms-sidebar-logout span:last-child { display: none; }
+
+        /* ===== Content push (default: desktop AND tablet) =====
+           Anything to the right of the sidebar is pushed over by the
+           sidebar's current width — full width normally, collapsed
+           (icon-rail) width when .cms-sidebar-collapsed is on <body>.
+           This is what keeps the management form visible and usable
+           at the same time as the nav, instead of the nav covering it. */
+        #cms-sidebar ~ .hb-header-shell,
+        #cms-sidebar ~ main,
+        #cms-sidebar ~ footer {
+            margin-left: var(--cms-w);
+            transition: margin-left var(--cms-t);
+        }
+
+        body.cms-sidebar-collapsed #cms-sidebar ~ .hb-header-shell,
+        body.cms-sidebar-collapsed #cms-sidebar ~ main,
+        body.cms-sidebar-collapsed #cms-sidebar ~ footer {
+            margin-left: var(--cms-w-collapsed);
+        }
+
+        .cms-sidebar-backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.35);
+            z-index: 1090;
+        }
+
+        /* ===== Tablet (641px–960px): push mode, docked by default =====
+           Same push mechanics as desktop above — no overrides needed here
+           for the layout itself. The sidebar just starts collapsed
+           (icon-rail, handled in JS) to leave more room for the form, and
+           expanding it (tap the toggle) pushes the form sideways instead
+           of covering it, so both stay visible and usable together. */
+
+        /* ===== Phone (≤640px): true overlay =====
+           Only screens too narrow to reasonably show both the nav and the
+           form side-by-side fall back to an overlay + backdrop. */
+        @media (max-width: 640px) {
+            #cms-sidebar {
+                transform: translateX(-100%);
+                width: var(--cms-w);
+                box-shadow: 0 0 24px rgba(0,0,0,0.18);
+            }
+
+            #cms-sidebar.is-open { transform: translateX(0); }
+
+            #cms-sidebar ~ .hb-header-shell,
+            #cms-sidebar ~ main,
+            #cms-sidebar ~ footer,
+            body.cms-sidebar-collapsed #cms-sidebar ~ .hb-header-shell,
+            body.cms-sidebar-collapsed #cms-sidebar ~ main,
+            body.cms-sidebar-collapsed #cms-sidebar ~ footer {
+                margin-left: 0;
+            }
+
+            body.cms-sidebar-open .cms-sidebar-backdrop { display: block; }
+        }
+    </style>
+
+    <aside id="cms-sidebar" aria-label="CMS sidebar">
+        <div class="cms-sidebar-top">
+
+            <!-- ADMIN -->
+            <a sec:authorize="hasAuthority('ROLE_ADMIN')"
+               th:href="@{/nhan-su/admin/phong}"
+               class="cms-sidebar-brand"
+               aria-label="Trang chủ">
+
+                <img th:src="@{/logo.jpg}" src="/logo.jpg" alt="Hotel Logo">
+                <span class="cms-sidebar-brand-text">Hotel CMS</span>
+            </a>
+
+            <!-- STAFF -->
+            <a sec:authorize="hasAnyAuthority('ROLE_STAFF','ROLE_EMPLOYEE')"
+               th:href="@{/nhan-su/dat-phong}"
+               class="cms-sidebar-brand"
+               aria-label="Trang chủ">
+
+                <img th:src="@{/logo.jpg}" src="/logo.jpg" alt="Hotel Logo">
+                <span class="cms-sidebar-brand-text">Hotel CMS</span>
+            </a>
+
+            <button type="button"
+                    class="cms-sidebar-toggle-trigger"
+                    aria-label="Thu gọn / mở rộng menu">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                    <line x1="3" y1="12" x2="21" y2="12"></line>
+                    <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+            </button>
+
+        </div>
+
+        <nav class="cms-sidebar-nav">
+
+            <!-- ===================== ADMIN MENU ===================== -->
+            <div sec:authorize="hasAuthority('ROLE_ADMIN')">
+                <div class="cms-nav-group">
+                    <span class="cms-nav-label">Tổng quan</span>
+                    <a th:href="@{/nhan-su/admin/thong-ke}" class="cms-nav-link">
+                        <span class="cms-nav-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><line x1="6" y1="20" x2="6" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="18" y1="20" x2="18" y2="14"/></svg>
+                        </span>
+                        <span class="cms-nav-text">Thống kê chung</span>
+                    </a>
+
+                                        <a th:href="@{/nhan-su/admin/thong-ke/doanh-thu}" class="cms-nav-link">
+                                            <span class="cms-nav-icon" aria-hidden="true">📈</span>
+                                            <span class="cms-nav-text">Doanh thu</span>
+                                        </a>
+                </div>
+
+                <div class="cms-nav-group">
+                    <a th:href="@{/nhan-su/admin/phong}" class="cms-nav-link">
+                        <span class="cms-nav-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><path d="M3 11h18v6H3z"/><path d="M3 17v3M21 17v3"/><path d="M5 11V8a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3"/><path d="M12 11V9a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v2"/></svg>
+                        </span>
+                        <span class="cms-nav-text">Danh sách phòng</span>
+                    </a>
+                    <a th:href="@{/nhan-su/admin/loai-phong}" class="cms-nav-link">
+                        <span class="cms-nav-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><path d="M20 12.5 12.5 20 4 11.5V4h7.5z"/><circle cx="8.5" cy="8.5" r="1.2" fill="currentColor" stroke="none"/></svg>
+                        </span>
+                        <span class="cms-nav-text">Loại phòng</span>
+                    </a>
+                </div>
+
+                <div class="cms-nav-group">
+                    <a th:href="@{/nhan-su/admin/dat-phong}" class="cms-nav-link">
+                        <span class="cms-nav-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg>
+                        </span>
+                        <span class="cms-nav-text">Đơn đặt phòng</span>
+                    </a>
+                    <a th:href="@{/nhan-su/dat-phong-quay}" class="cms-nav-link">
+                        <span class="cms-nav-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><path d="M6 3h12l1 5H5z"/><path d="M5 8h14v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2z"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
+                        </span>
+                        <span class="cms-nav-text">Đặt phòng tại quầy</span>
+                    </a>
+                    <a th:href="@{/nhan-su/checkout}" class="cms-nav-link">
+                        <span class="cms-nav-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="15 17 20 12 15 7"/><line x1="20" y1="12" x2="9" y2="12"/></svg>
+                        </span>
+                        <span class="cms-nav-text">Trả phòng (Checkout)</span>
+                    </a>
+                </div>
+
+                <div class="cms-nav-group">
+                    <a th:href="@{/nhan-su/admin/hoa-don}" class="cms-nav-link">
+                        <span class="cms-nav-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="13" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><line x1="6" y1="15" x2="10" y2="15"/></svg>
+                        </span>
+                        <span class="cms-nav-text">Hóa đơn</span>
+                    </a>
+                    <a th:href="@{/nhan-su/admin/khuyen-mai}" class="cms-nav-link">
+                        <span class="cms-nav-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="13" rx="1"/><path d="M3 12h18"/><path d="M12 8v13"/><path d="M12 8c-1.5-3-4.5-3-5 0s2 3 5 0"/><path d="M12 8c1.5-3 4.5-3 5 0s-2 3-5 0"/></svg>
+                        </span>
+                        <span class="cms-nav-text">Khuyến mãi</span>
+                    </a>
+                    <a th:href="@{/nhan-su/admin/dich-vu}" class="cms-nav-link">
+                        <span class="cms-nav-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><path d="M4 16a8 8 0 0 1 16 0z"/><line x1="2" y1="16" x2="22" y2="16"/><line x1="12" y1="4" x2="12" y2="7"/><circle cx="12" cy="3" r="1" fill="currentColor" stroke="none"/></svg>
+                        </span>
+                        <span class="cms-nav-text">Dịch vụ</span>
+                    </a>
+                </div>
+
+                <div class="cms-nav-group">
+                    <a th:href="@{/nhan-su/admin/khach-hang}" class="cms-nav-link">
+                        <span class="cms-nav-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6"/><circle cx="17" cy="9" r="2.4"/><path d="M15.5 14c2.6.4 4.5 2.4 4.5 6"/></svg>
+                        </span>
+                        <span class="cms-nav-text">Khách hàng</span>
+                    </a>
+                    <a th:href="@{/nhan-su/admin/nhan-vien}" class="cms-nav-link">
+                        <span class="cms-nav-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><rect x="4" y="8" width="16" height="12" rx="1.5"/><path d="M9 8V6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/><line x1="4" y1="13" x2="20" y2="13"/></svg>
+                        </span>
+                        <span class="cms-nav-text">Nhân viên</span>
+                    </a>
+                    <!--                    <a th:href="@{/nhan-su/admin/nguoi-dung}" class="cms-nav-link">-->
+                    <!--                        <span class="cms-nav-icon" aria-hidden="true">👤</span>-->
+                    <!--                        <span class="cms-nav-text">Người dùng hệ thống</span>-->
+                    <!--                    </a>-->
+                    <a th:href="@{/nhan-su/admin/loai-phong}" class="cms-nav-link" title="Đánh giá được quản lý theo từng loại phòng">
+                        <span class="cms-nav-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><path d="M12 3.5l2.6 5.3 5.9.8-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.8z"/></svg>
+                        </span>
+                        <span class="cms-nav-text">Đánh giá (theo loại phòng)</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- ================== STAFF / EMPLOYEE MENU ================== -->
+            <div sec:authorize="hasAnyAuthority('ROLE_STAFF','ROLE_EMPLOYEE')">
+
+                <div class="cms-nav-group">
+                    <span class="cms-nav-label">Nghiệp vụ</span>
+                    <a th:href="@{/nhan-su/dat-phong}" class="cms-nav-link">
+                        <span class="cms-nav-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg>
+                        </span>
+                        <span class="cms-nav-text">Đơn đặt phòng</span>
+                    </a>
+                    <a th:href="@{/nhan-su/dat-phong-quay}" class="cms-nav-link">
+                        <span class="cms-nav-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><path d="M6 3h12l1 5H5z"/><path d="M5 8h14v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2z"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
+                        </span>
+                        <span class="cms-nav-text">Đặt phòng tại quầy</span>
+                    </a>
+                    <a th:href="@{/nhan-su/checkout}" class="cms-nav-link">
+                        <span class="cms-nav-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="15 17 20 12 15 7"/><line x1="20" y1="12" x2="9" y2="12"/></svg>
+                        </span>
+                        <span class="cms-nav-text">Trả phòng (Checkout)</span>
+                    </a>
+                    <a th:href="@{/nhan-su/dich-vu}" class="cms-nav-link">
+                        <span class="cms-nav-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><path d="M4 16a8 8 0 0 1 16 0z"/><line x1="2" y1="16" x2="22" y2="16"/><line x1="12" y1="4" x2="12" y2="7"/><circle cx="12" cy="3" r="1" fill="currentColor" stroke="none"/></svg>
+                        </span>
+                        <span class="cms-nav-text">Dịch vụ</span>
+                    </a>
+                </div>
+
+                <!--                <div class="cms-nav-group">-->
+                <!--                    <span class="cms-nav-label">Khác</span>-->
+                <!--                    <a th:href="@{/phong}" class="cms-nav-link">-->
+                <!--                        <span class="cms-nav-icon" aria-hidden="true">-->
+                <!--                            <svg viewBox="0 0 24 24"><path d="M3 11h18v6H3z"/><path d="M3 17v3M21 17v3"/><path d="M5 11V8a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v3"/><path d="M12 11V9a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v2"/></svg>-->
+                <!--                        </span>-->
+                <!--                        <span class="cms-nav-text">Xem phòng (khách)</span>-->
+                <!--                    </a>-->
+                <!--                    <a th:href="@{/nhan-su/dat-phon}" class="cms-nav-link">-->
+                <!--                        <span class="cms-nav-icon" aria-hidden="true">-->
+                <!--                            <svg viewBox="0 0 24 24"><circle cx="9" cy="20" r="1"/><circle cx="18" cy="20" r="1"/><path d="M2 3h2l2.4 12.4a2 2 0 0 0 2 1.6h8.2a2 2 0 0 0 2-1.6L21 7H6"/></svg>-->
+                <!--                        </span>-->
+                <!--                        <span class="cms-nav-text">Danh sách đặt phòng</span>-->
+                <!--                    </a>-->
+                <!--                </div>-->
+            </div>
+
+        </nav>
+
+        <div class="cms-sidebar-bottom">
+            <a th:href="@{/logout}" class="cms-sidebar-logout">
+                <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="15 17 20 12 15 7"/><line x1="20" y1="12" x2="9" y2="12"/></svg>
+                <span>Đăng xuất</span>
+            </a>
+        </div>
+    </aside>
+
+    <div class="cms-sidebar-backdrop" data-cms-backdrop></div>
+
+    <script>
+        (function () {
+            if (window.__cmsSidebarInit) { return; }
+            window.__cmsSidebarInit = true;
+
+            var sidebar = document.getElementById('cms-sidebar');
+
+            // ≤640px: not enough room to show sidebar + form together → overlay.
+            var isPhone = function () { return window.matchMedia('(max-width: 640px)').matches; };
+            // 641–960px: enough room to squeeze both in → push mode, docked by default.
+            var isTablet = function () { return window.matchMedia('(min-width: 641px) and (max-width: 960px)').matches; };
+
+            function setPushCollapsed(collapsed) {
+                sidebar.classList.toggle('is-collapsed', collapsed);
+                document.body.classList.toggle('cms-sidebar-collapsed', collapsed);
+            }
+
+            function setOverlayOpen(open) {
+                sidebar.classList.toggle('is-open', open);
+                document.body.classList.toggle('cms-sidebar-open', open);
+            }
+
+            function applyStoredState() {
+                if (isPhone()) { return; }
+                var stored = localStorage.getItem('cmsSidebarCollapsed');
+                // No saved preference yet: default the docked/icon-rail state
+                // on tablet (leave max room for the form), full-width on desktop.
+                var collapsed = stored !== null ? stored === '1' : isTablet();
+                setPushCollapsed(collapsed);
+            }
+
+            function toggleSidebar() {
+                if (isPhone()) {
+                    setOverlayOpen(!sidebar.classList.contains('is-open'));
+                } else {
+                    var collapsed = !sidebar.classList.contains('is-collapsed');
+                    setPushCollapsed(collapsed);
+                    localStorage.setItem('cmsSidebarCollapsed', collapsed ? '1' : '0');
+                }
+            }
+
+            document.addEventListener('click', function (e) {
+                if (e.target.closest('.cms-sidebar-toggle-trigger')) {
+                    toggleSidebar();
+                } else if (e.target.closest('[data-cms-backdrop]')) {
+                    setOverlayOpen(false);
+                }
+            });
+
+            // highlight the current page in the menu
+            var links = sidebar.querySelectorAll('.cms-nav-link');
+            var path = window.location.pathname;
+            var bestMatch = null;
+            links.forEach(function (link) {
+                var href = link.getAttribute('href');
+                if (!href) { return; }
+                if (path === href || (href !== '/' && path.indexOf(href) === 0)) {
+                    if (!bestMatch || href.length > bestMatch.getAttribute('href').length) {
+                        bestMatch = link;
+                    }
+                }
+            });
+            if (bestMatch) { bestMatch.classList.add('is-active'); }
+
+            applyStoredState();
+
+            // Keep the sidebar coherent when crossing phone/tablet/desktop
+            // breakpoints (e.g. rotating a tablet, resizing a window).
+            var wasPhone = isPhone();
+            window.addEventListener('resize', function () {
+                var nowPhone = isPhone();
+                if (nowPhone === wasPhone) { return; }
+                wasPhone = nowPhone;
+                if (nowPhone) {
+                    // Entering phone range: drop push/collapse state, overlay closed.
+                    setPushCollapsed(false);
+                    setOverlayOpen(false);
+                } else {
+                    // Leaving phone range: drop overlay state, restore push state.
+                    setOverlayOpen(false);
+                    applyStoredState();
+                }
+            });
+        })();
+    </script>
+</div>
+</body>
+</html>
