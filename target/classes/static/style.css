@@ -11,7 +11,42 @@
     --border-color: #e0e0e0;
     --white: #ffffff;
 }
+.lp-search-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 20px;
+    margin-bottom: 24px;
+}
 
+.lp-search-item {
+    flex: 1 1 200px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.lp-search-item label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #555;
+}
+
+.lp-search-item input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #d9d9d9;
+    border-radius: 6px;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+.lp-search-actions {
+    flex: 1 1 100%;
+    display: flex;
+    gap: 12px;
+    margin-top: 4px;
+}
 * {
     margin: 0;
     padding: 0;
