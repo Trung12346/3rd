@@ -206,7 +206,7 @@ public interface ThongKeRepo extends JpaRepository<HoaDon, Integer> {
             SUM(hd.tong_tien)             AS tong_chi_tieu
         FROM hoa_don hd
         JOIN dat_phong d  ON hd.ma_dat_phong = d.ma_dat_phong
-        JOIN nguoi_dung nd ON d.ma_khach = nd.ma_nguoi_dung
+        JOIN khach_hang nd ON d.ma_khach = nd.ma_khach_hang
         WHERE hd.ngay_xuat >= :start AND hd.ngay_xuat < DATEADD(day, 1, :end)
         GROUP BY nd.ho_ten, nd.email
         ORDER BY SUM(hd.tong_tien) DESC
