@@ -77,7 +77,7 @@ public class SecurityConfig {
                                         "/loai-phong", "/loai-phong/**", "/API/payment/vnpay-payment",
                                         "/phong/**", "/phong", "/gio-hang/**", "/thanh-toan/**",
                                         "/static/**", "/css/**", "/js/**", "/images/**",
-                                        "/*.css", "/*.js", "/*.jpg", "/*.png", "/Register").permitAll()
+                                        "/*.css", "/*.js", "/*.jpg", "/*.png", "/Register","/khuyen-mai").permitAll()
 //                                .requestMatchers("/admin/dat-phong-quay/**")
 //                                .hasAnyRole("STAFF","ADMIN").requestMatchers("/Nhan-vien/**").hasRole("STAFF")
 //                                .requestMatchers("/admin/**").hasRole("ADMIN")
