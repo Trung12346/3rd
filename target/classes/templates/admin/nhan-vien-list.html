@@ -131,17 +131,6 @@
                     <option value="false" th:selected="${trangThai != null and trangThai == false}">Khóa</option>
                 </select>
             </div>
-            <div class="admin-field">
-                <label>Vai trò</label>
-                <select name="maVaiTro">
-                    <option value="">-- Tất cả --</option>
-                    <option th:each="vt : ${vaiTros}"
-                            th:value="${vt.id}"
-                            th:text="${vt.tenVaiTro}"
-                            th:selected="${maVaiTro != null and maVaiTro == vt.id}">
-                    </option>
-                </select>
-            </div>
 
             <div class="admin-actions">
                 <button type="submit" class="admin-btn outline">Tìm Kiếm</button>
@@ -182,11 +171,14 @@
                         <div class="row-actions">
                             <a class="admin-btn small outline"
                                th:href="@{/nhan-su/admin/nhan-vien/edit/{id}(id=${nv.id})}">Sửa</a>
-                            <form th:action="@{/nhan-su/admin/nhan-vien/lock/{id}(id=${nv.id})}"
+                            <form th:action="@{/nhan-su/admin/nhan-vien/lock-or-unlock/{id}(id=${nv.id})}"
                                   method="post"
-                                  onsubmit="return confirm('Bạn có chắc muốn khóa nhân viên này?')">
+                                  th:attr="onsubmit=|return confirm('Bạn có chắc muốn ${nv.trang_thai == true ? 'khóa' : 'mở khóa'} nhân viên này?')|">
                                 <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
-                                <button type="submit" class="admin-btn small danger">khóa</button>
+                                <button type="submit"
+                                        th:class="${nv.trang_thai == true} ? 'admin-btn small danger' : 'admin-btn small outline'"
+                                        th:text="${nv.trang_thai == true} ? 'Khóa' : 'Mở khóa'">
+                                </button>
                             </form>
                         </div>
                     </td>

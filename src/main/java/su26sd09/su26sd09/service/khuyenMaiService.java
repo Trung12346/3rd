@@ -1,11 +1,13 @@
 package su26sd09.su26sd09.service;
 
+import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cglib.core.Local;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import su26sd09.su26sd09.entity.KhuyenMai;
 import su26sd09.su26sd09.repository.khuyenMaiRepo;
@@ -89,5 +91,16 @@ public class khuyenMaiService {
                 ngayKetThuc,
                 hoatDong,
                 pageable);
+    }
+
+
+    @Scheduled(cron = "0 5 0 * * *")
+    @Transactional
+    public void capNhatTrangThaiKhuyenMai() {
+        LocalDate today = LocalDate.now();
+
+        repo.kichHoatKhuyenMaiDenNgay(today);
+
+        repo.tatKhuyenMaiHetHan(today);
     }
 }

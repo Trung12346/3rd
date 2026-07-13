@@ -32,7 +32,7 @@
 
             <div class="admin-grid">
                 <div class="admin-field">
-                    <label>Ten loại phòng</label>
+                    <label>Tên loại phòng</label>
                     <input type="text" th:field="*{tenLoai}" placeholder="VD: Deluxe" required>
                 </div>
                 <div class="admin-field">
@@ -59,21 +59,39 @@
     <section class="admin-panel">
         <h2>Danh Sách Loại Phòng</h2>
 
-        <form th:action="@{/nhan-su/admin/loai-phong/tim-kiem}" method="get" class="search-row">
-            <input type="text" name="keyword" placeholder="Tìm theo tên.." th:value="${keyword}">
-            <button type="submit" class="admin-btn outline">Tìm Kiếm</button>
+        <form th:action="@{/nhan-su/admin/loai-phong/tim-kiem}" method="get" class="lp-search-row">
+            <div class="lp-search-item">
+                <label>Tên loại</label>
+                <input type="text" name="keyword" placeholder="Tìm theo tên.." th:value="${keyword}">
+            </div>
+            <div class="lp-search-item">
+                <label>Giá từ</label>
+                <input type="number" name="minGia" min="0" step="1000" th:value="${minGia}">
+            </div>
+            <div class="lp-search-item">
+                <label>Giá đến</label>
+                <input type="number" name="maxGia" min="0" step="1000" th:value="${maxGia}">
+            </div>
+            <div class="lp-search-item">
+                <label>Sức chứa tối thiểu</label>
+                <input type="number" name="soKhach" min="1" th:value="${soKhach}">
+            </div>
+            <div class="lp-search-actions">
+                <button type="submit" class="admin-btn outline">Tìm Kiếm</button>
+                <a th:href="@{/nhan-su/admin/loai-phong}" class="admin-btn outline">Xóa Bộ Lọc</a>
+            </div>
         </form>
 
         <div class="admin-table-wrap">
             <table class="admin-table">
                 <thead>
                 <tr>
-                    <th>Ma</th>
-                    <th>Ten loai</th>
+                    <th>Mã</th>
+                    <th>Tên loại</th>
                     <th>Sức chứa</th>
                     <th>Giá cơ bản</th>
                     <th>Mô tả</th>
-                    <th>Thao tac</th>
+                    <th>Thao tác</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -87,12 +105,11 @@
                         <div class="row-actions">
                             <a class="admin-btn small outline"
                                th:href="@{/nhan-su/admin/loai-phong/edit/{id}(id=${lp.id})}">Sửa</a>
-                            <form th:action="@{/nhan-su/admin/loai-phong/delete/{id}(id=${lp.id})}"
-                                  method="post"
-                                  onsubmit="return confirm('Bạn có chắc muốn xóa loại phòng này?')">
-                                <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
-                                <button type="submit" class="admin-btn small danger">Xóa</button>
-                            </form>
+                            <a class="admin-btn small outline"
+                               th:href="@{/nhan-su/admin/loai-phong/{id}/danh-gia(id=${lp.id})}" th:text="'đánh giá loại phòng :' + ${lp.id}"></a>
+                            <a class="admin-btn small danger"
+                               th:href="@{/nhan-su/admin/loai-phong/delete/{id}(id=${lp.id})}"
+                               onclick="return confirm('Bạn có chắc muốn xóa loại phòng này?')">Xóa</a>
                         </div>
                     </td>
                 </tr>
@@ -103,6 +120,23 @@
                 </tr>
                 </tbody>
             </table>
+        </div>
+
+        <div class="pagination" th:if="${page != null and page.totalPages > 1}">
+            <a th:if="${page.hasPrevious()}"
+               th:href="@{/nhan-su/admin/loai-phong/tim-kiem(keyword=${keyword}, minGia=${minGia}, maxGia=${maxGia}, soKhach=${soKhach}, page=${page.number - 1}, size=${page.size})}"
+               class="admin-btn small outline">&laquo; Trước</a>
+
+            <span th:each="i : ${#numbers.sequence(0, page.totalPages - 1)}">
+                <a th:href="@{/nhan-su/admin/loai-phong/tim-kiem(keyword=${keyword}, minGia=${minGia}, maxGia=${maxGia}, soKhach=${soKhach}, page=${i}, size=${page.size})}"
+                   th:text="${i + 1}"
+                   th:classappend="${i == page.number} ? ' active' : ''"
+                   class="admin-btn small outline"></a>
+            </span>
+
+            <a th:if="${page.hasNext()}"
+               th:href="@{/nhan-su/admin/loai-phong/tim-kiem(keyword=${keyword}, minGia=${minGia}, maxGia=${maxGia}, soKhach=${soKhach}, page=${page.number + 1}, size=${page.size})}"
+               class="admin-btn small outline">Sau &raquo;</a>
         </div>
     </section>
 </main>

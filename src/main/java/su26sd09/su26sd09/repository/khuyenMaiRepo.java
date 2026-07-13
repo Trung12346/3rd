@@ -3,6 +3,7 @@ package su26sd09.su26sd09.repository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.repository.query.Param;
 import org.springframework.security.core.parameters.P;
 import su26sd09.su26sd09.entity.KhuyenMai;
@@ -20,6 +21,8 @@ import java.time.LocalDate;
 import java.util.List;
 
 public interface khuyenMaiRepo extends JpaRepository<KhuyenMai,Integer> {
+
+
 
 
     @Query("select m from KhuyenMai m where m.promoCode like :name")
@@ -47,4 +50,20 @@ AND (:hoatDong IS NULL OR km.hoat_dong = :hoatDong)
             @Param("hoatDong") Boolean hoatDong,
             Pageable pageable
     );
+
+
+
+    @Modifying
+    @Query("UPDATE KhuyenMai k SET k.hoatDong = false " +
+            "WHERE k.hoatDong = true AND k.ngayKetThuc < :today")
+    void tatKhuyenMaiHetHan(@Param("today") LocalDate today);
+
+    @Modifying
+    @Query("UPDATE KhuyenMai k SET k.hoatDong = true " +
+            "WHERE k.hoatDong = false AND k.ngayBatDau <= :today AND k.ngayKetThuc >= :today")
+    void kichHoatKhuyenMaiDenNgay(@Param("today") LocalDate today);
+
+
+
+
 }
