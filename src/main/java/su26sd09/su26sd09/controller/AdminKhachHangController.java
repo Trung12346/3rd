@@ -16,6 +16,7 @@ import su26sd09.su26sd09.repository.VaiTroRepo;
 import su26sd09.su26sd09.service.UserService;
 
 import java.security.Principal;
+import java.time.LocalDateTime;
 
 @Controller
 @RequestMapping("/nhan-su/admin/khach-hang")
@@ -77,12 +78,23 @@ public class AdminKhachHangController {
                 nguoiDung.setMatKhau_hash(ndRepo.findById(nguoiDung.getMa_khach_hang()).get().getMatKhau_hash());
             }
             errByp = true;
+            nguoiDung.setNgayCapNhat(LocalDateTime.now());
             for(FieldError fe: r.getFieldErrors())
             {
                 if(!fe.getField().equals("matKhau_hash"))
                 {
                     errByp = false;
                 }
+            }
+        } else
+        {
+            nguoiDung.setVaiTro(vtRepo.findById(3).get());
+            errByp = false;
+            if(matKhauMoi != null && !matKhauMoi.isBlank())
+            {
+
+                nguoiDung.setMatKhau_hash(e.encode(matKhauMoi));
+                errByp = true;
             }
         }
         if(r.hasErrors())

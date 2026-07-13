@@ -71,9 +71,9 @@
                     <input type="tel" th:field="*{soDienThoai}" placeholder="" pattern="[0-9]{10}">
                 </div>
 
-                <div class="admin-field">
+                <div class="admin-field" style="display: none">
                     <label>Vai tro</label>
-                    <select th:field="*{vaiTro}" >
+                    <select th:field="*{vaiTro}" hidden>
                         <option value="">-- Chon vai tro --</option>
                         <option th:each="vt : ${vaiTros}"
                                 th:value="${vt.id}"
@@ -117,13 +117,13 @@
                 <thead>
                 <tr>
                     <th>Mã</th>
-                    <th>Nhân viên</th>
+                    <th>Họ và tên</th>
                     <th>Email</th>
                     <th>Số điện thoại</th>
-                    <th>địa chỉ</th>
-                    <th>vai trò</th>
-                    <th>trạng thái</th>
-                    <th>Bộ phận</th>
+                    <th>Địa chỉ</th>
+                    <th>Trạng thái</th>
+                    <th>Tạo từ</th>
+                    <th>Cập nhật lúc</th>
                     <th>Thao tác</th>
                 </tr>
                 </thead>
@@ -134,8 +134,9 @@
                     <td th:text="${kh != null ? kh.email : ''}"></td>
                     <td th:text="${kh != null ? kh.soDienThoai : ''}"></td>
                     <td th:text="${kh != null ? kh.diaChi : ''}"></td>
-                    <td th:text="${kh != null ? kh.vaiTro.tenVaiTro : ''}"></td>
                     <td th:text="${kh.trangThai == true ? 'mở khóa' : 'khóa'}"></td>
+                    <td th:text="${#temporals.format(kh.ngayTao, 'yyyy-MM-dd HH:mm:ss')}"></td>
+                    <td th:text="${#temporals.format(kh.ngayCapNhat, 'yyyy-MM-dd HH:mm:ss')}"></td>
                     <td>
                         <div class="row-actions">
                             <a class="admin-btn small outline"
@@ -148,9 +149,6 @@
                             </form>
                         </div>
                     </td>
-                </tr>
-                <tr th:if="${khachHangs.isEmpty()}">
-                    <td colspan="9"><div class="empty-state">Không tìm thấy nhân viên phù hợp.</div></td>
                 </tr>
                 </tbody>
             </table>

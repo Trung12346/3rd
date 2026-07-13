@@ -33,7 +33,7 @@
                 <button type="submit" class="btn-submit">Đăng Nhập</button>
             </form>
 
-            <div class="auth-footer">
+            <div class="auth-footer" th:if="${url != '/nhan-su/login'}">
                 <p>Chưa có tài khoản? <a th:href="@{/Register}">Tạo tài khoản mới</a></p>
             </div>
         </div>

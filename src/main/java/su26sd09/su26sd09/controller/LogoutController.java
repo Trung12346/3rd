@@ -5,13 +5,17 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-@RequestMapping("/logout")
 @Controller
 public class LogoutController {
 
-    @GetMapping("")
+    @GetMapping("/logout")
     public String logout(HttpSession session){
         session.invalidate();
         return "redirect:/login";
+    }
+    @GetMapping("/nhan-su/logout")
+    public String nslogout(HttpSession session){
+        session.invalidate();
+        return "redirect:/nhan-su/login";
     }
 }
