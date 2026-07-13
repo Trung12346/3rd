@@ -121,7 +121,7 @@ public class AdminkhuyenMaiController {
             redirect.addFlashAttribute("error","voucher giảm theo giá cụ thể không được bằng giá tối thiểu có thể giảm");
             return"redirect:/nhan-su/admin/khuyen-mai";
         }
-        if (m.hoatDong != false && (!m.ngayBatDau.equals(LocalDate.now()) || !m.ngayKetThuc.equals(LocalDate.now()))){
+        if (m.hoatDong != false && ( m.ngayBatDau.isBefore(LocalDate.now()) || m.ngayKetThuc.equals(LocalDate.now()) || LocalDate.now().isAfter(m.ngayKetThuc))){
             redirect.addFlashAttribute("error","trạng thái không hợp lệ với mốc ngày đã chỉ định");
             return "redirect:/nhan-su/admin/khuyen-mai";
         }

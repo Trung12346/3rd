@@ -80,12 +80,19 @@ public class AdminNhanVienController {
     }
 
 
-    @PostMapping("/lock/{id}")
+    @PostMapping("/lock-or-unlock/{id}")
     public String deleteNhanVien(Principal P, @PathVariable("id") int id,RedirectAttributes redirect){
 
 
-        repo.lock(repo.findbyid(id));
-        redirect.addFlashAttribute("success","khóa nhân viên thành công");
+        NhanSu nv =  repo.findbyid(id);
+        if (nv.isTrang_thai() == false){
+            nv.setTrang_thai(true);
+            redirect.addFlashAttribute("success","mở khóa nhân viên thành công");
+        }else  {
+            redirect.addFlashAttribute("success","khóa nhân viên thành công");
+            nv.setTrang_thai(false);
+        }
+        repo.save(nv);
 
 
         return "redirect:/nhan-su/admin/nhan-vien";
@@ -113,10 +120,9 @@ public class AdminNhanVienController {
             nv.setMat_khau_hash(passwordEncoder.encode(matKhauMoi));
         }
 
-        // Chỉ xét các lỗi validate KHÁC vaitro/matKhau_hash (2 field này đã tự xử lý ở trên)
         for (FieldError fe : bindingResult.getFieldErrors()) {
             if (fe.getField().equals("vaitro") || fe.getField().equals("matKhau_hash")) {
-                continue; // đã xử lý riêng ở trên, bỏ qua
+                continue;
             }
             redirect.addFlashAttribute("error", fe.getDefaultMessage());
             return "redirect:/nhan-su/admin/nhan-vien";
@@ -127,7 +133,6 @@ public class AdminNhanVienController {
             return result;
         }
 
-        redirect.addFlashAttribute("success", "cập nhật dữ liệu thành công");
         return "redirect:/nhan-su/admin/nhan-vien";
     }
 
@@ -157,8 +162,11 @@ public class AdminNhanVienController {
                 return "redirect:/nhan-su/admin/nhan-vien";
             }
         }
-
-        redirect.addFlashAttribute("success", "cập nhật dữ liệu thành công");
+        if (nv.id == null){
+            redirect.addFlashAttribute("success", "thêm nhân viên thành công");
+        }else{
+            redirect.addFlashAttribute("success", "cập nhật nhân viên thành công");
+        }
         repo.save(nv);
         return "redirect:/nhan-su/admin/nhan-vien";
     }

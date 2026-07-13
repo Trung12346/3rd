@@ -1,10 +1,13 @@
 package su26sd09.su26sd09.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import su26sd09.su26sd09.entity.LoaiPhong;
 import su26sd09.su26sd09.repository.LoaiPhongRepository;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Service
@@ -45,5 +48,12 @@ public class LoaiPhongService {
 
     public List timKiem(String keyword){
         return repo.findbyName(keyword);
+    }
+
+
+    public Page<LoaiPhong> searchPaged(String keyword, BigDecimal minGia, BigDecimal maxGia,
+                                       Integer soKhach, Pageable pageable) {
+        String kw = (keyword == null || keyword.isBlank()) ? null : keyword.trim();
+        return repo.searchLoaiPhongPaged(kw, minGia, maxGia, soKhach, pageable);
     }
 }
