@@ -105,6 +105,8 @@
                         <div class="row-actions">
                             <a class="admin-btn small outline"
                                th:href="@{/nhan-su/admin/loai-phong/edit/{id}(id=${lp.id})}">Sửa</a>
+                            <a class="admin-btn small outline"
+                               th:href="@{/nhan-su/admin/loai-phong/{id}/danh-gia(id=${lp.id})}" th:text="'đánh giá loại phòng :' + ${lp.id}"></a>
                             <a class="admin-btn small danger"
                                th:href="@{/nhan-su/admin/loai-phong/delete/{id}(id=${lp.id})}"
                                onclick="return confirm('Bạn có chắc muốn xóa loại phòng này?')">Xóa</a>
