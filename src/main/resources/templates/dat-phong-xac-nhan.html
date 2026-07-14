@@ -69,6 +69,18 @@
         .addon-price { color: var(--sky-primary); font-weight: 600; font-size: 13px; }
         .addon-unit { color: #9ca3af; font-size: 12px; }
 
+        /* Khung giờ phục vụ của dịch vụ */
+        .addon-gio-hoatdong {
+            font-size: 11px;
+            color: #2563eb;
+            background: #eff6ff;
+            border-radius: 3px;
+            padding: 2px 6px;
+            display: inline-block;
+            margin-top: 6px;
+            font-weight: 600;
+        }
+
         /* Input số lượng */
         .addon-soluong { margin-top: 10px; display: none; }
         .addon-soluong label { font-size: 12px; color: #6b7280; font-weight: 700; display: block; margin-bottom: 4px; }
@@ -280,13 +292,23 @@
                             <input type="checkbox"
                                    name="dichVuIds"
                                    th:value="${dv.id}"
-                                   th:attr="data-gia=${dv.gia},data-id=${dv.id},data-ten=${dv.ten_dich_vu},data-donvi=${dv.donVi}"
+                                   th:attr="data-gia=${dv.gia},
+                                             data-id=${dv.id},
+                                             data-ten=${dv.ten_dich_vu},
+                                             data-donvi=${dv.donVi},
+                                             data-gio-bat-dau=${dv.gioBatDau},
+                                             data-gio-ket-thuc=${dv.gioKetThuc}"
                                    th:checked="${dichVuDaChonIds != null and dichVuDaChonIds.contains(dv.id)}">
                             <div style="width:100%">
                                 <div class="addon-name" th:text="${dv.ten_dich_vu}">Bữa sáng</div>
                                 <div class="addon-price">
                                     <span th:text="${#numbers.formatDecimal(dv.gia, 0, 'COMMA', 0, 'POINT')}">150.000</span>
                                     <span class="addon-unit" th:text="${'VNĐ / ' + dv.donVi}">VNĐ / người</span>
+                                </div>
+                                <!-- Hiển thị khung giờ phục vụ nếu dịch vụ có giới hạn giờ -->
+                                <div class="addon-gio-hoatdong" th:if="${dv.gioBatDau != null}"
+                                     th:text="${'Phục vụ ' + #temporals.format(dv.gioBatDau, 'HH:mm') + ' - ' + #temporals.format(dv.gioKetThuc, 'HH:mm') + ' mỗi ngày'}">
+                                    Phục vụ 06:00 - 10:00 mỗi ngày
                                 </div>
                                 <div class="addon-soluong">
                                     <label>Số lượng (<span th:text="${dv.donVi}">đơn vị</span>)</label>
@@ -463,6 +485,7 @@
         }
 
         kiemTraNgaySuDung(ngayInput, false);
+        kiemTraKhungGioDichVu(ngayInput, false);
     }
 
     // hienToast = true khi nên bắn toast (do người dùng vừa thao tác),
@@ -515,10 +538,63 @@
         return true;
     }
 
+    // ===== Kiểm tra khung giờ hoạt động riêng của từng dịch vụ =====
+    // (VD: Bữa sáng chỉ 06:00-10:00, Đưa đón sân bay chỉ 08:30-20:00...)
+    // Dịch vụ không có gio_bat_dau/gio_ket_thuc (NULL) => phục vụ cả ngày, bỏ qua check.
+    function kiemTraKhungGioDichVu(ngayInput, hienToast) {
+        const checkbox = ngayInput.closest('.addon-card').querySelector('input[type="checkbox"]');
+        const errEl = ngayInput.closest('.addon-soluong').querySelector('.ngay-su-dung-error');
+
+        if (!checkbox.checked || !ngayInput.value) {
+            return true;
+        }
+
+        const gioBatDauRaw = checkbox.dataset.gioBatDau;
+        const gioKetThucRaw = checkbox.dataset.gioKetThuc;
+
+        // Không có khung giờ giới hạn -> dịch vụ phục vụ cả ngày
+        if (!gioBatDauRaw || gioBatDauRaw === 'null' || !gioKetThucRaw || gioKetThucRaw === 'null') {
+            ngayInput.dataset.daBaoLoiGio = '';
+            return true;
+        }
+
+        const gioBatDau = gioBatDauRaw.substring(0, 5);   // "HH:mm"
+        const gioKetThuc = gioKetThucRaw.substring(0, 5); // "HH:mm"
+        const gioNhap = (ngayInput.value.split('T')[1] || '').substring(0, 5);
+        const tenDichVu = checkbox.dataset.ten || 'Dịch vụ';
+
+        const hopLe = gioNhap >= gioBatDau && gioNhap <= gioKetThuc;
+
+        if (!hopLe) {
+            ngayInput.classList.add('has-error');
+            if (errEl) {
+                errEl.textContent = tenDichVu + ' chỉ phục vụ từ ' + gioBatDau + ' đến ' + gioKetThuc + ' mỗi ngày.';
+                errEl.classList.add('show');
+            }
+            if (hienToast && ngayInput.dataset.daBaoLoiGio !== '1') {
+                showToast(
+                    tenDichVu + ' chỉ phục vụ từ ' + gioBatDau + ' đến ' + gioKetThuc + ' mỗi ngày. Vui lòng chọn lại giờ sử dụng.',
+                    { type: 'warning', title: 'Ngoài khung giờ phục vụ' }
+                );
+                ngayInput.dataset.daBaoLoiGio = '1';
+            }
+            return false;
+        }
+
+        ngayInput.dataset.daBaoLoiGio = '';
+        // Nếu ngày-tháng hợp lệ (kiemTraNgaySuDung đã pass) thì gỡ trạng thái lỗi hiển thị
+        if (!ngayInput.classList.contains('has-error')) {
+            if (errEl) errEl.classList.remove('show');
+        }
+        return true;
+    }
+
     function kiemTraTatCaNgaySuDung(hienToast) {
         let tatCaHopLe = true;
         document.querySelectorAll('.ngay-su-dung-input').forEach(function (ngayInput) {
-            if (!kiemTraNgaySuDung(ngayInput, hienToast)) tatCaHopLe = false;
+            const okKhoangNgay = kiemTraNgaySuDung(ngayInput, hienToast);
+            const okKhungGio = kiemTraKhungGioDichVu(ngayInput, hienToast);
+            if (!okKhoangNgay || !okKhungGio) tatCaHopLe = false;
         });
         return tatCaHopLe;
     }
@@ -669,17 +745,19 @@
     document.querySelectorAll('.ngay-su-dung-input').forEach(function (ngayInput) {
         ngayInput.addEventListener('change', function () {
             kiemTraNgaySuDung(ngayInput, true);
+            kiemTraKhungGioDichVu(ngayInput, true);
             capNhatTrangThaiNutTiepTuc();
         });
         ngayInput.addEventListener('input', function () {
             kiemTraNgaySuDung(ngayInput, true);
+            kiemTraKhungGioDichVu(ngayInput, true);
             capNhatTrangThaiNutTiepTuc();
         });
     });
 
     document.getElementById('promoInput').addEventListener('input', tinhLaiTongTien);
 
-    // Chặn submit nếu còn dịch vụ có ngày sử dụng không hợp lệ
+    // Chặn submit nếu còn dịch vụ có ngày sử dụng / khung giờ không hợp lệ
     document.getElementById('xacNhanDichVuForm').addEventListener('submit', function (e) {
         if (!kiemTraTatCaNgaySuDung(true)) {
             e.preventDefault();

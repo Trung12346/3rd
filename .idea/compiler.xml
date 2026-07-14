@@ -17,7 +17,6 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="SU26-SD-09" />
-        <module name="3rd" />
         <module name="SU26-SD-09-master" />
       </profile>
     </annotationProcessing>

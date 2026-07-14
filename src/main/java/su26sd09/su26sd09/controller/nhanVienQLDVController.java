@@ -26,7 +26,7 @@ public class nhanVienQLDVController {
             Model model
     ) {
         Dich_vu dv = new Dich_vu();
-        dv.setHoat_dong(true);
+        dv.setHoatDong(true);
 
         loadFormAndList(model, dv, keyword, trangThai, loaiDichVu, "Thêm dịch vụ");
         return "nhan-vien/dich-vu-list";

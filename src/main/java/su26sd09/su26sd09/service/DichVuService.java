@@ -97,7 +97,7 @@ public class DichVuService {
         dv.setGia(gia);
         dv.setDonVi("vụ");
         dv.setLoaiDv("PHAT_SINH");
-        dv.setHoat_dong(true);
+        dv.setHoatDong(true);
         return dichVuRepo.save(dv);
     }
 
