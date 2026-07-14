@@ -14,6 +14,7 @@ import org.thymeleaf.context.Context;
 import org.xhtmlrenderer.pdf.ITextRenderer;
 import su26sd09.su26sd09.entity.*;
 import su26sd09.su26sd09.repository.HoaDonRepo;
+import su26sd09.su26sd09.repository.ThanhToanRepo;
 import su26sd09.su26sd09.service.*;
 
 import java.math.BigDecimal;
@@ -52,6 +53,10 @@ public class adminHoaDonController {
 
     @Autowired
     private NhanVienService nhanVienService;
+
+    @Autowired
+    ThanhToanRepo thanhToanRepo;
+
 
     @GetMapping("")
     public String getHoaDon(
@@ -327,20 +332,73 @@ public class adminHoaDonController {
         HoaDon hoaDon = hoaDonService.findById(id);
 
         // Tinh tong phu phi ngoai gio tu cac phong trong don
+//        BigDecimal tongPhuThu = BigDecimal.ZERO;
+//        if (hoaDon != null && hoaDon.getD() != null) {
+//            List<ChiTietDatPhong> phongList =
+//                    chiTietDatPhongService.findByDatPhongId(hoaDon.getD().getId());
+//            for (ChiTietDatPhong ct : phongList) {
+//                if (ct != null && ct.getPhuPhi() != null && ct.getPhuPhi().signum() > 0) {
+//                    tongPhuThu = tongPhuThu.add(ct.getPhuPhi());
+//                }
+//            }
+//        }
+//
+//        Context context = new Context();
+//        context.setVariable("hoaDon", hoaDon);
+//        context.setVariable("tongPhuThu", tongPhuThu);
+
+        DatPhong datPhong = hoaDon.getD();
+        List<ChiTietDatPhong> phongList = datPhong != null && datPhong.getChiTietDatPhongs() != null
+                ? datPhong.getChiTietDatPhongs()
+                : List.of();
+        List<Chi_tiet_dich_vu> dichVuList = datPhong != null && datPhong.getCtdv() != null
+                ? datPhong.getCtdv()
+                : List.of();
+        List<ThanhToan> thanhToans = thanhToanRepo.findByH_IdOrderByNgaythanhToanAsc(id);
+
+        // Tinh tong phu phi ngoai gio (100k/loi) tu cac phong trong don
         BigDecimal tongPhuThu = BigDecimal.ZERO;
-        if (hoaDon != null && hoaDon.getD() != null) {
-            List<ChiTietDatPhong> phongList =
-                    chiTietDatPhongService.findByDatPhongId(hoaDon.getD().getId());
-            for (ChiTietDatPhong ct : phongList) {
-                if (ct != null && ct.getPhuPhi() != null && ct.getPhuPhi().signum() > 0) {
-                    tongPhuThu = tongPhuThu.add(ct.getPhuPhi());
-                }
+        for (ChiTietDatPhong ct : phongList) {
+            if (ct != null && ct.getPhuPhi() != null && ct.getPhuPhi().signum() > 0) {
+                tongPhuThu = tongPhuThu.add(ct.getPhuPhi());
             }
         }
 
+        BigDecimal tongTien = hoaDon.getTongTien() != null ? hoaDon.getTongTien() : BigDecimal.ZERO;
+        BigDecimal daThanhToan = hoaDon.getDaThanhToan() != null ? hoaDon.getDaThanhToan() : BigDecimal.ZERO;
+        BigDecimal conLai = tongTien.subtract(daThanhToan);
+
+        String trangThaiThanhToanLabel;
+        String trangThaiThanhToanClass;
+        if (daThanhToan.compareTo(BigDecimal.ZERO) <= 0) {
+            trangThaiThanhToanLabel = "Chưa thanh toán";
+            trangThaiThanhToanClass = "warning";
+        } else if (conLai.compareTo(BigDecimal.ZERO) > 0) {
+            trangThaiThanhToanLabel = "Còn nợ";
+            trangThaiThanhToanClass = "partial";
+        } else {
+            trangThaiThanhToanLabel = "Đã thanh toán đủ";
+            trangThaiThanhToanClass = "active";
+        }
+
+
+//        model.addAttribute("hoaDon", hoaDon);
+//        model.addAttribute("phongList", phongList);
+//        model.addAttribute("dichVuList", dichVuList);
+//        model.addAttribute("thanhToans", thanhToans);
+//        model.addAttribute("conLai", conLai);
+//        model.addAttribute("tongPhuThu", tongPhuThu);
+//        model.addAttribute("trangThaiThanhToanLabel", trangThaiThanhToanLabel);
+//        model.addAttribute("trangThaiThanhToanClass", trangThaiThanhToanClass);
+//        model.addAttribute("title", "Chi Tiết Hóa Đơn #" + id);
         Context context = new Context();
         context.setVariable("hoaDon", hoaDon);
+        context.setVariable("phongList", phongList);
+        context.setVariable("dichVuList", dichVuList);
+        context.setVariable("conLai", conLai);
         context.setVariable("tongPhuThu", tongPhuThu);
+        context.setVariable("trangThaiThanhToanLabel", trangThaiThanhToanLabel);
+        context.setVariable("trangThaiThanhToanClass", trangThaiThanhToanClass);
 
         String html = templateEngine.process("admin/hoa-don-pdf", context);
 
