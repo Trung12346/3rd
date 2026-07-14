@@ -119,9 +119,11 @@ public class AdminNhanVienController {
         if (matKhauMoi != null && !matKhauMoi.isBlank()) {
             nv.setMat_khau_hash(passwordEncoder.encode(matKhauMoi));
         }
-
+        System.out.println("đây là mật khẩu hash: " + nv.getMat_khau_hash());
+        System.out.println("đây là mật khẩu mới: " + matKhauMoi);
+        System.out.println("đây là vai trò: " + nv.getVaitro().getTenVaiTro());
         for (FieldError fe : bindingResult.getFieldErrors()) {
-            if (fe.getField().equals("vaitro") || fe.getField().equals("matKhau_hash")) {
+            if ( (fe.getField().equals("vaitro") || fe.getField().equals("mat_khau_hash") && matKhauMoi != null && !matKhauMoi.isBlank())) {
                 continue;
             }
             redirect.addFlashAttribute("error", fe.getDefaultMessage());
@@ -152,6 +154,11 @@ public class AdminNhanVienController {
                 redirect.addFlashAttribute("error","số điện thoại này đã tồn tại ở nhân viên khác");
                 return "redirect:/nhan-su/admin/nhan-vien";
             }
+            NhanSu ns = repo.FindByemail(nv.getEmail());
+            if (ns != null ){
+                redirect.addFlashAttribute("error","email này đã tồn tại");
+                return "redirect:/nhan-su/admin/nhan-vien";
+            }
         }else{
             if (repo.checkTrungCccd(nv.maCCCD,nv.id)){
                 redirect.addFlashAttribute("error","mã căn cước công dân này đã tồn tại ở nhân viên khác");
@@ -159,6 +166,11 @@ public class AdminNhanVienController {
             }
             if (repo.checkSodienThoai(nv.getSdt(),nv.id)){
                 redirect.addFlashAttribute("error","số điện thoại này đã tồn tại ở nhân viên khác");
+                return "redirect:/nhan-su/admin/nhan-vien";
+            }
+            NhanSu ns = repo.FindByemail(nv.getEmail());
+            if (ns != null &&  ns.id != nv.id){
+                redirect.addFlashAttribute("error","email này đã tồn tại");
                 return "redirect:/nhan-su/admin/nhan-vien";
             }
         }
