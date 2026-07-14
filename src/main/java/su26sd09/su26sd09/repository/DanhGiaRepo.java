@@ -30,29 +30,34 @@ public interface DanhGiaRepo extends JpaRepository<DanhGia,Integer> {
 
     @Query(value = """
              SELECT COALESCE(AVG(CAST(dg.diem_danh_gia AS float)), 0)
-             FROM danh_gia dg
-             WHERE dg.da_duyet = 1
-               AND (
-                   dg.ma_dat_phong IN (
+                 FROM danh_gia dg
+                 WHERE dg.da_duyet = 1
+                   AND dg.ma_dat_phong IN (
                        SELECT ctdp.ma_dat_phong
                        FROM chi_tiet_dat_phong ctdp
                        WHERE ctdp.ma_phong = :maPhong
                    )
-                   OR (
-                       dg.ma_dat_phong IS NULL
-                       AND dg.noi_dung LIKE CONCAT('[[]ROOM:', :maPhong, ']%')
-                   )
-               )
              """, nativeQuery = true)
     Double findAverageRatingByRoom(@Param("maPhong") int maPhong);
 
-    @Query(value = "SELECT lp.ma_loai_phong, ten_loai, suc_chua_toi_da, gia_co_ban, mo_ta FROM (SELECT p.ma_loai_phong FROM (SELECT ma_phong FROM chi_tiet_dat_phong WHERE ma_dat_phong = :id) AS mp JOIN phong p ON p.ma_phong = mp.ma_phong) AS mlp JOIN loai_phong lp ON lp.ma_loai_phong = mlp.ma_loai_phong", nativeQuery = true)
+    @Query(value = """
+    SELECT DISTINCT lp.ma_loai_phong, lp.ten_loai, lp.suc_chua_toi_da, lp.gia_co_ban, lp.mo_ta
+    FROM (SELECT ma_phong FROM chi_tiet_dat_phong WHERE ma_dat_phong = :id) mp
+    JOIN phong p ON p.ma_phong = mp.ma_phong
+    JOIN loai_phong lp ON lp.ma_loai_phong = p.ma_loai_phong
+    """, nativeQuery = true)
     public LoaiPhong findLoaiPhong(Integer id);
 
     @Query(value = """
-             SELECT dg.ma_dat_phong, ma_danh_gia, ma_nguoi_dung, diem_danh_gia, noi_dung, phan_hoi, da_duyet, ngay_tao FROM
-             (SELECT ctdp.ma_dat_phong FROM (SELECT ma_phong FROM phong WHERE ma_loai_phong = :id AND (:noi_dung IS NULL OR LOWER(noi_dung) LIKE CONCAT('%', LOWER(:noiDung), '%'))) p JOIN chi_tiet_dat_phong ctdp ON ctdp.ma_phong = p.ma_phong) dp
-             JOIN danh_gia dg ON dp.ma_dat_phong = dg.ma_dat_phong
+             SELECT dg.ma_dat_phong, dg.ma_danh_gia, dg.ma_nguoi_dung, dg.diem_danh_gia,
+                                                                             dg.noi_dung, dg.phan_hoi, dg.da_duyet, dg.ngay_tao
+                                                                      FROM (
+                                                                          SELECT DISTINCT ctdp.ma_dat_phong
+                                                                          FROM (SELECT ma_phong FROM phong WHERE ma_loai_phong = :id) p
+                                                                          JOIN chi_tiet_dat_phong ctdp ON ctdp.ma_phong = p.ma_phong
+                                                                      ) dp
+                                                                      JOIN danh_gia dg ON dp.ma_dat_phong = dg.ma_dat_phong
+                                                                      WHERE :noiDung IS NULL OR LOWER(dg.noi_dung) LIKE CONCAT('%', LOWER(:noiDung), '%')
              """, nativeQuery = true )
     public List<DanhGia> findByLoaiPhong(@Param("id") Integer id, @Param("noiDung") String noiDung);
 }
