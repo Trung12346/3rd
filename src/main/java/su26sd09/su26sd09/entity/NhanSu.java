@@ -42,6 +42,7 @@ public class NhanSu {
     private String sdt;
 
     @Column(name = "mat_khau_hash")
+    @NotBlank(message = "mật khẩu không được để trống")
     private String mat_khau_hash;
 
     @Column(name = "trang_thai")
