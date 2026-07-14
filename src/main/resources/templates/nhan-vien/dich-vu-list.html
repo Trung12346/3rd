@@ -457,7 +457,7 @@
 
         <div class="admin-field">
           <label>Hoạt động</label>
-          <select th:field="*{hoat_dong}">
+          <select th:field="*{hoatDong}">
             <option th:value="true">Có</option>
             <option th:value="false">Không</option>
           </select>
@@ -539,8 +539,8 @@
             <span class="no-amenity" th:if="${soLuongSuDung[dv.id] == null}">Chưa dùng</span>
           </td>
           <td>
-            <span th:if="${dv.hoat_dong}" class="status-badge active">Có</span>
-            <span th:unless="${dv.hoat_dong}" class="status-badge inactive">Không</span>
+            <span th:if="${dv.hoatDong}" class="status-badge active">Có</span>
+            <span th:unless="${dv.hoatDong}" class="status-badge inactive">Không</span>
           </td>
           <td>
             <div class="row-actions">
