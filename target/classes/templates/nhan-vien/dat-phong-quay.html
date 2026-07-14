@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Đặt Phòng Tại Quầy | Hotel</title>
     <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         *, *::before, *::after { box-sizing: border-box; }
         body { background: #f0f4f8; font-family: 'Montserrat', sans-serif; }
@@ -138,34 +139,73 @@
         }
         .cleaning-notice.show { display: block; }
 
-        /* Toast cảnh báo (giống style "Phụ phí ngoài giờ") — dùng khi phòng không thể đặt hoặc các cảnh báo khác */
-        .room-toast-wrap {
-            position: fixed; top: 24px; right: 24px; z-index: 3000;
-            display: flex; flex-direction: column; gap: 10px; max-width: 360px;
+        /* ===== Toast — dùng chung style với trang chi tiết phòng (booking-toast) ===== */
+        .booking-toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: 360px;
+            pointer-events: none;
         }
-        .room-toast {
-            display: flex; align-items: flex-start; gap: 10px;
-            background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px;
-            padding: 14px 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.12);
-            animation: roomToastIn .18s ease-out;
+        .booking-toast {
+            pointer-events: auto;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 12px 14px;
+            border-radius: 4px;
+            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.15);
+            font-size: 13.5px;
+            line-height: 1.5;
+            transform: translateX(120%);
+            opacity: 0;
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease;
+            cursor: default;
         }
-        .room-toast-icon {
-            flex-shrink: 0; width: 20px; height: 20px; border-radius: 50%;
-            background: #f59e0b; color: #fff; font-size: 13px; font-weight: 700;
-            display: flex; align-items: center; justify-content: center; margin-top: 1px;
+        .booking-toast.show { transform: translateX(0); opacity: 1; }
+        .booking-toast .toast-icon {
+            font-size: 18px;
+            flex-shrink: 0;
+            margin-top: 1px;
         }
-        .room-toast-body { flex: 1; }
-        .room-toast-title { font-size: 13px; font-weight: 700; color: #92400e; margin-bottom: 3px; }
-        .room-toast-desc  { font-size: 12px; color: #92400e; line-height: 1.5; }
-        .room-toast-close {
-            background: none; border: none; color: #c2843a; font-size: 15px;
-            cursor: pointer; line-height: 1; padding: 2px; flex-shrink: 0;
+        .booking-toast .toast-body { flex: 1; min-width: 0; }
+        .booking-toast .toast-title { font-weight: 700; margin-bottom: 2px; }
+        .booking-toast .toast-close {
+            background: transparent;
+            border: 0;
+            color: inherit;
+            opacity: 0.6;
+            cursor: pointer;
+            font-size: 18px;
+            padding: 0 4px;
+            line-height: 1;
         }
-        .room-toast-close:hover { color: #92400e; }
-        @keyframes roomToastIn {
-            from { opacity: 0; transform: translateY(-6px); }
-            to   { opacity: 1; transform: translateY(0); }
+        .booking-toast .toast-close:hover { opacity: 1; }
+        .booking-toast.toast-warning {
+            background: #fff8e1;
+            border: 1px solid #ffe082;
+            border-left: 4px solid #e67e22;
+            color: #6b4f00;
         }
+        .booking-toast.toast-warning .toast-icon { color: #e67e22; }
+        .booking-toast.toast-info {
+            background: #ebf5fb;
+            border: 1px solid #bbdefb;
+            border-left: 4px solid #2196F3;
+            color: #1a4a72;
+        }
+        .booking-toast.toast-info .toast-icon { color: #2196F3; }
+        .booking-toast.toast-error {
+            background: #fdecea;
+            border: 1px solid #f5c2c0;
+            border-left: 4px solid #e74c3c;
+            color: #922b21;
+        }
+        .booking-toast.toast-error .toast-icon { color: #e74c3c; }
 
         .room-grid::-webkit-scrollbar { width: 5px; }
         .room-grid::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 3px; }
@@ -206,6 +246,26 @@
             padding: 6px 10px; width: 100%;
         }
         .addon-extra input[type="number"] { width: 90px; }
+
+        /* Tabs dịch vụ — THÊM MỚI */
+        .dv-tabs {
+            display: flex; gap: 6px; margin-bottom: 18px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .dv-tab {
+            background: none; border: none; cursor: pointer;
+            font-family: 'Montserrat', sans-serif; font-size: 13px; font-weight: 700;
+            color: #94a3b8; padding: 9px 6px; margin-bottom: -1px;
+            border-bottom: 2px solid transparent; transition: color .15s, border-color .15s;
+        }
+        .dv-tab:hover { color: var(--sky-primary); }
+        .dv-tab.active { color: var(--sky-primary); border-bottom-color: var(--sky-primary); }
+        .dv-tab .badge-count { margin-left: 6px; }
+
+        .addon-extra input.input-error {
+            border-color: #dc2626; box-shadow: 0 0 0 3px rgba(220,38,38,0.12);
+        }
+        .addon-date-hint { font-size: 10px; color: #94a3b8; margin-top: 3px; }
 
         /* Promo */
         .promo-select {
@@ -289,7 +349,7 @@
 
 <div th:replace="~{fragments/cms-sidebar :: cmsSidebar}"></div>
 <div th:replace="~{fragments/headers/cms-header :: cmsHeader}"></div>
-<div class="room-toast-wrap" id="roomToastWrap"></div>
+<div class="booking-toast-container" id="bookingToastContainer" aria-live="polite"></div>
 
 <main class="quay-shell">
     <div class="quay-header">
@@ -435,15 +495,33 @@
                 </div>
 
                 <!-- ③ DỊCH VỤ BỔ SUNG -->
-                <div class="quay-panel">
+                <div class="quay-panel"
+                     th:with="dvThuongList=${dichVuList != null ? dichVuList.?[loaiDv == null or loaiDv == 'THUONG'] : null},
+                              dvPhatSinhList=${dichVuList != null ? dichVuList.?[loaiDv == 'PHAT_SINH'] : null}">
                     <div class="panel-title">
                         ③ Dịch Vụ Bổ Sung
                         <span class="badge-count" id="dv-badge">0</span>
                     </div>
-                    <div class="addon-grid">
-                        <label class="addon-card" th:each="dv : ${dichVuList}">
+
+                    <!-- Tab chọn loại dịch vụ -->
+                    <div class="dv-tabs">
+                        <button type="button" class="dv-tab active" data-tab="thuong">
+                            Dịch vụ thường
+                            <span class="badge-count show" th:text="${dvThuongList != null ? #lists.size(dvThuongList) : 0}">0</span>
+                        </button>
+                        <button type="button" class="dv-tab" data-tab="phatsinh">
+                            Dịch vụ phát sinh
+                            <span class="badge-count show" th:text="${dvPhatSinhList != null ? #lists.size(dvPhatSinhList) : 0}">0</span>
+                        </button>
+                    </div>
+
+                    <!-- Tab: Dịch vụ thường — cần validate ngày sử dụng trong khoảng ngày ở -->
+                    <div class="addon-grid" id="addonGridThuong">
+                        <label class="addon-card" th:each="dv : ${dvThuongList}">
                             <input type="checkbox" name="dichVuIds" th:value="${dv.id}"
-                                   th:attr="data-gia=${dv.gia},data-id=${dv.id},data-ten=${dv.ten_dich_vu},data-donvi=${dv.donVi}">
+                                   th:attr="data-gia=${dv.gia},data-id=${dv.id},data-ten=${dv.ten_dich_vu},data-donvi=${dv.donVi},data-loai=${dv.loaiDv},
+                                            data-gio-bat-dau=${dv.gioBatDau != null ? dv.gioBatDau : ''},
+                                            data-gio-ket-thuc=${dv.gioKetThuc != null ? dv.gioKetThuc : ''}">
                             <div style="width:100%">
                                 <div class="addon-name"  th:text="${dv.ten_dich_vu}">Bữa sáng</div>
                                 <div class="addon-price"
@@ -461,14 +539,54 @@
 
                                     <label style="margin-top:8px;">Ngày sử dụng</label>
                                     <input type="datetime-local"
+                                           class="addon-date-thuong addon-date-input"
                                            th:name="${'ngaySuDung_' + dv.id}"
                                            th:attr="data-id=${dv.id}"
                                            onclick="event.stopPropagation()">
+                                    <div class="addon-date-hint">Phải nằm trong khoảng ngày nhận - trả phòng</div>
+                                    <div class="addon-date-hint addon-hour-hint"></div>
                                 </div>
                             </div>
                         </label>
-                        <div th:if="${dichVuList == null or dichVuList.isEmpty()}" class="room-empty">
-                            Không có dịch vụ nào.
+                        <div th:if="${dvThuongList == null or dvThuongList.isEmpty()}" class="room-empty">
+                            Không có dịch vụ thường nào.
+                        </div>
+                    </div>
+
+                    <!-- Tab: Dịch vụ phát sinh — chưa cần validate ngày -->
+                    <div class="addon-grid" id="addonGridPhatSinh" style="display:none;">
+                        <label class="addon-card" th:each="dv : ${dvPhatSinhList}">
+                            <input type="checkbox" name="dichVuIds" th:value="${dv.id}"
+                                   th:attr="data-gia=${dv.gia},data-id=${dv.id},data-ten=${dv.ten_dich_vu},data-donvi=${dv.donVi},data-loai=${dv.loaiDv},
+                                            data-gio-bat-dau=${dv.gioBatDau != null ? dv.gioBatDau : ''},
+                                            data-gio-ket-thuc=${dv.gioKetThuc != null ? dv.gioKetThuc : ''}">
+                            <div style="width:100%">
+                                <div class="addon-name"  th:text="${dv.ten_dich_vu}">Giặt ủi</div>
+                                <div class="addon-price"
+                                     th:text="${#numbers.formatDecimal(dv.gia,0,'COMMA',0,'POINT') + ' VND / ' + dv.donVi}">
+                                    50.000 VND / lần
+                                </div>
+                                <!-- Số lượng + ngày sử dụng: hiện khi tick -->
+                                <div class="addon-extra">
+                                    <label>Số lượng (<span th:text="${dv.donVi}">đơn vị</span>)</label>
+                                    <input type="number"
+                                           th:name="${'soLuong_' + dv.id}"
+                                           th:attr="data-id=${dv.id}"
+                                           min="1" value="1"
+                                           onclick="event.stopPropagation()">
+
+                                    <label style="margin-top:8px;">Ngày sử dụng</label>
+                                    <input type="datetime-local"
+                                           class="addon-date-input"
+                                           th:name="${'ngaySuDung_' + dv.id}"
+                                           th:attr="data-id=${dv.id}"
+                                           onclick="event.stopPropagation()">
+                                    <div class="addon-date-hint addon-hour-hint"></div>
+                                </div>
+                            </div>
+                        </label>
+                        <div th:if="${dvPhatSinhList == null or dvPhatSinhList.isEmpty()}" class="room-empty">
+                            Không có dịch vụ phát sinh nào.
                         </div>
                     </div>
                 </div>
@@ -731,7 +849,7 @@
                     + (r.loai ? ' <span style="color:#94a3b8;font-size:11px;">(' + r.loai + ')</span>' : '') + '</span>'
                     + '<span class="sum-item-price">' + fmt(r.gia * (dem > 0 ? dem : 1)) + '</span>'
                     + '</div>';
-              }).join('');
+            }).join('');
 
         /* Cập nhật dịch vụ trong tóm tắt */
         const dvSection = document.getElementById('sum-dv-section');
@@ -821,27 +939,44 @@
         }
     });
 
-    /** Hiện banner cảnh báo dạng toast (giống banner "Phụ phí ngoài giờ"), tự ẩn sau vài giây. */
-    function showRoomToast(title, desc, autoHideMs) {
-        const wrap = document.getElementById('roomToastWrap');
-        const toast = document.createElement('div');
-        toast.className = 'room-toast';
-        toast.innerHTML =
-            '<div class="room-toast-icon">!</div>' +
-            '<div class="room-toast-body">' +
-                '<div class="room-toast-title"></div>' +
-                '<div class="room-toast-desc"></div>' +
+    /* ===== TOAST (đồng bộ với trang chi tiết phòng) ===== */
+
+    /** Hiển thị toast dạng "booking-toast" giống hệt trang chi tiết phòng. */
+    function showBookingToast(message, opts) {
+        opts = opts || {};
+        const type = opts.type || 'warning';
+        const title = opts.title || '';
+        const container = document.getElementById('bookingToastContainer');
+        if (!container) return;
+
+        const iconMap = { warning: 'fa-circle-exclamation', info: 'fa-circle-info', error: 'fa-circle-xmark' };
+        const el = document.createElement('div');
+        el.className = 'booking-toast toast-' + type;
+        el.innerHTML =
+            '<i class="fa-solid ' + (iconMap[type] || 'fa-circle-info') + ' toast-icon"></i>' +
+            '<div class="toast-body">' +
+            (title ? '<div class="toast-title">' + escapeHtmlToast(title) + '</div>' : '') +
+            '<div class="toast-message">' + escapeHtmlToast(message) + '</div>' +
             '</div>' +
-            '<button type="button" class="room-toast-close" aria-label="Đóng">&times;</button>';
-        toast.querySelector('.room-toast-title').textContent = title;
-        toast.querySelector('.room-toast-desc').textContent = desc;
-        toast.querySelector('.room-toast-close').addEventListener('click', function() {
-            toast.remove();
-        });
-        wrap.appendChild(toast);
-        if (autoHideMs) {
-            setTimeout(function() { toast.remove(); }, autoHideMs);
-        }
+            '<button type="button" class="toast-close" aria-label="Đóng">&times;</button>';
+        container.appendChild(el);
+        requestAnimationFrame(function () { el.classList.add('show'); });
+
+        const close = function () {
+            el.classList.remove('show');
+            setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 400);
+        };
+        el.querySelector('.toast-close').addEventListener('click', close);
+        setTimeout(close, opts.autoHideMs || 5000);
+    }
+
+    function escapeHtmlToast(s) {
+        return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    /** Giữ nguyên chữ ký cũ showRoomToast(title, desc, autoHideMs) để không phải sửa các nơi gọi bên dưới. */
+    function showRoomToast(title, desc, autoHideMs) {
+        showBookingToast(desc, { type: 'warning', title: title, autoHideMs: autoHideMs });
     }
 
     /* ===== ROOM CARDS — dùng div, không dùng label ===== */
@@ -988,6 +1123,107 @@
         timKiemPhong();
     });
 
+    /* ===== TAB DỊCH VỤ THƯỜNG / PHÁT SINH ===== */
+    document.querySelectorAll('.dv-tab').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.dv-tab').forEach(function(b) { b.classList.remove('active'); });
+            btn.classList.add('active');
+            const tab = btn.dataset.tab;
+            document.getElementById('addonGridThuong').style.display    = tab === 'thuong'    ? 'grid' : 'none';
+            document.getElementById('addonGridPhatSinh').style.display  = tab === 'phatsinh'  ? 'grid' : 'none';
+        });
+    });
+
+    /** Cập nhật min/max cho ô "Ngày sử dụng" của dịch vụ thường theo ngày nhận / trả phòng. */
+    function capNhatGioiHanNgayDichVu() {
+        const ngayNhan = document.getElementById('ngay-nhan').value;
+        const ngayTra  = document.getElementById('ngay-tra').value;
+        const minVal = ngayNhan ? ngayNhan + 'T00:00' : '';
+        const maxVal = ngayTra  ? ngayTra  + 'T23:59' : '';
+        document.querySelectorAll('.addon-date-thuong').forEach(function(inp) {
+            if (minVal) { inp.min = minVal; } else { inp.removeAttribute('min'); }
+            if (maxVal) { inp.max = maxVal; } else { inp.removeAttribute('max'); }
+        });
+    }
+
+    /* ===== KHUNG GIỜ PHỤC VỤ RIÊNG CỦA TỪNG DỊCH VỤ (gio_bat_dau / gio_ket_thuc) ===== */
+
+    /** Lấy "HH:mm" từ chuỗi LocalTime trả về từ server (có thể là "HH:mm" hoặc "HH:mm:ss" hoặc rỗng). */
+    function chuanHoaGio(str) {
+        return str ? str.substring(0, 5) : '';
+    }
+
+    /** Chọn 1 mốc giờ hợp lệ nằm trong khung [gioBatDau, gioKetThuc] để điền mặc định. */
+    function chonGioMacDinh(gioBatDau, gioKetThuc) {
+        if (gioBatDau) return gioBatDau;          // đầu khung giờ phục vụ -> chắc chắn hợp lệ
+        if (gioKetThuc) return '00:00';           // chỉ giới hạn giờ kết thúc -> lấy từ đầu ngày
+        return '09:00';                           // không giới hạn giờ -> giờ mặc định hợp lý
+    }
+
+    /** Kiểm tra 1 mốc giờ "HH:mm" có nằm trong khung [gioBatDau, gioKetThuc] hay không (rỗng = không giới hạn). */
+    function gioHopLe(gio, gioBatDau, gioKetThuc) {
+        if (gioBatDau && gio < gioBatDau) return false;
+        if (gioKetThuc && gio > gioKetThuc) return false;
+        return true;
+    }
+
+    /** Sinh câu mô tả khung giờ phục vụ để hiển thị dưới ô ngày sử dụng. */
+    function moTaKhungGio(gioBatDau, gioKetThuc) {
+        if (gioBatDau && gioKetThuc) return 'Dịch vụ chỉ phục vụ trong khung giờ ' + gioBatDau + ' - ' + gioKetThuc;
+        if (gioBatDau) return 'Dịch vụ chỉ phục vụ từ ' + gioBatDau + ' trở đi';
+        if (gioKetThuc) return 'Dịch vụ chỉ phục vụ đến trước ' + gioKetThuc;
+        return 'Dịch vụ phục vụ cả ngày, không giới hạn giờ';
+    }
+
+    /** Gắn mô tả khung giờ phục vụ (tĩnh) cho từng thẻ dịch vụ, chạy 1 lần lúc tải trang. */
+    function khoiTaoHintKhungGio() {
+        document.querySelectorAll('.addon-card').forEach(function(card) {
+            const cb = card.querySelector('input[type="checkbox"]');
+            const hint = card.querySelector('.addon-hour-hint');
+            if (!cb || !hint) return;
+            const bd = chuanHoaGio(cb.dataset.gioBatDau);
+            const kt = chuanHoaGio(cb.dataset.gioKetThuc);
+            hint.textContent = moTaKhungGio(bd, kt);
+        });
+    }
+
+    /** Tự điền "Ngày sử dụng" = ngày nhận phòng + giờ mặc định hợp lệ trong khung giờ phục vụ của dịch vụ. */
+    function tuDienNgaySuDung(cb) {
+        const card = cb.closest('.addon-card');
+        const dateInp = card.querySelector('.addon-date-input[name="ngaySuDung_' + cb.dataset.id + '"]');
+        if (!dateInp || dateInp.dataset.userEdited) return; // không ghi đè nếu người dùng đã tự sửa
+
+        const ngayNhan = document.getElementById('ngay-nhan').value;
+        if (!ngayNhan) return;
+
+        const bd = chuanHoaGio(cb.dataset.gioBatDau);
+        const kt = chuanHoaGio(cb.dataset.gioKetThuc);
+        const gio = chonGioMacDinh(bd, kt);
+        dateInp.value = ngayNhan + 'T' + gio;
+        dateInp.classList.remove('input-error');
+    }
+
+    /** Kiểm tra ô "Ngày sử dụng" đang nhập có đúng khung giờ phục vụ của dịch vụ không; báo toast nếu sai. */
+    function kiemTraGioDichVu(dateInp, cb, hienToast) {
+        if (!dateInp.value) return true;
+        const gio = dateInp.value.split('T')[1];
+        const bd  = chuanHoaGio(cb.dataset.gioBatDau);
+        const kt  = chuanHoaGio(cb.dataset.gioKetThuc);
+        const hopLe = gioHopLe(gio, bd, kt);
+
+        dateInp.classList.toggle('input-error', !hopLe);
+
+        if (!hopLe && hienToast) {
+            showRoomToast(
+                'Thời gian sử dụng dịch vụ không hợp lệ',
+                'Dịch vụ "' + cb.dataset.ten + '" ' + moTaKhungGio(bd, kt).replace(/^Dịch vụ /, '').toLowerCase() +
+                '. Vui lòng chọn lại giờ sử dụng.',
+                7000
+            );
+        }
+        return hopLe;
+    }
+
     /* ===== ADDON ===== */
     document.querySelectorAll('.addon-card input[type="checkbox"]').forEach(function(cb) {
         cb.addEventListener('change', function() {
@@ -996,6 +1232,7 @@
             if (this.checked) {
                 extra.style.display = 'block';
                 card.classList.add('checked');
+                tuDienNgaySuDung(this);
             } else {
                 extra.style.display = 'none';
                 card.classList.remove('checked');
@@ -1004,14 +1241,32 @@
         });
     });
 
+    /* Validate real-time khi nhân viên tự sửa "Ngày sử dụng" */
+    document.querySelectorAll('.addon-date-input').forEach(function(dateInp) {
+        dateInp.addEventListener('change', function() {
+            const cb = document.querySelector('.addon-card input[type="checkbox"][data-id="' + this.dataset.id + '"]');
+            if (!cb) return;
+            this.dataset.userEdited = '1';
+            kiemTraGioDichVu(this, cb, true);
+        });
+    });
+
+    khoiTaoHintKhungGio();
+
     document.querySelectorAll('.addon-extra input[type="number"]').forEach(function(inp) {
         inp.addEventListener('input', tinhTong);
     });
 
     ['ngay-nhan','ngay-tra','inp-nguoi-lon','inp-tre-em'].forEach(function(id) {
         const el = document.getElementById(id);
-        if (el) el.addEventListener('change', tinhTong);
+        if (el) el.addEventListener('change', function() {
+            capNhatGioiHanNgayDichVu();
+            // Đồng bộ lại "Ngày sử dụng" (chưa bị người dùng tự sửa) theo ngày nhận phòng mới
+            document.querySelectorAll('.addon-card input[type="checkbox"]:checked').forEach(tuDienNgaySuDung);
+            tinhTong();
+        });
     });
+    capNhatGioiHanNgayDichVu();
 
     document.getElementById('promoInput').addEventListener('input', tinhTong);
 
@@ -1025,6 +1280,68 @@
             }
         });
     }
+
+    /** Validate ngày sử dụng cho các dịch vụ THƯỜNG đã chọn (bắt buộc + phải trong khoảng ngày ở).
+     *  Dịch vụ phát sinh chưa cần validate. */
+    document.getElementById('quayForm').addEventListener('submit', function(e) {
+        let hopLe = true;
+        let firstInvalid = null;
+
+        document.querySelectorAll('.addon-date-thuong.input-error').forEach(function(inp) {
+            inp.classList.remove('input-error');
+        });
+
+        document.querySelectorAll('#addonGridThuong .addon-card input[type="checkbox"]:checked').forEach(function(cb) {
+            const id = cb.dataset.id;
+            const ten = cb.dataset.ten;
+            const dateInp = document.querySelector('.addon-date-thuong[name="ngaySuDung_' + id + '"]');
+            if (!dateInp) return;
+
+            const val = dateInp.value;
+            let loi = '';
+            if (!val) {
+                loi = 'Vui lòng chọn ngày sử dụng cho dịch vụ "' + ten + '".';
+            } else if (dateInp.min && val < dateInp.min) {
+                loi = 'Ngày sử dụng dịch vụ "' + ten + '" phải từ sau ngày nhận phòng.';
+            } else if (dateInp.max && val > dateInp.max) {
+                loi = 'Ngày sử dụng dịch vụ "' + ten + '" phải trước ngày trả phòng.';
+            }
+
+            if (loi) {
+                hopLe = false;
+                dateInp.classList.add('input-error');
+                if (!firstInvalid) firstInvalid = dateInp;
+                showRoomToast('Ngày sử dụng dịch vụ không hợp lệ', loi, 7000);
+            }
+        });
+
+        // Kiểm tra khung giờ phục vụ riêng (gio_bat_dau / gio_ket_thuc) — áp dụng cho cả dịch vụ thường và phát sinh
+        document.querySelectorAll('.addon-card input[type="checkbox"]:checked').forEach(function(cb) {
+            const dateInp = document.querySelector('.addon-date-input[name="ngaySuDung_' + cb.dataset.id + '"]');
+            if (!dateInp || !dateInp.value) return;
+            const dungGio = kiemTraGioDichVu(dateInp, cb, false);
+            if (!dungGio) {
+                hopLe = false;
+                if (!firstInvalid) firstInvalid = dateInp;
+                const bd = chuanHoaGio(cb.dataset.gioBatDau);
+                const kt = chuanHoaGio(cb.dataset.gioKetThuc);
+                showRoomToast(
+                    'Thời gian sử dụng dịch vụ không hợp lệ',
+                    'Dịch vụ "' + cb.dataset.ten + '" ' + moTaKhungGio(bd, kt).replace(/^Dịch vụ /, '').toLowerCase() +
+                    '. Vui lòng chọn lại giờ sử dụng.',
+                    7000
+                );
+            }
+        });
+
+        if (!hopLe) {
+            e.preventDefault();
+            if (firstInvalid) {
+                firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                firstInvalid.focus();
+            }
+        }
+    });
 
     tinhTong();
 </script>

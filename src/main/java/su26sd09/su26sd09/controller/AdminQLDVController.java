@@ -26,7 +26,7 @@ public class AdminQLDVController {
             @RequestParam(name = "loaiDichVu",defaultValue = "") String LoaiDichVu,
             Model model) {
         Dich_vu dv = new Dich_vu();
-        dv.setHoat_dong(true);
+        dv.setHoatDong(true);
 
         loadFormAndList(model, dv, keyword, trangThai, LoaiDichVu,"Thêm dịch vụ");
         return "admin/dich-vu-list";
