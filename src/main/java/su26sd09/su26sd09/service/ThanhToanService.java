@@ -15,6 +15,8 @@ public class ThanhToanService {
         return thanhToanRepo.save(thanhToan);
     }
 
-
+    public ThanhToan findByHoaDonId (int id){
+        return thanhToanRepo.findByH_Id(id);
+    }
 
 }

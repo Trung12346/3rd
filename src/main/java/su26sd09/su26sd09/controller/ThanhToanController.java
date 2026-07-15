@@ -22,6 +22,8 @@ public class ThanhToanController {
     @Autowired
     VnpayService vnpayService;
 
+
+
     @Autowired
     ChiTietDichVuService ctdvService;
 
@@ -184,10 +186,13 @@ public class ThanhToanController {
         for (Chi_tiet_dich_vu ctdv : chiTietDichVus) {
             amountDv = amountDv.add(ctdv.getDonGia());
         }
+
         BigDecimal tienGiam = tinhTienGiam(amountPhong, dp.getKm());
         Totalamount = amountPhong.subtract(tienGiam).add(amountDv);
         BigDecimal tienVat = Totalamount.multiply(ThueVat).setScale(2, RoundingMode.HALF_UP);
         Totalamount = Totalamount.add(tienVat);
+        HoaDon hd = hoaDonService.findByDatPhongId(id);
+        model.addAttribute("transactionId",thanhToanService.findByHoaDonId(hd.getId()));
         model.addAttribute("datPhong", dp);
         model.addAttribute("TongTien", amountPhong);
         model.addAttribute("TienVat",tienVat);
