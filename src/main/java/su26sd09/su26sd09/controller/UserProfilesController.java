@@ -71,6 +71,34 @@ public class    UserProfilesController {
         return "customer-setting";
     }
 
+    /**
+     * Xem chi tiết 1 đơn đặt phòng từ trang "Quản lý tài khoản".
+     * Kiểm tra id đặt phòng có tồn tại và có thuộc về khách hàng đang đăng nhập
+     * hay không (đối chiếu ma_khach_hang). Nếu khớp -> chuyển sang trang
+     * thanh-toan-thanh-cong.html (tái sử dụng logic tính tiền có sẵn ở
+     * ThanhToanController). Nếu không khớp/không tồn tại -> báo lỗi và quay
+     * lại tab "Đơn đặt phòng".
+     */
+    @GetMapping("/dat-phong/{id}")
+    public String chiTietDatPhong(@PathVariable Integer id, Principal p,
+                                  RedirectAttributes redirectAttributes) {
+        KhachHang nguoidung = getNguoiDungByPrincipal(p);
+        DatPhong dp = datPhongRepo.findById(id);
+
+        boolean hopLe = dp != null
+                && dp.getN() != null
+                && nguoidung.getMa_khach_hang() != null
+                && nguoidung.getMa_khach_hang().equals(dp.getN().getMa_khach_hang());
+
+        if (!hopLe) {
+            redirectAttributes.addFlashAttribute("errorMsg",
+                    "Không tìm thấy đơn đặt phòng hoặc bạn không có quyền xem đơn này!");
+            return "redirect:/profiles?tab=bookings";
+        }
+
+        return "redirect:/thanh-toan/thanh-cong/" + dp.getId();
+    }
+
     @PostMapping("/update")
     public String updateProfile(@RequestParam("hoTen") String hoTen,
                                 @RequestParam("soDienThoai") String soDienThoai,

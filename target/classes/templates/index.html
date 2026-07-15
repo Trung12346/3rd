@@ -8,330 +8,179 @@
     <title>Hotel | Trang Chủ</title>
     <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-   <style>
-       /* Dropdown menu styles */
-       .nav-menu {
-           position: relative;
-       }
-       .nav-item {
-           position: relative;
-           display: inline-block;
-       }
-       .dropdown-menu {
-           display: none;
-           position: absolute;
-           top: 100%;
-           left: 0;
-           background: white;
-           min-width: 220px;
-           box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-           border-radius: 4px;
-           padding: 8px 0;
-           z-index: 1000;
-           margin-top: 5px;
-       }
-       .nav-item:hover .dropdown-menu {
-           display: block;
-       }
-       .dropdown-menu a {
-           display: block;
-           padding: 10px 20px;
-           color: var(--text-dark);
-           text-decoration: none;
-           font-size: 14px;
-           transition: background 0.2s, color 0.2s;
-       }
-       .dropdown-menu a:hover {
-           background: var(--sky-light);
-           color: var(--sky-primary);
-       }
-       .dropdown-menu a i {
-           margin-right: 8px;
-           color: var(--sky-primary);
-       }
-       
-       /* Carousel styles */
-       .loai-phong-card:hover {
-           transform: translateY(-6px);
-           box-shadow: 0 12px 40px rgba(33, 150, 243, 0.15);
-       }
-       .loai-phong-card:hover .card-img-wrap img {
-           transform: scale(1.06);
-       }
-       .carousel-btn:hover {
-           background: var(--sky-primary);
-           color: #fff;
-       }
-       .carousel-btn:disabled {
-           opacity: 0.35;
-           cursor: default;
-           pointer-events: none;
-       }
-       .dot {
-           width: 8px;
-           height: 8px;
-           border-radius: 50%;
-           background: var(--border-color);
-           cursor: pointer;
-           transition: background 0.2s, transform 0.2s;
-       }
-       .dot.active {
-           background: var(--sky-primary);
-           transform: scale(1.3);
-       }
-       .btn-view-detail:hover {
-           background: #1565c0;
-       }
-       
-       .user-menu {
-           display: flex;
-           align-items: center;
-           gap: 15px;
-       }
-       .user-greeting {
-           font-size: 14px;
-           color: var(--text-dark);
-           font-weight: 500;
-       }
-       .user-greeting b {
-           color: var(--sky-primary);
-       }
-       /* Nut đăng xuất style nhu mot lien ket hoac nut outline gon gang */
-       .btn-logout {
-           background: transparent;
-           border: 1px solid var(--border-color);
-           color: var(--text-gray);
-           padding: 8px 15px;
-           border-radius: 2px;
-           cursor: pointer;
-           font-family: inherit;
-           font-size: 13px;
-           font-weight: 600;
-           text-transform: uppercase;
-           transition: all 0.3s;
-       }
-       .btn-logout:hover {
-           border-color: #E74C3C;
-           color: #E74C3C;
-           background: #FDEDEC;
-       }
-
-       .home-search-results {
-           background: var(--white);
-           border-top: 1px solid var(--border-color);
-           padding: 38px 5% 20px;
-       }
-       .home-search-heading {
-           align-items: center;
-           display: flex;
-           gap: 16px;
-           justify-content: space-between;
-           margin: 0 auto 22px;
-           max-width: 1180px;
-       }
-       .home-search-heading h2 {
-           color: var(--text-dark);
-           font-family: 'Georgia', serif;
-           font-size: 26px;
-           margin: 0;
-       }
-       .home-search-heading a {
-           color: var(--sky-primary);
-           font-size: 13px;
-           font-weight: 700;
-           text-decoration: none;
-           text-transform: uppercase;
-       }
-       .home-room-grid {
-           display: grid;
-           gap: 20px;
-           grid-template-columns: repeat(3, minmax(0, 1fr));
-           margin: 0 auto;
-           max-width: 1180px;
-       }
-       .home-room-card {
-           border: 1px solid var(--border-color);
-           border-radius: 4px;
-           box-shadow: 0 4px 18px rgba(0,0,0,0.06);
-           padding: 20px;
-       }
-       .home-room-card h3 {
-           color: var(--text-dark);
-           font-size: 20px;
-           margin: 0 0 8px;
-       }
-       .home-room-card p {
-           color: var(--text-gray);
-           font-size: 14px;
-           line-height: 1.6;
-           margin: 0 0 14px;
-       }
-       .home-room-meta {
-           color: var(--text-gray);
-           display: flex;
-           flex-wrap: wrap;
-           font-size: 13px;
-           gap: 10px 16px;
-           margin-bottom: 16px;
-       }
-       .home-room-meta strong {
-           color: var(--sky-primary);
-       }
-       .home-room-card .btn-view-detail {
-           background: var(--sky-primary);
-           color: #fff;
-           display: inline-block;
-           font-size: 13px;
-           font-weight: 700;
-           padding: 10px 18px;
-           text-decoration: none;
-           text-transform: uppercase;
-       }
-       .home-search-error {
-           background: #fff5f5;
-           border: 1px solid #f3c5c5;
-           color: #b42318;
-           font-size: 14px;
-           font-weight: 600;
-           margin: 14px auto 0;
-           max-width: 1180px;
-           padding: 12px 14px;
-       }
-
-       .home-search-empty {
-           background: #f8fbff;
-           border: 1px dashed var(--border-color);
-           color: var(--text-gray);
-           margin: 0 auto;
-           max-width: 1180px;
-           padding: 24px;
-           text-align: center;
-       }
-       @media (max-width: 900px) {
-           .home-room-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-       }
-       @media (max-width: 640px) {
-           .home-search-heading { align-items: flex-start; flex-direction: column; }
-           .home-room-grid { grid-template-columns: 1fr; }
-       }
-   </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div th:replace="~{fragments/headers/app-header :: appHeader}"></div>
+<div th:replace="~{fragments/headers/app-header :: appHeader}"></div>
 
-    <section class="hero">
-        <div class="hero-text">
-            <h1>Đẳng Cấp & Tinh Tế</h1>
-            <p>Khởi nguồn cho những trải nghiệm nghỉ dưỡng hoàn hảo</p>
+<section class="hero">
+    <div class="hero-text">
+        <h1>Đẳng Cấp & Tinh Tế</h1>
+        <p>Khởi nguồn cho những trải nghiệm nghỉ dưỡng hoàn hảo</p>
+    </div>
+    <div class="hero-scroll-cue" aria-hidden="true"><span></span></div>
+</section>
+
+<section class="booking-section">
+    <form class="booking-form" th:action="@{/home}" method="get">
+        <div class="booking-item">
+            <label><i class="fa-solid fa-door-open"></i> Tên phòng</label>
+            <input type="text" name="tenPhong" placeholder="VD: 101, view biển..." th:value="${tenPhong}">
         </div>
-    </section>
-
-    <section class="booking-section">
-        <form class="booking-form" th:action="@{/home}" method="get">
-            <div class="booking-item">
-                <label>Tên phòng</label>
-                <input type="text" name="tenPhong" placeholder="VD: 101, view biển..." th:value="${tenPhong}">
-            </div>
-            <div class="booking-item">
-                <label>Tên loại phòng</label>
-                <input type="text" name="tenLoaiPhong" placeholder="VD: Deluxe, Suite..." th:value="${tenLoaiPhong}">
-            </div>
-            <div class="booking-item">
-                <label>Giá từ</label>
-                <input type="number" name="minGia" min="0" step="100000" placeholder="500000" th:value="${minGia}">
-            </div>
-            <div class="booking-item">
-                <label>Giá đến</label>
-                <input type="number" name="maxGia" min="0" step="100000" placeholder="2000000" th:value="${maxGia}">
-            </div>
-            <button type="submit" class="btn-book">Tìm phòng</button>
-        </form>
-        <div class="home-search-error" th:if="${homeSearchError}" th:text="${homeSearchError}"></div>
-    </section>
-
-    <section class="home-search-results" th:if="${dangTimKiem == true and homeSearchError == null}">
-        <div class="home-search-heading">
-            <h2>Phòng trống phù hợp</h2>
-            <a th:href="@{/home}">Xóa tìm kiếm</a>
+        <div class="booking-item">
+            <label><i class="fa-solid fa-bed"></i> Tên loại phòng</label>
+            <input type="text" name="tenLoaiPhong" placeholder="VD: Deluxe, Suite..." th:value="${tenLoaiPhong}">
         </div>
-        <div class="home-room-grid" th:if="${phongsTimKiem != null and !phongsTimKiem.isEmpty()}">
-            <article class="home-room-card" th:each="p : ${phongsTimKiem}">
-                <h3 th:text="${'Phòng ' + p.soPhong}">Phòng 101</h3>
-                <p th:text="${p.moTa != null and !p.moTa.isBlank() ? p.moTa : 'Phòng đang trống và sẵn sàng đặt.'}">Phòng đang trống.</p>
-                <div class="home-room-meta">
-                    <span>Loại: <strong th:text="${p.loaiPhong != null ? p.loaiPhong.tenLoai : 'Chưa phân loại'}">Deluxe</strong></span>
-                    <span>Giá: <strong th:text="${#numbers.formatDecimal(p.giaMoiDem, 0, 'COMMA', 0, 'POINT')} + ' VND/đêm'">1.000.000 VND/đêm</strong></span>
+        <div class="booking-item">
+            <label><i class="fa-solid fa-sack-dollar"></i> Giá từ</label>
+            <input type="number" name="minGia" min="0" step="100000" placeholder="500000" th:value="${minGia}">
+        </div>
+        <div class="booking-item">
+            <label><i class="fa-solid fa-sack-dollar"></i> Giá đến</label>
+            <input type="number" name="maxGia" min="0" step="100000" placeholder="2000000" th:value="${maxGia}">
+        </div>
+        <button type="submit" class="btn-book"><i class="fa-solid fa-magnifying-glass"></i> Tìm phòng</button>
+    </form>
+    <div class="home-search-error" th:if="${homeSearchError}" th:text="${homeSearchError}"></div>
+</section>
+
+<section class="home-search-results" th:if="${dangTimKiem == true and homeSearchError == null}">
+    <div class="home-search-heading">
+        <h2>Phòng trống phù hợp</h2>
+        <a th:href="@{/home}">Xóa tìm kiếm</a>
+    </div>
+    <div class="home-room-grid" th:if="${phongsTimKiem != null and !phongsTimKiem.isEmpty()}">
+        <article class="home-room-card" th:each="p : ${phongsTimKiem}">
+            <h3 th:text="${'Phòng ' + p.soPhong}">Phòng 101</h3>
+            <p th:text="${p.moTa != null and !p.moTa.isBlank() ? p.moTa : 'Phòng đang trống và sẵn sàng đặt.'}">Phòng đang trống.</p>
+            <div class="home-room-meta">
+                <span>Loại: <strong th:text="${p.loaiPhong != null ? p.loaiPhong.tenLoai : 'Chưa phân loại'}">Deluxe</strong></span>
+                <span>Giá: <strong th:text="${#numbers.formatDecimal(p.giaMoiDem, 0, 'COMMA', 0, 'POINT')} + ' VND/đêm'">1.000.000 VND/đêm</strong></span>
+            </div>
+            <a th:href="@{/phong/{id}(id=${p.maPhong})}" class="btn-view-detail">Xem chi tiết</a>
+        </article>
+    </div>
+    <div class="home-search-empty" th:if="${phongsTimKiem == null or phongsTimKiem.isEmpty()}">
+        Không có phòng đang trống phù hợp với điều kiện tìm kiếm.
+    </div>
+</section>
+
+<!-- CAROUSEL: DANH SACH LOAI PHONG -->
+<section class="carousel-section" style="padding: 60px 5% 40px; background: var(--white);">
+    <div class="section-heading reveal-on-scroll" style="text-align: center; margin-bottom: 40px;">
+        <span class="section-eyebrow">Khám phá</span>
+        <h2 style="font-family: 'Playfair Display', 'Georgia', serif; font-size: 30px; color: var(--text-dark); margin-bottom: 10px;">Các Loại Phòng</h2>
+        <span style="display: inline-block; width: 60px; height: 3px; background: var(--sky-primary); border-radius: 2px;"></span>
+        <p style="color: var(--text-gray); margin-top: 12px; font-size: 15px;">Di chuyển trái phải để khám phá tất cả loại phòng</p>
+    </div>
+
+    <div class="carousel-wrapper" style="position: relative; overflow: hidden;">
+        <div class="carousel-track" id="carouselTrack" style="display: flex; gap: 24px; transition: transform 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94); will-change: transform;">
+
+            <div class="loai-phong-card" th:each="loai : ${loaiPhongs}" style="min-width: calc(33.333% - 16px); background: var(--white); border-radius: 8px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.08); border: 1px solid var(--border-color); cursor: pointer; transition: transform 0.3s ease, box-shadow 0.3s ease; flex-shrink: 0;">
+                <div class="card-img-wrap" style="position: relative; height: 220px; overflow: hidden;">
+                    <img th:src="${anhLoaiPhong != null and anhLoaiPhong[loai.id] != null} ? ${anhLoaiPhong[loai.id]} : 'https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=800&q=80'"
+                         th:alt="${loai.tenLoai}" style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s ease;">
+                    <div class="card-badge" th:text="${loai.tenLoai}" style="position: absolute; top: 16px; left: 16px; background: var(--sky-primary); color: #fff; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; padding: 5px 12px; border-radius: 2px;">Deluxe</div>
                 </div>
-                <a th:href="@{/phong/{id}(id=${p.maPhong})}" class="btn-view-detail">Xem chi tiết</a>
-            </article>
-        </div>
-        <div class="home-search-empty" th:if="${phongsTimKiem == null or phongsTimKiem.isEmpty()}">
-            Không có phòng đang trống phù hợp với điều kiện tìm kiếm.
-        </div>
-    </section>
-
-    <!-- CAROUSEL: DANH SACH LOAI PHONG -->
-    <section class="carousel-section" style="padding: 60px 5% 40px; background: var(--white);">
-        <div class="section-heading" style="text-align: center; margin-bottom: 40px;">
-            <h2 style="font-family: 'Georgia', serif; font-size: 30px; color: var(--text-dark); margin-bottom: 10px;">Các Loại Phòng</h2>
-            <span style="display: inline-block; width: 60px; height: 3px; background: var(--sky-primary); border-radius: 2px;"></span>
-            <p style="color: var(--text-gray); margin-top: 12px; font-size: 15px;">Di chuyển trái phải để khám phá tất cả loại phòng</p>
-        </div>
-
-        <div class="carousel-wrapper" style="position: relative; overflow: hidden;">
-            <div class="carousel-track" id="carouselTrack" style="display: flex; gap: 24px; transition: transform 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94); will-change: transform;">
-
-                <div class="loai-phong-card" th:each="loai : ${loaiPhongs}" style="min-width: calc(33.333% - 16px); background: var(--white); border-radius: 8px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.08); border: 1px solid var(--border-color); cursor: pointer; transition: transform 0.3s ease, box-shadow 0.3s ease; flex-shrink: 0;">
-                    <div class="card-img-wrap" style="position: relative; height: 220px; overflow: hidden;">
-                        <img th:src="${anhLoaiPhong != null and anhLoaiPhong[loai.id] != null} ? ${anhLoaiPhong[loai.id]} : 'https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=800&q=80'"
-                             th:alt="${loai.tenLoai}" style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s ease;">
-                        <div class="card-badge" th:text="${loai.tenLoai}" style="position: absolute; top: 16px; left: 16px; background: var(--sky-primary); color: #fff; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; padding: 5px 12px; border-radius: 2px;">Deluxe</div>
+                <div class="card-body" style="padding: 22px 24px 24px;">
+                    <h3 class="card-title" th:text="${loai.tenLoai}" style="font-family: 'Playfair Display', 'Georgia', serif; font-size: 20px; color: var(--text-dark); margin-bottom: 8px;">Phòng Deluxe</h3>
+                    <div class="card-meta" style="display: flex; gap: 16px; margin-bottom: 12px; flex-wrap: wrap;">
+                        <span style="font-size: 13px; color: var(--text-gray); display: flex; align-items: center; gap: 5px;"><i class="fa-solid fa-users" style="color: var(--sky-primary); font-size: 12px;"></i> Tối đa <span th:text="${loai.sucChuaToiDa}">2</span> người</span>
+                        <span style="font-size: 13px; color: var(--text-gray); display: flex; align-items: center; gap: 5px;"><i class="fa-solid fa-check-circle" style="color: var(--sky-primary); font-size: 12px;"></i> <span th:text="${soPhongTrongTheoLoai[loai.id]} + ' phòng trống'">Còn phòng</span></span>
                     </div>
-                    <div class="card-body" style="padding: 22px 24px 24px;">
-                        <h3 class="card-title" th:text="${loai.tenLoai}" style="font-family: 'Georgia', serif; font-size: 20px; color: var(--text-dark); margin-bottom: 8px;">Phòng Deluxe</h3>
-                        <div class="card-meta" style="display: flex; gap: 16px; margin-bottom: 12px; flex-wrap: wrap;">
-                            <span style="font-size: 13px; color: var(--text-gray); display: flex; align-items: center; gap: 5px;"><i class="fa-solid fa-users" style="color: var(--sky-primary); font-size: 12px;"></i> Tối đa <span th:text="${loai.sucChuaToiDa}">2</span> người</span>
-                            <span style="font-size: 13px; color: var(--text-gray); display: flex; align-items: center; gap: 5px;"><i class="fa-solid fa-check-circle" style="color: var(--sky-primary); font-size: 12px;"></i> <span th:text="${soPhongTrongTheoLoai[loai.id]} + ' phòng trống'">Còn phòng</span></span>
+                    <p class="card-desc" th:text="${loai.mota}" style="font-size: 14px; color: var(--text-gray); line-height: 1.6; margin-bottom: 18px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                        Không gian sang trọng với đầy đủ tiện nghi hiện đại mang đến kỳ nghỉ tuyệt vời.
+                    </p>
+                    <div class="card-footer" style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 16px;">
+                        <div class="card-price" style="font-size: 13px; color: var(--text-gray);">
+                            Từ <strong th:text="${#numbers.formatDecimal(loai.giaCoBan, 0, 'COMMA', 0, 'POINT')}" style="font-size: 20px; color: var(--sky-primary); font-weight: 700;">1.200.000</strong>
+                            <span style="font-size: 12px; color: var(--text-gray);"> VND/đêm</span>
                         </div>
-                        <p class="card-desc" th:text="${loai.mota}" style="font-size: 14px; color: var(--text-gray); line-height: 1.6; margin-bottom: 18px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
-            Không gian sang trọng với đầy đủ tiện nghi hiện đại mang đến kỳ nghỉ tuyệt vời.
-                        </p>
-                        <div class="card-footer" style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 16px;">
-                            <div class="card-price" style="font-size: 13px; color: var(--text-gray);">
-                                Từ <strong th:text="${#numbers.formatDecimal(loai.giaCoBan, 0, 'COMMA', 0, 'POINT')}" style="font-size: 20px; color: var(--sky-primary); font-weight: 700;">1.200.000</strong>
-                                <span style="font-size: 12px; color: var(--text-gray);"> VND/đêm</span>
-                            </div>
-                            <a th:href="@{'/loai-phong/' + ${loai.id}}" class="btn-view-detail" style="display: inline-block; padding: 9px 20px; background: var(--sky-primary); color: #fff; border: none; border-radius: 2px; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; text-decoration: none; transition: background 0.2s;">Xem Phòng</a>
-                        </div>
+                        <a th:href="@{'/loai-phong/' + ${loai.id}}" class="btn-view-detail" style="display: inline-block; padding: 9px 20px; background: var(--sky-primary); color: #fff; border: none; border-radius: 2px; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; text-decoration: none; transition: background 0.2s;">Xem Phòng</a>
                     </div>
                 </div>
+            </div>
 
-                <div class="empty-state" th:if="${loaiPhongs == null or loaiPhongs.isEmpty()}" style="width: 100%; padding: 34px 18px; border: 1px dashed var(--border-color); border-radius: 8px; color: var(--text-gray); text-align: center; background: #f8fbff;">
-                    Chưa có loại phòng phù hợp trong cơ sở dữ liệu.
-                </div>
+            <div class="empty-state" th:if="${loaiPhongs == null or loaiPhongs.isEmpty()}" style="width: 100%; padding: 34px 18px; border: 1px dashed var(--border-color); border-radius: 8px; color: var(--text-gray); text-align: center; background: #f8fbff;">
+                Chưa có loại phòng phù hợp trong cơ sở dữ liệu.
+            </div>
 
-            </div><!-- /carousel-track -->
-        </div><!-- /carousel-wrapper -->
+        </div><!-- /carousel-track -->
+    </div><!-- /carousel-wrapper -->
 
-        <!-- Dieu huong carousel -->
-        <div class="carousel-nav" style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 32px;">
-            <button class="carousel-btn" id="prevBtn" onclick="moveCarousel(-1)" disabled style="width: 44px; height: 44px; border: 2px solid var(--sky-primary); background: transparent; color: var(--sky-primary); border-radius: 50%; cursor: pointer; font-size: 16px; transition: all 0.2s; display: flex; align-items: center; justify-content: center;">
-                <i class="fa-solid fa-chevron-left"></i>
-            </button>
-            <div class="carousel-dots" id="carouselDots" style="display: flex; gap: 8px;"></div>
-            <button class="carousel-btn" id="nextBtn" onclick="moveCarousel(1)" style="width: 44px; height: 44px; border: 2px solid var(--sky-primary); background: transparent; color: var(--sky-primary); border-radius: 50%; cursor: pointer; font-size: 16px; transition: all 0.2s; display: flex; align-items: center; justify-content: center;">
-                <i class="fa-solid fa-chevron-right"></i>
-            </button>
+    <!-- Dieu huong carousel -->
+    <div class="carousel-nav" style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 32px;">
+        <button class="carousel-btn" id="prevBtn" onclick="moveCarousel(-1)" disabled style="width: 44px; height: 44px; border: 2px solid var(--sky-primary); background: transparent; color: var(--sky-primary); border-radius: 50%; cursor: pointer; font-size: 16px; transition: all 0.2s; display: flex; align-items: center; justify-content: center;">
+            <i class="fa-solid fa-chevron-left"></i>
+        </button>
+        <div class="carousel-dots" id="carouselDots" style="display: flex; gap: 8px;"></div>
+        <button class="carousel-btn" id="nextBtn" onclick="moveCarousel(1)" style="width: 44px; height: 44px; border: 2px solid var(--sky-primary); background: transparent; color: var(--sky-primary); border-radius: 50%; cursor: pointer; font-size: 16px; transition: all 0.2s; display: flex; align-items: center; justify-content: center;">
+            <i class="fa-solid fa-chevron-right"></i>
+        </button>
+    </div>
+</section>
+
+<!-- MỤC GIỚI THIỆU (ABOUT) - nằm ngay dưới "Các Loại Phòng" -->
+<section class="about-section">
+    <div class="about-intro reveal-on-scroll">
+        <div class="about-intro-text">
+            <span class="section-eyebrow">Về chúng tôi</span>
+            <h2>Nơi Sự Tinh Tế Gặp Gỡ Sự Ấm Áp</h2>
+            <p>
+                Hơn một nơi lưu trú, chúng tôi kiến tạo không gian nghỉ dưỡng nơi từng chi tiết
+                được chăm chút để mang lại cảm giác thư thái tuyệt đối. Với đội ngũ tận tâm và
+                tiêu chuẩn dịch vụ 5 sao, mỗi kỳ nghỉ tại đây đều là một trải nghiệm đáng nhớ.
+            </p>
         </div>
-    </section>
+        <div class="about-stats">
+            <div class="about-stat">
+                <strong>đội ngũ nhân sự</strong>
+                <span>Nhiều Năm kinh Nghiệm,đào tạo bài bản</span>
+            </div>
+            <div class="about-stat">
+                <strong>dịch vụ</strong>
+                <span>đa dạng,chu đáo</span>
+            </div>
+            <div class="about-stat">
+                <strong>150+</strong>
+                <span>Phòng nghỉ tiện nghi</span>
+            </div>
+            <div class="about-stat">
+                <strong>24/7</strong>
+                <span>Hỗ trợ khách hàng</span>
+            </div>
+        </div>
+    </div>
 
-    <footer>
-        <p>&copy; 2026 Hotel. All rights reserved.</p>
-    </footer>
-    <script src="/header-dropdown.js"></script>
+    <div class="about-grid reveal-on-scroll">
+        <div class="about-item">
+            <div class="about-item-icon"><i class="fa-solid fa-champagne-glasses"></i></div>
+            <h3>Dịch Vụ Đẳng Cấp</h3>
+            <p>Đội ngũ chuyên nghiệp, tận tâm hỗ trợ 24/7 để mọi nhu cầu của quý khách luôn được đáp ứng nhanh chóng.</p>
+        </div>
+        <div class="about-item">
+            <div class="about-item-icon"><i class="fa-solid fa-spa"></i></div>
+            <h3>Không Gian Thư Giãn</h3>
+            <p>Thiết kế tinh tế, không gian yên tĩnh cùng tiện ích spa, hồ bơi giúp quý khách tận hưởng trọn vẹn kỳ nghỉ.</p>
+        </div>
+        <div class="about-item">
+            <div class="about-item-icon"><i class="fa-solid fa-shield-heart"></i></div>
+            <h3>An Toàn & Tin Cậy</h3>
+            <p>Cam kết minh bạch về giá, bảo mật thông tin và quy trình đặt phòng rõ ràng, an tâm tuyệt đối.</p>
+        </div>
+    </div>
+</section>
+
+<footer>
+    <p>&copy; 2026 Hotel. All rights reserved.</p>
+</footer>
+<script src="/header-dropdown.js"></script>
 </body>
 <script>
-    // ===== CAROUSEL LOGIC =====
+    // ===== CAROUSEL LOGIC (giữ nguyên logic gốc) =====
     const track = document.getElementById('carouselTrack');
     const dotsContainer = document.getElementById('carouselDots');
     const prevBtn = document.getElementById('prevBtn');
@@ -353,7 +202,7 @@
     function initCarousel() {
         const cards = getCards();
         if (cards.length === 0) return;
-        
+
         cardsPerView = getCardsPerView();
         const totalSlides = Math.max(1, Math.ceil(cards.length / cardsPerView));
 
@@ -381,7 +230,7 @@
     function goToSlide(index) {
         const cards = getCards();
         if (cards.length === 0) return;
-        
+
         cardsPerView = getCardsPerView();
         const totalSlides = Math.ceil(cards.length / cardsPerView);
         currentIndex = Math.max(0, Math.min(index, totalSlides - 1));
@@ -427,5 +276,27 @@
             window.location.href = "/logout";
         }
     }
+
+    // ===== HIỆU ỨNG XUẤT HIỆN KHI CUỘN (chỉ thêm mới, không ảnh hưởng chức năng khác) =====
+    (function initRevealOnScroll() {
+        const items = document.querySelectorAll('.reveal-on-scroll');
+        if (!items.length) return;
+
+        if (!('IntersectionObserver' in window)) {
+            items.forEach(el => el.classList.add('is-visible'));
+            return;
+        }
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('is-visible');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.15 });
+
+        items.forEach(el => observer.observe(el));
+    })();
 </script>
 </html>

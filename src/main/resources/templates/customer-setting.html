@@ -234,6 +234,26 @@
         .status-cancelled{ background: #fdedec; color: #e74c3c; }
         .status-done     { background: #eaf4fe; color: #3498db; }
 
+        /* ===== CHI TIẾT ĐƠN ĐẶT PHÒNG ===== */
+        .btn-detail-order {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 4px;
+            border: 1px solid var(--sky-primary);
+            color: var(--sky-primary);
+            font-size: 12px;
+            font-weight: 600;
+            text-decoration: none;
+            white-space: nowrap;
+            transition: background 0.2s, color 0.2s;
+        }
+        .btn-detail-order:hover {
+            background: var(--sky-primary);
+            color: #fff;
+        }
+
         /* ===== FORM ===== */
         .form-grid {
             display: grid;
@@ -683,6 +703,7 @@
                             <th>Người lớn</th>
                             <th>Trẻ em</th>
                             <th>Trạng thái</th>
+                            <th>Chi tiết</th>
                         </tr>
                         </thead>
                         <tbody>
@@ -700,6 +721,11 @@
                                                       (${l.trangThai == 'Đã hoàn thành'} ? 'status-done' : 'status-success'))"
                                       th:text="${l.trangThai}">
                                 </span>
+                            </td>
+                            <td>
+                                <a th:href="@{/profiles/dat-phong/{id}(id=${l.id})}" class="btn-detail-order">
+                                    <i class="fa-solid fa-circle-info"></i> Chi tiết
+                                </a>
                             </td>
                         </tr>
                         </tbody>
