@@ -471,7 +471,7 @@
             </div>
             <div class="stat-card compact">
                 <div class="stat-label">Doanh Thu Thực</div>
-                <div class="stat-value" id="kpiDoanhThuThucThu">--</div>
+                <div class="stat-value kpiDoanhThuThucThu">--</div>
                 <div class="stat-hint">Doanh thu được ghi nhận thanh toán</div>
             </div>
             <div class="stat-card compact c-green">
@@ -586,7 +586,7 @@
                     <div class="cash-compare-row">
                         <span class="cash-compare-dot" style="background:#27AE60"></span>
                         <span class="cash-compare-label">Doanh thu thực thu <span class="cell-sub">(thanh toán)</span></span>
-                        <span class="cash-compare-value" id="kpiDoanhThuThucThu">--</span>
+                        <span class="cash-compare-value kpiDoanhThuThucThu">--</span>
                     </div>
                     <div class="cash-compare-bar-wrap">
                         <div class="cash-compare-bar" id="cashCompareBar" style="width:0%"></div>
@@ -615,7 +615,11 @@
 
                 // ----- Ghi nhan (hoa don) vs Thuc thu (thanh toan) -----
                 document.getElementById('kpiDoanhThuGhiNhan').textContent = formatVND(rsp.doanhThuGhiNhan);
-                document.getElementById('kpiDoanhThuThucThu').textContent = formatVND(rsp.doanhThuThucThu);
+                const es = document.querySelectorAll('.kpiDoanhThuThucThu');
+                es.forEach(e => {
+                    e.textContent = formatVND(rsp.doanhThuThucThu);
+                })
+
                 document.getElementById('kpiTyLeThuTien').textContent = formatPercent(rsp.tyLeThuTien);
                 document.getElementById('kpiSoGiaoDich').textContent = `${rsp.soGiaoDichThanhCong || 0} giao dịch thành công`;
                 document.getElementById('cashCompareBar').style.width = `${Math.min(100, rsp.tyLeThuTien || 0)}%`;

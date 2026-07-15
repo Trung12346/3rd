@@ -2,366 +2,287 @@
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8"></meta>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"></meta>
-    <title th:text="${title} + ' | Hotel'">Chi Tiết Hóa Đơn | Hotel</title>
-    <link rel="stylesheet" href="/style.css"></link>
+    <title th:text="'Chi Tiết Hóa Đơn #' + ${hoaDon.id} + ' | Hotel'">Chi Tiết Hóa Đơn | Hotel</title>
     <style>
+        /* ===== BASE ===== */
         body {
-            font-family: "Arial";
-        }
-        /* ===== TONG QUAN (stat cards, mirrors thong-ke-doanh-thu.html) ===== */
-        .stat-cards {
-            display: grid;
-            gap: 20px;
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-            margin-bottom: 6px;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            color: #1a2a3a;
+            margin: 0;
+            padding: 0;
+            background: #fff;
         }
 
-        .stat-card {
-            background: var(--white);
-            border: 1px solid var(--border-color);
-            border-left: 4px solid var(--sky-primary);
-            border-radius: 6px;
-            padding: 18px 20px;
+        /* ===== WRAPPER ===== */
+        .admin-wrapper {
+            padding: 24px 28px;
         }
 
-        .stat-card.c-green { border-left-color: #27AE60; }
-        .stat-card.c-amber { border-left-color: #F5B301; }
-        .stat-card.c-red { border-left-color: #E74C3C; }
-
-        .stat-label {
-            color: var(--text-gray);
-            font-size: 12px;
-            font-weight: 600;
-            letter-spacing: .02em;
-            text-transform: uppercase;
+        /* ===== PANEL / SECTION ===== */
+        .admin-panel {
+            padding: 20px 22px;
+            margin-bottom: 20px;
         }
 
-        .stat-value {
-            color: var(--sky-dark);
-
-            font-size: 24px;
-            font-weight: 700;
-            margin-top: 8px;
-        }
-
-        /* ===== INFO GRID (read-only key/value layout) ===== */
-        .info-grid {
-            display: grid;
-            gap: 18px 28px;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-        }
-
-        .info-grid.cols-2 {
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-        }
-
-        .info-item .info-label {
-            color: var(--text-gray);
-            font-size: 12px;
-            font-weight: 600;
-            letter-spacing: .02em;
-            text-transform: uppercase;
-        }
-
-        .info-item .info-value {
-            color: var(--text-dark);
+        .admin-panel h2 {
             font-size: 15px;
-            margin-top: 6px;
+            font-weight: 700;
+            color: #1a2a3a;
+            margin: 0 0 16px 0;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #dde3ec;
         }
 
-        .info-item .info-value.muted {
-            color: var(--text-gray);
+        /* ===== INFO GRID — 3 cols via display:table ===== */
+        .info-grid {
+            display: table;
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 14px;
+        }
+
+        .info-grid-row {
+            display: table-row;
+        }
+
+        .info-item {
+            display: table-cell;
+            width: 33.33%;
+            padding-right: 24px;
+            vertical-align: top;
+        }
+
+        /* 2-col variant */
+        .info-grid.cols-2 .info-item {
+            width: 50%;
+        }
+
+        .info-label {
+            color: #6b7d93;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .info-value {
+            color: #1a2a3a;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        .info-value.muted {
+            color: #6b7d93;
             font-size: 13px;
         }
 
-        /* ===== PAYMENT-STATUS BADGE VARIANT ===== */
-        .status-badge.partial {
-            background: #FDF2E3;
-            color: #B9770E;
+        .info-value a {
+            color: #1a6fb3;
+            text-decoration: none;
         }
 
-        /* ===== SUMMARY (invoice breakdown) ===== */
-        .summary-list {
-            margin: 0 auto;
-            max-width: 460px;
+        /* ===== TABLES ===== */
+        .admin-table-wrap {
+            overflow: hidden;
         }
 
-        .summary-row {
-            align-items: center;
-            border-bottom: 1px dashed var(--border-color);
-            display: flex;
-            justify-content: space-between;
-            padding: 10px 0;
+        .admin-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
         }
 
-        .summary-row:last-of-type {
+        .admin-table thead tr {
+            background: #f0f4fa;
+        }
+
+        .admin-table th {
+            text-align: left;
+            padding: 9px 12px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #6b7d93;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            border-bottom: 1px solid #dde3ec;
+        }
+
+        .admin-table td {
+            padding: 9px 12px;
+            border-bottom: 1px solid #f0f4fa;
+            color: #1a2a3a;
+            vertical-align: middle;
+        }
+
+        .admin-table tbody tr:last-child td {
             border-bottom: none;
         }
 
-        .summary-row .summary-label {
-            color: var(--text-gray);
-            font-size: 14px;
+        .empty-state {
+            color: #6b7d93;
+            font-size: 13px;
+            text-align: center;
+            padding: 12px 0;
         }
 
-        .summary-row .summary-value {
+        /* ===== STATUS BADGE ===== */
+        .status-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 12px;
             font-weight: 600;
         }
 
-        .summary-row.discount .summary-value {
-            color: #C0392B;
+        .status-badge.active   { background: #E6F4EA; color: #246B35; }
+        .status-badge.inactive { background: #FDECEA; color: #B71C1C; }
+        .status-badge.warning  { background: #FFF8E1; color: #7B5200; }
+        .status-badge.partial  { background: #FDF2E3; color: #B9770E; }
+
+        /* ===== SUMMARY LIST — flex replaced with table ===== */
+        .summary-list {
+            width: 460px;
+            margin: 0 auto;
         }
+
+        .summary-row {
+            display: table;
+            width: 100%;
+            border-bottom: 1px dashed #dde3ec;
+            padding: 10px 0;
+        }
+
+        .summary-row:last-child {
+            border-bottom: none;
+        }
+
+        .summary-label {
+            display: table-cell;
+            color: #6b7d93;
+            font-size: 14px;
+            width: 60%;
+        }
+
+        .summary-value {
+            display: table-cell;
+            font-weight: 600;
+            text-align: right;
+            width: 40%;
+        }
+
+        .summary-row.discount .summary-value { color: #C0392B; }
 
         .summary-row.phuthu .summary-label,
-        .summary-row.phuthu .summary-value {
-            color: #c2410c;
-        }
+        .summary-row.phuthu .summary-value  { color: #c2410c; }
 
         .summary-row.total {
-            border-top: 2px solid var(--sky-primary);
+            border-top: 2px solid #1a6fb3;
+            border-bottom: none;
             margin-top: 6px;
             padding-top: 14px;
         }
 
         .summary-row.total .summary-label {
-            color: var(--sky-dark);
+            color: #0d3b6e;
             font-size: 16px;
             font-weight: 700;
         }
 
         .summary-row.total .summary-value {
-            color: var(--sky-dark);
-
+            color: #0d3b6e;
             font-size: 20px;
         }
 
-        .summary-row.paid .summary-value { color: #246B35; }
+        .summary-row.paid .summary-value      { color: #246B35; }
         .summary-row.remaining .summary-value { color: #B9770E; }
         .summary-row.remaining.settled .summary-value { color: #246B35; }
 
+        /* ===== INVOICE NOTE ===== */
         .invoice-note {
-            background: var(--sky-light);
+            background: #e8f0fb;
             border-radius: 4px;
-            color: var(--text-dark);
+            color: #1a2a3a;
             font-size: 13px;
             margin-top: 18px;
             padding: 12px 14px;
         }
 
-        .section-divider {
-            border: none;
-            border-top: 1px solid var(--border-color);
-            margin: 30px 0;
-        }
-
-        @media (max-width: 900px) {
-            .stat-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-            .info-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-        }
-
-        @media (max-width: 640px) {
-            .stat-cards { grid-template-columns: 1fr; }
-            .info-grid, .info-grid.cols-2 { grid-template-columns: 1fr; }
+        /* ===== CLEARFIX ===== */
+        .clearfix:after {
+            content: "";
+            display: table;
+            clear: both;
         }
     </style>
 </head>
 <body>
-<!--<div class="wrapper">-->
-
-<!--    <div class="header">-->
-<!--        <div class="header-left">-->
-<!--            <div class="hotel-name">KHÁCH SẠN SUNRISE</div>-->
-<!--            <div class="hotel-info">123 Đường Lê Lợi, Hà Nội &nbsp;|&nbsp; info@hotel.local &nbsp;|&nbsp; +84 123 456 789</div>-->
-<!--        </div>-->
-<!--        <div class="header-right">-->
-<!--            <div class="invoice-title">HÓA ĐƠN</div>-->
-<!--            <div class="invoice-no">Số HD: <span th:text="${hoaDon.id}">0042</span></div>-->
-<!--        </div>-->
-<!--    </div>-->
-
-<!--    <div class="info-grid">-->
-<!--        <div class="info-col info-col-left">-->
-<!--            <div class="section-label">Thông tin đặt phòng</div>-->
-<!--            <div class="info-row">-->
-<!--                <span class="info-key">Mã đặt phòng</span>-->
-<!--                <span class="info-val" th:if="${hoaDon.d != null}" th:text="${hoaDon.d.id}">DP-0021</span>-->
-<!--                <span class="info-val-null" th:unless="${hoaDon.d != null}">Không có</span>-->
-<!--            </div>-->
-<!--            <div class="info-row">-->
-<!--                <span class="info-key">Nhân viên xuất</span>-->
-<!--                <span class="info-val" th:if="${hoaDon.n != null}" th:text="${hoaDon.n.hoTen}">Nguyễn Văn A</span>-->
-<!--                <span class="info-val-null" th:unless="${hoaDon.n != null}">Không có</span>-->
-<!--            </div>-->
-<!--            <div class="info-row">-->
-<!--                <span class="info-key">Khuyến mãi</span>-->
-<!--                <span class="info-val" th:if="${hoaDon.k != null}" th:text="${hoaDon.k.tenKhuyenMai}">KM01</span>-->
-<!--                <span class="info-val-null" th:unless="${hoaDon.k != null}">Không sử dụng</span>-->
-<!--            </div>-->
-<!--        </div>-->
-<!--        <div class="info-col">-->
-<!--            <div class="section-label">Thời gian</div>-->
-<!--            <div class="info-row">-->
-<!--                <span class="info-key">Ngày xuất</span>-->
-<!--                <span class="info-val" th:if="${hoaDon.ngayXuat != null}"-->
-<!--                      th:text="${#temporals.format(hoaDon.ngayXuat, 'dd/MM/yyyy HH:mm')}">10/06/2026 09:30</span>-->
-<!--                <span class="info-val-null" th:unless="${hoaDon.ngayXuat != null}">Không có</span>-->
-<!--            </div>-->
-<!--            <div class="info-row">-->
-<!--                <span class="info-key">Cập nhật</span>-->
-<!--                <span class="info-val" th:if="${hoaDon.ngayCapNhat != null}"-->
-<!--                      th:text="${#temporals.format(hoaDon.ngayCapNhat, 'dd/MM/yyyy HH:mm')}">10/06/2026 10:00</span>-->
-<!--                <span class="info-val-null" th:unless="${hoaDon.ngayCapNhat != null}">Chưa cập nhật</span>-->
-<!--            </div>-->
-<!--        </div>-->
-<!--    </div>-->
-
-<!--    <div class="items-wrap">-->
-<!--        <table class="items-table">-->
-<!--            <thead>-->
-<!--            <tr>-->
-<!--                <th>Khoản mục</th>-->
-<!--                <th class="right">Số tiền (VNĐ)</th>-->
-<!--            </tr>-->
-<!--            </thead>-->
-<!--            <tbody>-->
-<!--            <tr class="normal">-->
-<!--                <td>Tiền phòng</td>-->
-<!--                <td class="right"-->
-<!--                    th:text="${hoaDon.tienPhong != null ?-->
-<!--                            #numbers.formatDecimal(hoaDon.tienPhong, 0, 'COMMA', 0, 'POINT') : 'Không có'}">-->
-<!--                    2.400.000</td>-->
-<!--            </tr>-->
-<!--            <tr class="phuthu-row" th:if="${tongPhuThu != null and tongPhuThu.signum() > 0}">-->
-<!--                <td>Phụ phí ngoài giờ</td>-->
-<!--                <td class="right"-->
-<!--                    th:text="${'+ ' + #numbers.formatDecimal(tongPhuThu, 0, 'COMMA', 0, 'POINT')}">-->
-<!--                    + 100.000</td>-->
-<!--            </tr>-->
-<!--            <tr class="normal">-->
-<!--                <td>Tiền dịch vụ</td>-->
-<!--                <td class="right"-->
-<!--                    th:text="${hoaDon.tienDichVu != null ?-->
-<!--                            #numbers.formatDecimal(hoaDon.tienDichVu, 0, 'COMMA', 0, 'POINT') : 'Không có'}">-->
-<!--                    350.000</td>-->
-<!--            </tr>-->
-<!--            <tr class="normal">-->
-<!--                <td>Thuế VAT</td>-->
-<!--                <td class="right"-->
-<!--                    th:text="${hoaDon.tienVat != null ?-->
-<!--                            #numbers.formatDecimal(hoaDon.tienVat, 0, 'COMMA', 0, 'POINT') : 'Không có'}">-->
-<!--                    275.000</td>-->
-<!--            </tr>-->
-<!--            <tr class="null-row">-->
-<!--                <td>Tiền giảm</td>-->
-<!--                <td th:text="${hoaDon.tienGiam != null ?-->
-<!--                            #numbers.formatDecimal(hoaDon.tienGiam, 0, 'COMMA', 0, 'POINT') : 'Không có'}"-->
-<!--                    style="text-align:right;">Không có</td>-->
-<!--            </tr>-->
-<!--            </tbody>-->
-<!--        </table>-->
-<!--    </div>-->
-
-<!--    <div class="totals">-->
-<!--        <div class="total-row">-->
-<!--            <span class="total-label">Tổng tiền</span>-->
-<!--            <span class="total-val"-->
-<!--                  th:text="${hoaDon.tongTien != null ?-->
-<!--                      #numbers.formatDecimal(hoaDon.tongTien, 0, 'COMMA', 0, 'POINT') + ' VNĐ' : 'Không có'}">-->
-<!--                3.025.000 VNĐ</span>-->
-<!--        </div>-->
-<!--        <div class="total-row">-->
-<!--            <span class="total-label">Đã thanh toán</span>-->
-<!--            <span class="total-val-paid"-->
-<!--                  th:text="${hoaDon.daThanhToan != null ?-->
-<!--                      #numbers.formatDecimal(hoaDon.daThanhToan, 0, 'COMMA', 0, 'POINT') + ' VNĐ' : 'Chưa thanh toán'}">-->
-<!--                3.025.000 VNĐ</span>-->
-<!--        </div>-->
-<!--        &lt;!&ndash; Còn lại &ndash;&gt;-->
-<!--        <div class="remain-box"-->
-<!--             th:with="conLai = ${hoaDon.tongTien != null and hoaDon.daThanhToan != null ?-->
-<!--                 hoaDon.tongTien.subtract(hoaDon.daThanhToan) : null}">-->
-<!--            <span class="remain-label">Còn lại</span>-->
-<!--            <span class="remain-right">-->
-<!--                <span class="remain-amount"-->
-<!--                      th:text="${conLai != null ?-->
-<!--                          #numbers.formatDecimal(conLai, 0, 'COMMA', 0, 'POINT') + ' VNĐ' : '-&#45;&#45;'}">-->
-<!--                    0 VNĐ</span>-->
-<!--                <span class="badge-paid"-->
-<!--                      th:if="${conLai != null and conLai.compareTo(T(java.math.BigDecimal).ZERO) <= 0}">-->
-<!--                    ĐÃ THANH TOÁN</span>-->
-<!--                <span class="badge-unpaid"-->
-<!--                      th:unless="${conLai != null and conLai.compareTo(T(java.math.BigDecimal).ZERO) <= 0}">-->
-<!--                    CÒN NỢ</span>-->
-<!--            </span>-->
-<!--        </div>-->
-<!--    </div>-->
-
-<!--    <div class="note-box">-->
-<!--        <div class="note-label">Ghi chú</div>-->
-<!--        <div class="note-text"-->
-<!--             th:text="${hoaDon.ghiChu != null ? hoaDon.ghiChu : 'Không có'}">-->
-<!--            Khách yêu cầu phòng tầng cao, hướng nhìn ra hồ.</div>-->
-<!--    </div>-->
-
-<!--    <div class="footer">-->
-<!--        <span class="footer-left">Tài liệu này có giá trị như hóa đơn chính thức.</span>-->
-<!--        <span class="footer-right">sunrise-hotel.vn</span>-->
-<!--    </div>-->
-
-<!--</div>-->
 <main class="admin-wrapper">
 
     <!-- ===== THONG TIN KHACH HANG & DAT PHONG ===== -->
     <section class="admin-panel">
         <h2>Thông Tin Khách Hàng &amp; Đặt Phòng</h2>
+
+        <!-- Row 1: Khach hang / Email / SDT -->
         <div class="info-grid">
-            <div class="info-item">
-                <div class="info-label">Khách Hàng</div>
-                <div class="info-value"
-                     th:text="${hoaDon.d != null ?
-                        (hoaDon.d.n != null ? hoaDon.d.n.hoTen : (hoaDon.d.hoten != null ? hoaDon.d.hoten + ' (Vãng lai)' : 'Không có'))
-                        : 'Không có'}">Tên khách hàng</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Email</div>
-                <div class="info-value"
-                     th:text="${hoaDon.d != null ? (hoaDon.d.n != null ? hoaDon.d.n.email : hoaDon.d.email) : '-'}">-</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Số Điện Thoại</div>
-                <div class="info-value"
-                     th:text="${hoaDon.d != null ? (hoaDon.d.n != null ? hoaDon.d.n.soDienThoai : hoaDon.d.sdt) : '-'}">-</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Mã Đơn Đặt Phòng</div>
-                <div class="info-value">
-                    <a th:if="${hoaDon.d != null}"
-                       th:text="'#' + ${hoaDon.d.id}">#0</a>
-                    <span th:if="${hoaDon.d == null}">-</span>
+            <div class="info-grid-row">
+                <div class="info-item">
+                    <div class="info-label">Khách Hàng</div>
+                    <div class="info-value"
+                         th:text="${hoaDon.d != null ?
+                            (hoaDon.d.n != null ? hoaDon.d.n.hoTen : (hoaDon.d.hoten != null ? hoaDon.d.hoten + ' (Vãng lai)' : 'Không có'))
+                            : 'Không có'}">Tên khách hàng</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Email</div>
+                    <div class="info-value"
+                         th:text="${hoaDon.d != null ? (hoaDon.d.n != null ? hoaDon.d.n.email : hoaDon.d.email) : '-'}">-</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Số Điện Thoại</div>
+                    <div class="info-value"
+                         th:text="${hoaDon.d != null ? (hoaDon.d.n != null ? hoaDon.d.n.soDienThoai : hoaDon.d.sdt) : '-'}">-</div>
                 </div>
             </div>
-            <div class="info-item">
-                <div class="info-label">Ngày Nhận Phòng</div>
-                <div class="info-value"
-                     th:text="${hoaDon.d != null and hoaDon.d.ngaydatPhong != null ? #temporals.format(hoaDon.d.ngaydatPhong, 'dd/MM/yyyy HH:mm') : '-'}">-</div>
+
+            <!-- Row 2: Ma don / Nhan phong / Tra phong -->
+            <div class="info-grid-row">
+                <div class="info-item">
+                    <div class="info-label">Mã Đơn Đặt Phòng</div>
+                    <div class="info-value">
+                        <a th:if="${hoaDon.d != null}"
+                           th:text="'#' + ${hoaDon.d.id}">#0</a>
+                        <span th:if="${hoaDon.d == null}">-</span>
+                    </div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Ngày Nhận Phòng</div>
+                    <div class="info-value"
+                         th:text="${hoaDon.d != null and hoaDon.d.ngaydatPhong != null ? #temporals.format(hoaDon.d.ngaydatPhong, 'dd/MM/yyyy HH:mm') : '-'}">-</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Ngày Trả Phòng</div>
+                    <div class="info-value"
+                         th:text="${hoaDon.d != null and hoaDon.d.ngaytraPhong != null ? #temporals.format(hoaDon.d.ngaytraPhong, 'dd/MM/yyyy HH:mm') : '-'}">-</div>
+                </div>
             </div>
-            <div class="info-item">
-                <div class="info-label">Ngày Trả Phòng</div>
-                <div class="info-value"
-                     th:text="${hoaDon.d != null and hoaDon.d.ngaytraPhong != null ? #temporals.format(hoaDon.d.ngaytraPhong, 'dd/MM/yyyy HH:mm') : '-'}">-</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Số Khách</div>
-                <div class="info-value"
-                     th:text="${hoaDon.d != null ? (hoaDon.d.songuoiLon + ' người lớn, ' + hoaDon.d.sotreEm + ' trẻ em') : '-'}">-</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Trạng Thái Đơn</div>
-                <div class="info-value" th:text="${hoaDon.d != null ? hoaDon.d.trangThai : '-'}">-</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Yêu Cầu Thêm</div>
-                <div class="info-value muted" th:text="${hoaDon.d != null and hoaDon.d.yeuCauThem != null and !hoaDon.d.yeuCauThem.isEmpty() ? hoaDon.d.yeuCauThem : 'Không có'}">Không có</div>
+
+            <!-- Row 3: So khach / Trang thai don / Yeu cau them -->
+            <div class="info-grid-row">
+                <div class="info-item">
+                    <div class="info-label">Số Khách</div>
+                    <div class="info-value"
+                         th:text="${hoaDon.d != null ? (hoaDon.d.songuoiLon + ' người lớn, ' + hoaDon.d.sotreEm + ' trẻ em') : '-'}">-</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Trạng Thái Đơn</div>
+                    <div class="info-value" th:text="${hoaDon.d != null ? hoaDon.d.trangThai : '-'}">-</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Yêu Cầu Thêm</div>
+                    <div class="info-value muted"
+                         th:text="${hoaDon.d != null and hoaDon.d.yeuCauThem != null and !hoaDon.d.yeuCauThem.isEmpty() ? hoaDon.d.yeuCauThem : 'Không có'}">Không có</div>
+                </div>
             </div>
         </div>
     </section>
@@ -424,68 +345,35 @@
         </div>
     </section>
 
-<!--    &lt;!&ndash; ===== LICH SU THANH TOAN ===== &ndash;&gt;-->
-<!--    <section class="admin-panel">-->
-<!--        <h2>Lịch Sử Thanh Toán</h2>-->
-<!--        <div class="admin-table-wrap">-->
-<!--            <table class="admin-table">-->
-<!--                <thead>-->
-<!--                <tr>-->
-<!--                    <th>Ngày Thanh Toán</th>-->
-<!--                    <th>Phương Thức</th>-->
-<!--                    <th>Số Tiền</th>-->
-<!--                    <th>Trạng Thái</th>-->
-<!--                    <th>Mã Giao Dịch</th>-->
-<!--                    <th>Nhân Viên Xử Lý</th>-->
-<!--                    <th>Ghi Chú</th>-->
-<!--                </tr>-->
-<!--                </thead>-->
-<!--                <tbody>-->
-<!--                <tr th:each="tt : ${thanhToans}">-->
-<!--                    <td th:text="${tt.ngaythanhToan != null ? #temporals.format(tt.ngaythanhToan, 'dd/MM/yyyy HH:mm') : '-'}"></td>-->
-<!--                    <td th:text="${tt.phuongThuc != null ? tt.phuongThuc : '-'}"></td>-->
-<!--                    <td th:text="${tt.soTien != null ? #numbers.formatDecimal(tt.soTien, 0, 'COMMA', 0, 'POINT') + ' VND' : '-'}"></td>-->
-<!--                    <td>-->
-<!--                        <span class="status-badge"-->
-<!--                              th:classappend="${tt.trangThai == 'Thanh cong' ? 'active'-->
-<!--                                                : (tt.trangThai == 'That bai' ? 'inactive'-->
-<!--                                                : 'warning')}"-->
-<!--                              th:text="${tt.trangThai != null ? tt.trangThai : '-'}"></span>-->
-<!--                    </td>-->
-<!--                    <td th:text="${tt.magiaodich != null and !tt.magiaodich.isEmpty() ? tt.magiaodich : '-'}"></td>-->
-<!--                    <td th:text="${tt.nv != null ? tt.nv.hoten : '-'}"></td>-->
-<!--                    <td class="info-value muted" th:text="${tt.gichu != null and !tt.gichu.isEmpty() ? tt.gichu : '-'}"></td>-->
-<!--                </tr>-->
-<!--                <tr th:if="${thanhToans == null or thanhToans.isEmpty()}">-->
-<!--                    <td colspan="7"><div class="empty-state">Chưa ghi nhận giao dịch thanh toán nào cho hóa đơn này.</div></td>-->
-<!--                </tr>-->
-<!--                </tbody>-->
-<!--            </table>-->
-<!--        </div>-->
-<!--    </section>-->
-
     <!-- ===== TONG KET HOA DON ===== -->
     <section class="admin-panel">
         <h2>Tổng Kết Hóa Đơn</h2>
+
+        <!-- 2-col meta info -->
         <div class="info-grid cols-2" style="margin-bottom: 24px;">
-            <div class="info-item">
-                <div class="info-label">Nhân Viên Xuất Hóa Đơn</div>
-                <div class="info-value" th:text="${hoaDon.n != null ? hoaDon.n.hoten : 'Hệ thống'}">-</div>
+            <div class="info-grid-row">
+                <div class="info-item">
+                    <div class="info-label">Nhân Viên Xuất Hóa Đơn</div>
+                    <div class="info-value" th:text="${hoaDon.n != null ? hoaDon.n.hoten : 'Hệ thống'}">-</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Mã Khuyến Mãi Áp Dụng</div>
+                    <div class="info-value" th:text="${hoaDon.k != null ? (hoaDon.k.promoCode + ' — ' + hoaDon.k.moTa) : 'Không áp dụng'}">-</div>
+                </div>
             </div>
-            <div class="info-item">
-                <div class="info-label">Mã Khuyến Mãi Áp Dụng</div>
-                <div class="info-value" th:text="${hoaDon.k != null ? (hoaDon.k.promoCode + ' — ' + hoaDon.k.moTa) : 'Không áp dụng'}">-</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Ngày Xuất</div>
-                <div class="info-value" th:text="${hoaDon.ngayXuat != null ? #temporals.format(hoaDon.ngayXuat, 'dd/MM/yyyy HH:mm') : '-'}">-</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Ngày Cập Nhật</div>
-                <div class="info-value" th:text="${hoaDon.ngayCapNhat != null ? #temporals.format(hoaDon.ngayCapNhat, 'dd/MM/yyyy HH:mm') : 'Chưa cập nhật'}">-</div>
+            <div class="info-grid-row">
+                <div class="info-item">
+                    <div class="info-label">Ngày Xuất</div>
+                    <div class="info-value" th:text="${hoaDon.ngayXuat != null ? #temporals.format(hoaDon.ngayXuat, 'dd/MM/yyyy HH:mm') : '-'}">-</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Ngày Cập Nhật</div>
+                    <div class="info-value" th:text="${hoaDon.ngayCapNhat != null ? #temporals.format(hoaDon.ngayCapNhat, 'dd/MM/yyyy HH:mm') : 'Chưa cập nhật'}">-</div>
+                </div>
             </div>
         </div>
 
+        <!-- Summary breakdown -->
         <div class="summary-list">
             <div class="summary-row">
                 <span class="summary-label">Tiền phòng</span>
@@ -525,7 +413,7 @@
             <strong>Ghi chú:</strong> <span th:text="${hoaDon.ghiChu}"></span>
         </p>
     </section>
-</main>
 
+</main>
 </body>
 </html>
