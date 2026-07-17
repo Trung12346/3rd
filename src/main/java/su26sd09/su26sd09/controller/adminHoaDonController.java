@@ -400,6 +400,17 @@ public class adminHoaDonController {
         context.setVariable("trangThaiThanhToanLabel", trangThaiThanhToanLabel);
         context.setVariable("trangThaiThanhToanClass", trangThaiThanhToanClass);
 
+        // Phan tach lich su thanh toan vs hoan tien (chi hien thi neu don da huy)
+        java.util.List<ThanhToan> hoanTienList = new java.util.ArrayList<>();
+        for (ThanhToan t : thanhToans) {
+            if (t != null && "Hoan tien".equalsIgnoreCase(t.getLoaiGiaoDich())) {
+                hoanTienList.add(t);
+            }
+        }
+        BigDecimal tongHoan = hoaDon.getDaHoanTra() != null ? hoaDon.getDaHoanTra() : BigDecimal.ZERO;
+        context.setVariable("hoanTienList", hoanTienList);
+        context.setVariable("tongHoan", tongHoan);
+
         String html = templateEngine.process("admin/hoa-don-pdf", context);
 
         response.setContentType("application/pdf");

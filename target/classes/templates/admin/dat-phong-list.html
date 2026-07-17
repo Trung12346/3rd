@@ -260,6 +260,7 @@
                         <option value="Chua thanh toan" th:selected="${trangThai == 'Chua thanh toan'}">Chưa thanh toán</option>
                         <option value="Cho xac nhan" th:selected="${trangThai == 'Cho xac nhan'}">Chờ xác nhận</option>
                         <option value="Da xac nhan" th:selected="${trangThai == 'Da xac nhan'}">Đã xác nhận</option>
+                        <option value="Cho huy" th:selected="${trangThai == 'Cho huy'}">Chờ hủy (chờ hoàn tiền)</option>
                         <option value="Da nhan phong" th:selected="${trangThai == 'Da nhan phong'}">Đã nhận phòng</option>
                         <option value="Da tra phong" th:selected="${trangThai == 'Da tra phong'}">Đã trả phòng</option>
                         <option value="Da huy" th:selected="${trangThai == 'Da huy'}">Đã hủy</option>
@@ -436,7 +437,7 @@
                                 Chưa thanh toán
                             </span>
 
-                            <form th:if="${dp.trangThai != 'Chua thanh toan' and dp.trangThai != 'Da huy' and dp.trangThai != 'Da tra phong'}"
+                            <form th:if="${dp.trangThai != 'Chua thanh toan' and dp.trangThai != 'Cho huy' and dp.trangThai != 'Da huy' and dp.trangThai != 'Da tra phong'}"
                                   th:action="@{/nhan-su/admin/dat-phong/update-trang-thai}" method="post" style="margin: 0;">
                                 <input type="hidden" name="id" th:value="${dp.id}">
                                 <input type="hidden" name="page" th:value="${currentPage}">
@@ -465,12 +466,15 @@
                             <span th:if="${dp.trangThai == 'Da tra phong'}" class="status-badge neutral">
                                 Đã trả phòng
                             </span>
+                            <span th:if="${dp.trangThai == 'Cho huy'}" class="status-badge warning">
+                                Chờ hủy (chờ hoàn tiền)
+                            </span>
                             <span th:if="${dp.trangThai == 'Da huy'}" class="status-badge danger">
                                 Đã hủy
                             </span>
 
-                            <form th:if="${dp.trangThai == 'Chua thanh toan'}"
-                                  th:action="@{/nhan-su/admin/dat-phong/cancel}" method="post" style="margin: 0;">
+                            <form th:if="${dp.trangThai != 'Da nhan phong' and dp.trangThai != 'Da tra phong' and dp.trangThai != 'Da huy' and dp.trangThai != 'Cho huy'}"
+                                  th:action="@{/nhan-su/admin/dat-phong/huy}" method="post" style="margin: 0;">
                                 <input type="hidden" name="id" th:value="${dp.id}">
                                 <input type="hidden" name="page" th:value="${currentPage}">
                                 <input type="hidden" name="size" th:value="${pageSize}">

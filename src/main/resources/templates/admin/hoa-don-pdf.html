@@ -407,11 +407,78 @@
                 <span class="summary-label">Còn lại</span>
                 <span class="summary-value" th:text="${#numbers.formatDecimal(conLai, 0, 'COMMA', 0, 'POINT')} + ' VND'"></span>
             </div>
+            <div class="summary-row" th:if="${tongHoan != null and tongHoan.signum() > 0}" style="background:#fff7e6;">
+                <span class="summary-label" style="color:#c2410c;">↩ Hoàn trả khách</span>
+                <span class="summary-value" style="color:#c2410c;"
+                      th:text="'- ' + ${#numbers.formatDecimal(tongHoan, 0, 'COMMA', 0, 'POINT')} + ' VND'"></span>
+            </div>
         </div>
 
         <p class="invoice-note" th:if="${hoaDon.ghiChu != null and !hoaDon.ghiChu.isEmpty()}">
             <strong>Ghi chú:</strong> <span th:text="${hoaDon.ghiChu}"></span>
         </p>
+    </section>
+
+    <!-- ===== LICH SU HOAN TIEN (chi hien thi khi don da huy) ===== -->
+    <section class="admin-panel" th:if="${hoaDon.d != null and hoaDon.d.trangThai == 'Da huy' and hoanTienList != null and !hoanTienList.isEmpty()}">
+        <h2>↩ Lịch Sử Hoàn Tiền</h2>
+
+        <div class="info-grid cols-2" style="margin-bottom:14px;">
+            <div class="info-grid-row">
+                <div class="info-item">
+                    <div class="info-label">Số Tiền Hoàn Dự Kiến</div>
+                    <div class="info-value"
+                         th:text="${hoaDon.soTienHoan != null ? #numbers.formatDecimal(hoaDon.soTienHoan, 0, 'COMMA', 0, 'POINT') + ' VND' : '0 VND'}">0 VND</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Đã Hoàn Trả Thực Tế</div>
+                    <div class="info-value"
+                         th:text="${#numbers.formatDecimal(tongHoan, 0, 'COMMA', 0, 'POINT')} + ' VND'">0 VND</div>
+                </div>
+            </div>
+            <div class="info-grid-row">
+                <div class="info-item">
+                    <div class="info-label">Tỷ Lệ Hoàn</div>
+                    <div class="info-value"
+                         th:text="${hoaDon.tyLeHoan != null ? #numbers.formatDecimal(hoaDon.tyLeHoan.multiply(T(java.math.BigDecimal).valueOf(100L)),0,'COMMA',0,'POINT') + '%' : '-'}">-</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Trạng Thái Hoàn Tiền</div>
+                    <div class="info-value" th:text="${hoaDon.trangThaiHoanTien != null ? hoaDon.trangThaiHoanTien : '-'}">-</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="admin-table-wrap">
+            <table class="admin-table">
+                <thead>
+                <tr>
+                    <th>Ngày Hoàn</th>
+                    <th>Phương Thức</th>
+                    <th>Số Tiền</th>
+                    <th>Mã Giao Dịch</th>
+                    <th>STK / Ngân Hàng</th>
+                    <th>Nhân Viên Xử Lý</th>
+                    <th>Ghi Chú</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="ht : ${hoanTienList}">
+                    <td th:text="${ht.ngaythanhToan != null ? #temporals.format(ht.ngaythanhToan, 'dd/MM/yyyy HH:mm') : '-'}"></td>
+                    <td th:text="${ht.phuongThuc != null ? ht.phuongThuc : '-'}"></td>
+                    <td th:text="${ht.soTien != null ? #numbers.formatDecimal(ht.soTien, 0, 'COMMA', 0, 'POINT') + ' VND' : '-'}"></td>
+                    <td th:text="${ht.magiaodich != null and !ht.magiaodich.isEmpty() ? ht.magiaodich : '-'}"></td>
+                    <td>
+                        <span th:if="${ht.stkNhanHoan != null and !ht.stkNhanHoan.isEmpty()}"
+                              th:text="${ht.stkNhanHoan + ' (' + (ht.tenNganHangNhanHoan != null ? ht.tenNganHangNhanHoan : '-') + ')'}"></span>
+                        <span th:if="${ht.stkNhanHoan == null or ht.stkNhanHoan.isEmpty()}">-</span>
+                    </td>
+                    <td th:text="${ht.nv != null ? ht.nv.hoten : '-'}"></td>
+                    <td th:text="${ht.gichu != null and !ht.gichu.isEmpty() ? ht.gichu : '-'}"></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
     </section>
 
 </main>

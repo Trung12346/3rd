@@ -12,6 +12,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import su26sd09.su26sd09.dto.KetQuaHuyDonDTO;
 import su26sd09.su26sd09.dto.RoomBookingGuardDTO;
 import su26sd09.su26sd09.entity.*;
 import su26sd09.su26sd09.service.*;
@@ -42,6 +43,7 @@ public class NhanVienDatPhongController {
     @Autowired private NguoiDungService nguoiDungService;
     @Autowired private NhanVienService nhanVienService;
     @Autowired private VnpayService vnpayService;
+    @Autowired private HuyDonService huyDonService;
 
     @GetMapping("/dat-phong")
     public String getAllDatPhong(
@@ -484,22 +486,16 @@ public class NhanVienDatPhongController {
             @RequestParam(value = "size", defaultValue = "10") int size,
             RedirectAttributes redirectAttributes) {
 
-        DatPhong dp = datPhongService.findById(id);
-        if (dp == null) {
-            redirectAttributes.addFlashAttribute("error", "Khong tim thay don dat phong #" + id);
-            return "redirect:/nhan-su/dat-phong?page=" + page + "&size=" + size;
+        // Dùng chung luồng với admin: tạo yêu cầu hủy + set "Cho xu ly" để NV/Admin xử lý thủ công
+        KetQuaHuyDonDTO ketQua = huyDonService.huyDon(id);
+        redirectAttributes.addFlashAttribute("thongBao", ketQua.getThongBao());
+
+        if (ketQua.isCanHoanTien()) {
+            // Có phát sinh hoàn tiền -> đi sang trang xử lý hoàn tiền của nhân viên
+            return "redirect:/nhan-su/hoan-tien/chi-tiet/" + ketQua.getHoaDonId();
         }
 
-        if (!"Chua thanh toan".equals(dp.getTrangThai())) {
-            redirectAttributes.addFlashAttribute("error", "Chi co the huy don khi dang o trang thai Chua thanh toan");
-            return "redirect:/nhan-su/dat-phong?page=" + page + "&size=" + size;
-        }
-
-        dp.setTrangThai("Da huy");
-        dp.setNgayCapNhat(LocalDateTime.now());
-        datPhongService.save(dp);
-
-        redirectAttributes.addFlashAttribute("success", "Da huy don dat phong #" + id);
+        // Không phát sinh hoàn tiền -> quay lại danh sách đặt phòng
         return "redirect:/nhan-su/dat-phong?page=" + page + "&size=" + size;
     }
 

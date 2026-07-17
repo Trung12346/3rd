@@ -20,16 +20,39 @@ public class VnpayController {
 
     @GetMapping("/API/payment/vnpay-payment")
     public String GetVnpayPayment(HttpServletRequest request, RedirectAttributes redirectAttributes, Authentication authentication) {
+        String orderInfo = request.getParameter("vnp_OrderInfo");
+        boolean laHoanTien = "HoanTienChoKhach".equals(orderInfo);
+
         int paymentStatus = vnpayService.orderReturn(request, authentication);
 
         String vnp_TxnRef = request.getParameter("vnp_TxnRef");
-        int maDatPhong = Integer.parseInt(vnp_TxnRef.split("_")[0]);
-
-        String orderInfo     = request.getParameter("vnp_OrderInfo");
         String paymentTime   = request.getParameter("vnp_PayDate");
         String transactionId = request.getParameter("vnp_TransactionNo");
         String totalPrice    = request.getParameter("vnp_Amount");
 
+        // ===== Callback cho luồng HOÀN TIỀN =====
+        if (laHoanTien) {
+            // TxnRef dạng: REFUND_{maHoaDon}_{rand}
+            int maHoaDon = 0;
+            try {
+                String[] parts = vnp_TxnRef.split("_");
+                maHoaDon = Integer.parseInt(parts[1]);
+            } catch (Exception ignore) { }
+            if (maHoaDon > 0) {
+                if (paymentStatus == 1) {
+                    redirectAttributes.addFlashAttribute("success",
+                            "VNPay da xac nhan giao dich hoan tien. Ma GD: " + transactionId);
+                } else {
+                    redirectAttributes.addFlashAttribute("error",
+                            "VNPay giao dich hoan tien that bai hoac chu ky khong hop le.");
+                }
+                return "redirect:/nhan-su/admin/hoan-tien/chi-tiet/" + maHoaDon;
+            }
+            return "redirect:/nhan-su/admin/hoan-tien";
+        }
+
+        // ===== Callback cho các luồng khác (giữ nguyên logic cũ) =====
+        int maDatPhong = Integer.parseInt(vnp_TxnRef.split("_")[0]);
         boolean laThuThemDichVu = "ThuThemDichVu".equals(orderInfo);
 
         redirectAttributes.addFlashAttribute("orderId", orderInfo);

@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title th:text="${title} + ' | Hotel'">Chi Tiết Hóa Đơn | Hotel</title>
     <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         /* ===== TONG QUAN (stat cards, mirrors thong-ke-doanh-thu.html) ===== */
         .stat-cards {
@@ -25,6 +26,7 @@
         .stat-card.c-green { border-left-color: #27AE60; }
         .stat-card.c-amber { border-left-color: #F5B301; }
         .stat-card.c-red { border-left-color: #E74C3C; }
+        .stat-card.c-blue { border-left-color: #1a6fb3; }
 
         .stat-label {
             color: var(--text-gray);
@@ -200,12 +202,80 @@
                 <div class="stat-value"
                      th:text="${#numbers.formatDecimal(conLai, 0, 'COMMA', 0, 'POINT')} + ' VND'">0 VND</div>
             </div>
-            <div class="stat-card">
+            <div class="stat-card c-blue" th:if="${tongHoan != null and tongHoan.signum() > 0}">
+                <div class="stat-label">Đã Hoàn Trả</div>
+                <div class="stat-value"
+                     th:text="${#numbers.formatDecimal(tongHoan, 0, 'COMMA', 0, 'POINT')} + ' VND'">0 VND</div>
+            </div>
+            <div class="stat-card" th:if="${tongHoan == null or tongHoan.signum() <= 0}">
                 <div class="stat-label">Trạng Thái Thanh Toán</div>
                 <div class="stat-value" style="font-size:16px;">
                     <span class="status-badge" th:classappend="${trangThaiThanhToanClass}" th:text="${trangThaiThanhToanLabel}"></span>
                 </div>
             </div>
+            <div class="stat-card" th:if="${tongHoan != null and tongHoan.signum() > 0}">
+                <div class="stat-label">Trạng Thái Thanh Toán</div>
+                <div class="stat-value" style="font-size:16px;">
+                    <span class="status-badge" th:classappend="${trangThaiThanhToanClass}" th:text="${trangThaiThanhToanLabel}"></span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== THE HOAN TIEN (chi hien thi khi don da huy va co giao dich hoan) ===== -->
+    <section class="admin-panel" th:if="${hoaDon.d != null and hoaDon.d.trangThai == 'Da huy' and hoanTienList != null and !hoanTienList.isEmpty()}">
+        <h2><i class="fa-regular fa-money-bill-1"></i> Lịch Sử Hoàn Tiền</h2>
+        <div class="info-grid cols-2" style="margin-bottom:18px;">
+            <div class="info-item">
+                <div class="info-label">Số Tiền Hoàn Dự Kiến</div>
+                <div class="info-value"
+                     th:text="${hoaDon.soTienHoan != null ? #numbers.formatDecimal(hoaDon.soTienHoan, 0, 'COMMA', 0, 'POINT') + ' VND' : '0 VND'}">0 VND</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Đã Hoàn Trả Thực Tế</div>
+                <div class="info-value"
+                     th:text="${#numbers.formatDecimal(tongHoan, 0, 'COMMA', 0, 'POINT')} + ' VND'">0 VND</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Tỷ Lệ Hoàn</div>
+                <div class="info-value"
+                     th:text="${hoaDon.tyLeHoan != null ? #numbers.formatDecimal(hoaDon.tyLeHoan.multiply(T(java.math.BigDecimal).valueOf(100L)),0,'COMMA',0,'POINT') + '%' : '-'}">-</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Trạng Thái Hoàn Tiền</div>
+                <div class="info-value" th:text="${hoaDon.trangThaiHoanTien != null ? hoaDon.trangThaiHoanTien : '-'}">-</div>
+            </div>
+        </div>
+
+        <div class="admin-table-wrap">
+            <table class="admin-table">
+                <thead>
+                <tr>
+                    <th>Ngày Hoàn</th>
+                    <th>Phương Thức</th>
+                    <th>Số Tiền</th>
+                    <th>Mã Giao Dịch</th>
+                    <th>STK Nhận / Ngân Hàng</th>
+                    <th>Nhân Viên Xử Lý</th>
+                    <th>Ghi Chú</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="ht : ${hoanTienList}">
+                    <td th:text="${ht.ngaythanhToan != null ? #temporals.format(ht.ngaythanhToan, 'dd/MM/yyyy HH:mm') : '-'}"></td>
+                    <td th:text="${ht.phuongThuc != null ? ht.phuongThuc : '-'}"></td>
+                    <td th:text="${ht.soTien != null ? #numbers.formatDecimal(ht.soTien, 0, 'COMMA', 0, 'POINT') + ' VND' : '-'}"></td>
+                    <td th:text="${ht.magiaodich != null and !ht.magiaodich.isEmpty() ? ht.magiaodich : '-'}"></td>
+                    <td>
+                        <span th:if="${ht.stkNhanHoan != null and !ht.stkNhanHoan.isEmpty()}"
+                              th:text="${ht.stkNhanHoan + ' (' + (ht.tenNganHangNhanHoan != null ? ht.tenNganHangNhanHoan : '-') + ')'}"></span>
+                        <span th:if="${ht.stkNhanHoan == null or ht.stkNhanHoan.isEmpty()}">-</span>
+                    </td>
+                    <td th:text="${ht.nv != null ? ht.nv.hoten : '-'}"></td>
+                    <td class="info-value muted" th:text="${ht.gichu != null and !ht.gichu.isEmpty() ? ht.gichu : '-'}"></td>
+                </tr>
+                </tbody>
+            </table>
         </div>
     </section>
 
@@ -416,6 +486,11 @@
             <div class="summary-row remaining" th:classappend="${conLai.signum() <= 0} ? 'settled'">
                 <span class="summary-label">Còn lại</span>
                 <span class="summary-value" th:text="${#numbers.formatDecimal(conLai, 0, 'COMMA', 0, 'POINT')} + ' VND'"></span>
+            </div>
+            <div class="summary-row" th:if="${tongHoan != null and tongHoan.signum() > 0}" style="background:#fff7e6;">
+                <span class="summary-label" style="color:#c2410c;"> Hoàn trả khách</span>
+                <span class="summary-value" style="color:#c2410c;"
+                      th:text="'- ' + ${#numbers.formatDecimal(tongHoan, 0, 'COMMA', 0, 'POINT')} + ' VND'"></span>
             </div>
         </div>
 

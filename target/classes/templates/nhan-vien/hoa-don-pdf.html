@@ -68,6 +68,8 @@
         .total-val   { display: table-cell; text-align: right; font-size: 14px; font-weight: bold; color: #111; }
         .total-val-blue { display: table-cell; text-align: right; font-size: 14px; font-weight: bold; color: #1a5276; }
         .total-val-red  { display: table-cell; text-align: right; font-size: 14px; font-weight: bold; color: #c0392b; }
+        .total-val-orange { display: table-cell; text-align: right; font-size: 14px; font-weight: bold; color: #c2410c; }
+        .total-label-orange { display: table-cell; font-size: 13px; color: #c2410c; font-weight: bold; }
 
         .grand-box { background: #1a5276; display: table; width: 100%; padding: 12px 20px; margin-top: 4px; }
         .grand-label  { display: table-cell; font-size: 14px; font-weight: bold; color: #fff; }
@@ -330,6 +332,15 @@
                 3.025.000 VNĐ
             </span>
         </div>
+        <!-- Hoàn trả khách (chỉ hiển thị nếu có) -->
+        <div class="total-row" th:if="${tongHoan != null and tongHoan.compareTo(T(java.math.BigDecimal).ZERO) > 0}"
+             style="background:#fff7e6;">
+            <span class="total-label-orange">↩ Hoàn trả khách</span>
+            <span class="total-val-orange"
+                  th:text="${'- ' + #numbers.formatDecimal(tongHoan, 0, 'COMMA', 0, 'POINT') + ' VNĐ'}">
+                - 0 VNĐ
+            </span>
+        </div>
     </div>
 
     <!-- Còn lại + badge -->
@@ -374,6 +385,70 @@
         <div class="note-label">Ghi chú</div>
         <div class="note-text" th:text="${hoaDon.ghiChu}">
             Khách yêu cầu phòng tầng cao, hướng nhìn ra hồ.
+        </div>
+    </div>
+
+    <!-- ══ LỊCH SỬ HOÀN TIỀN (chỉ hiển thị khi đơn đã hủy và có giao dịch hoàn) ══ -->
+    <div th:if="${hoaDon.d != null and hoaDon.d.trangThai == 'Da huy' and hoanTienList != null and !hoanTienList.isEmpty()}"
+         style="margin: 14px 20px 0;">
+        <div class="section-bar">↩ Lịch sử hoàn tiền</div>
+        <div class="info-grid">
+            <div class="info-col info-col-left">
+                <div class="info-row">
+                    <span class="info-key">Số tiền hoàn dự kiến</span>
+                    <span class="info-val"
+                          th:text="${hoaDon.soTienHoan != null
+                              ? #numbers.formatDecimal(hoaDon.soTienHoan, 0, 'COMMA', 0, 'POINT') + ' VNĐ'
+                              : '0 VNĐ'}">0 VNĐ</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-key">Tỷ lệ hoàn</span>
+                    <span class="info-val"
+                          th:text="${hoaDon.tyLeHoan != null
+                              ? #numbers.formatDecimal(hoaDon.tyLeHoan.multiply(T(java.math.BigDecimal).valueOf(100L)), 0, 'COMMA', 0, 'POINT') + '%'
+                              : '-'}">-</span>
+                </div>
+            </div>
+            <div class="info-col">
+                <div class="info-row">
+                    <span class="info-key">Đã hoàn trả thực tế</span>
+                    <span class="info-val" style="color:#c2410c;"
+                          th:text="${tongHoan != null
+                              ? #numbers.formatDecimal(tongHoan, 0, 'COMMA', 0, 'POINT') + ' VNĐ'
+                              : '0 VNĐ'}">0 VNĐ</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-key">Trạng thái hoàn tiền</span>
+                    <span class="info-val"
+                          th:text="${hoaDon.trangThaiHoanTien != null ? hoaDon.trangThaiHoanTien : '-'}">-</span>
+                </div>
+            </div>
+        </div>
+        <div class="items-wrap">
+            <table class="items-table">
+                <thead>
+                <tr>
+                    <th>Ngày hoàn</th>
+                    <th>Phương thức</th>
+                    <th class="right">Số tiền (VNĐ)</th>
+                    <th>Mã giao dịch</th>
+                    <th>STK / Ngân hàng</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr class="row-normal" th:each="ht : ${hoanTienList}">
+                    <td th:text="${ht.ngaythanhToan != null ? #temporals.format(ht.ngaythanhToan, 'dd/MM/yyyy HH:mm') : '-'}">-</td>
+                    <td th:text="${ht.phuongThuc != null ? ht.phuongThuc : '-'}">-</td>
+                    <td class="right" th:text="${ht.soTien != null ? #numbers.formatDecimal(ht.soTien, 0, 'COMMA', 0, 'POINT') : '-'}">-</td>
+                    <td th:text="${ht.magiaodich != null and !ht.magiaodich.isEmpty() ? ht.magiaodich : '-'}">-</td>
+                    <td>
+                        <span th:if="${ht.stkNhanHoan != null and !ht.stkNhanHoan.isEmpty()}"
+                              th:text="${ht.stkNhanHoan + ' (' + (ht.tenNganHangNhanHoan != null ? ht.tenNganHangNhanHoan : '-') + ')'}">-</span>
+                        <span th:if="${ht.stkNhanHoan == null or ht.stkNhanHoan.isEmpty()}">-</span>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
         </div>
     </div>
 

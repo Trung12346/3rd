@@ -192,7 +192,7 @@ public class ThanhToanController {
         BigDecimal tienVat = Totalamount.multiply(ThueVat).setScale(2, RoundingMode.HALF_UP);
         Totalamount = Totalamount.add(tienVat);
         HoaDon hd = hoaDonService.findByDatPhongId(id);
-        model.addAttribute("transactionId",thanhToanService.findByHoaDonId(hd.getId()));
+        model.addAttribute("transactionId",thanhToanService.findByHoaDonId(hd.getId()).getMagiaodich());
         model.addAttribute("datPhong", dp);
         model.addAttribute("TongTien", amountPhong);
         model.addAttribute("TienVat",tienVat);

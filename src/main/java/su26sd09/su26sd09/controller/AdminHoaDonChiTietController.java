@@ -15,6 +15,7 @@ import su26sd09.su26sd09.repository.ThanhToanRepo;
 import su26sd09.su26sd09.service.HoaDonService;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -48,6 +49,18 @@ public class AdminHoaDonChiTietController {
                 : List.of();
         List<ThanhToan> thanhToans = thanhToanRepo.findByH_IdOrderByNgaythanhToanAsc(id);
 
+        // Phan tach lich su thanh toan (loaiGiaoDich = "Thu tien") vs hoan tien (loaiGiaoDich = "Hoan tien")
+        List<ThanhToan> thanhToanList = new ArrayList<>();
+        List<ThanhToan> hoanTienList = new ArrayList<>();
+        for (ThanhToan t : thanhToans) {
+            if (t != null && "Hoan tien".equalsIgnoreCase(t.getLoaiGiaoDich())) {
+                hoanTienList.add(t);
+            } else {
+                thanhToanList.add(t);
+            }
+        }
+        BigDecimal tongHoan = hoaDon.getDaHoanTra() != null ? hoaDon.getDaHoanTra() : BigDecimal.ZERO;
+
         // Tinh tong phu phi ngoai gio (100k/loi) tu cac phong trong don
         BigDecimal tongPhuThu = BigDecimal.ZERO;
         for (ChiTietDatPhong ct : phongList) {
@@ -76,7 +89,9 @@ public class AdminHoaDonChiTietController {
         model.addAttribute("hoaDon", hoaDon);
         model.addAttribute("phongList", phongList);
         model.addAttribute("dichVuList", dichVuList);
-        model.addAttribute("thanhToans", thanhToans);
+        model.addAttribute("thanhToans", thanhToanList);
+        model.addAttribute("hoanTienList", hoanTienList);
+        model.addAttribute("tongHoan", tongHoan);
         model.addAttribute("conLai", conLai);
         model.addAttribute("tongPhuThu", tongPhuThu);
         model.addAttribute("trangThaiThanhToanLabel", trangThaiThanhToanLabel);

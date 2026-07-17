@@ -469,7 +469,7 @@
                                 Đã hủy
                             </span>
 
-                            <form th:if="${dp.trangThai == 'Chua thanh toan'}"
+                            <form th:if="${dp.trangThai != 'Da nhan phong' and dp.trangThai != 'Da tra phong' and dp.trangThai != 'Da huy' and dp.trangThai != 'Cho huy'}"
                                   th:action="@{/nhan-su/dat-phong/cancel}" method="post" style="margin: 0;">
                                 <input type="hidden" name="id" th:value="${dp.id}">
                                 <input type="hidden" name="page" th:value="${currentPage}">

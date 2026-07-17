@@ -12,6 +12,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import su26sd09.su26sd09.dto.KetQuaHuyDonDTO;
 import su26sd09.su26sd09.dto.RoomBookingGuardDTO;
 import su26sd09.su26sd09.entity.*;
 import su26sd09.su26sd09.service.*;
@@ -57,6 +58,9 @@ public class AdminDatPhongController {
 
     @Autowired
     ThanhToanService thanhToanService;
+
+    @Autowired
+    HuyDonService huyDonService;
 
     @Autowired
     khuyenMaiService khuyenMaiService;
@@ -413,32 +417,25 @@ public class AdminDatPhongController {
         return value.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 
-    @PostMapping("/cancel")
-    public String cancel(
-            @RequestParam("id") Integer id,
-            @RequestParam(value = "page", defaultValue = "0") int page,
-            @RequestParam(value = "size", defaultValue = "10") int size,
-            RedirectAttributes redirectAttributes) {
+    @PostMapping("/huy")
+    public String huyDonAdmin(@RequestParam Integer id,
+                              @RequestParam(defaultValue = "0") int page,
+                              @RequestParam(defaultValue = "10") int size,
+                              RedirectAttributes redirectAttributes) {
 
-        DatPhong dp = datPhongService.findById(id);
-        if (dp == null) {
-            redirectAttributes.addFlashAttribute("error", "Không tìm thấy đơn đặt phòng #" + id);
-            return "redirect:/nhan-su/admin/dat-phong?page=" + page + "&size=" + size;
+        KetQuaHuyDonDTO ketQua = huyDonService.huyDon(id);
+        redirectAttributes.addFlashAttribute("thongBao", ketQua.getThongBao());
+
+        if (ketQua.isCanHoanTien()) {
+            // Có tiền cần hoàn -> đi thẳng sang trang xử lý hoàn tiền (AdminHoanTienController)
+            return "redirect:/nhan-su/admin/hoan-tien/chi-tiet/" + ketQua.getHoaDonId();
         }
 
-        if (!"Chua thanh toan".equals(dp.getTrangThai())) {
-            redirectAttributes.addFlashAttribute("error",
-                    "Chỉ có thể hủy đơn khi đang ở trạng thái Chưa thanh toán");
-            return "redirect:/nhan-su/admin/dat-phong?page=" + page + "&size=" + size;
-        }
-
-        dp.setTrangThai("Da huy");
-        dp.setNgayCapNhat(LocalDateTime.now());
-        datPhongService.save(dp);
-
-        redirectAttributes.addFlashAttribute("success", "Đã hủy đơn đặt phòng #" + id);
+        // Không phát sinh hoàn tiền -> quay lại danh sách đặt phòng
         return "redirect:/nhan-su/admin/dat-phong?page=" + page + "&size=" + size;
     }
+
+
 
     @GetMapping("/search")
     public String getSearchDatPhong(
