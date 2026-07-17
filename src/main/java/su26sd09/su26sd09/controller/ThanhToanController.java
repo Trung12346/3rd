@@ -99,7 +99,7 @@ public class ThanhToanController {
         tongTien = tongTien.add(tienVat);
 
         String baseUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort();
-        String vnpayUrl = vnpayService.createOrder(tongTien.intValue(), id, "ChuyenKhoan", baseUrl);
+        String vnpayUrl = vnpayService.createOrder(tongTien.longValue(), id, "ChuyenKhoan", baseUrl);
 
         return "redirect:" + vnpayUrl;
     }
