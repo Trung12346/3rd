@@ -687,9 +687,11 @@
       return;
     }
 
-    const ngayNhan = new Date(ngayNhanStr);
-    const ngayTra = new Date(ngayTraStr);
-    const soNgay = Math.round((ngayTra - ngayNhan) / (1000 * 60 * 60 * 24));
+    // Tinh so dem theo ngay lich (bo qua gio, tranh Math.round lam tron sai)
+    // Vi du: nhan 01/08 12:30 SA, tra 06/08 6:30 CH => 5 dem (06 - 01 = 5)
+    const d1 = new Date(String(ngayNhanStr).substring(0, 10) + 'T00:00:00');
+    const d2 = new Date(String(ngayTraStr).substring(0, 10) + 'T00:00:00');
+    const soNgay = Math.round((d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24));
 
     if (soNgay <= 0) {
       soDemRow.style.display = 'none';

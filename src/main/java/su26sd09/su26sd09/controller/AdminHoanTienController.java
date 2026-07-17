@@ -103,7 +103,7 @@ public class AdminHoanTienController {
         // Tạo URL VNPay và redirect
         String baseUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort();
         String vnpayUrl = vnpayService.createRefundOrder(
-                hd.getId(), hd.getSoTienHoan().intValue(), baseUrl);
+                hd.getId(), hd.getSoTienHoan().longValue(), baseUrl);
         return "redirect:" + vnpayUrl;
     }
 

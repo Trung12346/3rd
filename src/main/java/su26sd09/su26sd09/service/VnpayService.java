@@ -55,7 +55,7 @@ public class VnpayService {
     public static final String ORDER_INFO_DAT_PHONG        = "DatPhong";
     public static final String ORDER_INFO_HOAN_TIEN        = "HoanTienChoKhach";
 
-    public String createOrder(int total,int maDatPhong, String orderInfor, String urlReturn){
+    public String createOrder(long total,int maDatPhong, String orderInfor, String urlReturn){
         System.out.println("Truy cap createOrder");
         String vnp_Version = "2.1.0";
         String vnp_Command = "pay";
@@ -133,7 +133,7 @@ public class VnpayService {
      * @param soTien   số tiền hoàn (VND, chưa nhân 100)
      * @param urlReturn base URL (scheme://host:port)
      */
-    public String createRefundOrder(int maHoaDon, int soTien, String urlReturn) {
+    public String createRefundOrder(int maHoaDon, long soTien, String urlReturn) {
         System.out.println("Truy cap createRefundOrder, maHoaDon=" + maHoaDon + ", soTien=" + soTien);
 
         String vnp_Version = "2.1.0";

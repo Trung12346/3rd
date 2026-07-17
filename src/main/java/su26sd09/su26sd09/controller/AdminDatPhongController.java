@@ -653,7 +653,7 @@ public class AdminDatPhongController {
         }
         if("Chuyen Khoan".equalsIgnoreCase(phuongthuc)){
             String baseUrl = request.getScheme() + "://"+request.getServerName() + ":"+request.getServerPort();
-            String vnPayUrl = vnpayService.createOrder(soTien.intValue(),id,"ThuThemDichVu",baseUrl);
+            String vnPayUrl = vnpayService.createOrder(soTien.longValue(),id,"ThuThemDichVu",baseUrl);
             return "redirect:"+vnPayUrl;
         }
         ThanhToan tt = new ThanhToan();
