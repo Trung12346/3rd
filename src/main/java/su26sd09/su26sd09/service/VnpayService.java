@@ -7,6 +7,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import su26sd09.su26sd09.config.vnpayConfig;
+import su26sd09.su26sd09.dto.RefundDraft;
 import su26sd09.su26sd09.entity.*;
 
 import java.io.UnsupportedEncodingException;
@@ -45,6 +46,14 @@ public class VnpayService {
 
     @Autowired
     NhanVienService nhanVienService;
+
+    @Autowired
+    HuyDonService huyDonService;
+
+    /** Phân biệt các luồng callback VNPay. */
+    public static final String ORDER_INFO_THU_THEM_DICH_VU = "ThuThemDichVu";
+    public static final String ORDER_INFO_DAT_PHONG        = "DatPhong";
+    public static final String ORDER_INFO_HOAN_TIEN        = "HoanTienChoKhach";
 
     public String createOrder(int total,int maDatPhong, String orderInfor, String urlReturn){
         System.out.println("Truy cap createOrder");
@@ -116,6 +125,80 @@ public class VnpayService {
         return paymentUrl;
     }
 
+    /**
+     * Tạo URL VNPay cho luồng hoàn tiền (giả lập pay-in: từ tài khoản merchant
+     * tới 1 tài khoản đối tác trung gian, dùng làm bằng chứng giao dịch).
+     *
+     * @param maHoaDon mã hóa đơn cần hoàn
+     * @param soTien   số tiền hoàn (VND, chưa nhân 100)
+     * @param urlReturn base URL (scheme://host:port)
+     */
+    public String createRefundOrder(int maHoaDon, int soTien, String urlReturn) {
+        System.out.println("Truy cap createRefundOrder, maHoaDon=" + maHoaDon + ", soTien=" + soTien);
+
+        String vnp_Version = "2.1.0";
+        String vnp_Command = "pay";
+        String vnp_TxnRef = "REFUND_" + maHoaDon + "_" + vnpayConfig.getRandomNumber(8);
+        String vnp_IpAddr = "127.0.0.1";
+        String vnp_TmnCode = vnpayConfig.vnp_TmnCode;
+        String orderType = "refund";
+
+        Map<String, String> vnp_Params = new HashMap<>();
+        vnp_Params.put("vnp_Version", vnp_Version);
+        vnp_Params.put("vnp_Command", vnp_Command);
+        vnp_Params.put("vnp_TmnCode", vnp_TmnCode);
+        vnp_Params.put("vnp_Amount", String.valueOf(soTien * 100));
+        vnp_Params.put("vnp_CurrCode", "VND");
+
+        vnp_Params.put("vnp_TxnRef", vnp_TxnRef);
+        vnp_Params.put("vnp_OrderInfo", ORDER_INFO_HOAN_TIEN);
+        vnp_Params.put("vnp_OrderType", orderType);
+
+        vnp_Params.put("vnp_Locale", "vn");
+
+        urlReturn += vnpayConfig.vnp_Returnurl;
+        vnp_Params.put("vnp_ReturnUrl", urlReturn);
+        vnp_Params.put("vnp_IpAddr", vnp_IpAddr);
+
+        Calendar cld = Calendar.getInstance(TimeZone.getTimeZone("Etc/GMT+7"));
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyyMMddHHmmss");
+        String vnp_CreateDate = formatter.format(cld.getTime());
+        vnp_Params.put("vnp_CreateDate", vnp_CreateDate);
+
+        cld.add(Calendar.MINUTE, 15);
+        String vnp_ExpireDate = formatter.format(cld.getTime());
+        vnp_Params.put("vnp_ExpireDate", vnp_ExpireDate);
+
+        List fieldNames = new ArrayList(vnp_Params.keySet());
+        Collections.sort(fieldNames);
+        StringBuilder hashData = new StringBuilder();
+        StringBuilder query = new StringBuilder();
+        Iterator itr = fieldNames.iterator();
+        while (itr.hasNext()) {
+            String fieldName = (String) itr.next();
+            String fieldValue = (String) vnp_Params.get(fieldName);
+            if ((fieldValue != null) && (fieldValue.length() > 0)) {
+                hashData.append(fieldName);
+                hashData.append('=');
+                try {
+                    hashData.append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII.toString()));
+                    query.append(URLEncoder.encode(fieldName, StandardCharsets.US_ASCII.toString()));
+                    query.append('=');
+                    query.append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII.toString()));
+                } catch (UnsupportedEncodingException e) {
+                    e.printStackTrace();
+                }
+                if (itr.hasNext()) {
+                    query.append('&');
+                    hashData.append('&');
+                }
+            }
+        }
+        String vnp_SecureHash = vnpayConfig.hmacSHA512(vnpayConfig.vnp_HashSecret, hashData.toString());
+        String paymentUrl = vnpayConfig.vnp_PayUrl + "?" + query.toString() + "&vnp_SecureHash=" + vnp_SecureHash;
+        return paymentUrl;
+    }
+
     public int orderReturn(HttpServletRequest request, Authentication authentication) {
         System.out.println("Truy cap Order Return");
 
@@ -144,13 +227,85 @@ public class VnpayService {
         String vnp_PayDate       = request.getParameter("vnp_PayDate");
         String vnp_OrderInfo     = request.getParameter("vnp_OrderInfo");
 
-        int maDatPhong = Integer.parseInt(vnp_TxnRef.split("_")[0]);
         Long amountParse = Long.parseLong(amount) / 100;
         BigDecimal amountVnpay = BigDecimal.valueOf(amountParse);
 
         boolean vnpayBaoThanhCong = "00".equals(vnp_ResponseCode);
         boolean laThuThemDichVu = "ThuThemDichVu".equals(vnp_OrderInfo);
+        boolean laHoanTienChoKhach = ORDER_INFO_HOAN_TIEN.equals(vnp_OrderInfo);
 
+        // ===== Nhánh HOÀN TIỀN CHO KHÁCH =====
+        if (laHoanTienChoKhach) {
+            if (!vnpayBaoThanhCong) {
+                System.out.println("Hoan tien that bai (VNPay), txnRef=" + vnp_TxnRef);
+                return 0;
+            }
+            // TxnRef dạng: REFUND_{maHoaDon}_{rand}
+            String[] parts = vnp_TxnRef.split("_");
+            if (parts.length < 2) {
+                System.out.println("TxnRef khong dung dinh dang hoan tien: " + vnp_TxnRef);
+                return 0;
+            }
+            int maHoaDon = Integer.parseInt(parts[1]);
+            HoaDon hd = hoaDonService.findById(maHoaDon);
+            if (hd == null) {
+                System.out.println("Khong tim thay HoaDon de hoan tien: " + maHoaDon);
+                return 0;
+            }
+
+            LocalDateTime thoiGianThanhToan;
+            try {
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmss");
+                Date date = sdf.parse(vnp_PayDate);
+                thoiGianThanhToan = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
+            } catch (Exception e) {
+                thoiGianThanhToan = LocalDateTime.now();
+            }
+
+            // Lấy thông tin nháp từ session do controller lưu trước khi redirect sang VNPay
+            RefundDraft draft = null;
+            jakarta.servlet.http.HttpSession session = request.getSession(false);
+            if (session != null) {
+                Object o = session.getAttribute("refundDraft_" + maHoaDon);
+                if (o instanceof RefundDraft) {
+                    draft = (RefundDraft) o;
+                }
+                // Dùng thành công hay thất bại thì cũng xoá để tránh dùng lại
+                session.removeAttribute("refundDraft_" + maHoaDon);
+            }
+
+            NhanSu nvXuLy = null;
+            if (draft != null && draft.getEmailNhanVienXuLy() != null) {
+                nvXuLy = nhanVienService.FindByemail(draft.getEmailNhanVienXuLy());
+            }
+            if (nvXuLy == null) {
+                // fallback: lấy nhân viên đang đăng nhập hoặc 1 lễ tân
+                authentication = SecurityContextHolder.getContext().getAuthentication();
+                String email = null;
+                if (authentication != null && authentication.isAuthenticated()
+                        && !(authentication instanceof AnonymousAuthenticationToken)) {
+                    email = authentication.getName();
+                }
+                if (email != null) {
+                    nvXuLy = nhanVienService.FindByemail(email);
+                }
+                if (nvXuLy == null) {
+                    nvXuLy = nhanVienService.findAll().stream()
+                            .filter(nv -> "lễ tân".equalsIgnoreCase(nv.getBoPhan()))
+                            .findFirst().orElse(null);
+                }
+            }
+
+            huyDonService.xacNhanHoanTienVnpay(maHoaDon, vnp_TransactionNo,
+                    draft == null ? null : draft.getStkNhanHoan(),
+                    draft == null ? null : draft.getTenNganHang(),
+                    draft == null ? null : draft.getGhiChu(),
+                    thoiGianThanhToan, nvXuLy);
+            System.out.println("Hoan tien VNPay thanh cong: maHD=" + maHoaDon + ", maGD=" + vnp_TransactionNo);
+            return 1;
+        }
+
+        int maDatPhong = Integer.parseInt(vnp_TxnRef.split("_")[0]);
         DatPhong dp = datPhongService.findById(maDatPhong);
         if (dp == null) {
             System.out.println("Khong tim thay DatPhong: " + maDatPhong);

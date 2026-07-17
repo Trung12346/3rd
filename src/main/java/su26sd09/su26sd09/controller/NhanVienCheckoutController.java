@@ -45,6 +45,7 @@ public class NhanVienCheckoutController {
     @Autowired private PhongService phongService;
     @Autowired private HoaDonService hoaDonService;
     @Autowired private ThanhToanService thanhToanService;
+    @Autowired private su26sd09.su26sd09.repository.ThanhToanRepo thanhToanRepo;
     @Autowired private NguoiDungService nguoiDungService;
     @Autowired private NhanVienService nhanVienService;
     @Autowired private TemplateEngine templateEngine;
@@ -369,9 +370,21 @@ public class NhanVienCheckoutController {
             }
         }
 
+        // Lay lich su giao dich va tach rieng phan hoan tien
+        java.util.List<ThanhToan> thanhToans = thanhToanRepo.findByH_IdOrderByNgaythanhToanAsc(hoaDon.getId());
+        java.util.List<ThanhToan> hoanTienList = new java.util.ArrayList<>();
+        for (ThanhToan t : thanhToans) {
+            if (t != null && "Hoan tien".equalsIgnoreCase(t.getLoaiGiaoDich())) {
+                hoanTienList.add(t);
+            }
+        }
+        BigDecimal tongHoan = hoaDon.getDaHoanTra() != null ? hoaDon.getDaHoanTra() : BigDecimal.ZERO;
+
         Context context = new Context();
         context.setVariable("hoaDon", hoaDon);
         context.setVariable("tongPhuThu", tongPhuThu);
+        context.setVariable("hoanTienList", hoanTienList);
+        context.setVariable("tongHoan", tongHoan);
 
         String html = templateEngine.process("nhan-vien/hoa-don-pdf", context);
 

@@ -101,11 +101,11 @@
             transition: background-color var(--cms-t), border-color var(--cms-t), color var(--cms-t);
         }
 
-            .cms-sidebar-toggle-trigger svg {
-                width: 16px;
-                height: 16px;
-                display: block;
-            }
+        .cms-sidebar-toggle-trigger svg {
+            width: 16px;
+            height: 16px;
+            display: block;
+        }
 
         .cms-sidebar-toggle-trigger:hover {
             background: var(--cms-blue-light);
@@ -448,10 +448,10 @@
                         <span class="cms-nav-text">Thống kê chung</span>
                     </a>
 
-                                        <a th:href="@{/nhan-su/admin/thong-ke}" class="cms-nav-link">
-                                            <span class="cms-nav-icon" aria-hidden="true">📈</span>
-                                            <span class="cms-nav-text">Doanh thu</span>
-                                        </a>
+                    <a th:href="@{/nhan-su/admin/thong-ke}" class="cms-nav-link">
+                        <span class="cms-nav-icon" aria-hidden="true">📈</span>
+                        <span class="cms-nav-text">Doanh thu</span>
+                    </a>
                 </div>
 
                 <div class="cms-nav-group">
@@ -487,6 +487,12 @@
                             <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="15 17 20 12 15 7"/><line x1="20" y1="12" x2="9" y2="12"/></svg>
                         </span>
                         <span class="cms-nav-text">Trả phòng (Checkout)</span>
+                    </a>
+                    <a th:href="@{/nhan-su/admin/hoan-tien}" class="cms-nav-link">
+                        <span class="cms-nav-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/><line x1="6" y1="9" x2="6" y2="9.01"/><line x1="18" y1="15" x2="18" y2="15.01"/></svg>
+                        </span>
+                        <span class="cms-nav-text">Yêu cầu hoàn tiền</span>
                     </a>
                 </div>
 
@@ -554,17 +560,23 @@
                         </span>
                         <span class="cms-nav-text">Đặt phòng tại quầy</span>
                     </a>
-<!--                    <a th:href="@{/nhan-su/checkout}" class="cms-nav-link">-->
-<!--                        <span class="cms-nav-icon" aria-hidden="true">-->
-<!--                            <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="15 17 20 12 15 7"/><line x1="20" y1="12" x2="9" y2="12"/></svg>-->
-<!--                        </span>-->
-<!--                        <span class="cms-nav-text">Trả phòng (Checkout)</span>-->
-<!--                    </a>-->
+                    <!--                    <a th:href="@{/nhan-su/checkout}" class="cms-nav-link">-->
+                    <!--                        <span class="cms-nav-icon" aria-hidden="true">-->
+                    <!--                            <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="15 17 20 12 15 7"/><line x1="20" y1="12" x2="9" y2="12"/></svg>-->
+                    <!--                        </span>-->
+                    <!--                        <span class="cms-nav-text">Trả phòng (Checkout)</span>-->
+                    <!--                    </a>-->
                     <a th:href="@{/nhan-su/dich-vu}" class="cms-nav-link">
                         <span class="cms-nav-icon" aria-hidden="true">
                             <svg viewBox="0 0 24 24"><path d="M4 16a8 8 0 0 1 16 0z"/><line x1="2" y1="16" x2="22" y2="16"/><line x1="12" y1="4" x2="12" y2="7"/><circle cx="12" cy="3" r="1" fill="currentColor" stroke="none"/></svg>
                         </span>
                         <span class="cms-nav-text">Dịch vụ</span>
+                    </a>
+                    <a th:href="@{/nhan-su/hoan-tien}" class="cms-nav-link">
+                        <span class="cms-nav-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/><line x1="6" y1="9" x2="6" y2="9.01"/><line x1="18" y1="15" x2="18" y2="15.01"/></svg>
+                        </span>
+                        <span class="cms-nav-text">Yêu cầu hoàn tiền</span>
                     </a>
                 </div>
 

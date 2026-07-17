@@ -38,6 +38,15 @@ public class ThanhToan {
     @Column(name = "ma_giao_dich")
     public String magiaodich;
 
+    @Column(name = "loai_giao_dich")
+    public String loaiGiaoDich; // "Thu tien" / "Hoan tien"
+
+    @Column(name = "stk_nhan_hoan")
+    public String stkNhanHoan;
+
+    @Column(name = "ten_nganhang_nhan_hoan")
+    public String tenNganHangNhanHoan;
+
     @ManyToOne
     @JoinColumn(name = "ma_nhan_vien",referencedColumnName = "ma_nhan_su")
     public NhanSu nv;
