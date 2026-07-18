@@ -227,6 +227,14 @@ public interface ThongKeRepo extends JpaRepository<HoaDon, Integer> {
     public Double getActualRevenueCollected(@Param("start") LocalDate start, @Param("end") LocalDate end);
 
     @Query(value = """
+        SELECT COALESCE(SUM(so_tien), 0)
+        FROM thanh_toan
+        WHERE loai_giao_dich = N'Hoan tien'
+          AND ngay_thanh_toan >= :start AND ngay_thanh_toan < DATEADD(day, 1, :end)
+        """, nativeQuery = true)
+    public Double getRefundedAmount(@Param("start") LocalDate start, @Param("end") LocalDate end);
+
+    @Query(value = """
         SELECT COUNT(*)
         FROM thanh_toan
         WHERE trang_thai = N'Thanh cong'
