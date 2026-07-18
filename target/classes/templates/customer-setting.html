@@ -478,6 +478,61 @@
             .stats-grid { grid-template-columns: 1fr; }
             .section-header { flex-direction: column; align-items: flex-start; gap: 10px; }
         }
+
+        /* ===== MODAL: XÁC NHẬN HỦY ĐƠN ===== */
+        .cancel-modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+            z-index: 2000; align-items: center; justify-content: center; padding: 16px;
+        }
+        .cancel-modal-box {
+            background: #fff; border-radius: 12px; width: 100%; max-width: 520px;
+            max-height: 90vh; overflow-y: auto; box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+        }
+        .cancel-modal-header {
+            display: flex; align-items: center; gap: 10px;
+            padding: 18px 20px; border-bottom: 1px solid #eee;
+        }
+        .cancel-modal-header h3 { margin: 0; font-size: 17px; flex: 1; }
+        .cancel-modal-close {
+            background: none; border: none; font-size: 22px; line-height: 1; cursor: pointer;
+            color: var(--text-gray); padding: 0 4px;
+        }
+        .cancel-modal-body { padding: 20px; font-size: 14px; }
+        .cancel-policy-table {
+            width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 16px;
+        }
+        .cancel-policy-table th, .cancel-policy-table td {
+            border: 1px solid #eee; padding: 8px 10px; text-align: left;
+        }
+        .cancel-policy-table th { background: #f8f9fa; }
+        .cancel-policy-table tr.tier-active td {
+            background: #fdedec; font-weight: 700; color: #e74c3c;
+        }
+        .cancel-refund-summary {
+            background: #f8f9fa; border-radius: 8px; padding: 14px 16px;
+        }
+        .cancel-refund-row {
+            display: flex; justify-content: space-between; padding: 4px 0; font-size: 14px;
+        }
+        .cancel-refund-row.cancel-refund-highlight {
+            border-top: 1px dashed #ddd; margin-top: 6px; padding-top: 10px;
+            font-size: 15px; color: #e74c3c;
+        }
+        .cancel-modal-footer {
+            display: flex; justify-content: flex-end; gap: 10px;
+            padding: 16px 20px; border-top: 1px solid #eee;
+        }
+        .btn-cancel-modal-secondary {
+            padding: 9px 16px; border-radius: 8px; border: 1px solid #ddd;
+            background: #fff; color: var(--text-gray); cursor: pointer; font-size: 14px;
+        }
+        .btn-cancel-modal-confirm {
+            padding: 9px 16px; border-radius: 8px; border: none;
+            background: #e74c3c; color: #fff; cursor: pointer; font-size: 14px; font-weight: 600;
+        }
+        .btn-cancel-modal-confirm:disabled {
+            background: #f1948a; cursor: not-allowed;
+        }
     </style>
 </head>
 <body>
@@ -533,6 +588,10 @@
     <section class="dashboard-content">
 
         <!-- Alert messages (flash) -->
+        <div th:if="${thongBao}" class="alert alert-success">
+            <i class="fa-solid fa-circle-check"></i>
+            <span th:text="${thongBao}"></span>
+        </div>
         <div th:if="${successMsg}" class="alert alert-success">
             <i class="fa-solid fa-circle-check"></i>
             <span th:text="${successMsg}"></span>
@@ -704,6 +763,7 @@
                             <th>Trẻ em</th>
                             <th>Trạng thái</th>
                             <th>Chi tiết</th>
+                            <th>Hủy đơn</th>
                         </tr>
                         </thead>
                         <tbody>
@@ -716,9 +776,9 @@
                             <td th:text="${l.sotreEm}"></td>
                             <td>
                                 <span class="status-badge"
-                                      th:classappend="${l.trangThai == 'Đã hủy'} ? 'status-cancelled' :
-                                                      (${l.trangThai == 'Đang xử lý' || l.trangThai == 'Chờ xác nhận'} ? 'status-pending' :
-                                                      (${l.trangThai == 'Đã hoàn thành'} ? 'status-done' : 'status-success'))"
+                                      th:classappend="${l.trangThai == 'Đã hủy' || l.trangThai == 'Da huy' || l.trangThai == 'Cho huy'} ? 'status-cancelled' :
+                                                      (${l.trangThai == 'Đang xử lý' || l.trangThai == 'Chờ xác nhận' || l.trangThai == 'Cho xac nhan'} ? 'status-pending' :
+                                                      (${l.trangThai == 'Đã hoàn thành' || l.trangThai == 'Da tra phong'} ? 'status-done' : 'status-success'))"
                                       th:text="${l.trangThai}">
                                 </span>
                             </td>
@@ -726,6 +786,20 @@
                                 <a th:href="@{/profiles/dat-phong/{id}(id=${l.id})}" class="btn-detail-order">
                                     <i class="fa-solid fa-circle-info"></i> Chi tiết
                                 </a>
+                            </td>
+                            <td>
+                                <!-- Chỉ cho hủy khi đơn chưa nhận phòng / chưa trả phòng / chưa được yêu cầu hủy trước đó,
+                                     đồng bộ đúng điều kiện đang áp dụng ở phía quản lý (HuyDonService.huyDon).
+                                     Bấm nút này CHỈ mở modal xác nhận, việc hủy thật sự chỉ diễn ra khi
+                                     khách bấm nút "Xác nhận hủy đơn" bên trong modal. -->
+                                <button th:if="${l.trangThai == 'Cho xac nhan' || l.trangThai == 'Da xac nhan'}"
+                                        type="button" class="btn-detail-order"
+                                        style="background:#fdedec; color:#e74c3c; border:1px solid #f1948a; cursor:pointer;"
+                                        th:attr="onclick=|openCancelModal(${l.id})|">
+                                    <i class="fa-solid fa-ban"></i> Hủy đơn
+                                </button>
+                                <span th:unless="${l.trangThai == 'Cho xac nhan' || l.trangThai == 'Da xac nhan'}"
+                                      style="color:var(--text-gray); font-size:12px;">—</span>
                             </td>
                         </tr>
                         </tbody>
@@ -740,6 +814,82 @@
             </div>
         </div>
         <!-- END: ĐƠN ĐẶT PHÒNG -->
+
+        <!-- ==================== MODAL: XÁC NHẬN HỦY ĐƠN ==================== -->
+        <div id="cancelBookingOverlay" class="cancel-modal-overlay" style="display:none;">
+            <div class="cancel-modal-box">
+                <div class="cancel-modal-header">
+                    <i class="fa-solid fa-triangle-exclamation" style="color:#e74c3c;"></i>
+                    <h3>Xác nhận hủy đơn đặt phòng <span id="cancelModalMaDon"></span></h3>
+                    <button type="button" class="cancel-modal-close" onclick="closeCancelModal()">&times;</button>
+                </div>
+
+                <div class="cancel-modal-body">
+                    <div id="cancelModalLoading" style="text-align:center; padding:20px 0;">
+                        <i class="fa-solid fa-spinner fa-spin"></i> Đang tải chính sách hoàn tiền...
+                    </div>
+
+                    <div id="cancelModalError" class="alert alert-error" style="display:none;"></div>
+
+                    <div id="cancelModalContent" style="display:none;">
+                        <p style="margin:0 0 12px;">
+                            Vui lòng đọc kỹ chính sách hoàn tiền trước khi xác nhận hủy. Yêu cầu hủy sẽ được
+                            gửi tới nhân viên/quản trị để xử lý hoàn tiền thủ công.
+                        </p>
+
+                        <table class="cancel-policy-table">
+                            <thead>
+                            <tr><th>Thời gian kể từ lúc đặt</th><th>Tỷ lệ hoàn</th></tr>
+                            </thead>
+                            <tbody>
+                            <tr id="tier-0-30"><td>Dưới 30 phút</td><td>70%</td></tr>
+                            <tr id="tier-30-180"><td>Từ 30 phút đến 3 giờ</td><td>50%</td></tr>
+                            <tr id="tier-180-480"><td>Từ 3 giờ đến 8 giờ</td><td>40%</td></tr>
+                            <tr id="tier-480-plus"><td>Trên 8 giờ</td><td>30%</td></tr>
+                        </tbody>
+                        </table>
+
+                        <div class="cancel-refund-summary">
+                            <div class="cancel-refund-row">
+                                <span>Đã thanh toán:</span>
+                                <strong id="cancelSoTienDaThanhToan">—</strong>
+                            </div>
+                            <div class="cancel-refund-row">
+                                <span>Tỷ lệ hoàn áp dụng:</span>
+                                <strong id="cancelTyLeHoan">—</strong>
+                            </div>
+                            <div class="cancel-refund-row cancel-refund-highlight">
+                                <span>Số tiền dự kiến được hoàn:</span>
+                                <strong id="cancelSoTienHoan">—</strong>
+                            </div>
+                        </div>
+
+                        <p style="font-size:12px; color:var(--text-gray); margin-top:12px;">
+                            * Số tiền hoàn là ước tính tại thời điểm hiện tại và có thể thay đổi nếu bạn chờ
+                            thêm trước khi xác nhận, do được tính theo thời gian thực đã trôi qua kể từ lúc đặt phòng.
+                            Việc hoàn tiền sẽ được nhân viên/quản trị xác nhận thủ công sau khi tiếp nhận yêu cầu.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="cancel-modal-footer">
+                    <button type="button" class="btn-cancel-modal-secondary" onclick="closeCancelModal()">
+                        Đóng, giữ đơn
+                    </button>
+                    <button type="button" id="cancelModalConfirmBtn" class="btn-cancel-modal-confirm" disabled
+                            onclick="confirmCancelBooking()">
+                        <i class="fa-solid fa-ban"></i> Xác nhận hủy đơn
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form ẩn dùng chung để submit yêu cầu hủy thật sự, action được set động bằng JS -->
+        <form id="cancelBookingForm" method="post" style="display:none;">
+            <input type="hidden"
+                   th:name="${_csrf.parameterName}"
+                   th:value="${_csrf.token}"/>
+        </form>
 
         <!-- ==================== TAB: ĐÁNH GIÁ CỦA TÔI ==================== -->
         <div id="section-reviews" class="tab-section">
@@ -891,6 +1041,92 @@
     document.addEventListener('DOMContentLoaded', function() {
         var activeTab = /*[[${activeTab}]]*/ 'overview';
         showTab(activeTab);
+    });
+
+    // ==================== MODAL: XÁC NHẬN HỦY ĐƠN ====================
+    var cancelModalTargetId = null;
+
+    function formatVND(n) {
+        if (n === null || n === undefined || isNaN(n)) return '—';
+        return Number(n).toLocaleString('vi-VN') + ' đ';
+    }
+
+    function highlightRefundTier(soPhutDaTroi) {
+        ['tier-0-30', 'tier-30-180', 'tier-180-480', 'tier-480-plus'].forEach(function (rid) {
+            var el = document.getElementById(rid);
+            if (el) el.classList.remove('tier-active');
+        });
+        var activeId;
+        if (soPhutDaTroi < 30) activeId = 'tier-0-30';
+        else if (soPhutDaTroi < 180) activeId = 'tier-30-180';
+        else if (soPhutDaTroi < 480) activeId = 'tier-180-480';
+        else activeId = 'tier-480-plus';
+        var activeEl = document.getElementById(activeId);
+        if (activeEl) activeEl.classList.add('tier-active');
+    }
+
+    function openCancelModal(maDatPhong) {
+        cancelModalTargetId = maDatPhong;
+
+        document.getElementById('cancelModalMaDon').textContent = '#' + maDatPhong;
+        document.getElementById('cancelModalLoading').style.display = 'block';
+        document.getElementById('cancelModalError').style.display = 'none';
+        document.getElementById('cancelModalContent').style.display = 'none';
+        document.getElementById('cancelModalConfirmBtn').disabled = true;
+        document.getElementById('cancelBookingOverlay').style.display = 'flex';
+
+        fetch('/profiles/dat-phong/' + maDatPhong + '/huy-preview', {
+            method: 'GET',
+            headers: { 'Accept': 'application/json' }
+        })
+            .then(function (resp) { return resp.json().then(function (data) { return { status: resp.status, data: data }; }); })
+            .then(function (result) {
+                document.getElementById('cancelModalLoading').style.display = 'none';
+
+                if (!result.data.ok) {
+                    var errBox = document.getElementById('cancelModalError');
+                    errBox.textContent = result.data.message || 'Không thể tải thông tin hủy đơn. Vui lòng thử lại.';
+                    errBox.style.display = 'block';
+                    return;
+                }
+
+                var d = result.data;
+                document.getElementById('cancelSoTienDaThanhToan').textContent = formatVND(d.daThanhToan);
+                document.getElementById('cancelTyLeHoan').textContent = d.tyLePhanTram + '%';
+                document.getElementById('cancelSoTienHoan').textContent = formatVND(d.soTienHoanDuKien);
+                highlightRefundTier(d.soPhutDaTroi);
+
+                document.getElementById('cancelModalContent').style.display = 'block';
+                document.getElementById('cancelModalConfirmBtn').disabled = false;
+            })
+            .catch(function () {
+                document.getElementById('cancelModalLoading').style.display = 'none';
+                var errBox = document.getElementById('cancelModalError');
+                errBox.textContent = 'Có lỗi xảy ra khi tải thông tin hủy đơn. Vui lòng thử lại.';
+                errBox.style.display = 'block';
+            });
+    }
+
+    function closeCancelModal() {
+        cancelModalTargetId = null;
+        document.getElementById('cancelBookingOverlay').style.display = 'none';
+    }
+
+    // Chỉ khi khách bấm nút này bên trong modal thì yêu cầu hủy mới thực sự được gửi đi
+    function confirmCancelBooking() {
+        if (!cancelModalTargetId) return;
+        var btn = document.getElementById('cancelModalConfirmBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang xử lý...';
+
+        var form = document.getElementById('cancelBookingForm');
+        form.action = '/profiles/dat-phong/' + cancelModalTargetId + '/huy';
+        form.submit();
+    }
+
+    // Đóng modal khi bấm ra ngoài vùng nội dung
+    document.getElementById('cancelBookingOverlay').addEventListener('click', function (e) {
+        if (e.target === this) closeCancelModal();
     });
 </script>
 </body>
