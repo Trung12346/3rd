@@ -173,6 +173,11 @@ public class GioHangController {
             chiTietDatPhong.setGiaKhiDat(amount2);
             chiTietDatPhong.setPhuPhi(calculateExtraFee(PhongService.buildRoomGuardFor(p.getMaPhong()), ngayNhan, ngayTra));
             chiTietDatPhong.setD(datPhong);
+            Map<Integer , String> cccdPhong = allParamsCCCD.entrySet()
+                    .stream().filter(cccdP -> cccdP.getKey().startsWith("cccdPhong_")).
+                    collect(Collectors.toMap(e -> Integer.parseInt(e.getKey().substring("cccdPhong_".length())),
+                            Map.Entry::getValue));
+            chiTietDatPhong.setMa_cccd(cccdPhong.get(p.getMaPhong()));
             System.out.println("Cac phong: " + p.getSoPhong() + "Gia la: " + amount2);
 
             chiTietDatPhongService.save(chiTietDatPhong);
