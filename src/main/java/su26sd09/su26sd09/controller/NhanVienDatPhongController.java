@@ -381,6 +381,7 @@ public class NhanVienDatPhongController {
         return sb.toString();
     }
 
+
     @GetMapping("/dat-phong/search")
     public String searchDatPhong(
             @RequestParam(required = false) Integer maDatPhong,
@@ -505,7 +506,6 @@ public class NhanVienDatPhongController {
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
 
         if (!isAdmin) {
-
             NhanSu nv = nhanVienService.FindByemail(authentication.getName());
             if (!nhanVienService.laLeTanDangHoatDong(nv)) {
                 return "redirect:/home"; //TODO: THEM URL DASHBOARD VAO DAY
@@ -515,7 +515,7 @@ public class NhanVienDatPhongController {
         List<KhuyenMai> kmList = khuyenMaiService.findAllActive().collect(Collectors.toList());
 
         // Hiển thị TẤT CẢ phòng (kể cả "Dang su dung") để có thể đặt trước cho khách,
-        // kèm thông tin giờ trả dự kiến (nếu có) để nhân viên biết phòng nào sắp trống.
+        // kèm thông tin các khoảng đang bị giữ chỗ để nhân viên biết phòng nào đang trống/khi nào trống.
         List<Phong> tatCaPhong = phongService.findAllPhong();
         Map<Integer, RoomBookingGuardDTO> roomGuards = phongService.buildRoomGuards(tatCaPhong);
 
@@ -539,22 +539,37 @@ public class NhanVienDatPhongController {
         sb.append("]");
         model.addAttribute("kmJson", sb.toString());
 
-        // JSON riêng cho danh sách phòng kèm giờ trả dự kiến + trạng thái, dùng để JS tìm kiếm phòng
-        // theo thời gian nhận phòng mong muốn (input datetime-local) mà không cần gọi thêm API.
+        // JSON riêng cho danh sách phòng kèm TOÀN BỘ khoảng ngày đang bị giữ chỗ (không chỉ 1 đơn
+        // "gần nhất" như trước), dùng để JS tìm kiếm phòng theo thời gian nhận phòng mong muốn
+        // (input datetime-local) và validate overlap chính xác với từng đơn.
         StringBuilder rb = new StringBuilder("[");
         for (int i = 0; i < tatCaPhong.size(); i++) {
             Phong p = tatCaPhong.get(i);
             RoomBookingGuardDTO guard = roomGuards.get(p.getMaPhong());
-            // ngayKetThucKhoa = ngày trả phòng dự kiến của đơn "Da nhan phong" đang chiếm phòng này.
-            String ngayTraDuKien = (guard != null && guard.getNgayKetThucKhoa() != null)
-                    ? guard.getNgayKetThucKhoa().toString() : null;
             String trangThaiDon = guard != null ? guard.getTrangThaiDonGanNhat() : null;
+
+            // Build mảng con "khoaLich": danh sách toàn bộ khoảng đang giữ chỗ của phòng này
+            StringBuilder khoaLichArr = new StringBuilder("[");
+            if (guard != null) {
+                List<su26sd09.su26sd09.dto.KhoangNgayBiKhoaDTO> danhSach = guard.getDanhSachKhoaLich();
+                for (int j = 0; j < danhSach.size(); j++) {
+                    su26sd09.su26sd09.dto.KhoangNgayBiKhoaDTO k = danhSach.get(j);
+                    if (j > 0) khoaLichArr.append(",");
+                    khoaLichArr.append("{")
+                            .append("\"tu\":\"").append(k.getNgayBatDau() != null ? k.getNgayBatDau() : "").append("\",")
+                            .append("\"den\":\"").append(k.getNgayKetThuc() != null ? k.getNgayKetThuc() : "").append("\",")
+                            .append("\"trangThai\":\"").append(escapeJson(k.getTrangThaiDon())).append("\"")
+                            .append("}");
+                }
+            }
+            khoaLichArr.append("]");
+
             if (i > 0) rb.append(",");
             rb.append("{")
                     .append("\"maPhong\":").append(p.getMaPhong()).append(",")
                     .append("\"trangThai\":\"").append(escapeJson(p.getTrangThai())).append("\",")
                     .append("\"trangThaiDon\":").append(trangThaiDon == null ? "null" : "\"" + escapeJson(trangThaiDon) + "\"").append(",")
-                    .append("\"ngayTraDuKien\":").append(ngayTraDuKien == null ? "null" : "\"" + ngayTraDuKien + "\"")
+                    .append("\"khoaLich\":").append(khoaLichArr)
                     .append("}");
         }
         rb.append("]");

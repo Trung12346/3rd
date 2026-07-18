@@ -345,8 +345,6 @@
       <h3>Thông Tin Đặt Phòng</h3>
       <form action="/phong/dat-phong/quick" method="POST" id="quickBookingForm"
             th:data-trang-thai-don="${bookingGuard != null ? bookingGuard.trangThaiDonGanNhat : ''}"
-            th:data-ngay-bat-dau-khoa="${bookingGuard != null and bookingGuard.ngayBatDauKhoa != null ? #temporals.format(bookingGuard.ngayBatDauKhoa, 'yyyy-MM-dd') : ''}"
-            th:data-ngay-ket-thuc-khoa="${bookingGuard != null and bookingGuard.ngayKetThucKhoa != null ? #temporals.format(bookingGuard.ngayKetThucKhoa, 'yyyy-MM-dd') : ''}"
             th:data-gio-nhan-toi-thieu="${bookingGuard != null ? bookingGuard.gioNhanToiThieu : '08:30'}"
 
             th:data-gio-nhan-toi-da="${bookingGuard != null ? bookingGuard.gioNhanToiDa : '11:00'}"
@@ -508,7 +506,46 @@
 <div class="booking-toast-container" id="bookingToastContainer" aria-live="polite"></div>
 
 <script src="/header-dropdown.js"></script>
-<script th:inline="javascript">
+<script th:inline="javascript" th:with="khoaList=${bookingGuard != null and bookingGuard.danhSachKhoaLich != null ? bookingGuard.danhSachKhoaLich : {}}">
+  // ===== TOAN BO danh sach khoang ngay dang bi khoa (khong chi 1 khoang) =====
+  // FIX: truoc day chi lay khoang DAU TIEN trong danhSachKhoaLich (khoaDauTien)
+  // nen neu phong co nhieu don giu cho, cac don khong phai "dau tien" trong
+  // list se KHONG duoc validate overlap, gay lot du lieu (vi du: don 07/07-17/07
+  // khong bi chan vi list tra ve don 18/07-22/07 truoc no).
+  const danhSachKhoaLich = [
+    /*[# th:each="khoa : ${khoaList}"]*/
+    {
+      ngayBatDau: /*[[${#temporals.format(khoa.ngayBatDau, 'yyyy-MM-dd')}]]*/ '',
+      ngayKetThuc: /*[[${#temporals.format(khoa.ngayKetThuc, 'yyyy-MM-dd')}]]*/ '',
+      trangThaiDon: /*[[${khoa.trangThaiDon}]]*/ ''
+    },
+    /*[/]*/
+  ];
+
+  // Tim khoang dau tien trong danh sach ma [dNhan, dTra) giao (overlap) voi no.
+  function timKhoaLichOverlap(dNhan, dTra, danhSachKhoa) {
+    for (const khoa of danhSachKhoa) {
+      const lockedStart = new Date(khoa.ngayBatDau + 'T00:00:00');
+      const lockedEnd = new Date(khoa.ngayKetThuc + 'T23:59:59');
+      if (dNhan < lockedEnd && dTra > lockedStart) {
+        return khoa;
+      }
+    }
+    return null;
+  }
+
+  // Tim ngay ket thuc XA NHAT trong danh sach, dung de de xuat ngay nhan
+  // phong mac dinh (sau khoang gan nhat con hieu luc).
+  function timNgayKetThucXaNhat(danhSachKhoa) {
+    if (!danhSachKhoa.length) return null;
+    let max = null;
+    for (const khoa of danhSachKhoa) {
+      const d = new Date(khoa.ngayKetThuc + 'T00:00:00');
+      if (!max || d > max) max = d;
+    }
+    return max;
+  }
+
   function changeImage(element) {
     document.getElementById('mainImage').src = element.src;
     let thumbs = document.querySelectorAll('.gallery-thumbs img');
@@ -736,6 +773,20 @@
     const errNguoi = document.getElementById('err-nguoi');
     const errMaCccd = document.getElementById('err-ma-cccd');
 
+    // Lay trang thai don tu form data (do server set qua Thymeleaf).
+    // Khoang bi khoa lay tu mang danhSachKhoaLich (toan bo danh sach, khai
+    // bao o dau script), khong chi 1 khoang nhu truoc.
+    const trangThaiDon = form.dataset.trangThaiDon || '';
+
+    // FIX: Khai bao TRANG_THAI_DON_BI_KHOA + helper `laTrangThaiBiKhoa` o
+    // scope nay (truoc do chi co o IIFE thu 2), neu khong cac ham kiemTraLogic
+    // va kiemTraHopLe se gap ReferenceError -> IIFE nay crash -> nut Dat
+    // phong ngay bi disable vinh vien, user bam khong co tac dung.
+    const TRANG_THAI_DON_BI_KHOA = ['Da nhan phong', 'Cho xac nhan', 'Da xac nhan'];
+    function laTrangThaiBiKhoa(t) {
+      return TRANG_THAI_DON_BI_KHOA.indexOf(t) !== -1;
+    }
+
     // Lay suc chua toi da tu carousel card (loaiPhong hien tai)
     let sucChuaToiDa = 0;
     const cardHienTai = document.querySelector('.loai-phong-card[style*="border: 2px solid"]') || document.querySelector('.loai-phong-card');
@@ -772,6 +823,64 @@
       if (grp) grp.classList.add('has-error');
     }
 
+    /**
+     * Kiem tra logic don thuan (khong thay doi UI, khong show loi).
+     * Tra ve { ok, lyDo }. Dung cho nut Dat phong (chi can biet co valid hay
+     * khong de enable/disable, KHONG can hien thi loi khi user dang go).
+     */
+    function kiemTraLogic() {
+      const v1 = ngayNhanEl.value;
+      const v2 = ngayTraEl.value;
+      if (!v1) return { ok: false, lyDo: 'Chua chon ngay nhan phong.' };
+      if (!v2) return { ok: false, lyDo: 'Chua chon ngay tra phong.' };
+
+      const d1 = new Date(v1);
+      const d2 = new Date(v2);
+      if (isNaN(d1.getTime()) || isNaN(d2.getTime())) {
+        return { ok: false, lyDo: 'Ngay khong hop le.' };
+      }
+      const diffDays = Math.round((d2 - d1) / 86400000);
+      if (diffDays < 1) {
+        return { ok: false, lyDo: 'Ngay tra phong phai cach ngay nhan phong it nhat 1 ngay.' };
+      }
+
+      if (sucChuaToiDa > 0) {
+        const nl = parseInt(slNguoiLonEl.value, 10) || 0;
+        const te = parseInt(slTreEmEl.value, 10) || 0;
+        if (nl + te > sucChuaToiDa) {
+          return { ok: false, lyDo: 'So luong nguoi vuot qua suc chua.' };
+        }
+      }
+
+      // CCCD chi validate khi user da nhap day du 12 so (tranh bao loi khi
+      // dang go 1 phan)
+      if (maCccdEl) {
+        const cccd = (maCccdEl.value || '').trim();
+        if (cccd && cccd.length > 0 && cccd.length < 12) {
+          return { ok: false, lyDo: 'So CCCD chua du 12 so.' };
+        }
+        if (cccd && !/^[0-9]{12}$/.test(cccd)) {
+          return { ok: false, lyDo: 'So CCCD khong hop le.' };
+        }
+      }
+
+      // Check overlap voi TOAN BO danh sach khoang bi khoa (chi check khi ca
+      // 2 ngay da co gia tri), khong chi 1 khoang dau tien nhu truoc.
+      if (laTrangThaiBiKhoa(trangThaiDon) && danhSachKhoaLich.length > 0) {
+        if (timKhoaLichOverlap(d1, d2, danhSachKhoaLich)) {
+          return { ok: false, lyDo: 'Khoang ngay moi dang giao (overlap) voi don cu.' };
+        }
+      }
+
+      return { ok: true, lyDo: null };
+    }
+
+    /**
+     * Validate day du + hien thi loi len UI. Chi goi khi:
+     * - User bam nut "Dat Phong Ngay" (submit)
+     * - User blur ra khoi field (change event)
+     * KHONG goi khi user dang go (input event) de tranh loi che tam nhin.
+     */
     function kiemTraHopLe() {
       clearError(grpNgayNhan);
       clearError(grpNgayTra);
@@ -809,9 +918,14 @@
         }
       }
 
-      // Validate CCCD: 12 chu so
+      // Validate CCCD: 12 chu so (chi bao loi khi da nhap xong)
       if (maCccdEl) {
         const cccd = (maCccdEl.value || '').trim();
+        if (cccd && cccd.length > 0 && cccd.length < 12) {
+          showError(grpMaCccd);
+          errMaCccd.textContent = 'Số CCCD chưa đủ 12 số (mới nhập ' + cccd.length + ' số).';
+          return { ok: false, lyDo: 'So CCCD chua du 12 so.' };
+        }
         if (cccd && !/^[0-9]{12}$/.test(cccd)) {
           showError(grpMaCccd);
           errMaCccd.textContent = 'Số CCCD phải gồm đúng 12 chữ số.';
@@ -819,25 +933,13 @@
         }
       }
 
-      // ===== Check overlap voi khoang bi khoa =====
-      // Fix bug: truoc day chi check "ngayNhan > ngayKetThucKhoa", nen cac
-      // truong hop nhu don cu 11/8-15/8, khach dat 7/7-16/8 van bi cho
-      // phep (ngayNhan=7/7 > 15/8? That ra 7/7 KHONG > 15/8, nen truoc day
-      // phai bi chan, nhung logic cu ngayNhan <= locked la DUNG nhung
-      // hinh nhu chua bat duoc truong hop nguoc lai: ngayNhan=1/9, ngayTra=20/9,
-      // don cu 11/8-15/8 => ngayNhan=1/9 > 15/8 nhung ngayTra=20/9 van overlap).
-      // Bay gio check overlap that su giua [ngayNhan, ngayTra) va
-      // [ngayBatDauKhoa, ngayKetThucKhoa] (giong logic server).
-      if (laTrangThaiBiKhoa(trangThaiDon) && ngayBatDauKhoa && ngayKetThucKhoa) {
-        const lockedStart = new Date(ngayBatDauKhoa + 'T00:00:00');
-        const lockedEnd = new Date(ngayKetThucKhoa + 'T23:59:59');
-        // Lay datetime day du (v1, v2) de so sanh overlap, vi d1/d2 o tren
-        // chi la ngay lich (T00:00:00) -> luon < lockedEnd neu cung ngay tra cu
-        // don cu, gay sai logic.
-        if (new Date(v1) < lockedEnd && new Date(v2) > lockedStart) {
+      // ===== Check overlap voi TOAN BO danh sach khoang bi khoa =====
+      if (laTrangThaiBiKhoa(trangThaiDon) && danhSachKhoaLich.length > 0) {
+        const khoaTrung = timKhoaLichOverlap(d1, d2, danhSachKhoaLich);
+        if (khoaTrung) {
           showError(grpNgayNhan);
           showError(grpNgayTra);
-          errNgayNhan.textContent = 'Phòng đã có lịch đặt từ ' + ngayBatDauKhoa + ' đến ' + ngayKetThucKhoa +
+          errNgayNhan.textContent = 'Phòng đã có lịch đặt từ ' + khoaTrung.ngayBatDau + ' đến ' + khoaTrung.ngayKetThuc +
                   '. Khoảng bạn chọn đang giao với lịch cũ. Vui lòng chọn khoảng khác.';
           return { ok: false, lyDo: 'Khoang ngay moi dang giao (overlap) voi don cu.' };
         }
@@ -851,7 +953,10 @@
       // Neu phong khong kha dung (controller da set disabled san), giu nguyen
       if (btnSubmit.disabled && btnSubmit.dataset.phongKhongKhaDung === 'true') return;
 
-      const kq = kiemTraHopLe();
+      // FIX: dung kiemTraLogic() (khong hien loi UI) de trang thai nut chi
+      // phan anh logic don thuan, khong bi loi UI "nhay" khi user dang go.
+      // Loi UI chi duoc hien thi khi user blur (change) hoac submit.
+      const kq = kiemTraLogic();
       if (kq.ok) {
         btnSubmit.disabled = false;
         btnSubmit.title = '';
@@ -866,26 +971,24 @@
       btnSubmit.dataset.phongKhongKhaDung = 'true';
     }
 
-    // Lang nghe thay doi
+    // FIX: PHAN BIET 2 LOAI LISTENER:
+    // - 'input' (user dang go): chi goi capNhatTrangThaiNut() de enable/disable
+    //   nut, KHONG goi kiemTraHopLe() de tranh loi UI che tam nhin.
+    // - 'change' (user da blur hoac chon xong tu picker): goi kiemTraHopLe()
+    //   de hien thi loi (neu co) cho user biet.
     if (ngayNhanEl) {
-      ngayNhanEl.addEventListener('change', capNhatTrangThaiNut);
       ngayNhanEl.addEventListener('input', capNhatTrangThaiNut);
+      ngayNhanEl.addEventListener('change', kiemTraHopLe);
     }
     if (ngayTraEl) {
-      ngayTraEl.addEventListener('change', capNhatTrangThaiNut);
       ngayTraEl.addEventListener('input', capNhatTrangThaiNut);
+      ngayTraEl.addEventListener('change', kiemTraHopLe);
     }
-    if (slNguoiLonEl) slNguoiLonEl.addEventListener('change', capNhatTrangThaiNut);
-    if (slTreEmEl) slTreEmEl.addEventListener('change', capNhatTrangThaiNut);
+    if (slNguoiLonEl) slNguoiLonEl.addEventListener('change', kiemTraHopLe);
+    if (slTreEmEl) slTreEmEl.addEventListener('change', kiemTraHopLe);
     if (maCccdEl) {
       maCccdEl.addEventListener('input', capNhatTrangThaiNut);
-      maCccdEl.addEventListener('change', capNhatTrangThaiNut);
-    }
-
-    // Re-validate sau khi tinh so dem
-    if (typeof tinhSoDemVaTongTien === 'function') {
-      const origFn = tinhSoDemVaTongTien;
-      // Wrap (chi can goi lai validate; khong can sua logic tinh tien)
+      maCccdEl.addEventListener('change', kiemTraHopLe);
     }
 
     // Khoi tao: cap nhat trang thai nut
@@ -896,6 +999,7 @@
       const kq = kiemTraHopLe();
       if (!kq.ok) {
         e.preventDefault();
+        kiemTraHopLe(); // hien thi loi UI
         capNhatTrangThaiNut();
       }
     });
@@ -917,8 +1021,8 @@
     const giaPhongGocLocal = Number(/*[[${phong != null ? phong.giaMoiDem : 0}]]*/ 0);
 
     const trangThaiDon = form.dataset.trangThaiDon || '';
-    const ngayBatDauKhoa = form.dataset.ngayBatDauKhoa || '';
-    const ngayKetThucKhoa = form.dataset.ngayKetThucKhoa || '';
+    // Khoang bi khoa lay tu mang danhSachKhoaLich (toan bo danh sach, khai
+    // bao o dau script), khong chi 1 khoang nhu truoc.
 
     // ===== Trang thai don duoc coi la "dang khoa lich" =====
     // Phai trung voi validateRoomBookingGuard() ben PhongController va
@@ -1003,6 +1107,10 @@
     // nguyen nhan: trang co banner thi phu phi khong hien, trang khong co
     // banner thi lai hien binh thuong.
     let lastExtraFee = 0;
+    // Track trang thai overlap gan nhat de chi ban toast khi VUA chuyen trang
+    // thai (tu "hop le" -> "overlap" hoac nguoc lai), tranh spam toast moi
+    // lan user go. Neu user dang nhap sai va sua lai, toast cu van hien.
+    let lastOverlapState = false;
 
     // ===== BANNER + DISABLED DATE RANGES =====
     // Su dung ham `laTrangThaiBiKhoa` chung (Da nhan phong / Cho xac nhan / Da xac nhan)
@@ -1012,10 +1120,12 @@
     function applyGuardBanner() {
       const biKhoa = laTrangThaiBiKhoa(trangThaiDon);
 
-      if (biKhoa && ngayKetThucKhoa) {
+      if (biKhoa && danhSachKhoaLich.length > 0) {
 
-        const tu = formatDate(ngayBatDauKhoa || ngayKetThucKhoa);
-        const den = formatDate(ngayKetThucKhoa);
+        // Hien thi TAT CA cac khoang dang bi khoa, khong chi 1 khoang
+        const dongText = danhSachKhoaLich.map(function (k) {
+          return formatDate(k.ngayBatDau) + ' → ' + formatDate(k.ngayKetThuc);
+        }).join(' , ');
 
         // Title phan biet 2 truong hop de khach hieu ly do
         const titleEl = document.getElementById('guard-banner-title');
@@ -1028,20 +1138,31 @@
         }
 
         bannerDates.textContent =
-                'Khoảng đã được đặt: ' + tu + ' → ' + den;
+                'Khoảng đã được đặt: ' + dongText;
 
         banner.classList.add('show');
 
-        const minNhan = addDaysIso(ngayKetThucKhoa, 1);
-
-        // Dat min cho ca ngayNhan (trinh duyet tu chan chon truoc do) va
-        // ngayTra (ngan truong hop nhap ngayTra truoc ngayNhan)
-        ngayNhanEl.min = minNhan + 'T00:00';
-        ngayNhanEl.value = minNhan + 'T08:30';
-
-        const ngayTraMacDinh = addDaysIso(minNhan, 1);
-        ngayTraEl.min = ngayTraMacDinh + 'T00:00';
-        ngayTraEl.value = ngayTraMacDinh + 'T11:00';
+        // FIX: KHONG set thuoc tinh "min" cho input datetime-local vi:
+        // 1) Trinh duyet se tu chan form submit neu value < min, gay "bam
+        //    nut Dat phong ngay khong duoc" ma khong hien thi loi giup
+        //    khach hieu ly do (dung case user test: ngay 7/7-18/7 < min 16/8).
+        // 2) User muon sua ngay nhan/tra (vi nhap nham) se bi gioi han cung
+        //    va khong the chon lai.
+        // Viec check overlap se do kiemTraHopLe() + xuLyNgayNhanThayDoi()
+        // dam nhan, khi do hien thi loi ro rang cho nguoi dung.
+        // Chi set gia tri MAC DINH neu input dang trong, dua tren khoang co
+        // ngay tra XA NHAT trong toan bo danh sach (an toan nhat, tranh de
+        // xuat trung mot khoang khac o giua).
+        if (!ngayNhanEl.value) {
+          const ngayKetThucXaNhat = timNgayKetThucXaNhat(danhSachKhoaLich);
+          if (ngayKetThucXaNhat) {
+            const isoXaNhat = ngayKetThucXaNhat.getFullYear() + '-' + pad2(ngayKetThucXaNhat.getMonth() + 1) + '-' + pad2(ngayKetThucXaNhat.getDate());
+            const minNhan = addDaysIso(isoXaNhat, 1);
+            ngayNhanEl.value = minNhan + 'T08:30';
+            const ngayTraMacDinh = addDaysIso(minNhan, 1);
+            if (!ngayTraEl.value) ngayTraEl.value = ngayTraMacDinh + 'T11:00';
+          }
+        }
 
         tinhSoDemVaTongTien();
         checkAndToastExtraFee();
@@ -1113,10 +1234,6 @@
       lastExtraFee = fee;
     }
 
-    // FIX: gan ham xu ly rieng cho tung input va nghe ca 'input' lan 'change',
-    // de phu phi + toast cap nhat ngay khi nguoi dung dang go (khong can blur),
-    // dong bo voi tinhSoDemVaTongTien o tren.
-    //
     // LOGIC MOI (sua theo yeu cau): voi cac don "Cho xac nhan" / "Da xac nhan" /
     // "Da nhan phong", khoang ngay [ngayNhan, ngayTra) moi cua khach phai KHONG
     // overlap voi khoang [ngayBatDauKhoa, ngayKetThucKhoa] cua don cu. Truoc day
@@ -1124,36 +1241,37 @@
     // nhu: don cu 11/8-15/8, khach dat 7/7-16/8 (ngayNhan=7/7 > 15/8? SAI, nhung
     // 7/7 <= 15/8 van duoc chap nhan o phien cu), trong khi khoang moi giao
     // truc tiep voi don cu. Bay gio check overlap that su.
+    //
+    // FIX UX: chi ban toast khi trang thai overlap VUA chuyen (false -> true
+    // hoac true -> false), khong spam toast moi lan user go phim. Loi UI
+    // chi tiet (de canh bao nguoi dung) van do kiemTraHopLe() o IIFE tren
+    // dam nhan khi user blur hoac submit.
     function xuLyNgayNhanThayDoi() {
-      // Validate với guard: kiem tra overlap giua khoang moi va khoang bi khoa
-      if ((trangThaiDon === 'Da nhan phong' || trangThaiDon === 'Cho xac nhan' || trangThaiDon === 'Da xac nhan')
-          && ngayBatDauKhoa && ngayKetThucKhoa
-          && ngayNhanEl.value && ngayTraEl.value) {
+      // Validate với guard: kiem tra overlap giua khoang moi va TOAN BO
+      // danh sach khoang bi khoa (khong chi 1 khoang).
+      let isOverlap = false;
+      let khoaTrung = null;
+      if (laTrangThaiBiKhoa(trangThaiDon) && danhSachKhoaLich.length > 0
+              && ngayNhanEl.value && ngayTraEl.value) {
         const v1 = new Date(ngayNhanEl.value);
         const v2 = new Date(ngayTraEl.value);
-        const lockedStart = new Date(ngayBatDauKhoa + 'T00:00:00');
-        const lockedEnd = new Date(ngayKetThucKhoa + 'T23:59:59');
-
-        // Overlap khi: ngayNhan < lockedEnd && ngayTra > lockedStart
-        // (so sanh theo ms, giong logic ben server validateRoomBookingGuard)
-        if (v1 < lockedEnd && v2 > lockedStart) {
-          showToast('Phòng đã có lịch đặt từ ' + formatDate(ngayBatDauKhoa) +
-                  ' đến ' + formatDate(ngayKetThucKhoa) +
-                  '. Khoảng bạn chọn (' + formatDate(ngayNhanEl.value.substring(0,10)) +
-                  ' → ' + formatDate(ngayTraEl.value.substring(0,10)) +
-                  ') đang giao với lịch cũ. Vui lòng chọn khoảng khác.', {
-            type: 'error',
-            title: 'Trùng lịch phòng đang được giữ'
-          });
-        } else if (v1 < lockedEnd) {
-          // Khong overlap nhung van canh bao neu ngay nhan nam trong khoang bi khoa
-          showToast('Ngày nhận phòng phải sau ngày trả phòng của đơn đang giữ (' + formatDate(ngayKetThucKhoa) +
-                  '). Vui lòng chọn từ ' + formatDate(addDaysIso(ngayKetThucKhoa, 1)) + ' trở đi.', {
-            type: 'error',
-            title: 'Ngày nhận bị trùng đơn cũ'
-          });
+        if (!isNaN(v1.getTime()) && !isNaN(v2.getTime())) {
+          khoaTrung = timKhoaLichOverlap(v1, v2, danhSachKhoaLich);
+          isOverlap = khoaTrung !== null;
         }
       }
+
+      // Chi ban toast khi trang thai overlap thay doi (vd tu khong -> co)
+      if (isOverlap && !lastOverlapState) {
+        showToast('Khoảng ngày bạn chọn đang giao với lịch phòng đã được đặt (' +
+                formatDate(khoaTrung.ngayBatDau) + ' → ' + formatDate(khoaTrung.ngayKetThuc) +
+                '). Vui lòng chọn khoảng khác hoặc chờ đến sau ngày trả.', {
+          type: 'error',
+          title: 'Trùng lịch phòng'
+        });
+      }
+      lastOverlapState = isOverlap;
+
       checkAndToastExtraFee();
     }
 
@@ -1162,8 +1280,8 @@
       ngayNhanEl.addEventListener('change', xuLyNgayNhanThayDoi);
     }
     if (ngayTraEl) {
-      ngayTraEl.addEventListener('input', checkAndToastExtraFee);
-      ngayTraEl.addEventListener('change', checkAndToastExtraFee);
+      ngayTraEl.addEventListener('input', xuLyNgayNhanThayDoi);
+      ngayTraEl.addEventListener('change', xuLyNgayNhanThayDoi);
     }
 
     // Tính phụ phí lúc load trang (nếu đã có giá trị default)

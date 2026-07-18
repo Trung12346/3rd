@@ -260,11 +260,10 @@ public class PhongService {
 
     /** Trả về guard cho 1 phòng cụ thể. */
     public RoomBookingGuardDTO buildRoomGuardFor(int maPhong) {
-        System.out.println("buildRoomGuardFor: " + maPhong);
         Phong phong = findById(maPhong);
         if (phong == null) {
             return new RoomBookingGuardDTO(
-                    null, null, null, null,
+                    null, null, java.util.Collections.emptyList(),
                     LocalTime.of(8, 30), LocalTime.of(11, 0), LocalTime.of(18, 30),
                     new BigDecimal("100000"),
                     false
@@ -275,81 +274,45 @@ public class PhongService {
 
     private RoomBookingGuardDTO buildSingleRoomGuard(Phong phong) {
 
-        String trangThai = phong.getTrangThai();
+        List<DatPhong> allBookings = datPhongRepo.findRecentBookingsForPhong(phong.getMaPhong());
 
-        // Không có trạng thái -> chặn
-        if (trangThai == null) {
-            return blockedGuard(null, null);
+        List<su26sd09.su26sd09.dto.KhoangNgayBiKhoaDTO> khoaLich = new ArrayList<>();
+        String trangThaiDonGanNhat = null;
+
+        for (DatPhong dp : allBookings) {
+            String tt = dp.getTrangThai();
+
+            // Đơn đầu tiên trong danh sách (sắp theo ngayTao desc) đại diện cho
+            // "đơn gần nhất" — dùng để áp rule giờ/phụ phí khi phòng vừa trả.
+            if (trangThaiDonGanNhat == null) {
+                trangThaiDonGanNhat = tt;
+            }
+
+            // Chỉ các trạng thái này mới thực sự khóa lịch (chặn overlap ngày).
+            if ("Da nhan phong".equals(tt) || "Cho xac nhan".equals(tt) || "Da xac nhan".equals(tt)) {
+                khoaLich.add(new su26sd09.su26sd09.dto.KhoangNgayBiKhoaDTO(
+                        dp.getId(), dp.getNgaydatPhong(), dp.getNgaytraPhong(), tt));
+            }
         }
 
-        // Phòng trống -> đặt bình thường
-        if ("Trong".equalsIgnoreCase(trangThai)) {
-            return RoomBookingGuardDTO.empty(trangThai);
-        }
-
-        // Chỉ xử lý guard cho 2 trạng thái này
-        if (!"Dang su dung".equalsIgnoreCase(trangThai)
-                && !"Da dat truoc".equalsIgnoreCase(trangThai)) {
-            return blockedGuard(trangThai, null);
-        }
-
-        Optional<DatPhong> optional = findLatestBooking(phong.getMaPhong());
-
-        if (optional.isEmpty()) {
-            System.out.println("Khong tim thay DatPhong cho phong " + phong.getSoPhong());
-            return blockedGuard(trangThai, null);
-        }
-
-        DatPhong dp = optional.get();
-        String trangThaiDon = dp.getTrangThai();
-
-        System.out.println("========== GUARD ==========");
-        System.out.println("Phong: " + phong.getSoPhong());
-        System.out.println("Trang thai phong: " + trangThai);
-        System.out.println("Don tim duoc: " + dp.getId());
-        System.out.println("Trang thai don: " + trangThaiDon);
-
-        // Các trạng thái phải khóa lịch
-        if ("Da nhan phong".equals(trangThaiDon)
-                || "Cho xac nhan".equals(trangThaiDon)
-                || "Da xac nhan".equals(trangThaiDon)) {
-
-            return new RoomBookingGuardDTO(
-                    trangThai,
-                    trangThaiDon,
-                    dp.getNgaydatPhong(),
-                    dp.getNgaytraPhong(),
-                    LocalTime.of(8, 30),
-                    LocalTime.of(11, 0),
-                    LocalTime.of(18, 30),
-                    new BigDecimal("100000"),
-                    true
-            );
-        }
-
-        // Khách đã trả phòng -> chỉ áp dụng rule giờ
-        if ("Da tra phong".equals(trangThaiDon)) {
-
-            return new RoomBookingGuardDTO(
-                    trangThai,
-                    trangThaiDon,
-                    null,
-                    null,
-                    LocalTime.of(8, 30),
-                    LocalTime.of(11, 0),
-                    LocalTime.of(18, 30),
-                    new BigDecimal("100000"),
-                    true
-            );
-        }
-
-        // Các trạng thái khác
-        return blockedGuard(trangThai, trangThaiDon);
+        // coTheDat = true luôn (phòng đã tồn tại). Việc chặn cụ thể theo ngày
+        // nào sẽ do validateRoomBookingGuard() ở Controller quyết định dựa vào
+        // danhSachKhoaLich, không còn phụ thuộc Phong.trangThai nữa.
+        return new RoomBookingGuardDTO(
+                phong.getTrangThai(),
+                trangThaiDonGanNhat,
+                khoaLich,
+                LocalTime.of(8, 30),
+                LocalTime.of(11, 0),
+                LocalTime.of(18, 30),
+                new BigDecimal("100000"),
+                true
+        );
     }
 
     private RoomBookingGuardDTO blockedGuard(String trangThaiPhong, String trangThaiDon) {
         return new RoomBookingGuardDTO(
-                trangThaiPhong, trangThaiDon, null, null,
+                trangThaiPhong, trangThaiDon, java.util.Collections.emptyList(),
                 LocalTime.of(8, 30), LocalTime.of(11, 0), LocalTime.of(18, 30),
                 new BigDecimal("100000"),
                 false

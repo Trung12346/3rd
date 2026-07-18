@@ -101,13 +101,14 @@ public class PhongController {
                 .mapToInt(DanhGia::getDiemDanhGia)
                 .average()
                 .orElse(0);
-        
+
         // Lấy tất cả loại phòng cho dropdown menu và carousel
         List<LoaiPhong> loaiPhongs = phongService.findAllLoai();
         Map<Integer, String> anhLoaiPhong = new HashMap<>();
         for (LoaiPhong lp : loaiPhongs) {
             anhLoaiPhong.put(lp.getId(), "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=800&q=80");
         }
+
         RoomBookingGuardDTO guard = phongService.buildRoomGuardFor(phong.getMaPhong());
 
         model.addAttribute("phong", phong);
@@ -118,14 +119,18 @@ public class PhongController {
         model.addAttribute("diemTrungBinh", diemTrungBinh);
         model.addAttribute("loaiPhongs", loaiPhongs);
         model.addAttribute("anhLoaiPhong", anhLoaiPhong);
-        System.out.println("Render phong = " + phong.getMaPhong());
-        System.out.println("Render guard = " + guard.getTrangThaiDonGanNhat());
-        model.addAttribute("bookingGuard", phongService.buildRoomGuardFor(phong.getMaPhong()));
+        model.addAttribute("bookingGuard", guard);
+        model.addAttribute("bookingLockedRangesJson", buildLockedRangesJson(guard));
 
+        System.out.println("Render phong = " + phong.getMaPhong());
         System.out.println("Guard = " + guard);
-        System.out.println("Trang thai don = " + guard.getTrangThaiDonGanNhat());
-        System.out.println("Ngay bat dau = " + guard.getNgayBatDauKhoa());
-        System.out.println("Ngay ket thuc = " + guard.getNgayKetThucKhoa());
+        System.out.println("Trang thai don gan nhat = " + guard.getTrangThaiDonGanNhat());
+        System.out.println("So khoang bi khoa = " + guard.getDanhSachKhoaLich().size());
+        for (su26sd09.su26sd09.dto.KhoangNgayBiKhoaDTO k : guard.getDanhSachKhoaLich()) {
+            System.out.println("  - Khoang khoa: " + k.getNgayBatDau() + " -> " + k.getNgayKetThuc()
+                    + " (trangThai=" + k.getTrangThaiDon() + ", maDatPhong=" + k.getMaDatPhong() + ")");
+        }
+
         return "room-detail";
     }
 
@@ -583,27 +588,20 @@ public class PhongController {
             return "Phong khong kha dung.";
         }
 
-        String trangThaiDon = guard.getTrangThaiDonGanNhat();
+        // Duyệt TỪNG đơn đang giữ chỗ, không gộp min-max, tránh chặn nhầm
+        // khoảng trống giữa 2 đơn không liên tục.
+        for (su26sd09.su26sd09.dto.KhoangNgayBiKhoaDTO khoang : guard.getDanhSachKhoaLich()) {
+            LocalDateTime batDau = khoang.getNgayBatDau();
+            LocalDateTime ketThuc = khoang.getNgayKetThuc();
+            if (batDau == null || ketThuc == null) continue;
 
-        if ("Da nhan phong".equals(trangThaiDon)
-                || "Cho xac nhan".equals(trangThaiDon)
-                || "Da xac nhan".equals(trangThaiDon)) {
-
-            LocalDateTime batDau = guard.getNgayBatDauKhoa();
-            LocalDateTime ketThuc = guard.getNgayKetThucKhoa();
-
-            if (batDau != null && ketThuc != null) {
-
-                boolean overlap =
-                        ngayNhan.isBefore(ketThuc)
-                                && ngayTra.isAfter(batDau);
-
-                if (overlap) {
-                    return "Phong da co lich dat tu "
-                            + batDau.toLocalDate()
-                            + " den "
-                            + ketThuc.toLocalDate();
-                }
+            boolean overlap = ngayNhan.isBefore(ketThuc) && ngayTra.isAfter(batDau);
+            if (overlap) {
+                return "Phong da co lich dat tu "
+                        + batDau.toLocalDate()
+                        + " den "
+                        + ketThuc.toLocalDate()
+                        + ". Vui long chon khoang ngay khac.";
             }
         }
 
@@ -638,6 +636,22 @@ public class PhongController {
         boolean ngoaiGioNhan = gioNhan.isBefore(guard.getGioNhanToiThieu()) || gioNhan.isAfter(guard.getGioNhanToiDa());
         boolean ngoaiGioTra = gioTra.isAfter(guard.getGioTraToiDa());
         return (ngoaiGioNhan || ngoaiGioTra) ? guard.getPhuPhiNgoaiGioVND() : BigDecimal.ZERO;
+    }
+    private String buildLockedRangesJson(RoomBookingGuardDTO guard) {
+        List<su26sd09.su26sd09.dto.KhoangNgayBiKhoaDTO> list =
+                guard != null ? guard.getDanhSachKhoaLich() : java.util.Collections.emptyList();
+        StringBuilder sb = new StringBuilder("[");
+        for (int i = 0; i < list.size(); i++) {
+            su26sd09.su26sd09.dto.KhoangNgayBiKhoaDTO k = list.get(i);
+            if (i > 0) sb.append(",");
+            sb.append("{")
+                    .append("\"tu\":\"").append(k.getNgayBatDau() != null ? k.getNgayBatDau().toLocalDate() : "").append("\",")
+                    .append("\"den\":\"").append(k.getNgayKetThuc() != null ? k.getNgayKetThuc().toLocalDate() : "").append("\",")
+                    .append("\"trangThai\":\"").append(escapeJson(k.getTrangThaiDon())).append("\"")
+                    .append("}");
+        }
+        sb.append("]");
+        return sb.toString();
     }
 
 
