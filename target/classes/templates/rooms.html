@@ -49,7 +49,7 @@
             margin-right: 8px;
             color: var(--sky-primary);
         }
-        
+
         .user-menu {
             display: flex;
             align-items: center;
@@ -195,9 +195,11 @@
 
 <main class="rooms-container">
     <div class="room-card" th:each="p : ${phongs}"
-         th:with="guard=${bookingGuardByPhong != null ? bookingGuardByPhong[p.maPhong] : null}, coTheDat=${guard != null and guard.coTheDat}">
+         th:with="guard=${bookingGuardByPhong != null ? bookingGuardByPhong[p.maPhong] : null},
+                  coTheDat=${guard != null and guard.coTheDat},
+                  khoaDauTien=${guard != null and guard.danhSachKhoaLich != null and !guard.danhSachKhoaLich.isEmpty() ? guard.danhSachKhoaLich[0] : null}">
         <div class="room-img">
-            <img src="https://images.unsplash.com/photo-1611892440504-42a792e24d32?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
+            <img src="https://images.unsplash.com/photo-1611892440504-42a792e24d32?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
                  th:alt="${p.soPhong}">
             <span class="room-status-badge"
                   th:classappend="${p.trangThai == 'Trong'} ? 'status-trong' : (${p.trangThai == 'Da dat'} ? 'status-da-dat' : 'status-bao-tri')"
@@ -218,15 +220,15 @@
                     <i class="fa-solid fa-tag"></i> <span th:text="${tenLoaiTheoPhong[p.maPhong]}">Deluxe</span>
                 </span>
             </div>
-            
+
             <!-- Tien nghi -->
             <div class="room-amenities" th:if="${tienNghiTheoPhong[p.maPhong] != null and !tienNghiTheoPhong[p.maPhong].isEmpty()}">
-                <span th:each="tn, iterStat : ${tienNghiTheoPhong[p.maPhong]}" 
+                <span th:each="tn, iterStat : ${tienNghiTheoPhong[p.maPhong]}"
                       th:if="${iterStat.index < 4}"
                       class="room-amenity"
                       th:text="${tn}">WiFi</span>
             </div>
-            
+
             <p class="room-description" th:text="${p.moTa}">
                 Trai nghiem không gian sang trong voi ban cong rieng ngam toan canh bien tho mong.
             </p>
@@ -244,8 +246,8 @@
                         th:data-loai="${tenLoaiTheoPhong[p.maPhong]}"
                         th:data-suc-chua="${p.loaiPhong != null ? p.loaiPhong.sucChuaToiDa : 0}"
                         th:data-trang-thai-don="${guard != null ? guard.trangThaiDonGanNhat : ''}"
-                        th:data-ngay-bat-dau-khoa="${guard != null and guard.ngayBatDauKhoa != null ? guard.ngayBatDauKhoa : ''}"
-                        th:data-ngay-ket-thuc-khoa="${guard != null and guard.ngayKetThucKhoa != null ? guard.ngayKetThucKhoa : ''}"
+                        th:data-ngay-bat-dau-khoa="${khoaDauTien != null ? khoaDauTien.ngayBatDau : ''}"
+                        th:data-ngay-ket-thuc-khoa="${khoaDauTien != null ? khoaDauTien.ngayKetThuc : ''}"
                         th:data-phu-phi-ngoai-gio="${guard != null ? guard.phuPhiNgoaiGioVND : 0}"
                         onclick="luuPhongVaoGio(event, this)"
                         th:text="${coTheDat} ? 'Thêm Vào Danh Sách' : 'Không Khả Dụng'">
@@ -255,7 +257,7 @@
         </div>
     </div>
 
-    <div th:if="${phongs == null or phongs.isEmpty()}" 
+    <div th:if="${phongs == null or phongs.isEmpty()}"
          style="width: 100%; padding: 40px 20px; text-align: center; color: var(--text-gray); border: 1px dashed var(--border-color); border-radius: 8px; background: #f8fbff;">
         <i class="fa-solid fa-bed" style="font-size: 48px; color: var(--sky-primary); opacity: 0.3; margin-bottom: 16px;"></i>
         <p>Chưa có phòng nào trong hệ thống.</p>

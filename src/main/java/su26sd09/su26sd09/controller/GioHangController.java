@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import su26sd09.su26sd09.dto.KhoangNgayBiKhoaDTO;
 import su26sd09.su26sd09.dto.RoomBookingGuardDTO;
 import su26sd09.su26sd09.entity.ChiTietDatPhong;
 import su26sd09.su26sd09.entity.DatPhong;
@@ -83,14 +84,17 @@ public class GioHangController {
             }
 
             RoomBookingGuardDTO guard = PhongService.buildRoomGuardFor(p);
-            String guardError = validateRoomBookingGuard(guard, ngayNhan,ngayTra);
+            String guardError = validateRoomBookingGuard(guard, ngayNhan, ngayTra);
+
             System.out.println("===== USER INPUT =====");
             System.out.println("Ngay nhan: " + ngayNhan);
             System.out.println("Ngay tra  : " + ngayTra);
+            System.out.println("===== GUARD (phong " + p + ") =====");
+            System.out.println("So khoang bi khoa: " + guard.getDanhSachKhoaLich().size());
+            for (KhoangNgayBiKhoaDTO k : guard.getDanhSachKhoaLich()) {
+                System.out.println("  - " + k.getNgayBatDau() + " -> " + k.getNgayKetThuc() + " (" + k.getTrangThaiDon() + ")");
+            }
 
-            System.out.println("===== GUARD =====");
-            System.out.println("Bat dau khoa : " + guard.getNgayBatDauKhoa());
-            System.out.println("Ket thuc khoa: " + guard.getNgayKetThucKhoa());
             if (guardError != null) {
                 redirectAttributes.addFlashAttribute("bookingError", "Phong " + phong.getSoPhong() + ": " + guardError);
                 return "redirect:/gio-hang";
@@ -113,21 +117,21 @@ public class GioHangController {
         String email;
         if (authentication != null && authentication.isAuthenticated() && !isNhanVienOrAdmin(authentication)) {
             email = authentication.getName();
-        }else{
+        } else {
             email = null;
         }
         KhachHang n = nguoiDungService.findByEmail(email);
         Map<Integer, String> cccdTheoPhong = allParamsCCCD.entrySet().stream().
                 filter(e -> e.getKey().startsWith("cccdPhong_")).
                 collect(Collectors.toMap(
-                        e-> Integer.parseInt(e.getKey().substring("cccdPhong_".length())),
+                        e -> Integer.parseInt(e.getKey().substring("cccdPhong_".length())),
                         Map.Entry::getValue
                 ));
         DatPhong datPhong = new DatPhong();
         datPhong.setN(n);
-        if(ma_cccd !=null) {
+        if (ma_cccd != null) {
             datPhong.setMa_cccd(ma_cccd);
-        }else{
+        } else {
             datPhong.setMa_cccd(null);
         }
         datPhong.setNgaydatPhong(ngayNhan);
@@ -140,22 +144,24 @@ public class GioHangController {
         datPhong.setNgayCapNhat(null);
         datPhong.setSdt(null);
         datPhongService.save(datPhong);
-        long resThue  = soDem;
+
+        long resThue = soDem;
         BigDecimal amount = BigDecimal.ZERO;
-        for(Phong p : ListPhong){
-           if (p == null){
-               System.out.println("Null");
-           }
+        for (Phong p : ListPhong) {
+            if (p == null) {
+                System.out.println("Null");
+            }
             List<BigDecimal> price = new ArrayList<>();
             price.add(p.getGiaMoiDem());
-            for (BigDecimal i : price){
+            for (BigDecimal i : price) {
                 amount = amount.add(i);
             }
-           System.out.println("Total "+amount);
-       }
+            System.out.println("Total " + amount);
+        }
         amount = amount.multiply(BigDecimal.valueOf(resThue));
         System.out.println(amount);
-        for(Phong p : ListPhong){
+
+        for (Phong p : ListPhong) {
             BigDecimal amount2 = p.getGiaMoiDem();
             amount2 = amount2.multiply(BigDecimal.valueOf(resThue));
             amount2 = amount2.add(calculateExtraFee(PhongService.buildRoomGuardFor(p.getMaPhong()), ngayNhan, ngayTra));
@@ -163,17 +169,24 @@ public class GioHangController {
             chiTietDatPhong.setP(p);
             chiTietDatPhong.setGiaMoiDem(p.getGiaMoiDem());
             chiTietDatPhong.setMa_cccd(cccdTheoPhong.get(p.getMaPhong()));
-            System.out.println("ma_cccd cua phong: "+p.getMaPhong() + "la: "+cccdTheoPhong.get(p.getMaPhong()));
+            System.out.println("ma_cccd cua phong: " + p.getMaPhong() + "la: " + cccdTheoPhong.get(p.getMaPhong()));
             chiTietDatPhong.setGiaKhiDat(amount2);
             chiTietDatPhong.setPhuPhi(calculateExtraFee(PhongService.buildRoomGuardFor(p.getMaPhong()), ngayNhan, ngayTra));
             chiTietDatPhong.setD(datPhong);
-            System.out.println("Cac phong: "+p.getSoPhong()+"Gia la: "+amount2);
+            System.out.println("Cac phong: " + p.getSoPhong() + "Gia la: " + amount2);
 
             chiTietDatPhongService.save(chiTietDatPhong);
         }
-        return "redirect:/phong/dat-phong/xac-nhan/"+datPhong.getId();
+        return "redirect:/phong/dat-phong/xac-nhan/" + datPhong.getId();
     }
 
+    /**
+     * Validate theo Cách 1: duyệt TỪNG khoảng trong danhSachKhoaLich (không
+     * gộp min-max), chặn nếu overlap với BẤT KỲ khoảng nào. Không còn phụ
+     * thuộc vào 1 "đơn gần nhất" duy nhất như trước — nhờ vậy phòng có nhiều
+     * đơn đang giữ chỗ (kể cả đơn ở tương lai gần lẫn tương lai xa) đều được
+     * kiểm tra đầy đủ.
+     */
     private String validateRoomBookingGuard(RoomBookingGuardDTO guard,
                                             LocalDateTime ngayNhan,
                                             LocalDateTime ngayTra) {
@@ -182,18 +195,19 @@ public class GioHangController {
             return "Phong khong kha dung, vui long chon phong khac.";
         }
 
-        String trangThaiDon = guard.getTrangThaiDonGanNhat();
+        for (KhoangNgayBiKhoaDTO khoang : guard.getDanhSachKhoaLich()) {
+            LocalDateTime batDau = khoang.getNgayBatDau();
+            LocalDateTime ketThuc = khoang.getNgayKetThuc();
+            if (batDau == null || ketThuc == null) continue;
 
-        // Có khách đang ở hoặc đã có người đặt trước
-        if (("Da nhan phong".equals(trangThaiDon)
-                || "Cho xac nhan".equals(trangThaiDon)
-                || "Da xac nhan".equals(trangThaiDon))
-                && guard.getNgayKetThucKhoa() != null
-                && !ngayNhan.isAfter(guard.getNgayKetThucKhoa())) {
-
-            return "Phong da co lich dat. Ngay nhan phong phai sau "
-                    + guard.getNgayKetThucKhoa().toLocalDate()
-                    + ".";
+            boolean overlap = ngayNhan.isBefore(ketThuc) && ngayTra.isAfter(batDau);
+            if (overlap) {
+                return "Phong da co lich dat tu "
+                        + batDau.toLocalDate()
+                        + " den "
+                        + ketThuc.toLocalDate()
+                        + ". Vui long chon khoang ngay khac.";
+            }
         }
 
         return null;

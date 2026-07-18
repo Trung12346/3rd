@@ -1,5 +1,7 @@
 package su26sd09.su26sd09.controller;
 
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -8,9 +10,11 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import su26sd09.su26sd09.dto.RoomBookingGuardDTO;
 import su26sd09.su26sd09.entity.LoaiPhong;
 import su26sd09.su26sd09.entity.Phong;
 import su26sd09.su26sd09.service.PhongService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.time.LocalTime;
 import java.util.HashMap;
@@ -79,7 +83,6 @@ public class LoaiPhongController {
         List<Phong> phongs = phongService.findPhongTheoLoai(id);
         Map<Integer, List<String>> tienNghiTheoPhong = new HashMap<>();
         for (Phong phong : phongs) {
-
             tienNghiTheoPhong.put(phong.getMaPhong(), phongService.findTenTienNghiByPhong(phong.getMaPhong()));
         }
 
@@ -90,12 +93,31 @@ public class LoaiPhongController {
             anhLoaiPhong.put(lp.getId(), "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=800&q=80");
         }
 
+        Map<Integer, RoomBookingGuardDTO> bookingGuardByPhong = phongService.buildRoomGuards(phongs);
+
+        ObjectMapper mapper = new ObjectMapper()
+                .registerModule(new JavaTimeModule())
+                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        Map<Integer, String> khoaLichJsonByPhong = new HashMap<>();
+
+        for (Map.Entry<Integer, RoomBookingGuardDTO> entry : bookingGuardByPhong.entrySet()) {
+            try {
+                khoaLichJsonByPhong.put(
+                        entry.getKey(),
+                        mapper.writeValueAsString(entry.getValue().getDanhSachKhoaLich())
+                );
+            } catch (Exception e) {
+                khoaLichJsonByPhong.put(entry.getKey(), "[]");
+            }
+        }
+        model.addAttribute("khoaLichJsonByPhong", khoaLichJsonByPhong);
+
         model.addAttribute("loaiPhong", loaiPhong);
         model.addAttribute("phongs", phongs);
         model.addAttribute("tienNghiTheoPhong", tienNghiTheoPhong);
         model.addAttribute("loaiPhongs", tatCaLoaiPhong);
         model.addAttribute("anhLoaiPhong", anhLoaiPhong);
-        model.addAttribute("bookingGuardByPhong", phongService.buildRoomGuards(phongs));
+        model.addAttribute("bookingGuardByPhong", bookingGuardByPhong); // ✅ dùng lại biến đã có, không gọi lại service
         model.addAttribute("gioNhanToiDaMacDinh", LocalTime.of(11,0));
         model.addAttribute("gioTraToiDaMacDinh", LocalTime.of(18,30));
         return "phong-theo-loai";

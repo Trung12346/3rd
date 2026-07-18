@@ -576,8 +576,11 @@
             const nextCheckout = new Date(nextCheckin.getFullYear(), nextCheckin.getMonth(), nextCheckin.getDate() + 1, 18, 0);
             ngayTraEl.value = formatDateTimeLocal(nextCheckout, 18, 0);
         }
-        // set min cho input để trình duyệt tự chặn chọn ngày trước đó
-        ngayNhanEl.min = formatDateTimeLocal(nextCheckin, 0, 0);
+        // FIX: KHONG set "min" cho input datetime-local. Trinh duyet se tu
+        // chan form submit khi value < min nhung khong hien thi loi giup
+        // user (dung case user test: nhap 13/7 < min 13/8 => bam nut khong
+        // duoc, khong ro ly do). Viec check overlap do validateForm() va
+        // canhBaoOverlap() dam nhan, khi do hien thi loi ro rang.
 
         // ===== Banner canh bao (giong het room-detail.html / phong-theo-loai.html) =====
         if (banner) {
@@ -625,9 +628,39 @@
         const latestEnd = furthest.end;
         const nextCheckin = new Date(latestEnd.getFullYear(), latestEnd.getMonth(), latestEnd.getDate() + 1, 8, 30);
         const chosen = ngayNhanEl.value ? new Date(ngayNhanEl.value) : null;
-        if (chosen && isSameOrBeforeLockedEnd(chosen, ranges)) {
-            ngayNhanHintEl.classList.add('locked');
-            ngayNhanHintEl.textContent = 'Vui lòng chọn ngày nhận phòng từ ' + formatDisplayDate(nextCheckin) + ' trở đi.';
+
+        if (chosen) {
+            // FIX: Kiem tra overlap that su truoc (ca khoang [ngayNhan, ngayTra)
+            // co giao voi khoang [lockedStart, lockedEnd] khong). Truoc day
+            // chi check 1 chieu "ngayNhan <= lockedEnd" nen nhieu truong hop
+            // nguoi dung nhap ngay nhan TRUOC lockedEnd (vd don cu 1/7-12/8
+            // nhung nhap ngay nhan 13/7 - 15/7) bi hien thi sai "chon tu 13/8".
+            // Bay gio: neu overlap that su => hien thi canh bao overlap, nguoc
+            // lai neu chi don thuan ngayNhan truoc lockedEnd => hien thi ngay
+            // som nhat co the chon.
+            let isOverlap = false;
+            if (ngayTraEl.value) {
+                const chosenTra = new Date(ngayTraEl.value);
+                if (!isNaN(chosenTra.getTime())) {
+                    isOverlap = ranges.some(r => {
+                        const lockedEndFull = new Date(r.end.getFullYear(), r.end.getMonth(), r.end.getDate(), 23, 59, 59);
+                        return chosen < lockedEndFull && chosenTra > r.start;
+                    });
+                }
+            }
+
+            if (isOverlap) {
+                ngayNhanHintEl.classList.add('locked');
+                ngayNhanHintEl.textContent = 'Khoảng bạn chọn đang giao với lịch phòng ' +
+                    furthest.roomNumber + ' (đến ' + formatDisplayDate(latestEnd) +
+                    '). Vui lòng chọn ngày nhận từ ' + formatDisplayDate(nextCheckin) + ' trở đi.';
+            } else if (isSameOrBeforeLockedEnd(chosen, ranges)) {
+                ngayNhanHintEl.classList.add('locked');
+                ngayNhanHintEl.textContent = 'Vui lòng chọn ngày nhận phòng từ ' + formatDisplayDate(nextCheckin) + ' trở đi.';
+            } else {
+                ngayNhanHintEl.classList.remove('locked');
+                ngayNhanHintEl.textContent = '';
+            }
         } else {
             ngayNhanHintEl.classList.remove('locked');
             ngayNhanHintEl.textContent = '';

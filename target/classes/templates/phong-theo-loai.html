@@ -543,6 +543,23 @@
         .booking-guard-banner strong { color: #6b4f00; }
         .booking-guard-banner .guard-dates { display: block; margin-top: 4px; color: #8a6d00; font-size: 12px; }
 
+        /* ===== Danh sách khoảng ngày bị khóa hiển thị trong card phòng ===== */
+        .locked-dates-list {
+            list-style: none;
+            margin: 0 0 10px;
+            padding: 0;
+            font-size: 11px;
+            color: #8a6d00;
+            background: #fff8e1;
+            border: 1px solid #ffe082;
+            border-radius: 4px;
+        }
+        .locked-dates-list li {
+            padding: 5px 10px;
+            border-bottom: 1px dashed #ffe082;
+        }
+        .locked-dates-list li:last-child { border-bottom: none; }
+
         /* ===== Phụ phí ngoài giờ (dòng trong summary-box) ===== */
         .summary-row.extra-fee-row { display: none; color: #c0392b; }
         .summary-row.extra-fee-row.show { display: flex; }
@@ -680,6 +697,15 @@
                     <p class="phong-description" th:text="${p.moTa}">
                         Phòng tiện nghi đầy đủ với view thoáng đãng và nội thất sang trọng.
                     </p>
+
+                    <!--/* Danh sach cac khoang ngay dang bi khoa boi don cu (neu co) */-->
+                    <ul class="locked-dates-list"
+                        th:if="${bookingGuardByPhong != null and bookingGuardByPhong[p.maPhong] != null and !bookingGuardByPhong[p.maPhong].danhSachKhoaLich.isEmpty()}">
+                        <li th:each="khoa : ${bookingGuardByPhong[p.maPhong].danhSachKhoaLich}">
+                            <span th:text="${#temporals.format(khoa.ngayBatDau, 'yyyy-MM-dd')} + ' → ' + ${#temporals.format(khoa.ngayKetThuc, 'yyyy-MM-dd')}"></span>
+                            (<span th:text="${khoa.trangThaiDon}"></span>)
+                        </li>
+                    </ul>
                 </div>
                 <div class="phong-card-footer">
                     <div class="phong-price">
@@ -697,11 +723,11 @@
                                 th:data-gia="${p.giaMoiDem}"
                                 th:data-gia-label="${#numbers.formatDecimal(p.giaMoiDem, 0, 'COMMA', 0, 'POINT')}"
                                 th:data-trang-thai-don="${bookingGuardByPhong != null and bookingGuardByPhong[p.maPhong] != null ? bookingGuardByPhong[p.maPhong].trangThaiDonGanNhat : ''}"
-                                th:data-ngay-bat-dau-khoa="${bookingGuardByPhong != null and bookingGuardByPhong[p.maPhong] != null and bookingGuardByPhong[p.maPhong].ngayBatDauKhoa != null ? #temporals.format(bookingGuardByPhong[p.maPhong].ngayBatDauKhoa, 'yyyy-MM-dd') : ''}"
-                                th:data-ngay-ket-thuc-khoa="${bookingGuardByPhong != null and bookingGuardByPhong[p.maPhong] != null and bookingGuardByPhong[p.maPhong].ngayKetThucKhoa != null ? #temporals.format(bookingGuardByPhong[p.maPhong].ngayKetThucKhoa, 'yyyy-MM-dd') : ''}"
+                                th:data-khoa-lich='${khoaLichJsonByPhong != null and khoaLichJsonByPhong[p.maPhong] != null ? khoaLichJsonByPhong[p.maPhong] : "[]"}'
                                 th:data-gio-nhan-toi-thieu="${bookingGuardByPhong != null and bookingGuardByPhong[p.maPhong] != null ? bookingGuardByPhong[p.maPhong].gioNhanToiThieu : '08:30'}"
                                 th:data-gio-nhan-toi-da="${bookingGuardByPhong != null and bookingGuardByPhong[p.maPhong] != null ? bookingGuardByPhong[p.maPhong].gioNhanToiDa : gioNhanToiDaMacDinh}"
-                                th:data-gio-tra-toi-da="${bookingGuardByPhong != null and bookingGuardByPhong[p.maPhong] != null ? bookingGuardByPhong[p.maPhong].gioTraToiDa : gioTraToiDaMacDinh}"                                    th:data-phu-phi-ngoai-gio="${bookingGuardByPhong != null and bookingGuardByPhong[p.maPhong] != null ? bookingGuardByPhong[p.maPhong].phuPhiNgoaiGioVND : 100000}"
+                                th:data-gio-tra-toi-da="${bookingGuardByPhong != null and bookingGuardByPhong[p.maPhong] != null ? bookingGuardByPhong[p.maPhong].gioTraToiDa : gioTraToiDaMacDinh}"
+                                th:data-phu-phi-ngoai-gio="${bookingGuardByPhong != null and bookingGuardByPhong[p.maPhong] != null ? bookingGuardByPhong[p.maPhong].phuPhiNgoaiGioVND : 100000}"
                                 onclick="chonPhongNhanh(event, this)"
                                 th:text="${p.trangThai != 'Trong' and p.trangThai != 'Dang su dung' and p.trangThai != 'Da dat truoc'} ? 'Không Khả Dụng' : 'Đặt Phòng'">
                             Đặt Phòng
@@ -716,8 +742,7 @@
                                 th:data-loai="${loaiPhong != null ? loaiPhong.tenLoai : ''}"
                                 th:data-suc-chua="${loaiPhong != null ? loaiPhong.sucChuaToiDa : 0}"
                                 th:data-trang-thai-don="${bookingGuardByPhong != null and bookingGuardByPhong[p.maPhong] != null ? bookingGuardByPhong[p.maPhong].trangThaiDonGanNhat : ''}"
-                                th:data-ngay-bat-dau-khoa="${bookingGuardByPhong != null and bookingGuardByPhong[p.maPhong] != null and bookingGuardByPhong[p.maPhong].ngayBatDauKhoa != null ? #temporals.format(bookingGuardByPhong[p.maPhong].ngayBatDauKhoa, 'yyyy-MM-dd''T''HH:mm') : ''}"
-                                th:data-ngay-ket-thuc-khoa="${bookingGuardByPhong != null and bookingGuardByPhong[p.maPhong] != null and bookingGuardByPhong[p.maPhong].ngayKetThucKhoa != null ? #temporals.format(bookingGuardByPhong[p.maPhong].ngayKetThucKhoa, 'yyyy-MM-dd''T''HH:mm') : ''}"
+                                th:data-khoa-lich='${khoaLichJsonByPhong != null and khoaLichJsonByPhong[p.maPhong] != null ? khoaLichJsonByPhong[p.maPhong] : "[]"}'
                                 th:data-gio-nhan-toi-thieu="${bookingGuardByPhong != null and bookingGuardByPhong[p.maPhong] != null ? bookingGuardByPhong[p.maPhong].gioNhanToiThieu : '08:30'}"
                                 th:data-gio-nhan-toi-da="${bookingGuardByPhong != null and bookingGuardByPhong[p.maPhong] != null ? bookingGuardByPhong[p.maPhong].gioNhanToiDa : gioNhanToiDaMacDinh}"
                                 th:data-gio-tra-toi-da="${bookingGuardByPhong != null and bookingGuardByPhong[p.maPhong] != null ? bookingGuardByPhong[p.maPhong].gioTraToiDa : gioTraToiDaMacDinh}"
@@ -905,8 +930,42 @@
         return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
     }
 
-    let currentExtraFee = 0;
-    let lastExtraFee = 0;
+    // ===== Doc danh sach cac khoang ngay bi khoa (JSON) tu dataset =====
+    function layDanhSachKhoaLich(dataset) {
+        try {
+            const raw = dataset && dataset.khoaLich ? dataset.khoaLich : '[]';
+            const list = JSON.parse(raw);
+            return Array.isArray(list) ? list : [];
+        } catch (e) {
+            return [];
+        }
+    }
+
+    // Tim khoang dau tien trong danh sach ma [dNhan, dTra) giao (overlap) voi no.
+    // Tra ve khoang bi trung (co batDau/ketThuc) hoac null neu khong trung khoang nao.
+    function timKhoaLichOverlap(dNhan, dTra, danhSachKhoa) {
+        for (const khoa of danhSachKhoa) {
+            const lockedStart = new Date(khoa.ngayBatDau);
+            const lockedEnd = new Date(khoa.ngayKetThuc);
+            if (dNhan < lockedEnd && dTra > lockedStart) {
+                return khoa;
+            }
+        }
+        return null;
+    }
+
+    // Tim khoang co ngay ket thuc XA NHAT, dung de de xuat ngay nhan phong
+    // mac dinh khi can (sau khoang gan nhat con hieu luc).
+    function timNgayKetThucGanNhat(danhSachKhoa) {
+        if (!danhSachKhoa.length) return null;
+        let max = null;
+        for (const khoa of danhSachKhoa) {
+            const d = new Date(khoa.ngayKetThuc);
+            if (!max || d > max) max = d;
+        }
+        return max;
+    }
+
 
     function tinhPhuPhiExtra() {
         const form = document.getElementById('quickBookingForm');
@@ -965,33 +1024,34 @@
         const ngayNhanEl = document.getElementById('ngay-nhan');
         if (!banner) return;
         const trangThaiDon = form.dataset.trangThaiDon || '';
-        const ngayBatDauKhoa = form.dataset.ngayBatDauKhoa || '';
-        const ngayKetThucKhoa = form.dataset.ngayKetThucKhoa || '';
+        const danhSachKhoa = layDanhSachKhoaLich(form.dataset);
 
-        if (laTrangThaiBiKhoa(trangThaiDon) && ngayKetThucKhoa) {
-            const tu = formatDate(ngayBatDauKhoa || ngayKetThucKhoa);
-            const den = formatDate(ngayKetThucKhoa);
-
+        if (laTrangThaiBiKhoa(trangThaiDon) && danhSachKhoa.length > 0) {
             if (bannerTitle) {
                 bannerTitle.textContent = (trangThaiDon === 'Da nhan phong')
                     ? 'Phòng đang có khách sử dụng'
                     : 'Phòng đã có khách đặt trước (chờ nhận phòng)';
             }
-            if (bannerDates) bannerDates.textContent = 'Khoảng đã được đặt: ' + (tu ? tu + ' → ' : '') + den;
+            if (bannerDates) {
+                const dongText = danhSachKhoa.map(function (k) {
+                    return formatDate(String(k.ngayBatDau).substring(0, 10)) + ' → ' + formatDate(String(k.ngayKetThuc).substring(0, 10));
+                }).join(' , ');
+                bannerDates.textContent = 'Các khoảng đã được đặt: ' + dongText;
+            }
             banner.classList.add('show');
 
-            const minNhan = addDaysIso(ngayKetThucKhoa, 1);
-            if (ngayNhanEl) {
-                ngayNhanEl.min = minNhan + 'T00:00';
-                if (!ngayNhanEl.value) {
-                    ngayNhanEl.value = minNhan + 'T08:30';
-                }
+            // FIX: KHONG set "min" cho input datetime-local (xem ghi chu cu).
+            // Chi goi y ngay nhan mac dinh neu input dang trong: dung ngay
+            // sau khoang co han tra XA NHAT (an toan nhat, tranh de xuat
+            // trung mot khoang khac o giua).
+            const ngayKetThucXaNhat = timNgayKetThucGanNhat(danhSachKhoa);
+            if (ngayNhanEl && !ngayNhanEl.value && ngayKetThucXaNhat) {
+                const d = new Date(ngayKetThucXaNhat);
+                d.setDate(d.getDate() + 1);
+                ngayNhanEl.value = d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()) + 'T08:30';
             }
         } else {
             banner.classList.remove('show');
-            // FIX: khi chuyen sang chon 1 phong khac khong bi khoa, phai go
-            // thuoc tinh "min" cua truoc do di, neu khong ngay nhan phong se
-            // van bi gioi han theo phong da chon truoc, du phong moi dang trong.
             if (ngayNhanEl) {
                 ngayNhanEl.removeAttribute('min');
             }
@@ -1070,6 +1130,12 @@
         lastExtraFee = extraFee;
     }
 
+    // ===== Track trang thai overlap gan nhat, de chi ban toast khi VUA
+    // chuyen trang thai (false -> true hoac true -> false), tranh spam
+    // toast moi lan user go phim. Loi UI chi tiet do kiemTraHopLe() o
+    // IIFE duoi xu ly khi user blur hoac submit. =====
+    let lastOverlapStatePhongTheoLoai = false;
+
     // ===== Kiem tra khoang moi co giao (overlap) voi khoang dang bi khoa
     // cua don cu hay khong (ap dung cho ca 3 trang thai don bi khoa).
     // Fix: truoc day chi check "ngayNhan > ngayKetThucKhoa" (1 chieu), nen cac
@@ -1079,46 +1145,45 @@
         const form = document.getElementById('quickBookingForm');
         if (!form) return;
         const trangThaiDon = form.dataset.trangThaiDon || '';
-        const ngayBatDauKhoa = form.dataset.ngayBatDauKhoa || '';
-        const ngayKetThucKhoa = form.dataset.ngayKetThucKhoa || '';
+        const danhSachKhoa = layDanhSachKhoaLich(form.dataset);
         const ngayNhanEl = document.getElementById('ngay-nhan');
         const ngayTraEl = document.getElementById('ngay-tra');
-        if (!laTrangThaiBiKhoa(trangThaiDon) || !ngayBatDauKhoa || !ngayKetThucKhoa) return;
+        if (!laTrangThaiBiKhoa(trangThaiDon) || danhSachKhoa.length === 0) return;
         if (!ngayNhanEl || !ngayNhanEl.value || !ngayTraEl || !ngayTraEl.value) return;
 
         const dNhan = new Date(ngayNhanEl.value);
         const dTra = new Date(ngayTraEl.value);
         if (isNaN(dNhan.getTime()) || isNaN(dTra.getTime())) return;
-        const lockedStart = new Date(ngayBatDauKhoa + 'T00:00:00');
-        const lockedEnd = new Date(ngayKetThucKhoa + 'T23:59:59');
 
-        if (dNhan < lockedEnd && dTra > lockedStart) {
-            showToast('Phòng đã có lịch đặt từ ' + formatDate(ngayBatDauKhoa) +
-                ' đến ' + formatDate(ngayKetThucKhoa) +
-                '. Khoảng bạn chọn đang giao với lịch cũ. Vui lòng chọn khoảng khác.', {
+        const khoaTrung = timKhoaLichOverlap(dNhan, dTra, danhSachKhoa);
+        const isOverlap = khoaTrung !== null;
+        // Chi ban toast khi trang thai VUA chuyen (vd tu khong overlap -> overlap)
+        if (isOverlap && !lastOverlapStatePhongTheoLoai) {
+            const tu = formatDate(String(khoaTrung.ngayBatDau).substring(0, 10));
+            const den = formatDate(String(khoaTrung.ngayKetThuc).substring(0, 10));
+            showToast('Khoảng ngày bạn chọn đang giao với lịch phòng đã được đặt (' +
+                tu + ' → ' + den +
+                '). Vui lòng chọn khoảng khác hoặc chờ đến sau ngày trả.', {
                 type: 'error',
                 title: 'Khoảng ngày bị trùng với đơn cũ'
             });
-        } else if (dNhan < lockedEnd) {
-            // Khong overlap nhung ngay nhan van nam trong khoang bi khoa
-            showToast('Ngày nhận phòng phải sau ngày trả phòng của đơn đang giữ (' + formatDate(ngayKetThucKhoa) +
-                '). Vui lòng chọn từ ' + formatDate(addDaysIso(ngayKetThucKhoa, 1)) + ' trở đi.', {
-                type: 'error',
-                title: 'Ngày nhận bị trùng đơn cũ'
-            });
         }
+        lastOverlapStatePhongTheoLoai = isOverlap;
     }
 
-    // Nghe ca 'input' lan 'change' de cap nhat gia/phu phi/canh bao ngay khi
-    // nguoi dung dang go, khong can doi den luc blur khoi o input.
+    // Nghe 'input' de cap nhat gia/phu phi real-time, va 'change' (blur)
+    // de hien thi canh bao overlap. Tach 2 loai de kiemTraTrungLichVaCanhBao
+    // khong bi spam toast khi user dang go phim.
     const ngayNhanInputEl = document.querySelector('input[name="ngayNhan"]');
     const ngayTraInputEl = document.querySelector('input[name="ngayTra"]');
     ['input', 'change'].forEach(function (evt) {
         ngayNhanInputEl.addEventListener(evt, tinhGia);
         ngayNhanInputEl.addEventListener(evt, applyGuardBanner);
-        ngayNhanInputEl.addEventListener(evt, kiemTraTrungLichVaCanhBao);
         ngayTraInputEl.addEventListener(evt, tinhGia);
     });
+    // Canh bao overlap chi chay khi user da chon xong (change), khong spam khi go
+    ngayNhanInputEl.addEventListener('change', kiemTraTrungLichVaCanhBao);
+    ngayTraInputEl.addEventListener('change', kiemTraTrungLichVaCanhBao);
 
     function readRoomCart() {
         try {
@@ -1148,8 +1213,7 @@
             // tinh duoc phu phi ngoai gio + de xuat ngay nhan phong chung
             // cho ca gio hang (dua tren phong co han tra xa nhat).
             trangThaiDon: button.dataset.trangThaiDon || '',
-            ngayBatDauKhoa: button.dataset.ngayBatDauKhoa || '',
-            ngayKetThucKhoa: button.dataset.ngayKetThucKhoa || '',
+            khoaLich: button.dataset.khoaLich || '[]',
             gioNhanToiThieu: button.dataset.gioNhanToiThieu || '08:30',
             gioNhanToiDa: button.dataset.gioNhanToiDa || '11:00',
             gioTraToiDa: button.dataset.gioTraToiDa || '18:30',
@@ -1203,8 +1267,7 @@
         const form = document.getElementById('quickBookingForm');
         if (form) {
             form.dataset.trangThaiDon = button.dataset.trangThaiDon || '';
-            form.dataset.ngayBatDauKhoa = button.dataset.ngayBatDauKhoa || '';
-            form.dataset.ngayKetThucKhoa = button.dataset.ngayKetThucKhoa || '';
+            form.dataset.khoaLich = button.dataset.khoaLich || '[]';
             form.dataset.gioNhanToiThieu = button.dataset.gioNhanToiThieu || '';
             form.dataset.gioNhanToiDa = button.dataset.gioNhanToiDa || '';
             form.dataset.gioTraToiDa = button.dataset.gioTraToiDa || '';
@@ -1350,21 +1413,21 @@
             // su giua [ngayNhan, ngayTra) va [ngayBatDauKhoa, ngayKetThucKhoa],
             // giong logic validateRoomBookingGuard() ben PhongController.
             const trangThaiDon = form.dataset.trangThaiDon || '';
-            const ngayBatDauKhoa = form.dataset.ngayBatDauKhoa || '';
-            const ngayKetThucKhoa = form.dataset.ngayKetThucKhoa || '';
-            if (laTrangThaiBiKhoa(trangThaiDon) && ngayBatDauKhoa && ngayKetThucKhoa) {
-                const lockedStart = new Date(ngayBatDauKhoa + 'T00:00:00');
-                const lockedEnd = new Date(ngayKetThucKhoa + 'T23:59:59');
-                // Lay datetime day du (v1, v2) de so sanh overlap, vi d1/d2
-                // o tren chi la ngay lich (T00:00:00) -> se luon < lockedEnd
-                // neu cung ngay voi ngay tra cua don cu, gay sai.
+            const danhSachKhoa = layDanhSachKhoaLich(form.dataset);
+            if (laTrangThaiBiKhoa(trangThaiDon) && danhSachKhoa.length > 0) {
+                // Lay datetime day du (v1, v2) de so sanh overlap voi TUNG khoang
+                // rieng biet, khong gop thanh 1 khoang min-max lon (se chan
+                // nham ca khoang trong giua 2 don).
                 const dNhan = new Date(v1);
                 const dTra = new Date(v2);
-                if (dNhan < lockedEnd && dTra > lockedStart) {
+                const khoaTrung = timKhoaLichOverlap(dNhan, dTra, danhSachKhoa);
+                if (khoaTrung) {
                     showError(grpNgayNhan);
                     showError(grpNgayTra);
-                    errNgayNhan.textContent = 'Phòng đã có lịch đặt từ ' + formatDate(ngayBatDauKhoa) +
-                        ' đến ' + formatDate(ngayKetThucKhoa) +
+                    const tu = formatDate(String(khoaTrung.ngayBatDau).substring(0, 10));
+                    const den = formatDate(String(khoaTrung.ngayKetThuc).substring(0, 10));
+                    errNgayNhan.textContent = 'Phòng đã có lịch đặt từ ' + tu +
+                        ' đến ' + den +
                         '. Khoảng bạn chọn đang giao với lịch cũ. Vui lòng chọn khoảng khác.';
                     return { ok: false, lyDo: 'Khoang ngay moi giao (overlap) voi don cu.' };
                 }
@@ -1373,9 +1436,43 @@
             return { ok: true, lyDo: null };
         }
 
+        // Kiem tra logic don thuan (khong thay doi UI, khong show loi). Dung
+        // cho nut Dat phong, tranh bi loi UI "nhay" khi user dang go.
+        function kiemTraLogic() {
+            if (!maPhongEl.value) return { ok: false, lyDo: 'Vui long chon phong truoc khi dat.' };
+            const v1 = ngayNhanEl.value;
+            const v2 = ngayTraEl.value;
+            if (!v1) return { ok: false, lyDo: 'Chua chon ngay nhan phong.' };
+            if (!v2) return { ok: false, lyDo: 'Chua chon ngay tra phong.' };
+            const dNhan = new Date(v1);
+            const dTra = new Date(v2);
+            if (isNaN(dNhan.getTime()) || isNaN(dTra.getTime())) {
+                return { ok: false, lyDo: 'Ngay khong hop le.' };
+            }
+            if (dTra <= dNhan) {
+                return { ok: false, lyDo: 'Ngay tra phong phai sau ngay nhan phong.' };
+            }
+            if (sucChuaToiDa > 0) {
+                const nl = parseInt(slNguoiLonEl.value, 10) || 0;
+                const te = parseInt(slTreEmEl.value, 10) || 0;
+                if (nl + te > sucChuaToiDa) {
+                    return { ok: false, lyDo: 'So luong nguoi vuot qua suc chua.' };
+                }
+            }
+            const trangThaiDon = form.dataset.trangThaiDon || '';
+            const danhSachKhoa = layDanhSachKhoaLich(form.dataset);
+            if (laTrangThaiBiKhoa(trangThaiDon) && danhSachKhoa.length > 0) {
+                if (timKhoaLichOverlap(dNhan, dTra, danhSachKhoa)) {
+                    return { ok: false, lyDo: 'Khoang ngay moi giao (overlap) voi don cu.' };
+                }
+            }
+            return { ok: true, lyDo: null };
+        }
+
         function capNhatTrangThaiNut() {
             if (!btnSubmit) return;
-            const kq = kiemTraHopLe();
+            // FIX: dung kiemTraLogic() de trang thai nut khong bi loi UI "nhay"
+            const kq = kiemTraLogic();
             if (kq.ok) {
                 btnSubmit.disabled = false;
                 btnSubmit.title = '';
@@ -1385,13 +1482,17 @@
             }
         }
 
-        // Lang nghe thay doi
-        ngayNhanEl.addEventListener('change', capNhatTrangThaiNut);
-        ngayTraEl.addEventListener('change', capNhatTrangThaiNut);
+        // FIX: PHAN BIET 2 LOAI LISTENER:
+        // - 'input' (user dang go): chi goi capNhatTrangThaiNut() de enable/disable
+        //   nut, KHONG goi kiemTraHopLe() de tranh loi UI che tam nhin.
+        // - 'change' (user da blur hoac chon xong tu picker): goi kiemTraHopLe()
+        //   de hien thi loi (neu co) cho user biet.
         ngayNhanEl.addEventListener('input', capNhatTrangThaiNut);
+        ngayNhanEl.addEventListener('change', kiemTraHopLe);
         ngayTraEl.addEventListener('input', capNhatTrangThaiNut);
-        slNguoiLonEl.addEventListener('change', capNhatTrangThaiNut);
-        slTreEmEl.addEventListener('change', capNhatTrangThaiNut);
+        ngayTraEl.addEventListener('change', kiemTraHopLe);
+        slNguoiLonEl.addEventListener('change', kiemTraHopLe);
+        slTreEmEl.addEventListener('change', kiemTraHopLe);
 
         // Trang thai ban dau: disabled
         capNhatTrangThaiNut();
