@@ -75,7 +75,7 @@ public class ThongKeService {
         // Doanh thu ghi nhan (accrual, hoa_don.tong_tien) vs doanh thu thuc thu (cash-basis, thanh_toan)
         Double doanhThuGhiNhanRaw = tkr.getTotalRevenue(tuNgay, denNgay);
         double doanhThuGhiNhan = doanhThuGhiNhanRaw == null ? 0d : doanhThuGhiNhanRaw;
-        Double doanhThuThucThuRaw = tkr.getActualRevenueCollected(tuNgay, denNgay);
+        Double doanhThuThucThuRaw = tkr.getActualRevenueCollected(tuNgay, denNgay) - tkr.getRefundedAmount(tuNgay, denNgay);
         double doanhThuThucThu = doanhThuThucThuRaw == null ? 0d : doanhThuThucThuRaw;
         Integer soGiaoDichThanhCong = tkr.getSoGiaoDichThanhCong(tuNgay, denNgay);
         double tyLeThuTien = safeDivPercent(doanhThuThucThu, doanhThuGhiNhan);
