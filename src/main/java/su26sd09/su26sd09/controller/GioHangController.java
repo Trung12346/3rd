@@ -16,6 +16,7 @@ import su26sd09.su26sd09.entity.ChiTietDatPhong;
 import su26sd09.su26sd09.entity.DatPhong;
 import su26sd09.su26sd09.entity.KhachHang;
 import su26sd09.su26sd09.entity.Phong;
+import su26sd09.su26sd09.repository.PhongRepository;
 import su26sd09.su26sd09.service.ChiTietDatPhongService;
 import su26sd09.su26sd09.service.DatPhongService;
 import su26sd09.su26sd09.service.NguoiDungService;
@@ -42,6 +43,9 @@ public class GioHangController {
 
     @Autowired
     ChiTietDatPhongService chiTietDatPhongService;
+
+    @Autowired
+    PhongRepository phongRepository;
 
     @Autowired
     NguoiDungService nguoiDungService;
@@ -161,26 +165,47 @@ public class GioHangController {
         amount = amount.multiply(BigDecimal.valueOf(resThue));
         System.out.println(amount);
 
-        for (Phong p : ListPhong) {
+        if(roomIds.size() == 1)
+        {
+            Phong p = phongRepository.findById(roomIds.get(0)).get();
+
             BigDecimal amount2 = p.getGiaMoiDem();
             amount2 = amount2.multiply(BigDecimal.valueOf(resThue));
             amount2 = amount2.add(calculateExtraFee(PhongService.buildRoomGuardFor(p.getMaPhong()), ngayNhan, ngayTra));
             ChiTietDatPhong chiTietDatPhong = new ChiTietDatPhong();
             chiTietDatPhong.setP(p);
             chiTietDatPhong.setGiaMoiDem(p.getGiaMoiDem());
-            chiTietDatPhong.setMa_cccd(cccdTheoPhong.get(p.getMaPhong()));
-            System.out.println("ma_cccd cua phong: " + p.getMaPhong() + "la: " + cccdTheoPhong.get(p.getMaPhong()));
             chiTietDatPhong.setGiaKhiDat(amount2);
             chiTietDatPhong.setPhuPhi(calculateExtraFee(PhongService.buildRoomGuardFor(p.getMaPhong()), ngayNhan, ngayTra));
             chiTietDatPhong.setD(datPhong);
-            Map<Integer , String> cccdPhong = allParamsCCCD.entrySet()
-                    .stream().filter(cccdP -> cccdP.getKey().startsWith("cccdPhong_")).
-                    collect(Collectors.toMap(e -> Integer.parseInt(e.getKey().substring("cccdPhong_".length())),
-                            Map.Entry::getValue));
-            chiTietDatPhong.setMa_cccd(cccdPhong.get(p.getMaPhong()));
-            System.out.println("Cac phong: " + p.getSoPhong() + "Gia la: " + amount2);
+            chiTietDatPhong.setMa_cccd(ma_cccd);
+
 
             chiTietDatPhongService.save(chiTietDatPhong);
+        } else {
+
+
+            for (Phong p : ListPhong) {
+                BigDecimal amount2 = p.getGiaMoiDem();
+                amount2 = amount2.multiply(BigDecimal.valueOf(resThue));
+                amount2 = amount2.add(calculateExtraFee(PhongService.buildRoomGuardFor(p.getMaPhong()), ngayNhan, ngayTra));
+                ChiTietDatPhong chiTietDatPhong = new ChiTietDatPhong();
+                chiTietDatPhong.setP(p);
+                chiTietDatPhong.setGiaMoiDem(p.getGiaMoiDem());
+                chiTietDatPhong.setMa_cccd(cccdTheoPhong.get(p.getMaPhong()));
+                System.out.println("ma_cccd cua phong: " + p.getMaPhong() + "la: " + cccdTheoPhong.get(p.getMaPhong()));
+                chiTietDatPhong.setGiaKhiDat(amount2);
+                chiTietDatPhong.setPhuPhi(calculateExtraFee(PhongService.buildRoomGuardFor(p.getMaPhong()), ngayNhan, ngayTra));
+                chiTietDatPhong.setD(datPhong);
+                Map<Integer, String> cccdPhong = allParamsCCCD.entrySet()
+                        .stream().filter(cccdP -> cccdP.getKey().startsWith("cccdPhong_")).
+                        collect(Collectors.toMap(e -> Integer.parseInt(e.getKey().substring("cccdPhong_".length())),
+                                Map.Entry::getValue));
+                chiTietDatPhong.setMa_cccd(cccdPhong.get(p.getMaPhong()));
+                System.out.println("Cac phong: " + p.getSoPhong() + "Gia la: " + amount2);
+
+                chiTietDatPhongService.save(chiTietDatPhong);
+            }
         }
         return "redirect:/phong/dat-phong/xac-nhan/" + datPhong.getId();
     }
