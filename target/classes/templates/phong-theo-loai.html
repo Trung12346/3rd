@@ -892,6 +892,21 @@
         return TRANG_THAI_DON_BI_KHOA.indexOf(trangThaiDon) !== -1;
     }
 
+    // ===== Chan dat phong vao ngay trong qua khu =====
+    // Vi du hom nay la 19/07 thi khong duoc chon ngay nhan phong la 18/07
+    // hoac mot khoang nam hoan toan trong qua khu nhu 12/07-16/07. So sanh
+    // theo NGAY LICH (bo qua gio) de tranh loi lech gio giua "bay gio" va
+    // "hom nay 00:00".
+    function ngayBatDauCuaHomNay() {
+        const now = new Date();
+        return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    }
+    function laNgayQuaKhu(dateObj) {
+        if (!dateObj || isNaN(dateObj.getTime())) return false;
+        const d = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
+        return d < ngayBatDauCuaHomNay();
+    }
+
     function parseGia(str) {
         return parseInt(str.replace(/[^0-9]/g, '')) || 0;
     }
@@ -1386,6 +1401,15 @@
             const d2Str = v2.substring(0, 10);
             const d1 = new Date(d1Str + 'T00:00:00');
             const d2 = new Date(d2Str + 'T00:00:00');
+
+            // FIX: khong cho chon ngay nhan phong trong qua khu (vi du hom
+            // nay 19/07 thi khong duoc chon 18/07 hoac 12/07-16/07).
+            if (laNgayQuaKhu(d1)) {
+                showError(grpNgayNhan);
+                errNgayNhan.textContent = 'Ngày nhận phòng không được là ngày trong quá khứ. Vui lòng chọn từ hôm nay trở đi.';
+                return { ok: false, lyDo: 'Ngay nhan phong la ngay qua khu.' };
+            }
+
             const diffDays = Math.round((d2.getTime() - d1.getTime()) / 86400000);
             if (diffDays < 1) {
                 showError(grpNgayTra);
@@ -1449,6 +1473,13 @@
             if (isNaN(dNhan.getTime()) || isNaN(dTra.getTime())) {
                 return { ok: false, lyDo: 'Ngay khong hop le.' };
             }
+
+            // FIX: khong cho chon ngay nhan phong trong qua khu (vi du hom
+            // nay 19/07 thi khong duoc chon 18/07 hoac 12/07-16/07).
+            if (laNgayQuaKhu(dNhan)) {
+                return { ok: false, lyDo: 'Ngay nhan phong la ngay qua khu.' };
+            }
+
             if (dTra <= dNhan) {
                 return { ok: false, lyDo: 'Ngay tra phong phai sau ngay nhan phong.' };
             }

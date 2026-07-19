@@ -89,7 +89,7 @@
         .room-price  { font-size: 13px; font-weight: 700; color: #0f766e; margin-top: 8px; }
         .room-empty  { color: #999; font-size: 13px; grid-column: 1/-1; padding: 20px; text-align: center; }
 
-        /* Thanh tìm kiếm phòng theo thời gian nhận phòng mong muốn */
+        /* Thanh tìm phòng theo thời gian nhận phòng mong muốn */
         .room-search-bar {
             display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap;
             margin-bottom: 16px; padding: 14px 16px; background: #f8fafc;
@@ -118,14 +118,21 @@
         }
         .room-status-badge.trong { background: #ecfdf5; color: #15803d; border: 1px solid #bbf7d0; }
         .room-status-badge.dang-su-dung { background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; }
+        /* Trạng thái "Đã đặt trước" — THÊM MỚI: phòng đang trống nhưng có đơn chờ xác nhận sắp tới */
+        .room-status-badge.dat-truoc { background: #eef2ff; color: #4338ca; border: 1px solid #c7d2fe; }
 
         .room-card.dang-su-dung { border-style: dashed; }
+        .room-card.dat-truoc { border-style: dashed; }
         .room-card.locked { opacity: .45; cursor: not-allowed; }
         .room-card.locked:hover { border-color: #e2e8f0; background: none; }
 
         .room-return-info {
             font-size: 11px; color: #c2410c; font-weight: 600; margin-top: 6px;
             background: #fff7ed; border-radius: 4px; padding: 3px 6px; display: inline-block;
+        }
+        /* THÊM MỚI: style riêng cho room-return-info khi hiển thị thông tin "đã đặt trước" */
+        .room-return-info.dat-truoc-info {
+            color: #4338ca; background: #eef2ff;
         }
         .room-match-tag {
             position: absolute; top: 8px; left: 10px; background: #16a34a; color: #fff;
@@ -138,6 +145,15 @@
             background: #fffbeb; border: 1px solid #fde68a; color: #92400e; display: none;
         }
         .cleaning-notice.show { display: block; }
+
+        /* Thông báo liệt kê các khoảng ngày đặt trước để rà soát — THÊM MỚI */
+        .prebooking-notice {
+            margin-top: 10px; padding: 10px 14px; border-radius: 6px; font-size: 12px;
+            background: #eef2ff; border: 1px solid #c7d2fe; color: #4338ca; display: none;
+        }
+        .prebooking-notice.show { display: block; }
+        .prebooking-notice ul { margin: 6px 0 0 18px; padding: 0; }
+        .prebooking-notice li { margin-bottom: 2px; }
 
         /* ===== Toast — dùng chung style với trang chi tiết phòng (booking-toast) ===== */
         .booking-toast-container {
@@ -397,6 +413,7 @@
                         <div class="form-field">
                             <label>Ngày nhận phòng <span style="color:red">*</span></label>
                             <input type="date" name="ngaydatPhong" id="ngay-nhan" required>
+                            <div class="addon-date-hint" id="ngayNhanQuayHint"></div>
                         </div>
                         <div class="form-field">
                             <label>Ngày trả phòng <span style="color:red">*</span></label>
@@ -472,7 +489,8 @@
                                  th:text="${#numbers.formatDecimal(p.giaMoiDem,0,'COMMA',0,'POINT') + ' VND/đêm'}">
                                 500.000 VND/đêm
                             </div>
-                            <!-- Giờ trả dự kiến (nếu phòng đang có khách) — điền bằng JS từ roomStatusJson để format đẹp -->
+                            <!-- Giờ trả dự kiến (nếu phòng đang có khách) hoặc các khoảng đã đặt trước
+                                 (nếu phòng trống nhưng có đơn chờ xác nhận) — điền bằng JS từ roomStatusJson -->
                             <div class="room-return-info" style="display:none;"></div>
                         </div>
                         <div th:if="${phongTrongList == null or phongTrongList.isEmpty()}" class="room-empty">
@@ -484,6 +502,9 @@
                         ⚠ Phòng bạn vừa chọn đang sắp trả — hệ thống đã tự cộng thêm <strong>1 giờ</strong> vào giờ nhận phòng.
                         Phòng cần ít nhất 1 tiếng để dọn dẹp / vệ sinh trước khi bàn giao cho khách mới.
                     </div>
+
+                    <!-- Thông báo liệt kê các khoảng ngày đã đặt trước (chờ xác nhận) — THÊM MỚI -->
+                    <div class="prebooking-notice" id="prebookingNotice"></div>
 
                     <!-- ========== THÊM MỚI: CCCD theo từng phòng đã chọn ========== -->
                     <div id="cccd-tung-phong" style="display:none;">
@@ -909,7 +930,7 @@
         }
     }
 
-    /* ===== TRẠNG THÁI PHÒNG + GIỜ TRẢ DỰ KIẾN ===== */
+    /* ===== TRẠNG THÁI PHÒNG + GIỜ TRẢ DỰ KIẾN / ĐÃ ĐẶT TRƯỚC ===== */
     const ROOM_STATUS = window.__ROOM_STATUS__ || [];
     const ROOM_STATUS_MAP = {};
     ROOM_STATUS.forEach(function(r) { ROOM_STATUS_MAP[r.maPhong] = r; });
@@ -923,15 +944,43 @@
             + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
     }
 
-    /* Hiển thị "giờ trả dự kiến" trên các phòng đang sử dụng */
+    /** Định dạng gọn 1 khoảng ngày đặt trước để hiển thị: "dd/mm/yyyy HH:mm → dd/mm/yyyy HH:mm"
+     *  Lưu ý: field thực tế backend trả về trong mỗi phần tử của "khoaLich" là "tu" / "den"
+     *  (không phải ngayBatDau/ngayKetThuc — đó là tên field khác dùng ở chỗ tính overlap). */
+    function fmtKhoangDatTruoc(k) {
+        const tu  = k.tu  ? fmtDateTime(k.tu)  : '?';
+        const den = k.den ? fmtDateTime(k.den) : '?';
+        return tu + ' → ' + den;
+    }
+
+    /* Hiển thị "giờ trả dự kiến" trên các phòng đang sử dụng, hoặc
+       "đã đặt trước" trên các phòng đang trống nhưng có đơn chờ xác nhận sắp tới. */
     document.querySelectorAll('.room-card').forEach(function(card) {
         const maPhong = card.dataset.maPhong;
         const info = ROOM_STATUS_MAP[maPhong];
         const returnEl = card.querySelector('.room-return-info');
+        const badge = card.querySelector('.room-status-badge');
+
+        const coKhoaLichTuongLai = info && Array.isArray(info.khoaLich) && info.khoaLich.length > 0;
+
         if (info && info.trangThai === 'Dang su dung' && info.ngayTraDuKien) {
+            // Phòng đang thực sự có khách ở
             returnEl.textContent = 'Dự kiến trả: ' + fmtDateTime(info.ngayTraDuKien);
             returnEl.style.display = 'inline-block';
+        } else if (info && info.trangThai !== 'Dang su dung' && coKhoaLichTuongLai) {
+            // Phòng đang TRỐNG (đơn trước đã "Da tra phong") nhưng có đơn mới "Cho xac nhan"
+            // giữ chỗ trước -> hiển thị rõ là "Đã đặt trước", KHÔNG phải phòng vừa trả khách.
+            card.classList.add('dat-truoc');
+            if (badge) {
+                badge.textContent = 'Đã đặt trước';
+                badge.classList.remove('trong');
+                badge.classList.add('dat-truoc');
+            }
+            returnEl.textContent = 'Đặt trước: ' + info.khoaLich.map(fmtKhoangDatTruoc).join('; ');
+            returnEl.classList.add('dat-truoc-info');
+            returnEl.style.display = 'inline-block';
         }
+
         // Chỉ khóa phòng khi server (RoomBookingGuardDTO.coTheDat) xác nhận KHÔNG thể đặt được
         // — ví dụ phòng "Dang su dung" nhưng không phải đơn "Da nhan phong"/"Da tra phong" hợp lệ.
         if (info && info.coTheDat === false) {
@@ -996,48 +1045,106 @@
             const cb = this.querySelector('input[type="checkbox"]');
             if (cb) cb.checked = !cb.checked;
 
-            /* Nếu vừa CHỌN 1 phòng đang "Dang su dung" (sắp trả) -> tự cộng 1h vệ sinh vào giờ nhận phòng + báo toast */
-            if (!wasSelected && this.classList.contains('selected') && this.classList.contains('dang-su-dung')) {
-                capNhatGioNhanChoVeSinh(this);
-                showRoomToast(
-                    'Phòng cần thời gian vệ sinh',
-                    'Phòng bạn vừa chọn đang sắp trả — hệ thống đã tự cộng thêm 1 giờ vào giờ nhận phòng để dọn dẹp / vệ sinh trước khi bàn giao cho khách mới.',
-                    8000
-                );
+            /* Nếu vừa CHỌN 1 phòng đang "Dang su dung" (sắp trả) -> gợi ý giờ nhận phòng sau khi vệ sinh xong,
+               NHƯNG chỉ khi nhân viên CHƯA tự nhập ngày nhận phòng. Nhân viên vẫn có thể tự chọn một khoảng
+               ngày khác (kể cả trước thời điểm phòng dự kiến trả) — hệ thống sẽ cảnh báo riêng nếu bị trùng lịch.
+               Nếu vừa chọn 1 phòng "dat-truoc" (đang trống nhưng đã có đơn chờ xác nhận) -> báo rõ đây KHÔNG
+               phải phòng vừa trả khách, kèm danh sách các khoảng ngày đã giữ để nhân viên rà soát. */
+            if (!wasSelected && this.classList.contains('selected')) {
+                if (this.classList.contains('dang-su-dung')) {
+                    const daTuDongDien = capNhatGioNhanChoVeSinh(this);
+                    if (daTuDongDien) {
+                        showRoomToast(
+                            'Phòng cần thời gian vệ sinh',
+                            'Phòng bạn vừa chọn đang sắp trả — hệ thống đã gợi ý giờ nhận phòng sau khi vệ sinh xong. Bạn vẫn có thể tự chọn ngày khác, miễn là không trùng lịch.',
+                            8000
+                        );
+                    }
+                } else if (this.classList.contains('dat-truoc')) {
+                    const info = ROOM_STATUS_MAP[this.dataset.maPhong];
+                    const dsNgay = (info && Array.isArray(info.khoaLich) && info.khoaLich.length > 0)
+                        ? info.khoaLich.map(fmtKhoangDatTruoc).join('; ')
+                        : '';
+                    showRoomToast(
+                        'Phòng này đã có lịch đặt trước',
+                        'Đây là phòng đang trống chứ không phải khách vừa trả — đã có đơn đặt trước chờ xác nhận.'
+                        + (dsNgay ? ' Khoảng đã giữ: ' + dsNgay + '.' : '')
+                        + ' Vui lòng chọn ngày nhận/trả không trùng các khoảng này.',
+                        9000
+                    );
+                }
             }
 
             renderCccdInputs();   /* THÊM MỚI */
             capNhatCanhBaoVeSinh();
+            capNhatCanhBaoDatTruoc();
+            debouncedKiemTraOverlapQuay();
             tinhTong();
         });
     });
 
-    /** Tự cộng thêm 1 giờ vào ô "Ngày nhận phòng" (nếu là input datetime, chỉ áp dụng khi có giờ cụ thể).
-     *  Do form chính dùng input type="date" (chỉ có ngày), việc "cộng 1h" được phản ánh qua
-     *  thanh tìm kiếm phòng (roomSearchTime) và cảnh báo vệ sinh; đồng thời gợi ý giờ nhận tối thiểu
-     *  cho nhân viên thông qua thông báo hiển thị bên dưới khu vực chọn phòng. */
-    function capNhatGioNhanChoVeSinh(card) {
-        const searchInput = document.getElementById('roomSearchTime');
-        const info = ROOM_STATUS_MAP[card.dataset.maPhong];
-        if (!info || !info.ngayTraDuKien) return;
+    /** Tìm khoảng ngày trả XA NHẤT (end time lớn nhất) trong số tất cả các khoảng bị giữ chỗ
+     *  (Dang su dung hoặc Da dat truoc) của TẤT CẢ các phòng đang được chọn — không chỉ riêng
+     *  1 phòng. Dùng chung nguồn dữ liệu với phần kiểm tra overlap (layDanhSachKhoaLichPhongQuay)
+     *  nên tự động bao phủ cả 2 trạng thái, kể cả khi phòng "Dang su dung" cũng có khoaLich.
+     *  @returns {{farthest: {end: Date, start: Date|null, soPhong: string}, chiTiet: Array<{soPhong: string, ranges: Array}>}|null}
+     */
+    function timKhoangXaNhatTrongPhongDaChonQuay() {
+        let farthest = null;
+        const chiTiet = [];
+        document.querySelectorAll('.room-card.selected').forEach(function(card) {
+            const laPhongDangGiuCho = card.classList.contains('dang-su-dung') || card.classList.contains('dat-truoc');
+            if (!laPhongDangGiuCho) return;
+            const info = ROOM_STATUS_MAP[card.dataset.maPhong];
+            const ranges = layDanhSachKhoaLichPhongQuay(info);
+            if (ranges.length === 0) return;
+            chiTiet.push({ soPhong: card.dataset.soPhong, ranges: ranges });
+            ranges.forEach(function(r) {
+                if (!farthest || r.end.getTime() > farthest.end.getTime()) {
+                    farthest = { end: r.end, start: r.start, soPhong: card.dataset.soPhong };
+                }
+            });
+        });
+        if (!farthest) return null;
+        return { farthest: farthest, chiTiet: chiTiet };
+    }
 
-        const gioTra = new Date(info.ngayTraDuKien);
-        const gioNhanToiThieu = new Date(gioTra.getTime() + 60 * 60 * 1000); // +1 giờ vệ sinh
+    /** Dựa trên TẤT CẢ các phòng đang được chọn có tình trạng bị giữ chỗ (Dang su dung / Da dat truoc),
+     *  tìm khoảng có ngày trả XA NHẤT trong số đó và gợi ý ngày nhận phòng ngay sau khoảng đó
+     *  (+1 giờ vệ sinh), để tránh trùng lịch với BẤT KỲ phòng nào trong số các phòng đã chọn —
+     *  không chỉ riêng phòng vừa bấm chọn. Ví dụ: chọn Phòng 102 (trả 14h) + Phòng 201 (đặt trước
+     *  đến 18h) -> gợi ý ngày nhận sau 18h+1h, để không trùng cả 2 phòng.
+     *
+     *  Chỉ tự động điền/ghi đè khi ô "Ngày nhận phòng" đang TRỐNG hoặc đang giữ giá trị do CHÍNH
+     *  hệ thống tự gợi ý trước đó (dataset.autoFilled === '1') — không bao giờ ghi đè giá trị do
+     *  nhân viên tự tay nhập.
+     *  @returns {{farthest, chiTiet}|null} kết quả tính toán (để hiển thị toast), hoặc null nếu
+     *           không có phòng nào đang bị giữ chỗ trong số các phòng đã chọn.
+     */
+    function goiYNgayNhanTheoPhongDaChonQuay() {
+        const ket = timKhoangXaNhatTrongPhongDaChonQuay();
+        if (!ket) return null;
 
-        // Nếu nhân viên đang dùng ô tìm kiếm giờ nhận, tự cập nhật thành giờ sau khi vệ sinh xong
-        if (searchInput) {
-            const pad = function(n) { return String(n).padStart(2, '0'); };
-            const isoLocal = gioNhanToiThieu.getFullYear() + '-' + pad(gioNhanToiThieu.getMonth() + 1) + '-' + pad(gioNhanToiThieu.getDate())
-                + 'T' + pad(gioNhanToiThieu.getHours()) + ':' + pad(gioNhanToiThieu.getMinutes());
-            searchInput.value = isoLocal;
-        }
-
-        // Đồng bộ ngày nhận phòng (input date) sang đúng ngày của giờ nhận tối thiểu sau vệ sinh
         const ngayNhanInput = document.getElementById('ngay-nhan');
-        if (ngayNhanInput) {
-            const pad = function(n) { return String(n).padStart(2, '0'); };
-            ngayNhanInput.value = gioNhanToiThieu.getFullYear() + '-' + pad(gioNhanToiThieu.getMonth() + 1) + '-' + pad(gioNhanToiThieu.getDate());
+        const coTheGhiDe = ngayNhanInput && (!ngayNhanInput.value || ngayNhanInput.dataset.autoFilled === '1');
+        if (!coTheGhiDe) return ket; // nhan vien da tu nhap tay -> khong ghi de, chi tra ve de hien toast
+
+        const gioNhanToiThieu = new Date(ket.farthest.end.getTime() + 60 * 60 * 1000); // +1 giờ vệ sinh
+        const pad = function(n) { return String(n).padStart(2, '0'); };
+
+        // Nếu nhân viên đang dùng ô tìm kiếm giờ nhận (và đó cũng chưa phải nhân viên tự nhập tay)
+        const searchInput = document.getElementById('roomSearchTime');
+        if (searchInput && (!searchInput.value || searchInput.dataset.autoFilled === '1')) {
+            searchInput.value = gioNhanToiThieu.getFullYear() + '-' + pad(gioNhanToiThieu.getMonth() + 1) + '-' + pad(gioNhanToiThieu.getDate())
+                + 'T' + pad(gioNhanToiThieu.getHours()) + ':' + pad(gioNhanToiThieu.getMinutes());
+            searchInput.dataset.autoFilled = '1';
         }
+
+        // Đồng bộ ngày nhận phòng (input date) sang đúng ngày của giờ nhận tối thiểu sau khoảng xa nhất
+        ngayNhanInput.value = gioNhanToiThieu.getFullYear() + '-' + pad(gioNhanToiThieu.getMonth() + 1) + '-' + pad(gioNhanToiThieu.getDate());
+        ngayNhanInput.dataset.autoFilled = '1'; // đánh dấu: đây là giá trị hệ thống tự gợi ý, được phép ghi đè lần sau
+
+        return ket;
     }
 
     /** Hiện/ẩn thông báo "cần ít nhất 1 tiếng vệ sinh" khi có phòng đang sử dụng được chọn. */
@@ -1047,6 +1154,187 @@
             .some(function(c) { return c.classList.contains('dang-su-dung'); });
         notice.classList.toggle('show', coPhongDangSuDungDuocChon);
     }
+
+    /** Hiện/ẩn + đổ nội dung thông báo liệt kê các khoảng ngày ĐÃ ĐẶT TRƯỚC (chờ xác nhận)
+     *  của các phòng "dat-truoc" đang được chọn, để nhân viên rà soát trước khi tạo đơn mới. */
+    function capNhatCanhBaoDatTruoc() {
+        const notice = document.getElementById('prebookingNotice');
+        const selectedDatTruocCards = Array.from(document.querySelectorAll('.room-card.selected.dat-truoc'));
+
+        if (selectedDatTruocCards.length === 0) {
+            notice.classList.remove('show');
+            notice.innerHTML = '';
+            return;
+        }
+
+        let html = '⚠ Phòng bạn chọn đang <strong>trống</strong> nhưng đã có đơn <strong>đặt trước</strong> (chờ xác nhận)'
+            + ' — không phải phòng khách vừa trả. Vui lòng rà soát các khoảng ngày đã giữ trước khi tạo đơn:<ul>';
+
+        selectedDatTruocCards.forEach(function(card) {
+            const info = ROOM_STATUS_MAP[card.dataset.maPhong];
+            const ranges = (info && Array.isArray(info.khoaLich)) ? info.khoaLich : [];
+            if (ranges.length === 0) return;
+            html += '<li><strong>Phòng ' + card.dataset.soPhong + '</strong>: '
+                + ranges.map(fmtKhoangDatTruoc).join('; ') + '</li>';
+        });
+
+        html += '</ul>';
+        notice.innerHTML = html;
+        notice.classList.add('show');
+    }
+
+    /* ===================================================================
+     * ===== VALIDATE NGÀY NHẬN / TRẢ PHÒNG (quá khứ + trùng lịch) =====
+     * ===================================================================
+     * Yêu cầu:
+     *  - Không được chọn ngày nhận phòng trong quá khứ.
+     *  - ĐƯỢC chọn ngày nhận/trả phòng TRƯỚC thời điểm phòng đang có khách
+     *    dự kiến trả (không còn bắt buộc phải đặt SAU) - miễn là khoảng
+     *    ngày [ngayNhan, ngayTra) không thực sự GIAO (overlap) với khoảng
+     *    thời gian phòng đó đang bị giữ.
+     *  - Khi vi phạm thì báo toast, nhưng có debounce + chỉ báo khi trạng
+     *    thái VỪA chuyển từ hợp lệ -> vi phạm, để tránh spam thông báo khi
+     *    nhân viên đang gõ từng số trong ô ngày.
+     * =================================================================== */
+
+    /** true nếu "ngayStr" (yyyy-MM-dd) là ngày trong quá khứ so với hôm nay. */
+    function laNgayQuaKhuQuay(ngayStr) {
+        if (!ngayStr) return false;
+        const now = new Date();
+        const pad = function(n) { return String(n).padStart(2, '0'); };
+        const todayStr = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate());
+        return ngayStr < todayStr;
+    }
+
+    /** Lấy danh sách khoảng ngày đang bị khóa của 1 phòng (dựa trên roomStatusJson). */
+    function layDanhSachKhoaLichPhongQuay(info) {
+        const list = [];
+        if (!info) return list;
+        // Phòng đang có khách sử dụng NGAY BÂY GIỜ -> bị khóa cho đến giờ trả dự kiến.
+        if (info.trangThai === 'Dang su dung' && info.ngayTraDuKien) {
+            const end = new Date(info.ngayTraDuKien);
+            if (!isNaN(end.getTime())) list.push({ start: null, end: end });
+        }
+        // Nếu backend gửi thêm danh sách các khoảng bị khóa khác (ví dụ đơn đã xác nhận
+        // cho tương lai, hoặc đơn "Cho xac nhan" đặt trước) thì đọc thêm ở đây.
+        // Field thực tế trong mỗi phần tử của "khoaLich" là "tu" / "den".
+        if (Array.isArray(info.khoaLich)) {
+            info.khoaLich.forEach(function(k) {
+                if (k && k.den) {
+                    const end = new Date(k.den);
+                    const start = k.tu ? new Date(k.tu) : null;
+                    if (!isNaN(end.getTime())) list.push({ start: (start && !isNaN(start.getTime())) ? start : null, end: end });
+                }
+            });
+        }
+        return list;
+    }
+
+    /** Kiểm tra khoảng [ngayNhanStr, ngayTraStr) (dạng yyyy-MM-dd) có GIAO với bất kỳ
+     *  khoảng nào trong "ranges" hay không. Trả về khoảng bị giao (end xa nhất) hoặc null. */
+    function timKhoangOverlapQuay(ngayNhanStr, ngayTraStr, ranges) {
+        if (!ngayNhanStr || !ngayTraStr || !ranges.length) return null;
+        const start = new Date(ngayNhanStr + 'T00:00:00');
+        const end = new Date(ngayTraStr + 'T23:59:59');
+        if (isNaN(start.getTime()) || isNaN(end.getTime())) return null;
+
+        let found = null;
+        ranges.forEach(function(r) {
+            const rStart = r.start || new Date(0); // khong biet gio bat dau -> coi nhu da bat dau tu truoc
+            const rEnd = r.end;
+            if (start < rEnd && end > rStart) {
+                if (!found || rEnd.getTime() > found.end.getTime()) found = { start: rStart, end: rEnd };
+            }
+        });
+        return found;
+    }
+
+    // Trang thai lan kiem tra gan nhat, de chi hien toast dung 1 lan khi VUA
+    // chuyen tu hop le sang vi pham (khong lap lai lien tuc khi khong doi).
+    let lastPastDateStateQuay = false;
+    let lastOverlapStateQuay = false;
+
+    function kiemTraNgayQuaKhuQuay() {
+        const ngayNhanInput = document.getElementById('ngay-nhan');
+        const hintEl = document.getElementById('ngayNhanQuayHint');
+        const ngayNhanVal = ngayNhanInput ? ngayNhanInput.value : '';
+        if (!ngayNhanVal) { lastPastDateStateQuay = false; if (hintEl) hintEl.textContent = ''; return; }
+
+        const isPast = laNgayQuaKhuQuay(ngayNhanVal);
+        if (hintEl) {
+            hintEl.textContent = isPast ? 'Ngày nhận phòng không được là ngày trong quá khứ.' : '';
+            hintEl.style.color = isPast ? '#dc2626' : '';
+        }
+        if (isPast && !lastPastDateStateQuay) {
+            showRoomToast(
+                'Ngày nhận phòng không hợp lệ',
+                'Ngày nhận phòng không được là ngày trong quá khứ. Vui lòng chọn từ hôm nay trở đi.',
+                6000
+            );
+        }
+        lastPastDateStateQuay = isPast;
+    }
+
+    function kiemTraOverlapPhongDaChonQuay() {
+        const ngayNhanVal = document.getElementById('ngay-nhan').value;
+        const ngayTraVal  = document.getElementById('ngay-tra').value;
+        if (!ngayNhanVal || !ngayTraVal) { lastOverlapStateQuay = false; return; }
+
+        let phongViPham = null;
+        document.querySelectorAll('.room-card.selected').forEach(function(card) {
+            const info = ROOM_STATUS_MAP[card.dataset.maPhong];
+            const ranges = layDanhSachKhoaLichPhongQuay(info);
+            const ov = timKhoangOverlapQuay(ngayNhanVal, ngayTraVal, ranges);
+            if (ov && (!phongViPham || ov.end.getTime() > phongViPham.end.getTime())) {
+                phongViPham = { end: ov.end, soPhong: card.dataset.soPhong };
+            }
+        });
+
+        const isOverlap = !!phongViPham;
+        if (isOverlap && !lastOverlapStateQuay) {
+            showRoomToast(
+                'Ngày nhận/trả phòng trùng lịch',
+                'Phòng ' + phongViPham.soPhong + ' đang được giữ đến ' + fmtDateTime(phongViPham.end.toISOString()) +
+                '. Vui lòng chọn khoảng ngày khác (trước hoặc sau khoảng đó) để không bị trùng lịch, hoặc chọn phòng khác.',
+                8000
+            );
+        }
+        lastOverlapStateQuay = isOverlap;
+    }
+
+    // ===== Debounce: chỉ thực sự kiểm tra + báo toast sau khi nhân viên NGỪNG
+    // thao tác trên ô ngày trong 700ms, tránh việc gõ từng số làm hiện nhiều
+    // toast chồng lên nhau. =====
+    let pastDateTimerQuay = null;
+    function debouncedKiemTraNgayQuaKhuQuay() {
+        if (pastDateTimerQuay) clearTimeout(pastDateTimerQuay);
+        pastDateTimerQuay = setTimeout(kiemTraNgayQuaKhuQuay, 700);
+    }
+    let overlapCheckTimerQuay = null;
+    function debouncedKiemTraOverlapQuay() {
+        if (overlapCheckTimerQuay) clearTimeout(overlapCheckTimerQuay);
+        overlapCheckTimerQuay = setTimeout(kiemTraOverlapPhongDaChonQuay, 700);
+    }
+
+    document.getElementById('ngay-nhan').addEventListener('input', function() {
+        debouncedKiemTraNgayQuaKhuQuay();
+        debouncedKiemTraOverlapQuay();
+    });
+    document.getElementById('ngay-tra').addEventListener('input', function() {
+        debouncedKiemTraOverlapQuay();
+    });
+    // Khi roi khoi o input (blur), kiem tra ngay lap tuc thay vi cho debounce,
+    // vi day la tin hieu ro rang nhan vien da nhap xong.
+    document.getElementById('ngay-nhan').addEventListener('blur', function() {
+        if (pastDateTimerQuay) clearTimeout(pastDateTimerQuay);
+        if (overlapCheckTimerQuay) clearTimeout(overlapCheckTimerQuay);
+        kiemTraNgayQuaKhuQuay();
+        kiemTraOverlapPhongDaChonQuay();
+    });
+    document.getElementById('ngay-tra').addEventListener('blur', function() {
+        if (overlapCheckTimerQuay) clearTimeout(overlapCheckTimerQuay);
+        kiemTraOverlapPhongDaChonQuay();
+    });
 
     /* ===== TÌM KIẾM / SẮP XẾP PHÒNG THEO GIỜ NHẬN MONG MUỐN ===== */
     function timKiemPhong() {
@@ -1333,6 +1621,47 @@
                 );
             }
         });
+
+        // ===== Validate ngày nhận / trả phòng: không được là ngày quá khứ,
+        // ngày trả phải sau ngày nhận, và không được TRÙNG (overlap) với
+        // lịch của các phòng đã chọn đang bị giữ chỗ. Được phép chọn
+        // khoảng ngày TRƯỚC thời điểm phòng đó dự kiến trả, miễn là không
+        // thực sự giao nhau. =====
+        const ngayNhanVal = document.getElementById('ngay-nhan').value;
+        const ngayTraVal  = document.getElementById('ngay-tra').value;
+        if (!ngayNhanVal || !ngayTraVal) {
+            hopLe = false;
+            if (!firstInvalid) firstInvalid = document.getElementById('ngay-nhan');
+            showRoomToast('Thiếu thông tin ngày', 'Vui lòng chọn đầy đủ ngày nhận phòng và ngày trả phòng.', 6000);
+        } else if (laNgayQuaKhuQuay(ngayNhanVal)) {
+            hopLe = false;
+            if (!firstInvalid) firstInvalid = document.getElementById('ngay-nhan');
+            showRoomToast('Ngày nhận phòng không hợp lệ', 'Ngày nhận phòng không được là ngày trong quá khứ. Vui lòng chọn từ hôm nay trở đi.', 7000);
+        } else if (ngayTraVal <= ngayNhanVal) {
+            hopLe = false;
+            if (!firstInvalid) firstInvalid = document.getElementById('ngay-tra');
+            showRoomToast('Ngày trả phòng không hợp lệ', 'Ngày trả phòng phải sau ngày nhận phòng ít nhất 1 ngày.', 7000);
+        } else {
+            let phongViPham = null;
+            document.querySelectorAll('.room-card.selected').forEach(function(card) {
+                const info = ROOM_STATUS_MAP[card.dataset.maPhong];
+                const ranges = layDanhSachKhoaLichPhongQuay(info);
+                const ov = timKhoangOverlapQuay(ngayNhanVal, ngayTraVal, ranges);
+                if (ov && (!phongViPham || ov.end.getTime() > phongViPham.end.getTime())) {
+                    phongViPham = { end: ov.end, soPhong: card.dataset.soPhong };
+                }
+            });
+            if (phongViPham) {
+                hopLe = false;
+                if (!firstInvalid) firstInvalid = document.getElementById('ngay-nhan');
+                showRoomToast(
+                    'Ngày nhận/trả phòng trùng lịch',
+                    'Phòng ' + phongViPham.soPhong + ' đang được giữ đến ' + fmtDateTime(phongViPham.end.toISOString()) +
+                    '. Vui lòng chọn khoảng ngày khác (trước hoặc sau khoảng đó) để không bị trùng lịch, hoặc chọn phòng khác.',
+                    8000
+                );
+            }
+        }
 
         if (!hopLe) {
             e.preventDefault();

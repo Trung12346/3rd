@@ -546,6 +546,21 @@
     return max;
   }
 
+  // ===== Chan dat phong vao ngay trong qua khu =====
+  // Vi du hom nay la 19/07 thi khong duoc chon ngay nhan phong la 18/07
+  // hoac mot khoang nam hoan toan trong qua khu nhu 12/07-16/07. So sanh
+  // theo NGAY LICH (bo qua gio) de tranh loi lech gio giua "bay gio" va
+  // "hom nay 00:00".
+  function ngayBatDauCuaHomNay() {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  }
+  function laNgayQuaKhu(dateObj) {
+    if (!dateObj || isNaN(dateObj.getTime())) return false;
+    const d = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
+    return d < ngayBatDauCuaHomNay();
+  }
+
   function changeImage(element) {
     document.getElementById('mainImage').src = element.src;
     let thumbs = document.querySelectorAll('.gallery-thumbs img');
@@ -839,6 +854,13 @@
       if (isNaN(d1.getTime()) || isNaN(d2.getTime())) {
         return { ok: false, lyDo: 'Ngay khong hop le.' };
       }
+
+      // FIX: khong cho chon ngay nhan phong trong qua khu (vi du hom nay
+      // 19/07 thi khong duoc chon 18/07 hoac 12/07-16/07).
+      if (laNgayQuaKhu(d1)) {
+        return { ok: false, lyDo: 'Ngay nhan phong khong duoc la ngay trong qua khu.' };
+      }
+
       const diffDays = Math.round((d2 - d1) / 86400000);
       if (diffDays < 1) {
         return { ok: false, lyDo: 'Ngay tra phong phai cach ngay nhan phong it nhat 1 ngay.' };
@@ -901,6 +923,15 @@
       }
       const d1 = new Date(v1);
       const d2 = new Date(v2);
+
+      // FIX: khong cho chon ngay nhan phong trong qua khu (vi du hom nay
+      // 19/07 thi khong duoc chon 18/07 hoac 12/07-16/07).
+      if (laNgayQuaKhu(d1)) {
+        showError(grpNgayNhan);
+        errNgayNhan.textContent = 'Ngày nhận phòng không được là ngày trong quá khứ. Vui lòng chọn từ hôm nay trở đi.';
+        return { ok: false, lyDo: 'Ngay nhan phong la ngay qua khu.' };
+      }
+
       const diffDays = Math.round((d2 - d1) / 86400000);
       if (diffDays < 1) {
         showError(grpNgayTra);

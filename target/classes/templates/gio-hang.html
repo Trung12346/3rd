@@ -316,7 +316,7 @@
                     <div>
                         <strong id="guard-banner-title">Phòng đang có khách sử dụng</strong>
                         <div class="guard-dates" id="guard-banner-dates"></div>
-                        <div class="guard-dates" id="guard-banner-note">Ngày nhận phòng mới phải cách ngày trả phòng của đơn đó ít nhất 1 ngày.</div>
+                        <div class="guard-dates" id="guard-banner-note">Vui lòng chọn ngày nhận/trả phòng không trùng với các khoảng thời gian đã đặt bên trên.</div>
                     </div>
                 </div>
 
@@ -415,7 +415,9 @@
     // Phai trung voi validateRoomBookingGuard() ben GioHangController /
     // PhongController va buildSingleRoomGuard() ben PhongService: mot phong
     // dang bi giu boi don "Cho xac nhan", "Da xac nhan" hoac "Da nhan phong"
-    // thi khach moi chi duoc chon ngay nhan SAU ngay tra du kien cua don do.
+    // thi khach van co the dat, MIEN LA khoang ngay nhan/tra moi KHONG GIAO
+    // (khong overlap) voi khoang ngay cua don do. Khong con bat buoc phai
+    // chon ngay SAU ngay tra cua don cu nua.
     const TRANG_THAI_DON_BI_KHOA = ['Da nhan phong', 'Cho xac nhan', 'Da xac nhan'];
     function laTrangThaiBiKhoa(trangThaiDon) {
         return TRANG_THAI_DON_BI_KHOA.indexOf(trangThaiDon) !== -1;
@@ -492,15 +494,26 @@
         return new Date(date.getFullYear(), date.getMonth(), date.getDate());
     }
 
+    // ===== Chan dat phong vao ngay trong qua khu =====
+    // Vi du hom nay la 19/07 thi khong duoc chon ngay nhan phong la 18/07
+    // hoac mot khoang nam hoan toan trong qua khu nhu 12/07-16/07. Tai su
+    // dung startOfDay() de so sanh theo NGAY LICH, bo qua gio.
+    function laNgayQuaKhu(date) {
+        if (!date || isNaN(date.getTime())) return false;
+        return startOfDay(date).getTime() < startOfDay(new Date()).getTime();
+    }
+
     /**
-     * Lấy danh sách khoảng ngày đang bị KHÓA (không cho chọn ngày nhận trùng/trước)
-     * từ giỏ hàng. Một phòng bị khóa khi đơn đặt phòng liên kết với nó VẪN CÒN
-     * HIỆU LỰC, tức trangThaiDon thuộc {Da nhan phong, Cho xac nhan, Da xac nhan}.
-     * Phòng vẫn cho phép đặt (không disable), chỉ là phải đợi sau ngày trả của
-     * đơn cũ - đúng như một khách sạn thật vẫn nhận đặt trước cho phòng đang có khách.
+     * Lấy danh sách khoảng ngày đang bị KHÓA (đã có đơn còn hiệu lực) từ
+     * giỏ hàng. Một phòng có khoảng khóa khi đơn đặt phòng liên kết với nó
+     * VẪN CÒN HIỆU LỰC, tức trangThaiDon thuộc {Da nhan phong, Cho xac nhan,
+     * Da xac nhan}. Phòng vẫn cho phép đặt (không disable) cho một khoảng
+     * ngày KHÁC miễn là khoảng đó không giao (overlap) với khoảng đã khóa -
+     * đúng như một khách sạn thật vẫn nhận đặt trước/đặt cho khoảng ngày
+     * khác cho phòng đang có khách.
      *
-     * end = khóa đến hết ngày ngayKetThucKhoa (ngày trả phòng dự kiến/hiện tại của đơn cũ).
-     * Ngày nhận phòng mới phải LỚN HƠN end ít nhất 1 ngày (không được trùng ngày trả).
+     * end = ngày trả phòng dự kiến/hiện tại của đơn cũ, start = ngày nhận
+     * phòng của đơn cũ (nếu có).
      */
     function getCartLockedRanges() {
         return readCart()
@@ -521,28 +534,32 @@
 
     /**
      * Trong nhieu phong dang bi khoa cung luc, phong nao co ngay tra (end)
-     * XA NHAT se la phong quyet dinh ngay nhan phong som nhat co the chon
-     * cho ca gio hang (vi ca gio hang dung chung 1 ngay nhan/tra). Vi du:
-     * phong A tra 01/08, phong B tra 04/08 => phai doi den sau 04/08 (phong B)
-     * moi dat duoc ca 2 phong cung luc.
+     * XA NHAT duoc dung de goi y 1 gia tri MAC DINH ban dau cho ca gio hang
+     * (khi form con trong, chua nhap gi). Day CHI la goi y, khong con la
+     * gioi han bat buoc - nguoi dung van co the tu chon bat ky khoang ngay
+     * nao khac miễn la khong giao voi cac khoang khoa.
      */
     function getFurthestLockedRange(ranges) {
         if (!ranges.length) return null;
         return ranges.reduce((furthest, r) => (!furthest || r.end.getTime() > furthest.end.getTime()) ? r : furthest, null);
     }
 
-    function isDateLocked(date, ranges) {
-        const day = startOfDay(date).getTime();
-        return ranges.some(r => day >= r.start.getTime() && day <= r.end.getTime());
-    }
-
     /**
-     * true nếu "date" trùng đúng ngày trả phòng bị khóa (ranges[].end) trở về trước.
-     * Dùng để chặn riêng trường hợp "nhập ngày nhận TRÙNG hoặc TRƯỚC ngày trả phòng của đơn cũ".
+     * True neu khoang [ngayNhan, ngayTra) THUC SU GIAO (overlap) voi bat ky
+     * khoang khoa nao trong "ranges". Day la ham kiem tra duy nhat quyet
+     * dinh mot lua chon ngay co hop le hay khong - khong con phu thuoc vao
+     * viec ngay nhan co "truoc/sau" mot moc co dinh nao.
      */
-    function isSameOrBeforeLockedEnd(date, ranges) {
-        const day = startOfDay(date).getTime();
-        return ranges.some(r => day <= r.end.getTime());
+    function timKhoangOverlap(ngayNhan, ngayTra, ranges) {
+        if (!ngayNhan || !ngayTra || isNaN(ngayNhan.getTime()) || isNaN(ngayTra.getTime())) return null;
+        let ketQua = null;
+        ranges.forEach(r => {
+            const lockedEndFull = new Date(r.end.getFullYear(), r.end.getMonth(), r.end.getDate(), 23, 59, 59);
+            if (ngayNhan < lockedEndFull && ngayTra > r.start) {
+                if (!ketQua || r.end.getTime() > ketQua.end.getTime()) ketQua = r;
+            }
+        });
+        return ketQua;
     }
 
     function applyDefaultAfterLocked() {
@@ -557,62 +574,54 @@
                 ngayNhanHintEl.textContent = '';
                 ngayNhanHintEl.classList.remove('locked');
             }
-            ngayNhanEl.removeAttribute('min');
             return;
         }
 
-        // Phong co han tra xa nhat se quyet dinh ngay nhan phong de xuat
-        // chung cho ca gio hang.
-        const furthest = getFurthestLockedRange(ranges);
-        const latestEnd = furthest.end;
-        const nextCheckin = new Date(latestEnd.getFullYear(), latestEnd.getMonth(), latestEnd.getDate() + 1, 8, 30);
-
-        const current = ngayNhanEl.value ? new Date(ngayNhanEl.value) : null;
-        if (!current || isSameOrBeforeLockedEnd(current, ranges)) {
-            ngayNhanEl.value = formatDateTimeLocal(nextCheckin, 8, 30);
+        // CHI dat gia tri mac dinh khi form con hoan toan trong (lan dau vao
+        // trang / vua xoa het). Neu nguoi dung da tu nhap ngay (du co giao
+        // voi lich khoa hay khong), KHONG ghi de len lua chon cua ho o day -
+        // viec canh bao/chan overlap se do updateNgayNhanHint(), canhBaoOverlap()
+        // va validateForm() dam nhan rieng.
+        if (!ngayNhanEl.value && !ngayTraEl.value) {
+            const furthest = getFurthestLockedRange(ranges);
+            const latestEnd = furthest.end;
+            const goiYNhan = new Date(latestEnd.getFullYear(), latestEnd.getMonth(), latestEnd.getDate() + 1, 8, 30);
+            const goiYTra = new Date(goiYNhan.getFullYear(), goiYNhan.getMonth(), goiYNhan.getDate() + 1, 18, 0);
+            ngayNhanEl.value = formatDateTimeLocal(goiYNhan, 8, 30);
+            ngayTraEl.value = formatDateTimeLocal(goiYTra, 18, 0);
         }
-        const checkout = ngayTraEl.value ? new Date(ngayTraEl.value) : null;
-        if (!checkout || checkout <= new Date(ngayNhanEl.value)) {
-            const nextCheckout = new Date(nextCheckin.getFullYear(), nextCheckin.getMonth(), nextCheckin.getDate() + 1, 18, 0);
-            ngayTraEl.value = formatDateTimeLocal(nextCheckout, 18, 0);
-        }
-        // FIX: KHONG set "min" cho input datetime-local. Trinh duyet se tu
-        // chan form submit khi value < min nhung khong hien thi loi giup
-        // user (dung case user test: nhap 13/7 < min 13/8 => bam nut khong
-        // duoc, khong ro ly do). Viec check overlap do validateForm() va
-        // canhBaoOverlap() dam nhan, khi do hien thi loi ro rang.
 
-        // ===== Banner canh bao (giong het room-detail.html / phong-theo-loai.html) =====
+        // ===== Banner chi mang tinh THONG BAO cac khoang da bi giu cho, de
+        // khach hang tu chon ngay khac khong giao voi cac khoang nay. Khong
+        // con ep buoc phai chon "tu ngay X tro di". =====
         if (banner) {
             banner.classList.add('show');
             if (ranges.length > 1) {
-                // Liet ke tat ca cac phong dang bi khoa, sap xep theo han tra tang dan,
-                // de khach hieu vi sao he thong lai chon moc ngay dua tren phong nao.
                 const dsPhong = ranges
                     .slice()
                     .sort((a, b) => a.end.getTime() - b.end.getTime())
-                    .map(r => 'Phòng ' + r.roomNumber + ' (hết ' + formatDisplayDate(r.end) + ')')
+                    .map(r => 'Phòng ' + r.roomNumber + ' (' + formatDisplayDate(r.start) + ' → ' + formatDisplayDate(r.end) + ')')
                     .join(', ');
                 if (bannerTitle) bannerTitle.textContent = 'Có ' + ranges.length + ' phòng trong giỏ đang được giữ chỗ';
                 if (bannerDates) {
-                    bannerDates.textContent = dsPhong + '. Phòng ' + furthest.roomNumber + ' có ngày trả muộn nhất, '
-                        + 'nên ngày nhận phòng chung cho cả giỏ cần chọn từ ' + formatDisplayDate(nextCheckin) + ' trở đi.';
+                    bannerDates.textContent = dsPhong + '. Bạn vẫn có thể đặt cho khoảng ngày khác, miễn là không trùng với các khoảng trên.';
                 }
             } else {
+                const only = ranges[0];
                 if (bannerTitle) {
-                    bannerTitle.textContent = furthest.trangThaiDon === 'Da nhan phong'
+                    bannerTitle.textContent = only.trangThaiDon === 'Da nhan phong'
                         ? 'Phòng đang có khách sử dụng'
                         : 'Phòng đã có khách đặt trước';
                 }
                 if (bannerDates) {
-                    bannerDates.textContent = 'Phòng ' + furthest.roomNumber + ' đã được giữ đến hết ngày ' + formatDisplayDate(latestEnd) + '.';
+                    bannerDates.textContent = 'Phòng ' + only.roomNumber + ' đang được giữ từ ' + formatDisplayDate(only.start)
+                        + ' đến hết ngày ' + formatDisplayDate(only.end) + '. Bạn vẫn có thể chọn khoảng ngày khác không trùng với khoảng này.';
                 }
             }
         }
 
-        // Giu lai o hint nho (mau do) duoi truong Ngay nhan phong, chi dung
-        // de bao ngay dang chon van con trung lich (khi khach tu tay sua lai
-        // ngay sau khi banner da tinh gia tri mac dinh).
+        // Giu lai o hint nho (mau do) duoi truong Ngay nhan phong, chi bao
+        // KHI khoang dang chon THUC SU GIAO voi lich cu.
         updateNgayNhanHint();
     }
 
@@ -624,39 +633,16 @@
             ngayNhanHintEl.textContent = '';
             return;
         }
-        const furthest = getFurthestLockedRange(ranges);
-        const latestEnd = furthest.end;
-        const nextCheckin = new Date(latestEnd.getFullYear(), latestEnd.getMonth(), latestEnd.getDate() + 1, 8, 30);
-        const chosen = ngayNhanEl.value ? new Date(ngayNhanEl.value) : null;
+        const chosenNhan = ngayNhanEl.value ? new Date(ngayNhanEl.value) : null;
+        const chosenTra = ngayTraEl.value ? new Date(ngayTraEl.value) : null;
 
-        if (chosen) {
-            // FIX: Kiem tra overlap that su truoc (ca khoang [ngayNhan, ngayTra)
-            // co giao voi khoang [lockedStart, lockedEnd] khong). Truoc day
-            // chi check 1 chieu "ngayNhan <= lockedEnd" nen nhieu truong hop
-            // nguoi dung nhap ngay nhan TRUOC lockedEnd (vd don cu 1/7-12/8
-            // nhung nhap ngay nhan 13/7 - 15/7) bi hien thi sai "chon tu 13/8".
-            // Bay gio: neu overlap that su => hien thi canh bao overlap, nguoc
-            // lai neu chi don thuan ngayNhan truoc lockedEnd => hien thi ngay
-            // som nhat co the chon.
-            let isOverlap = false;
-            if (ngayTraEl.value) {
-                const chosenTra = new Date(ngayTraEl.value);
-                if (!isNaN(chosenTra.getTime())) {
-                    isOverlap = ranges.some(r => {
-                        const lockedEndFull = new Date(r.end.getFullYear(), r.end.getMonth(), r.end.getDate(), 23, 59, 59);
-                        return chosen < lockedEndFull && chosenTra > r.start;
-                    });
-                }
-            }
-
-            if (isOverlap) {
+        if (chosenNhan && chosenTra && !isNaN(chosenNhan.getTime()) && !isNaN(chosenTra.getTime())) {
+            const overlap = timKhoangOverlap(chosenNhan, chosenTra, ranges);
+            if (overlap) {
                 ngayNhanHintEl.classList.add('locked');
-                ngayNhanHintEl.textContent = 'Khoảng bạn chọn đang giao với lịch phòng ' +
-                    furthest.roomNumber + ' (đến ' + formatDisplayDate(latestEnd) +
-                    '). Vui lòng chọn ngày nhận từ ' + formatDisplayDate(nextCheckin) + ' trở đi.';
-            } else if (isSameOrBeforeLockedEnd(chosen, ranges)) {
-                ngayNhanHintEl.classList.add('locked');
-                ngayNhanHintEl.textContent = 'Vui lòng chọn ngày nhận phòng từ ' + formatDisplayDate(nextCheckin) + ' trở đi.';
+                ngayNhanHintEl.textContent = 'Khoảng bạn chọn đang trùng với lịch phòng ' +
+                    overlap.roomNumber + ' (' + formatDisplayDate(overlap.start) + ' → ' + formatDisplayDate(overlap.end) +
+                    '). Vui lòng chọn khoảng ngày khác (trước hoặc sau khoảng trên) để không bị trùng lịch.';
             } else {
                 ngayNhanHintEl.classList.remove('locked');
                 ngayNhanHintEl.textContent = '';
@@ -739,9 +725,21 @@
             ngayTraEl.classList.add('is-invalid');
             if (ngayErrorEl) ngayErrorEl.textContent = 'Vui lòng chọn đầy đủ ngày nhận và ngày trả.';
         } else {
-            // 3) Ngày trả phải > ngày nhận (ít nhất 1 đêm)
             const start = new Date(ngayNhan);
             const end = new Date(ngayTra);
+
+            // 3) Ngay nhan phong khong duoc la ngay trong qua khu. Vi du hom
+            // nay 19/07 thi khong duoc chon 18/07 hoac 12/07-16/07. Check
+            // truoc tien vi day la loi ro rang nhat, khong can doi den cac
+            // buoc validate phia sau.
+            if (laNgayQuaKhu(start)) {
+                errors.push('Ngày nhận phòng không được là ngày trong quá khứ. Vui lòng chọn từ hôm nay trở đi.');
+                ngayNhanEl.classList.add('is-invalid');
+                ngayTraEl.classList.add('is-invalid');
+                if (ngayErrorEl) ngayErrorEl.textContent = 'Ngày nhận phòng không được là ngày trong quá khứ.';
+            }
+
+            // 4) Ngày trả phải > ngày nhận (ít nhất 1 đêm)
             if (!(end > start)) {
                 errors.push('Ngày trả phòng phải sau ngày nhận phòng.');
                 ngayNhanEl.classList.add('is-invalid');
@@ -759,15 +757,12 @@
                     if (ngayErrorEl) ngayErrorEl.textContent = 'Ngày trả phải cách ngày nhận ít nhất 1 ngày.';
                 }
 
-                // 3b) Kiểm tra khóa: phòng đang có đơn Da nhan phong / Cho xac nhan / Da xac nhan
-                // (chưa "Da tra phong") => khoảng mới [ngayNhan, ngayTra) phải
-                // KHÔNG overlap với khoảng [ngayBatDauKhoa, ngayKetThucKhoa] của
-                // TỪNG phòng. Vì cả giỏ dùng chung 1 ngayNhan/ngayTra, nên phải
-                // thỏa mãn phòng có khoảng khóa xa nhất (end xa nhất).
-                // FIX: truoc day chi check 1 chieu "ngayNhan <= ngayKetThucKhoa",
-                // nen cac truong hop overlap that su (don cu 11/8-15/8 nhung
-                // khach dat 1/9-20/9 hay 7/7-16/8) van bi "lot" qua. Bay gio
-                // check overlap that su giong logic validateRoomBookingGuard().
+                // 4b) Kiểm tra khóa: phòng đang có đơn Da nhan phong / Cho xac nhan / Da xac nhan
+                // (chưa "Da tra phong") => khoảng mới [ngayNhan, ngayTra) chỉ cần
+                // KHÔNG GIAO (overlap) với khoảng [ngayBatDauKhoa, ngayKetThucKhoa]
+                // của TỪNG phòng. Không còn bắt buộc phải chọn ngày SAU khoảng
+                // khóa - khách có thể chọn một khoảng ngày khác (kể cả trước
+                // khoảng khóa) miễn là hai khoảng không giao nhau.
                 let phongBiOverlapXaNhat = null;
                 items.forEach(item => {
                     if (laTrangThaiBiKhoa(item.trangThaiDon) && item.ngayKetThucKhoa) {
@@ -782,8 +777,7 @@
                             const lockedEndFull = new Date(lockedEndDay.getFullYear(), lockedEndDay.getMonth(), lockedEndDay.getDate(), 23, 59, 59);
                             if (start < lockedEndFull && end > lockedStartDay) {
                                 // Phong bi overlap. Trong nhieu phong, chon phong co
-                                // end XA NHAT de khach biet ly do minh phai doi den
-                                // khi nao.
+                                // end XA NHAT de khach biet ro no la phong nao.
                                 if (!phongBiOverlapXaNhat || lockedEndDay.getTime() > phongBiOverlapXaNhat.end.getTime()) {
                                     phongBiOverlapXaNhat = {
                                         end: lockedEndDay,
@@ -796,21 +790,19 @@
                     }
                 });
                 if (phongBiOverlapXaNhat) {
-                    const tuNgay = new Date(phongBiOverlapXaNhat.end.getFullYear(), phongBiOverlapXaNhat.end.getMonth(), phongBiOverlapXaNhat.end.getDate() + 1);
                     const tuStart = formatDisplayDate(phongBiOverlapXaNhat.start);
                     const tuEnd = formatDisplayDate(phongBiOverlapXaNhat.end);
                     errors.push('Phòng ' + phongBiOverlapXaNhat.roomNumber + ' đã có lịch đặt từ ' + tuStart
-                        + ' đến ' + tuEnd + '. Khoảng bạn chọn đang giao với lịch cũ. '
-                        + 'Vì đây là phòng có lịch xa nhất trong giỏ, ngày nhận phòng chung cần chọn từ '
-                        + formatDisplayDate(tuNgay) + ' trở đi (hoặc điều chỉnh ngày trả cho cả giỏ).');
+                        + ' đến ' + tuEnd + '. Khoảng ngày bạn chọn đang trùng (giao) với lịch đó. '
+                        + 'Vui lòng chọn khoảng ngày khác (trước hoặc sau khoảng trên) để không bị trùng lịch.');
                     ngayNhanEl.classList.add('is-invalid');
                     ngayTraEl.classList.add('is-invalid');
-                    if (ngayErrorEl) ngayErrorEl.textContent = 'Khoảng ngày chọn bị giao (overlap) với lịch phòng ' + phongBiOverlapXaNhat.roomNumber + ' trong giỏ (' + tuStart + ' → ' + tuEnd + ').';
+                    if (ngayErrorEl) ngayErrorEl.textContent = 'Khoảng ngày chọn bị trùng (overlap) với lịch phòng ' + phongBiOverlapXaNhat.roomNumber + ' trong giỏ (' + tuStart + ' → ' + tuEnd + ').';
                 }
             }
         }
 
-        // 4) Số người tối đa: tổng người lớn + trẻ em không vượt quá tổng sức chứa các phòng
+        // 5) Số người tối đa: tổng người lớn + trẻ em không vượt quá tổng sức chứa các phòng
         if (items.length > 0) {
             const totalCapacity = getTotalCapacity();
             const totalPeople = getTotalPeople();
@@ -1023,40 +1015,71 @@
         }
     }
 
-    // Khi người dùng đổi ngày nhận/trả thủ công, kiểm tra ngay xem khoảng
-    // chọn có đang overlap với lịch cũ của bất kỳ phòng nào trong giỏ không.
-    // FIX: check overlap that su (khong chi check 1 chieu ngayNhan) de canh
-    // bao ngay cho khach hang khi sua lai ngay.
+    // Khi người dùng đổi ngày nhận/trả thủ công, kiểm tra xem khoảng chọn có
+    // đang GIAO (overlap) với lịch cũ của bất kỳ phòng nào trong giỏ không.
+    // Chỉ CẢNH BÁO khi thực sự giao nhau - không còn ép chọn ngày sau.
+    // Đồng thời chỉ báo 1 lần khi trạng thái VỪA chuyển từ "không trùng"
+    // sang "trùng" (không lặp lại toast liên tục nếu trạng thái không đổi).
+    let lastOverlapStateGioHang = false;
     function canhBaoOverlap() {
-        const items = readCart();
         const ranges = getCartLockedRanges();
-        if (!ranges.length) return;
-        if (!ngayNhanEl.value || !ngayTraEl.value) return;
+        if (!ranges.length) { lastOverlapStateGioHang = false; return; }
+        if (!ngayNhanEl.value || !ngayTraEl.value) { lastOverlapStateGioHang = false; return; }
         const start = new Date(ngayNhanEl.value);
         const end = new Date(ngayTraEl.value);
-        if (isNaN(start.getTime()) || isNaN(end.getTime())) return;
+        if (isNaN(start.getTime()) || isNaN(end.getTime())) { lastOverlapStateGioHang = false; return; }
 
-        // Trong nhieu phong, neu chi can 1 phong overlap thi canh bao ngay
-        let phongBiOverlap = null;
-        ranges.forEach(r => {
-            if (start < new Date(r.end.getFullYear(), r.end.getMonth(), r.end.getDate(), 23, 59, 59)
-                && end > r.start) {
-                if (!phongBiOverlap || r.end.getTime() > phongBiOverlap.end.getTime()) {
-                    phongBiOverlap = { start: r.start, end: r.end, roomNumber: r.roomNumber };
-                }
-            }
-        });
-        if (phongBiOverlap) {
+        const phongBiOverlap = timKhoangOverlap(start, end, ranges);
+        const isOverlap = !!phongBiOverlap;
+        if (isOverlap && !lastOverlapStateGioHang) {
             const ds = ranges.slice().sort((a, b) => a.end.getTime() - b.end.getTime())
                 .map(r => 'P.' + r.roomNumber + ' (' + formatDisplayDate(r.start) + '→' + formatDisplayDate(r.end) + ')')
                 .join(', ');
             showToast('Có phòng trong giỏ đang bị trùng lịch: ' + ds +
-                '. Vui lòng chọn khoảng ngày khác (ngày nhận phải SAU ngày trả của đơn cũ, hoặc điều chỉnh ngày trả).', {
+                '. Vui lòng chọn khoảng ngày khác (trước hoặc sau khoảng đã đặt) để không bị trùng lịch.', {
                 type: 'error',
-                title: 'Khoảng ngày bị overlap với lịch phòng',
+                title: 'Khoảng ngày bị trùng với lịch phòng',
                 duration: 7000
             });
         }
+        lastOverlapStateGioHang = isOverlap;
+    }
+
+    // ===== Canh bao real-time khi user chon ngay nhan phong trong qua khu =====
+    // Chi ban toast 1 lan khi trang thai VUA chuyen (tu hop le -> qua khu),
+    // tranh spam toast lien tuc trong khi user van dang de nguyen gia tri cu.
+    let lastPastDateStatePhongGioHang = false;
+    function canhBaoNgayQuaKhu() {
+        if (!ngayNhanEl.value) { lastPastDateStatePhongGioHang = false; return; }
+        const start = new Date(ngayNhanEl.value);
+        if (isNaN(start.getTime())) { lastPastDateStatePhongGioHang = false; return; }
+        const isPast = laNgayQuaKhu(start);
+        if (isPast && !lastPastDateStatePhongGioHang) {
+            showToast('Ngày nhận phòng bạn chọn đang nằm trong quá khứ. Vui lòng chọn từ hôm nay trở đi.', {
+                type: 'error',
+                title: 'Ngày nhận phòng không hợp lệ',
+                duration: 6000
+            });
+        }
+        lastPastDateStatePhongGioHang = isPast;
+    }
+
+    // ===== Debounce cho cac toast canh bao (overlap / ngay qua khu) =====
+    // Cac input datetime-local co the ban su kien 'change' nhieu lan khi
+    // nguoi dung dang go tung so (ngay/thang/nam/gio/phut), khien toast bi
+    // hien lien tuc va chong len nhau rat kho chiu. Ta CHI thuc su kiem tra
+    // va hien toast sau khi nguoi dung NGUNG go trong mot khoang thoi gian
+    // ngan (khong con su kien moi nao trong 700ms) - tuc la coi nhu ho da
+    // nhap xong gia tri ngay/gio.
+    let overlapCheckTimer = null;
+    function debouncedCanhBaoOverlap() {
+        if (overlapCheckTimer) clearTimeout(overlapCheckTimer);
+        overlapCheckTimer = setTimeout(canhBaoOverlap, 700);
+    }
+    let pastDateCheckTimer = null;
+    function debouncedCanhBaoNgayQuaKhu() {
+        if (pastDateCheckTimer) clearTimeout(pastDateCheckTimer);
+        pastDateCheckTimer = setTimeout(canhBaoNgayQuaKhu, 700);
     }
 
     ngayNhanEl.addEventListener('change', () => {
@@ -1064,19 +1087,39 @@
         refreshValidation();
         refreshPeopleCapacity();
         updateNgayNhanHint();
-        canhBaoOverlap();
+        debouncedCanhBaoOverlap();
+        debouncedCanhBaoNgayQuaKhu();
     });
     ngayNhanEl.addEventListener('input', () => {
         refreshValidation();
         updateNgayNhanHint();
+        debouncedCanhBaoOverlap();
+        debouncedCanhBaoNgayQuaKhu();
     });
     ngayTraEl.addEventListener('change', () => {
         renderCart();
         refreshValidation();
         refreshPeopleCapacity();
+        updateNgayNhanHint();
+        debouncedCanhBaoOverlap();
+    });
+    ngayTraEl.addEventListener('input', () => {
+        refreshValidation();
+        updateNgayNhanHint();
+        debouncedCanhBaoOverlap();
+    });
+    // Khi roi khoi o input (blur), kiem tra ngay lap tuc (khong can cho debounce)
+    // vi day la tin hieu ro rang la nguoi dung da nhap xong.
+    ngayNhanEl.addEventListener('blur', () => {
+        if (overlapCheckTimer) clearTimeout(overlapCheckTimer);
+        if (pastDateCheckTimer) clearTimeout(pastDateCheckTimer);
+        canhBaoOverlap();
+        canhBaoNgayQuaKhu();
+    });
+    ngayTraEl.addEventListener('blur', () => {
+        if (overlapCheckTimer) clearTimeout(overlapCheckTimer);
         canhBaoOverlap();
     });
-    ngayTraEl.addEventListener('input', () => { refreshValidation(); });
     if (nguoiLonEl) nguoiLonEl.addEventListener('change', () => { renderCart(); refreshValidation(); refreshPeopleCapacity(); });
     if (treEmEl) treEmEl.addEventListener('change', () => { renderCart(); refreshValidation(); refreshPeopleCapacity(); });
 
