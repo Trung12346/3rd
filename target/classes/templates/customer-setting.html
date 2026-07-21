@@ -14,7 +14,7 @@
             display: flex;
             gap: 30px;
             padding: 40px 5%;
-            max-width: 1600px;   /* tăng từ 1400px */
+            max-width: 1600px;
             margin: 0 auto;
             flex: 1;
             width: 100%;
@@ -190,6 +190,8 @@
             margin-bottom: 20px;
             padding-bottom: 15px;
             border-bottom: 1px solid var(--border-color);
+            flex-wrap: wrap;
+            gap: 15px;
         }
 
         .section-header h3 {
@@ -462,6 +464,88 @@
             background: #FDEDEC;
         }
 
+        /* ===== TÌM KIẾM ĐƠN ĐẶT PHÒNG ===== */
+        .booking-search-form {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .search-input-wrap {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .search-input-wrap i.fa-magnifying-glass {
+            position: absolute;
+            left: 12px;
+            color: var(--text-gray);
+            font-size: 13px;
+            pointer-events: none;
+        }
+
+        .search-input-wrap input[type="text"] {
+            padding: 9px 34px 9px 34px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 13px;
+            font-family: 'Montserrat', sans-serif;
+            width: 260px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .search-input-wrap input[type="text"]:focus {
+            border-color: var(--sky-primary);
+        }
+
+        .search-clear-btn {
+            position: absolute;
+            right: 10px;
+            color: var(--text-gray);
+            text-decoration: none;
+            font-size: 13px;
+        }
+
+        .search-clear-btn:hover { color: #e74c3c; }
+
+        /* ===== PHÂN TRANG ===== */
+        .pagination-bar {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 6px;
+            margin-top: 22px;
+        }
+
+        .page-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 34px;
+            height: 34px;
+            padding: 0 6px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            color: var(--text-dark);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .page-link:hover {
+            border-color: var(--sky-primary);
+            color: var(--sky-primary);
+        }
+
+        .page-link.active {
+            background: var(--sky-primary);
+            border-color: var(--sky-primary);
+            color: #fff;
+        }
+
         /* ===== RESPONSIVE ===== */
         @media (max-width: 900px) {
             .dashboard-layout { flex-direction: column; }
@@ -477,6 +561,9 @@
             .dashboard-layout { padding: 24px 16px; }
             .stats-grid { grid-template-columns: 1fr; }
             .section-header { flex-direction: column; align-items: flex-start; gap: 10px; }
+            .booking-search-form { width: 100%; }
+            .search-input-wrap { flex: 1; }
+            .search-input-wrap input[type="text"] { width: 100%; }
         }
 
         /* ===== MODAL: XÁC NHẬN HỦY ĐƠN ===== */
@@ -628,7 +715,7 @@
                 </div>
             </div>
 
-            <!-- Bảng đặt phòng gần đây (5 dòng đầu) -->
+            <!-- Bảng đặt phòng gần đây (5 dòng đầu, đã sort giảm dần theo id) -->
             <div class="content-section">
                 <div class="section-header">
                     <h3><i class="fa-solid fa-clock-rotate-left" style="color:var(--sky-primary); margin-right:8px;"></i>Đặt Phòng Gần Đây</h3>
@@ -746,12 +833,28 @@
                     <h3><i class="fa-solid fa-bed" style="color:var(--sky-primary); margin-right:8px;"></i>
                         Tất Cả Đơn Đặt
                         <span style="font-size:13px; font-weight:400; color:var(--text-gray); margin-left:8px;"
-                              th:text="'(' + ${tongPhong} + ' đơn)'"></span>
+                              th:text="'(' + ${tongKetQua} + ' đơn)'"></span>
                     </h3>
+
+                    <!-- Ô tìm kiếm -->
+                    <form th:action="@{/profiles}" method="get" class="booking-search-form">
+                        <input type="hidden" name="tab" value="bookings"/>
+                        <div class="search-input-wrap">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            <input type="text" name="keyword" th:value="${keyword}"
+                                   placeholder="Tìm theo mã đơn, tên phòng, trạng thái...">
+                            <a th:if="${keyword != null && !keyword.isEmpty()}"
+                               th:href="@{/profiles(tab='bookings')}"
+                               class="search-clear-btn" title="Xóa tìm kiếm">
+                                <i class="fa-solid fa-xmark"></i>
+                            </a>
+                        </div>
+                        <button type="submit" class="admin-btn" style="padding:9px 16px; font-size:13px;">Tìm</button>
+                    </form>
                 </div>
 
                 <!-- Có dữ liệu -->
-                <div th:if="${!listDatPhong.isEmpty()}">
+                <div th:if="${!listDatPhongPhanTrang.isEmpty()}">
                     <table class="data-table">
                         <thead>
                         <tr>
@@ -767,7 +870,7 @@
                         </tr>
                         </thead>
                         <tbody>
-                        <tr th:each="l : ${listDatPhong}">
+                        <tr th:each="l : ${listDatPhongPhanTrang}">
                             <td><strong th:text="'#' + ${l.id}"></strong></td>
                             <td th:text="${phongTheoDon[l.id] != null ? phongTheoDon[l.id] : '—'}"></td>
                             <td th:text="${l.ngaydatPhong != null ? #temporals.format(l.ngaydatPhong, 'dd/MM/yyyy') : '—'}"></td>
@@ -804,12 +907,35 @@
                         </tr>
                         </tbody>
                     </table>
+
+                    <!-- ==== PHÂN TRANG (giữ nguyên từ khóa tìm kiếm khi chuyển trang) ==== -->
+                    <div th:if="${totalPages > 1}" class="pagination-bar">
+                        <a th:if="${currentPage > 1}"
+                           th:href="@{/profiles(tab='bookings', page=${currentPage - 1}, keyword=${keyword})}"
+                           class="page-link">
+                            <i class="fa-solid fa-angle-left"></i>
+                        </a>
+
+                        <a th:each="i : ${#numbers.sequence(1, totalPages)}"
+                           th:href="@{/profiles(tab='bookings', page=${i}, keyword=${keyword})}"
+                           th:text="${i}"
+                           th:classappend="${i == currentPage} ? ' active'"
+                           class="page-link"></a>
+
+                        <a th:if="${currentPage < totalPages}"
+                           th:href="@{/profiles(tab='bookings', page=${currentPage + 1}, keyword=${keyword})}"
+                           class="page-link">
+                            <i class="fa-solid fa-angle-right"></i>
+                        </a>
+                    </div>
                 </div>
 
                 <!-- Rỗng -->
-                <div th:if="${listDatPhong.isEmpty()}" class="empty-state">
+                <div th:if="${listDatPhongPhanTrang.isEmpty()}" class="empty-state">
                     <i class="fa-regular fa-calendar-xmark"></i>
-                    <p>Bạn chưa có đơn đặt phòng nào.</p>
+                    <p th:if="${keyword != null && !keyword.isEmpty()}"
+                       th:text="'Không tìm thấy đơn đặt phòng nào khớp với &#39;' + ${keyword} + '&#39;.'"></p>
+                    <p th:unless="${keyword != null && !keyword.isEmpty()}">Bạn chưa có đơn đặt phòng nào.</p>
                 </div>
             </div>
         </div>
@@ -846,7 +972,7 @@
                             <tr id="tier-30-180"><td>Từ 30 phút đến 3 giờ</td><td>50%</td></tr>
                             <tr id="tier-180-480"><td>Từ 3 giờ đến 8 giờ</td><td>40%</td></tr>
                             <tr id="tier-480-plus"><td>Trên 8 giờ</td><td>30%</td></tr>
-                        </tbody>
+                            </tbody>
                         </table>
 
                         <div class="cancel-refund-summary">

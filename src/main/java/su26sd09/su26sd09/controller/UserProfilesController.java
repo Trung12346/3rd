@@ -43,11 +43,16 @@ public class    UserProfilesController {
 
     @GetMapping("")
     public String home(Model model, Principal p,
-                       @RequestParam(value = "tab", defaultValue = "overview") String tab) {
+                       @RequestParam(value = "tab", defaultValue = "overview") String tab,
+                       @RequestParam(value = "page", defaultValue = "1") int page,
+                       @RequestParam(value = "keyword", required = false) String keyword) {
 
         KhachHang nguoidung = getNguoiDungByPrincipal(p);
 
         List<DatPhong> allDatPhong = datPhongRepo.FindbyNguoiDung(nguoidung.getMa_khach_hang());
+
+        // Sắp xếp giảm dần theo mã đơn (đơn mới nhất lên đầu)
+        allDatPhong.sort((a, b) -> b.getId().compareTo(a.getId()));
 
         Map<Integer, String> phongTheoDon = new HashMap<>();
         for (DatPhong datPhong : allDatPhong) {
@@ -59,9 +64,44 @@ public class    UserProfilesController {
             phongTheoDon.put(datPhong.getId(), tenPhong);
         }
 
+        // ==== Tìm kiếm cho tab "Đơn đặt phòng" ====
+        String kw = keyword != null ? keyword.trim().toLowerCase() : "";
+        List<DatPhong> filteredDatPhong = allDatPhong;
+        if (!kw.isEmpty()) {
+            filteredDatPhong = allDatPhong.stream()
+                    .filter(dp -> {
+                        String maDon = String.valueOf(dp.getId());
+                        String tenPhong = phongTheoDon.getOrDefault(dp.getId(), "");
+                        String trangThai = dp.getTrangThai() != null ? dp.getTrangThai() : "";
+                        return maDon.contains(kw)
+                                || tenPhong.toLowerCase().contains(kw)
+                                || trangThai.toLowerCase().contains(kw);
+                    })
+                    .toList();
+        }
+
+        // ==== Phân trang cho tab "Đơn đặt phòng" ====
+        int pageSize = 9;
+        int totalItems = filteredDatPhong.size();
+        int totalPages = (int) Math.ceil((double) totalItems / pageSize);
+        if (totalPages < 1) totalPages = 1;
+        if (page < 1) page = 1;
+        if (page > totalPages) page = totalPages;
+
+        int fromIndex = (page - 1) * pageSize;
+        int toIndex = Math.min(fromIndex + pageSize, totalItems);
+        List<DatPhong> listDatPhongPhanTrang = fromIndex < toIndex
+                ? filteredDatPhong.subList(fromIndex, toIndex)
+                : List.of();
+
         List<DanhGia> listDanhGia = danhGiaRepo.findByNguoiDung(nguoidung.getMa_khach_hang());
 
-        model.addAttribute("listDatPhong", allDatPhong);
+        model.addAttribute("listDatPhong", allDatPhong);                     // dùng cho tab Tổng quan
+        model.addAttribute("listDatPhongPhanTrang", listDatPhongPhanTrang);  // dùng cho tab Đơn đặt phòng
+        model.addAttribute("currentPage", page);
+        model.addAttribute("totalPages", totalPages);
+        model.addAttribute("keyword", keyword);
+        model.addAttribute("tongKetQua", totalItems);
         model.addAttribute("phongTheoDon", phongTheoDon);
         model.addAttribute("nguoiDung", nguoidung);
         model.addAttribute("tongPhong", allDatPhong.size());
@@ -71,14 +111,7 @@ public class    UserProfilesController {
         return "customer-setting";
     }
 
-    /**
-     * Xem chi tiết 1 đơn đặt phòng từ trang "Quản lý tài khoản".
-     * Kiểm tra id đặt phòng có tồn tại và có thuộc về khách hàng đang đăng nhập
-     * hay không (đối chiếu ma_khach_hang). Nếu khớp -> chuyển sang trang
-     * thanh-toan-thanh-cong.html (tái sử dụng logic tính tiền có sẵn ở
-     * ThanhToanController). Nếu không khớp/không tồn tại -> báo lỗi và quay
-     * lại tab "Đơn đặt phòng".
-     */
+
     @GetMapping("/dat-phong/{id}")
     public String chiTietDatPhong(@PathVariable Integer id, Principal p,
                                   RedirectAttributes redirectAttributes) {
