@@ -69,47 +69,47 @@ public class NhanVienHoanTienController {
         return "nhan-vien/hoan-tien-chi-tiet";
     }
 
-    @PostMapping("/{id}/chuyen-khoan")
-    public String taoUrlChuyenKhoan(@PathVariable Integer id,
-                                    @RequestParam String stkNhanHoan,
-                                    @RequestParam String tenNganHang,
-                                    @RequestParam(required = false) String ghiChu,
-                                    Authentication auth,
-                                    HttpServletRequest request,
-                                    RedirectAttributes ra) {
+        @PostMapping("/{id}/chuyen-khoan")
+        public String taoUrlChuyenKhoan(@PathVariable Integer id,
+                                        @RequestParam String stkNhanHoan,
+                                        @RequestParam String tenNganHang,
+                                        @RequestParam(required = false) String ghiChu,
+                                        Authentication auth,
+                                        HttpServletRequest request,
+                                        RedirectAttributes ra) {
 
-        HoaDon hd = hoaDonService.findById(id);
-        if (hd == null) {
-            ra.addFlashAttribute("error", "Khong tim thay hoa don");
-            return "redirect:/nhan-su/hoan-tien";
-        }
-        if (!"Cho xu ly".equals(hd.getTrangThaiHoanTien())) {
-            ra.addFlashAttribute("error", "Yeu cau nay da duoc xu ly truoc do");
-            return "redirect:/nhan-su/hoan-tien/chi-tiet/" + id;
-        }
-        if (stkNhanHoan == null || stkNhanHoan.isBlank()
-                || tenNganHang == null || tenNganHang.isBlank()) {
-            ra.addFlashAttribute("error", "Vui long nhap so tai khoan va ten ngan hang nhan hoan");
-            return "redirect:/nhan-su/hoan-tien/chi-tiet/" + id;
-        }
-        if (hd.getSoTienHoan() == null || hd.getSoTienHoan().signum() <= 0) {
-            ra.addFlashAttribute("error", "So tien hoan khong hop le");
-            return "redirect:/nhan-su/hoan-tien/chi-tiet/" + id;
-        }
+            HoaDon hd = hoaDonService.findById(id);
+            if (hd == null) {
+                ra.addFlashAttribute("error", "Khong tim thay hoa don");
+                return "redirect:/nhan-su/hoan-tien";
+            }
+            if (!"Cho xu ly".equals(hd.getTrangThaiHoanTien())) {
+                ra.addFlashAttribute("error", "Yeu cau nay da duoc xu ly truoc do");
+                return "redirect:/nhan-su/hoan-tien/chi-tiet/" + id;
+            }
+            if (stkNhanHoan == null || stkNhanHoan.isBlank()
+                    || tenNganHang == null || tenNganHang.isBlank()) {
+                ra.addFlashAttribute("error", "Vui long nhap so tai khoan va ten ngan hang nhan hoan");
+                return "redirect:/nhan-su/hoan-tien/chi-tiet/" + id;
+            }
+            if (hd.getSoTienHoan() == null || hd.getSoTienHoan().signum() <= 0) {
+                ra.addFlashAttribute("error", "So tien hoan khong hop le");
+                return "redirect:/nhan-su/hoan-tien/chi-tiet/" + id;
+            }
 
-        // Luu draft vao session de VNPay callback su dung
-        RefundDraft draft = new RefundDraft(
-                hd.getId(), hd.getSoTienHoan(),
-                stkNhanHoan.trim(), tenNganHang.trim(),
-                ghiChu == null ? null : ghiChu.trim(),
-                auth == null ? null : auth.getName());
-        request.getSession(true).setAttribute("refundDraft_" + hd.getId(), draft);
+            // Luu draft vao session de VNPay callback su dung
+            RefundDraft draft = new RefundDraft(
+                    hd.getId(), hd.getSoTienHoan(),
+                    stkNhanHoan.trim(), tenNganHang.trim(),
+                    ghiChu == null ? null : ghiChu.trim(),
+                    auth == null ? null : auth.getName());
+            request.getSession(true).setAttribute("refundDraft_" + hd.getId(), draft);
 
-        String baseUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort();
-        String vnpayUrl = vnpayService.createRefundOrder(
-                hd.getId(), hd.getSoTienHoan().longValue(), baseUrl);
-        return "redirect:" + vnpayUrl;
-    }
+            String baseUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort();
+            String vnpayUrl = vnpayService.createRefundOrder(
+                    hd.getId(), hd.getSoTienHoan().longValue(), baseUrl);
+            return "redirect:" + vnpayUrl;
+        }
 
     @PostMapping("/{id}/xac-nhan")
     public String xacNhan(@PathVariable Integer id,

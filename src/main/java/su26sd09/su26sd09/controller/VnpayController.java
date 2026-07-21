@@ -46,9 +46,13 @@ public class VnpayController {
                     redirectAttributes.addFlashAttribute("error",
                             "VNPay giao dich hoan tien that bai hoac chu ky khong hop le.");
                 }
-                return "redirect:/nhan-su/admin/hoan-tien/chi-tiet/" + maHoaDon;
+                // FIX: phai redirect ve trang nhan-vien (STAFF) /nhan-su/hoan-tien/...
+                // chu khong phai /nhan-su/admin/hoan-tien/... (chi ADMIN moi vao
+                // duoc). Truoc day dung nham path admin, STAFF sau khi callback
+                // VNPay se bi SecurityConfig deny -> trang access denied 403.
+                return "redirect:/nhan-su/hoan-tien/chi-tiet/" + maHoaDon;
             }
-            return "redirect:/nhan-su/admin/hoan-tien";
+            return "redirect:/nhan-su/hoan-tien";
         }
 
         // ===== Callback cho các luồng khác (giữ nguyên logic cũ) =====
