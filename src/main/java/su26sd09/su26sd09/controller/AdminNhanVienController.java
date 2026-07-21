@@ -99,6 +99,14 @@ public class AdminNhanVienController {
 
     }
 
+    @PostMapping("/delete/{id}")
+    public String delete(@PathVariable("id") int id,RedirectAttributes redirect){
+        String name = repo.findbyid(id).getHoten();
+        repo.deletebyid(id);
+        redirect.addFlashAttribute("success","đã xóa nhân viên: " + name);
+        return "redirect:/nhan-su/admin/nhan-vien";
+    }
+
 
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
