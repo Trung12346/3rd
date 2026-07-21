@@ -806,11 +806,41 @@
         if (items.length > 0) {
             const totalCapacity = getTotalCapacity();
             const totalPeople = getTotalPeople();
-            if (totalCapacity > 0 && totalPeople > totalCapacity) {
-                errors.push('Tổng số người (' + totalPeople + ') vượt quá sức chứa của các phòng trong giỏ (' + totalCapacity + ' người).');
-                if (peopleErrorEl) peopleErrorEl.textContent = 'Vượt sức chứa (' + totalPeople + '/' + totalCapacity + ').';
-                if (nguoiLonEl) nguoiLonEl.classList.add('is-invalid');
-                if (treEmEl) treEmEl.classList.add('is-invalid');
+            // FIX (bug redirect gio-hang): Neu totalCapacity = 0 (do cart
+            // item cu khong co field sucChua - vi du them phong tu room-detail
+            // truoc khi fix bug, hoac localStorage cu chua duoc migrate), viec
+            // bo qua validation nhu cu se cho form submit len server, server
+            // bat validate o GioHangController.checkoutCart roi redirect ve
+            // /gio-hang voi error -> user bi "redirect vong vong" rat kho chiu.
+            // Bay gio: neu totalCapacity = 0, ta tinh theo sucChua thap nhat
+            // (min) cua cac phong trong gio de dam bao validate van chay duoc
+            // (hon la bo qua). Neu tat ca phong deu khong co sucChua (edge case
+            // rat hiem), van canh bao nguoi dung de ho kiem tra lai.
+            if (totalPeople > 0) {
+                let capacityToCheck = totalCapacity;
+                if (capacityToCheck <= 0) {
+                    const sucChuaValues = items
+                        .map(function(it) { return Number(it.sucChua || 0); })
+                        .filter(function(v) { return v > 0; });
+                    if (sucChuaValues.length > 0) {
+                        // Dung tong suc chua cua cac phong CO sucChua de check,
+                        // tranh bo qua validation khi chi 1 so phong bi thieu data.
+                        capacityToCheck = sucChuaValues.reduce(function(s, v) { return s + v; }, 0);
+                    } else {
+                        // Khong phong nao co sucChua -> khong the validate client-side.
+                        // Van canh bao de nguoi dung kiem tra lai, nhung van cho
+                        // submit (server se validate lai).
+                        if (peopleErrorEl) {
+                            peopleErrorEl.textContent = 'Không xác định được sức chứa phòng, vui lòng xóa phòng cũ trong giỏ rồi thêm lại.';
+                        }
+                    }
+                }
+                if (capacityToCheck > 0 && totalPeople > capacityToCheck) {
+                    errors.push('Tổng số người (' + totalPeople + ') vượt quá sức chứa của các phòng trong giỏ (' + capacityToCheck + ' người).');
+                    if (peopleErrorEl) peopleErrorEl.textContent = 'Vượt sức chứa (' + totalPeople + '/' + capacityToCheck + ').';
+                    if (nguoiLonEl) nguoiLonEl.classList.add('is-invalid');
+                    if (treEmEl) treEmEl.classList.add('is-invalid');
+                }
             }
         }
 

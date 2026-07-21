@@ -439,6 +439,7 @@
                 th:data-tang="${phong != null ? phong.soTang : ''}"
                 th:data-gia="${phong != null ? phong.giaMoiDem : 0}"
                 th:data-loai="${loaiPhong != null ? loaiPhong.tenLoai : ''}"
+                th:data-suc-chua="${loaiPhong != null ? loaiPhong.sucChuaToiDa : 0}"
                 onclick="luuPhongVaoGio(event, this)">
           Thêm Vào Danh Sách
         </button>
@@ -694,6 +695,12 @@
       floor: button.dataset.tang,
       price: Number(button.dataset.gia || 0),
       typeName: button.dataset.loai || '',
+      // FIX: phai luu sucChua vao cart item de gio-hang.html co the validate
+      // tong nguoi (NL + TE) khong vuot tong suc chua cua cac phong trong gio.
+      // Neu thieu field nay, getTotalCapacity() o gio-hang tra ve 0, validation
+      // bi bo qua va form submit len server, server redirect ve gio-hang voi
+      // error "vuot suc chua" (vong lap kho chiu cho nguoi dung).
+      sucChua: Number(button.dataset.sucChua || 0),
       image: document.getElementById('mainImage') ? document.getElementById('mainImage').src : ''
     };
     const cart = readRoomCart();
