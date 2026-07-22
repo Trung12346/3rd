@@ -1,0 +1,165 @@
+﻿<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản Lý Nhân Viên | Hotel</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<div th:replace="~{fragments/cms-sidebar :: cmsSidebar}"></div>
+<div th:replace="~{fragments/headers/cms-header :: cmsHeader}"></div>
+<main class="admin-wrapper">
+    <div class="admin-header">
+        <h1>Quản Lý Khách Hàng</h1>
+        <a th:href="@{/nhan-su/admin/khach-hang}" class="admin-btn outline">Làm Mới Form</a>
+    </div>
+
+    <div th:if="${success}" class="admin-message success">
+        <span th:text="${success}"></span>
+    </div>
+    <div th:if="${error}" class="admin-message error">
+        <span th:text="${error}"></span>
+    </div>
+
+    <section class="admin-panel">
+        <h2 th:text="${title}">Thêm nhân viên</h2>
+
+        <form th:action="@{/nhan-su/admin/khach-hang/save}" th:object="${khachHang}" method="post">
+            <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+            <input type="hidden" th:field="*{ma_khach_hang}">
+
+            <div class="admin-grid">
+<!--                <div class="admin-field">-->
+<!--                    <label>Người dùng</label>-->
+<!--                    <select name="maNguoiDung" >-->
+<!--                        <option value="">&#45;&#45; Chọn khách hàng &#45;&#45;</option>-->
+<!--                        <option th:each="nguoiDung : ${nguoiDungs}"-->
+<!--                                th:value="${nguoiDung.maNguoiDung}"-->
+<!--                                th:text="${nguoiDung.hoTen + ' - ' + nguoiDung.email + ' - ' + nguoiDung.vaiTro.tenVaiTro}"-->
+<!--                                th:selected="${khachHang != null && khachHang.maNguoiDung == nguoiDung.maNguoiDung}">-->
+<!--                        </option>-->
+<!--                    </select >-->
+<!--                </div>-->
+
+
+                <div class="admin-field">
+                    <label>Ho ten</label>
+                    <input type="text" th:field="*{hoTen}" placeholder="VD: Nguyen Van A" >
+                </div>
+
+                <div class="admin-field">
+                    <label>Email</label>
+                    <input type="email" th:field="*{email}" placeholder="example@gmail.com" >
+                </div>
+
+                <div class="admin-field">
+                    <label>Mat khau</label>
+                    <input type="password"
+                           name="matKhauMoi"
+                           placeholder="Nhap khi them moi hoac muon doi">
+                </div>
+
+                <input
+                       th:field="*{matKhau_hash}"
+                       placeholder="Nhap khi them moi hoac muon doi"
+                       th:type="hidden" th:if="${ma_khach_hang != null}">
+
+                <div class="admin-field">
+                    <label>So dien thoai</label>
+                    <input type="tel" th:field="*{soDienThoai}" placeholder="" pattern="[0-9]{10}">
+                </div>
+
+                <div class="admin-field" style="display: none">
+                    <label>Vai tro</label>
+                    <select th:field="*{vaiTro}" hidden>
+                        <option value="">-- Chon vai tro --</option>
+                        <option th:each="vt : ${vaiTros}"
+                                th:value="${vt.id}"
+                                th:text="${vt.tenVaiTro}"
+                                th:selected="${vaiTro != null && vaiTro.id == vt.id}">
+                        </option>
+                    </select>
+                </div>
+
+                <div class="admin-field">
+                    <label>Trang thai</label>
+                    <select th:field="*{trangThai}">
+                        <option th:value="true">Hoat dong</option>
+                        <option th:value="false">Khoa</option>
+                    </select>
+                </div>
+
+                <div class="admin-field full">
+                    <label>Dia chi</label>
+                    <textarea th:field="*{diaChi}" placeholder="So nha, duong, tinh/TP..."></textarea>
+                </div>
+            </div>
+
+            <div class="admin-actions">
+                <button type="submit" class="admin-btn">Lưu Khách Hàng</button>
+                <a th:href="@{/nhan-su/admin/khach-hang}" class="admin-btn outline">Hủy</a>
+            </div>
+        </form>
+    </section>
+
+    <section class="admin-panel">
+        <h2>Danh Sách Khách Hàng</h2>
+
+        <form th:action="@{/nhan-su/admin/khach-hang}" method="get" class="search-row">
+            <input type="text" name="keyword" placeholder="Tìm theo tên" th:value="${keyword}">
+            <button type="submit" class="admin-btn outline">Tìm Kiếm</button>
+        </form>
+
+        <div class="admin-table-wrap">
+            <table class="admin-table">
+                <thead>
+                <tr>
+                    <th>Mã</th>
+                    <th>Họ và tên</th>
+                    <th>Email</th>
+                    <th>Số điện thoại</th>
+                    <th>Địa chỉ</th>
+                    <th>Trạng thái</th>
+                    <th>Tạo từ</th>
+                    <th>Cập nhật lúc</th>
+                    <th>Thao tác</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="kh : ${khachHangs}">
+                    <td th:text="${kh.ma_khach_hang}"></td>
+                    <td><strong th:text="${kh != null ? kh.hoTen : ''}"></strong></td>
+                    <td th:text="${kh != null ? kh.email : ''}"></td>
+                    <td th:text="${kh != null ? kh.soDienThoai : ''}"></td>
+                    <td th:text="${kh != null ? kh.diaChi : ''}"></td>
+                    <td th:text="${kh.trangThai == true ? 'mở khóa' : 'khóa'}"></td>
+                    <td th:text="${#temporals.format(kh.ngayTao, 'yyyy-MM-dd HH:mm:ss')}"></td>
+                    <td th:text="${#temporals.format(kh.ngayCapNhat, 'yyyy-MM-dd HH:mm:ss')}"></td>
+                    <td>
+                        <div class="row-actions">
+                            <a class="admin-btn small outline"
+                               th:href="@{/nhan-su/admin/khach-hang/edit/{id}(id=${kh.ma_khach_hang})}">Sửa</a>
+                            <form th:action="@{/nhan-su/admin/khach-hang/lock/{id}(id=${kh.ma_khach_hang})}"
+                                  method="post"
+                                  onsubmit="return confirm('Bạn có chắc muốn khoá khách hàng này này?')">
+                                <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                                <button type="submit" class="admin-btn small danger">Khoá</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+
+<footer>
+    <p>&copy; 2026 Hotel. All rights reserved.</p>
+</footer>
+
+</body>
+
+</html>

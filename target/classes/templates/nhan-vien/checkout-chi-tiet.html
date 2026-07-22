@@ -1,0 +1,308 @@
+﻿<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trả Phòng - Đơn #<span th:text="${dp.id}"></span> | Hotel</title>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/@tabler/icons-webfont/3.31.0/tabler-icons.min.css">
+</head>
+<body>
+<style>
+    .status-badge {
+        display: inline-block;
+        font-size: 12px;
+        font-weight: 500;
+        padding: 4px 10px;
+        border-radius: 6px;
+        border: 1px solid transparent;
+        white-space: nowrap;
+    }
+    .status-badge.warning { background: #FAEEDA; color: #633806; border-color: #BA7517; }
+    .status-badge.info { background: #E6F1FB; color: #0C447C; border-color: #378ADD; }
+    .status-badge.success { background: #EAF3DE; color: #27500A; border-color: #639922; }
+    .status-badge.neutral { background: #F1EFE8; color: #2C2C2A; border-color: #888780; }
+    .status-badge.danger { background: #FCEBEB; color: #791F1F; border-color: #E24B4A; }
+
+    .folio-summary {
+        max-width: 480px;
+        margin-left: auto;
+        border-top: 1px solid #e5e5e5;
+        padding-top: 12px;
+    }
+    .folio-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 6px 0;
+        font-size: 14px;
+        color: #333;
+    }
+    .folio-row.discount { color: #C0392B; }
+    .folio-row.grand {
+        font-size: 17px;
+        font-weight: 700;
+        color: #0C447C;
+        border-top: 1px solid #e5e5e5;
+        margin-top: 6px;
+        padding-top: 10px;
+    }
+    .folio-row.paid { color: #27500A; }
+    .folio-row.due {
+        font-size: 16px;
+        font-weight: 700;
+        color: #791F1F;
+    }
+
+    .inline-form {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: flex-end;
+        margin-top: 14px;
+        padding-top: 14px;
+        border-top: 1px dashed #e5e5e5;
+    }
+    .inline-form .admin-field { margin-bottom: 0; min-width: 180px; }
+
+    .guest-info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 14px 24px;
+    }
+    .guest-info-item .label {
+        font-size: 12px;
+        color: #6b6b6b;
+        margin-bottom: 2px;
+    }
+    .guest-info-item .value {
+        font-size: 14px;
+        font-weight: 600;
+        color: #1a1a1a;
+    }
+</style>
+<div th:replace="~{fragments/cms-sidebar :: cmsSidebar}"></div>
+<div th:replace="~{fragments/headers/cms-header :: cmsHeader}"></div>
+<main class="admin-wrapper">
+    <div class="admin-header">
+        <h1>Trả Phòng — Đơn #<span th:text="${dp.id}"></span></h1>
+        <a th:href="@{/nhan-su/checkout}" class="admin-btn outline">Quay Lại Danh Sách</a>
+    </div>
+
+    <div th:if="${success}" class="admin-message success">
+        <span th:text="${success}"></span>
+    </div>
+    <div th:if="${error}" class="admin-message error">
+        <span th:text="${error}"></span>
+    </div>
+
+    <!-- ===== THONG TIN KHACH & DON ===== -->
+    <section class="admin-panel">
+        <h2>
+            Thông Tin Đặt Phòng
+            <span th:if="${dp.trangThai == 'Da nhan phong'}" class="status-badge info" style="margin-left:8px;">Đang lưu trú</span>
+            <span th:if="${dp.trangThai == 'Da tra phong'}" class="status-badge success" style="margin-left:8px;">Đã trả phòng</span>
+            <span th:if="${dp.trangThai != 'Da nhan phong' and dp.trangThai != 'Da tra phong'}" class="status-badge neutral" style="margin-left:8px;" th:text="${dp.trangThai}"></span>
+        </h2>
+
+        <div class="guest-info-grid">
+            <div class="guest-info-item">
+                <div class="label">Khách hàng</div>
+                <div class="value" th:text="${dp.n != null ? dp.n.hoTen : (dp.hoten != null ? dp.hoten + ' (Vãng lai)' : 'Không có')}"></div>
+            </div>
+            <div class="guest-info-item">
+                <div class="label">CCCD</div>
+                <div class="value" th:text="${dp.ma_cccd != null ? dp.ma_cccd : '—'}"></div>
+            </div>
+            <div class="guest-info-item">
+                <div class="label">Điện thoại</div>
+                <div class="value" th:text="${dp.n != null ? dp.n.soDienThoai : (dp.sdt != null ? dp.sdt : '—')}"></div>
+            </div>
+            <div class="guest-info-item">
+                <div class="label">Email</div>
+                <div class="value" th:text="${dp.n != null ? dp.n.email : (dp.email != null ? dp.email : '—')}"></div>
+            </div>
+            <div class="guest-info-item">
+                <div class="label">Ngày nhận phòng</div>
+                <div class="value" th:text="${dp.ngaydatPhong != null ? #temporals.format(dp.ngaydatPhong, 'dd/MM/yyyy HH:mm') : '—'}"></div>
+            </div>
+            <div class="guest-info-item">
+                <div class="label">Ngày trả phòng dự kiến</div>
+                <div class="value" th:text="${dp.ngaytraPhong != null ? #temporals.format(dp.ngaytraPhong, 'dd/MM/yyyy HH:mm') : '—'}"></div>
+            </div>
+            <div class="guest-info-item">
+                <div class="label">Số đêm</div>
+                <div class="value" th:text="${soDem}"></div>
+            </div>
+            <div class="guest-info-item">
+                <div class="label">Số khách</div>
+                <div class="value" th:text="${dp.songuoiLon + ' người lớn, ' + dp.sotreEm + ' trẻ em'}"></div>
+            </div>
+            <div class="guest-info-item" th:if="${dp.km != null}">
+                <div class="label">Khuyến mãi áp dụng</div>
+                <div class="value" th:text="${dp.km.promoCode}"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== PHONG DA DAT ===== -->
+    <section class="admin-panel">
+        <h2>Phòng Đã Đặt</h2>
+        <div class="admin-table-wrap">
+            <table class="admin-table">
+                <thead>
+                <tr>
+                    <th>Số phòng</th>
+                    <th>Tầng</th>
+                    <th>Loại phòng</th>
+                    <th>CCCD khách ở</th>
+                    <th>Giá phòng</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="ct : ${phongList}">
+                    <td th:text="${ct.p != null ? ct.p.soPhong : '—'}"></td>
+                    <td th:text="${ct.p != null ? ct.p.soTang : '—'}"></td>
+                    <td th:text="${ct.p != null and ct.p.loaiPhong != null ? ct.p.loaiPhong.tenLoai : '—'}"></td>
+                    <td th:text="${ct.ma_cccd != null ? ct.ma_cccd : '—'}"></td>
+                    <td th:text="${#numbers.formatDecimal(ct.giaKhiDat, 0, 'COMMA', 0, 'POINT') + ' VND'}"></td>
+                </tr>
+                <tr th:if="${phongList.isEmpty()}">
+                    <td colspan="5"><div class="empty-state">Đơn này chưa có phòng nào.</div></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- ===== DICH VU SU DUNG ===== -->
+    <section class="admin-panel">
+        <h2>Dịch Vụ Sử Dụng</h2>
+        <div class="admin-table-wrap">
+            <table class="admin-table">
+                <thead>
+                <tr>
+                    <th>Dịch vụ</th>
+                    <th>Số lượng</th>
+                    <th>Thành tiền</th>
+                    <th>Thời gian dùng</th>
+                    <th>Ghi chú</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="ct : ${dichVuList}">
+                    <td th:text="${ct.dv != null ? ct.dv.ten_dich_vu : '—'}"></td>
+                    <td th:text="${ct.soluong}"></td>
+                    <td th:text="${#numbers.formatDecimal(ct.donGia, 0, 'COMMA', 0, 'POINT') + ' VND'}"></td>
+                    <td th:text="${ct.ngay_su_dung != null ? #temporals.format(ct.ngay_su_dung, 'dd/MM/yyyy HH:mm') : '—'}"></td>
+                    <td th:text="${ct.ghichu != null ? ct.ghichu : '—'}"></td>
+                </tr>
+                <tr th:if="${dichVuList.isEmpty()}">
+                    <td colspan="5"><div class="empty-state">Chưa sử dụng dịch vụ nào.</div></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Them dich vu phat sinh - chi hien khi don con dang luu tru -->
+        <form th:if="${dp.trangThai == 'Da nhan phong'}"
+              class="inline-form"
+              th:action="@{/nhan-su/checkout/{id}/them-dich-vu(id=${dp.id})}" method="post">
+            <div class="admin-field">
+                <label>Thêm dịch vụ phát sinh</label>
+                <select name="maDichVu" required>
+                    <option value="">-- Chọn dịch vụ --</option>
+                    <option th:each="dv : ${dichVuOptions}"
+                            th:value="${dv.id}"
+                            th:text="${dv.ten_dich_vu + ' - ' + #numbers.formatDecimal(dv.gia, 0, 'COMMA', 0, 'POINT') + ' VND/' + dv.donVi}">
+                    </option>
+                </select>
+            </div>
+            <div class="admin-field" style="min-width:100px;">
+                <label>Số lượng</label>
+                <input type="number" name="soLuong" min="1" value="1">
+            </div>
+            <div class="admin-field" style="min-width:auto;">
+                <button type="submit" class="admin-btn outline">Thêm Dịch Vụ</button>
+            </div>
+        </form>
+    </section>
+
+    <!-- ===== HOA DON & THANH TOAN ===== -->
+    <section class="admin-panel">
+        <h2>Hóa Đơn &amp; Thanh Toán</h2>
+
+        <div class="folio-summary">
+            <div class="folio-row">
+                <span>Tiền phòng</span>
+                <span th:text="${#numbers.formatDecimal(tienPhong, 0, 'COMMA', 0, 'POINT') + ' VND'}"></span>
+            </div>
+            <div class="folio-row">
+                <span>Tiền dịch vụ</span>
+                <span th:text="${#numbers.formatDecimal(tienDichVu, 0, 'COMMA', 0, 'POINT') + ' VND'}"></span>
+            </div>
+            <div class="folio-row discount" th:if="${tienGiam.compareTo(T(java.math.BigDecimal).ZERO) > 0}">
+                <span>Giảm giá</span>
+                <span th:text="${'- ' + #numbers.formatDecimal(tienGiam, 0, 'COMMA', 0, 'POINT') + ' VND'}"></span>
+            </div>
+            <div class="folio-row">
+                <span>Thuế VAT (10%)</span>
+                <span th:text="${#numbers.formatDecimal(tienVat, 0, 'COMMA', 0, 'POINT') + ' VND'}"></span>
+            </div>
+            <div class="folio-row grand">
+                <span>Tổng cộng</span>
+                <span th:text="${#numbers.formatDecimal(tongTien, 0, 'COMMA', 0, 'POINT') + ' VND'}"></span>
+            </div>
+            <div class="folio-row paid" th:if="${daThu.compareTo(T(java.math.BigDecimal).ZERO) > 0}">
+                <span>Đã thanh toán trước</span>
+                <span th:text="${#numbers.formatDecimal(daThu, 0, 'COMMA', 0, 'POINT') + ' VND'}"></span>
+            </div>
+            <div class="folio-row due" th:if="${dp.trangThai == 'Da nhan phong'}">
+                <span>Còn phải thu</span>
+                <span th:text="${#numbers.formatDecimal(conLai, 0, 'COMMA', 0, 'POINT') + ' VND'}"></span>
+            </div>
+        </div>
+
+        <!-- Form xac nhan tra phong - chi hien khi don con dang luu tru -->
+        <form th:if="${dp.trangThai == 'Da nhan phong'}"
+              class="inline-form"
+              th:action="@{/nhan-su/checkout/{id}/xac-nhan(id=${dp.id})}" method="post"
+              onsubmit="return confirm('Xác nhận thu tiền và trả phòng cho đơn #' + [[${dp.id}]] + '?');">
+            <div class="admin-field">
+                <label>Phương thức thanh toán</label>
+                <select name="phuongThucThanhToan">
+                    <option value="Tien mat">Tiền mặt</option>
+                    <option value="Chuyen khoan">Chuyển khoản</option>
+                    <option value="The tin dung">Thẻ tín dụng</option>
+                    <option value="Vi dien tu">Ví điện tử</option>
+                </select>
+            </div>
+            <div class="admin-field" style="flex:1; min-width:220px;">
+                <label>Ghi chú thanh toán</label>
+                <input type="text" name="ghiChu" placeholder="Không bắt buộc">
+            </div>
+            <div class="admin-field" style="min-width:auto;">
+                <button type="submit" class="admin-btn">Xác Nhận Trả Phòng &amp; Thu Tiền</button>
+            </div>
+        </form>
+
+        <!-- Da tra phong: hien thi hoa don va nut xuat PDF -->
+        <div th:if="${dp.trangThai == 'Da tra phong'}" class="admin-actions" style="margin-top:16px;">
+            <a th:if="${hoaDon != null}"
+               th:href="@{/nhan-su/checkout/{id}/xuat-pdf(id=${dp.id})}"
+               class="admin-btn" target="_blank">
+                Xuất Hóa Đơn PDF
+            </a>
+            <a th:href="@{/nhan-su/checkout}" class="admin-btn outline">Quay Lại Danh Sách</a>
+        </div>
+
+        <div th:if="${dp.trangThai != 'Da nhan phong' and dp.trangThai != 'Da tra phong'}" class="admin-message error" style="margin-top:16px;">
+            Đơn này chưa nhận phòng (trạng thái hiện tại: <span th:text="${dp.trangThai}"></span>), không thể thực hiện trả phòng.
+        </div>
+    </section>
+</main>
+
+<footer>
+    <p>&copy; 2026 Hotel. All rights reserved.</p>
+</footer>
+</body>
+</html>

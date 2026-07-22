@@ -1,0 +1,164 @@
+﻿<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quan Ly Nguoi Dung | Hotel</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<div th:replace="~{fragments/cms-sidebar :: cmsSidebar}"></div>
+<div th:replace="~{fragments/headers/cms-header :: cmsHeader}"></div>
+<main class="admin-wrapper">
+    <div class="admin-header">
+        <h1>Quan Ly Nguoi Dung</h1>
+        <a th:href="@{/nhan-su/admin/nguoi-dung}" class="admin-btn outline">Lam Moi Form</a>
+    </div>
+
+    <div th:if="${success}" class="admin-message success">
+        <span th:text="${success}"></span>
+    </div>
+    <div th:if="${error}" class="admin-message error">
+        <span th:text="${error}"></span>
+    </div>
+
+    <section class="admin-panel">
+        <h2 th:text="${title}">Them nguoi dung</h2>
+
+        <form th:action="@{/nhan-su/admin/nguoi-dung/save}" th:object="${nguoiDung}" method="post">
+            <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+            <input type="hidden" th:field="*{maNguoiDung}">
+
+            <div class="admin-grid">
+                <div class="admin-field">
+                    <label>Ho ten</label>
+                    <input type="text" th:field="*{hoTen}" placeholder="VD: Nguyen Van A" required>
+                </div>
+
+                <div class="admin-field">
+                    <label>Email</label>
+                    <input type="email" th:field="*{email}" placeholder="example@gmail.com" required>
+                </div>
+
+                <div class="admin-field">
+                    <label>Mat khau</label>
+                    <input type="password"
+                           name="matKhaumoi"
+                           placeholder="Nhap khi them moi hoac muon doi">
+                </div>
+
+                    <input type="text"
+                           th:field="*{matKhau_hash}"
+                           placeholder="Nhap khi them moi hoac muon doi"
+                           th:type="hidden" th:if="${nguoiDung.maNguoiDung != null}">
+
+                <div class="admin-field">
+                    <label>So dien thoai</label>
+                    <input type="tel" th:field="*{soDienThoai}" placeholder="09xxxxxxxx" pattern="[0-9]{10}">
+                </div>
+
+                <div class="admin-field">
+                    <label>Vai tro</label>
+                    <select th:field="*{vaiTro}" required>
+                        <option value="">-- Chon vai tro --</option>
+                        <option th:each="vt : ${vaiTros}"
+                                th:value="${vt.id}"
+                                th:text="${vt.tenVaiTro}"
+                                th:selected="${nguoiDung.vaiTro != null and nguoiDung.vaiTro.id == vt.id}">
+                        </option>
+                    </select>
+                </div>
+
+                <div class="admin-field">
+                    <label>Trang thai</label>
+                    <select th:field="*{trangThai}">
+                        <option th:value="true">Hoat dong</option>
+                        <option th:value="false">Khoa</option>
+                    </select>
+                </div>
+
+                <div class="admin-field full">
+                    <label>Dia chi</label>
+                    <textarea th:field="*{diaChi}" placeholder="So nha, duong, tinh/TP..."></textarea>
+                </div>
+            </div>
+
+            <div class="admin-actions">
+                <button type="submit" class="admin-btn">Luu Nguoi Dung</button>
+                <a th:href="@{/nhan-su/admin/nguoi-dung}" class="admin-btn outline">Huy</a>
+            </div>
+        </form>
+    </section>
+
+    <section class="admin-panel">
+        <h2>Danh Sach Nguoi Dung</h2>
+
+        <form th:action="@{/nhan-su/admin/nguoi-dung/search}" method="get" class="search-row">
+            <input type="text"
+                   name="keyword"
+                   placeholder="Tim theo ten"
+                   >
+            <button type="submit" class="admin-btn outline">Tim Kiem</button>
+        </form>
+
+        <div class="admin-table-wrap">
+            <table class="admin-table">
+                <thead>
+                <tr>
+                    <th>Ma</th>
+                    <th>Ho ten</th>
+                    <th>Email</th>
+                    <th>So dien thoai</th>
+                    <th>Dia chi</th>
+                    <th>Trang thai</th>
+                    <th>Vai tro</th>
+                    <th>Ngay tao</th>
+                    <th>Thao tac</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="nd : ${nguoiDungs}">
+                    <td th:text="${nd.maNguoiDung}"></td>
+                    <td><strong th:text="${nd.hoTen}"></strong></td>
+                    <td th:text="${nd.email}"></td>
+                    <td th:text="${nd.soDienThoai != null ? nd.soDienThoai : ''}"></td>
+                    <td th:text="${nd.diaChi != null ? nd.diaChi : ''}"></td>
+                    <td>
+                        <span th:if="${nd.trangThai}" class="status-badge active">Hoat dong</span>
+                        <span th:unless="${nd.trangThai}" class="status-badge inactive">Khoa</span>
+                    </td>
+                    <td th:text="${nd.vaiTro != null ? nd.vaiTro.tenVaiTro : ''}"></td>
+                    <td th:text="${nd.ngayTao != null ? #temporals.format(nd.ngayTao, 'dd/MM/yyyy') : ''}"></td>
+                    <td>
+                        <div class="row-actions">
+                            <a class="admin-btn small outline"
+                               th:href="@{/nhan-su/admin/nguoi-dung/edit/{id}(id=${nd.maNguoiDung})}">
+                                Sua
+                            </a>
+                            <form th:action="@{/nhan-su/admin/nguoi-dung/lock/{id}(id=${nd.maNguoiDung})}"
+                                  method="post"
+                                  onsubmit="return confirm('Ban co chac muon khoa nguoi dung nay?')">
+                                <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                                <button type="submit" class="admin-btn small danger">Khoa</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                <tr th:if="${nguoiDungs.isEmpty()}">
+                    <td colspan="9">
+                        <div class="empty-state">Khong tim thay nguoi dung phu hop.</div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+
+<footer>
+    <p>&copy; 2026 Hotel. All rights reserved.</p>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,122 @@
+﻿<!DOCTYPE html>
+<html lang="vi" xmlns:sec="http://www.thymeleaf.org/extras/spring-security" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hotel | Trang chủ của bạn</title>
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        /* CSS danh rieng cho menu người dùng da đăng nhập */
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .user-greeting {
+            font-size: 14px;
+            color: var(--text-dark);
+            font-weight: 500;
+        }
+        .user-greeting b {
+            color: var(--sky-primary);
+        }
+        /* Nut đăng xuất style nhu mot lien ket hoac nut outline gon gang */
+        .btn-logout {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-gray);
+            padding: 8px 15px;
+            border-radius: 2px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            transition: all 0.3s;
+        }
+        .btn-logout:hover {
+            border-color: #E74C3C;
+            color: #E74C3C;
+            background: #FDEDEC;
+        }
+    </style>
+</head>
+<body>
+<div th:replace="~{fragments/headers/app-header :: appHeader}"></div>
+
+<section class="hero">
+    <div class="hero-text">
+        <h1>Đẳng Cấp & Tinh Tế</h1>
+        <p>Khởi nguồn cho những trải nghiệm nghỉ dưỡng hoàn hảo</p>
+    </div>
+</section>
+
+<section class="booking-section">
+    <form class="booking-form">
+        <div class="booking-item">
+            <label>Ngày nhận phòng</label>
+            <input type="date">
+        </div>
+        <div class="booking-item">
+            <label>Ngày trả phòng</label>
+            <input type="date">
+        </div>
+        <div class="booking-item">
+            <label>Người lớn</label>
+            <select>
+                <option value="1">1</option>
+                <option value="2" selected>2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+            </select>
+        </div>
+        <div class="booking-item">
+            <label>Trẻ em</label>
+            <select>
+                <option value="0">0</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+            </select>
+        </div>
+        <button type="button" class="btn-book">Kiểm tra phòng</button>
+    </form>
+</section>
+
+<div style="height: 400px; padding: 100px 5%; text-align: center; background-color: var(--white);">
+    <h2 style="color: var(--sky-primary); margin-bottom: 25px; font-size: 36px;">
+        Chào Mừng Trở Lại, <span id="welcome-user-name">Quý Khách</span>!
+    </h2>
+    <p style="color: var(--text-gray); max-width: 750px; margin: 0 auto; line-height: 1.8; font-size: 15px;">
+        Rất vui được đón tiếp bạn quay trở lại Hotel. La thanh vien cua chung toi, ban se luon nhan duoc nhung uu dai dac biet va muc gia tot nhat khi dat phòng truc tiep. Hay de chung toi mang lai cam giac thu thai va binh yen tuyet doi cho ky nghi tiep theo cua ban.
+    </p>
+</div>
+
+<footer>
+    <p>&copy; 2026 Hotel. All rights reserved.</p>
+</footer>
+
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        // Gia lap viec lay thong tin người dùng tu LocalStorage (sau khi đăng nhập thanh cong)
+        // Trong thuc te, luc login xong ban se setItem: localStorage.setItem("userFullName", "Ten tu API");
+        const userName = localStorage.getItem("userFullName") || "Nguyen Van A";
+
+        // Cập nhat ten len Header va phan Welcome
+        document.getElementById("header-user-name").innerText = userName;
+        document.getElementById("welcome-user-name").innerText = userName;
+    });
+
+    function logout() {
+        if(confirm("Bạn có chắc chắn muốn đăng xuất không?")) {
+            // Xóa du lieu phien đăng nhập
+            localStorage.removeItem("userFullName");
+            localStorage.removeItem("token");
+
+            // Chuyen huong ve trang chu mac dinh (chua đăng nhập)
+            window.location.href = "/logout";
+        }
+    }
+</script>
+</body>
+</html>
+

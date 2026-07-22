@@ -1,0 +1,614 @@
+﻿<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản Lý Đơn Đặt Phòng | Hotel</title>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/@tabler/icons-webfont/3.31.0/tabler-icons.min.css">
+</head>
+<body>
+<style>
+    .admin-pagination {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+        padding: 12px 16px;
+        margin-top: 12px;
+        border-top: 1px solid #e5e5e5;
+    }
+
+    .admin-pagination .pagination-info {
+        font-size: 14px;
+        color: #6b6b6b;
+    }
+
+    .admin-pagination .pagination-info strong {
+        color: #1a1a1a;
+        font-weight: 500;
+    }
+
+    .pagination-links {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .page-btn {
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #d9d9d9;
+        border-radius: 6px;
+        background: #fff;
+        font-size: 14px;
+        line-height: 1;
+        color: #333;
+        text-decoration: none;
+        cursor: pointer;
+        transition: background 0.15s, border-color 0.15s;
+    }
+
+    .page-btn:hover {
+        background: #f5f5f5;
+        border-color: #b3b3b3;
+    }
+
+    .page-btn.active {
+        background: #2563eb;
+        color: #fff;
+        border-color: #2563eb;
+        font-weight: 500;
+    }
+
+    .page-btn.disabled {
+        color: #c2c2c2;
+        pointer-events: none;
+        cursor: default;
+        background: #fafafa;
+    }
+
+    .status-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .status-badge {
+        display: inline-block;
+        font-size: 12px;
+        font-weight: 500;
+        padding: 4px 10px;
+        border-radius: 6px;
+        border: 1px solid transparent;
+        white-space: nowrap;
+    }
+
+    .status-badge.warning {
+        background: #FAEEDA;
+        color: #633806;
+        border-color: #BA7517;
+    }
+
+    .status-badge.info {
+        background: #E6F1FB;
+        color: #0C447C;
+        border-color: #378ADD;
+    }
+
+    .status-badge.success {
+        background: #EAF3DE;
+        color: #27500A;
+        border-color: #639922;
+    }
+
+    .status-badge.neutral {
+        background: #F1EFE8;
+        color: #2C2C2A;
+        border-color: #888780;
+    }
+
+    .status-badge.danger {
+        background: #FCEBEB;
+        color: #791F1F;
+        border-color: #E24B4A;
+    }
+
+    .status-action-btn {
+        font-size: 13px;
+        padding: 6px 14px;
+        background: #0C447C;
+        color: #fff;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: background 0.15s;
+    }
+
+    .status-action-btn:hover {
+        background: #185FA5;
+    }
+
+    .status-action-btn:disabled {
+        background: #B4B2A9;
+        cursor: not-allowed;
+    }
+
+    /* MODAL CCCD TUNG PHONG */
+    .cccd-modal-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.45);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+    }
+    .cccd-modal-overlay.open { display: flex; }
+    .cccd-modal-box {
+        background: #fff;
+        border-radius: 6px;
+        box-shadow: 0 8px 40px rgba(0,0,0,0.18);
+        max-height: 80vh;
+        overflow-y: auto;
+        padding: 24px 28px;
+        width: 480px;
+        max-width: 92vw;
+        position: relative;
+    }
+    .cccd-modal-title {
+        color: #0C447C;
+        font-size: 17px;
+        font-weight: 700;
+        margin-bottom: 16px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #e5e5e5;
+    }
+    .cccd-modal-close {
+        position: absolute;
+        top: 14px; right: 18px;
+        background: none;
+        border: none;
+        font-size: 20px;
+        cursor: pointer;
+        color: #888;
+        line-height: 1;
+    }
+    .cccd-modal-close:hover { color: #333; }
+    .cccd-room-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 0;
+        border-bottom: 1px solid #f0f0f0;
+        font-size: 14px;
+    }
+    .cccd-room-row:last-child { border-bottom: none; }
+    .cccd-room-name { font-weight: 600; color: #1a1a1a; }
+    .cccd-room-value { color: #0C447C; font-weight: 600; }
+    .cccd-room-empty { color: #999; font-style: italic; font-size: 13px; }
+</style>
+<div th:replace="~{fragments/cms-sidebar :: cmsSidebar}"></div>
+<div th:replace="~{fragments/headers/cms-header :: cmsHeader}"></div>
+<main class="admin-wrapper">
+    <div class="admin-header">
+        <h1>Quản Lý Đơn Đặt Phòng</h1>
+        <a th:href="@{/nhan-su/admin/dat-phong}" class="admin-btn outline">Làm mới</a>
+    </div>
+
+    <div th:if="${success}" class="admin-message success">
+        <span th:text="${success}"></span>
+    </div>
+    <div th:if="${error}" class="admin-message error">
+        <span th:text="${error}"></span>
+    </div>
+
+    <section class="admin-panel">
+        <h2>Tìm Kiếm Đơn Đặt Phòng</h2>
+
+        <form th:action="@{/nhan-su/admin/dat-phong/search}" method="get">
+            <div class="admin-grid">
+                <div class="admin-field">
+                    <label>Mã đặt phòng</label>
+                    <input type="number" name="maDatPhong" min="1" th:value="${maDatPhong}">
+                </div>
+                <div class="admin-field">
+                    <label>Tên khách</label>
+                    <input name="tenKhach" min="1" th:value="${tenKhach}">
+                </div>
+                <div class="admin-field">
+                    <label>Mã nhân viên</label>
+                    <input type="number" name="maNhanVien" min="1" th:value="${maNhanVien}">
+                </div>
+                <div class="admin-field">
+                    <label>CCCD</label>
+                    <input type="text" name="ma_cccd" placeholder="12 so CCCD" th:value="${ma_cccd}">
+                </div>
+                <div class="admin-field">
+                    <label>Ngày nhận từ</label>
+                    <input type="date" name="ngayNhanTu" th:value="${ngayNhanTu}">
+                </div>
+                <div class="admin-field">
+                    <label>Ngày nhận đến</label>
+                    <input type="date" name="ngayNhanDen" th:value="${ngayNhanDen}">
+                </div>
+                <div class="admin-field">
+                    <label>Ngày trả từ</label>
+                    <input type="date" name="ngayTraTu" th:value="${ngayTraTu}">
+                </div>
+                <div class="admin-field">
+                    <label>Ngày trả đến</label>
+                    <input type="date" name="ngayTraDen" th:value="${ngayTraDen}">
+                </div>
+                <div class="admin-field">
+                    <label>Số người lớn</label>
+                    <input type="number" name="soNguoiLon" min="0" th:value="${soNguoiLon}">
+                </div>
+                <div class="admin-field">
+                    <label>Số trẻ em</label>
+                    <input type="number" name="soTreEm" min="0" th:value="${soTreEm}">
+                </div>
+                <div class="admin-field">
+                    <label>Trạng thái</label>
+                    <select name="trangThai">
+                        <option value="">-- Tất cả --</option>
+                        <option value="Chua thanh toan" th:selected="${trangThai == 'Chua thanh toan'}">Chưa thanh toán</option>
+                        <option value="Cho xac nhan" th:selected="${trangThai == 'Cho xac nhan'}">Chờ xác nhận</option>
+                        <option value="Da xac nhan" th:selected="${trangThai == 'Da xac nhan'}">Đã xác nhận</option>
+                        <option value="Cho huy" th:selected="${trangThai == 'Cho huy'}">Chờ hủy (chờ hoàn tiền)</option>
+                        <option value="Da nhan phong" th:selected="${trangThai == 'Da nhan phong'}">Đã nhận phòng</option>
+                        <option value="Da tra phong" th:selected="${trangThai == 'Da tra phong'}">Đã trả phòng</option>
+                        <option value="Da huy" th:selected="${trangThai == 'Da huy'}">Đã hủy</option>
+                    </select>
+                </div>
+                <div class="admin-field">
+                    <label>Yêu cầu thêm</label>
+                    <input type="text" name="yeuCauThem" th:value="${yeuCauThem}">
+                </div>
+                <div class="admin-field">
+                    <label>Ngày tạo từ</label>
+                    <input type="date" name="ngayTaoTu" th:value="${ngayTaoTu}">
+                </div>
+                <div class="admin-field">
+                    <label>Ngày tạo đến</label>
+                    <input type="date" name="ngayTaoDen" th:value="${ngayTaoDen}">
+                </div>
+                <div class="admin-field">
+                    <label>Ngày cập nhật từ</label>
+                    <input type="date" name="ngayCapNhatTu" th:value="${ngayCapNhatTu}">
+                </div>
+                <div class="admin-field">
+                    <label>Ngày cập nhật đến</label>
+                    <input type="date" name="ngayCapNhatDen" th:value="${ngayCapNhatDen}">
+                </div>
+            </div>
+
+            <div class="admin-actions">
+                <button type="submit" class="admin-btn outline">Tìm Kiếm</button>
+                <a th:href="@{/nhan-su/admin/dat-phong}" class="admin-btn outline">Xóa Lọc</a>
+            </div>
+        </form>
+    </section>
+
+    <section class="admin-panel" th:if="${dpEdit != null}">
+        <h2>Sửa Đơn Đặt Phòng</h2>
+
+        <form th:action="@{/nhan-su/admin/dat-phong/update}" method="post">
+            <input type="hidden" name="id" th:value="${dpEdit.id}">
+            <input type="hidden" name="page" th:value="${currentPage}">
+            <input type="hidden" name="size" th:value="${pageSize}">
+
+            <div class="admin-grid">
+                <div class="admin-field" th:if="${dpEdit.n == null}">
+                    <label>Họ tên khách (vãng lai)</label>
+                    <input type="text" name="hoten" th:value="${dpEdit.hoten}">
+                </div>
+                <div class="admin-field" th:if="${dpEdit.n == null}">
+                    <label>Email khách (vãng lai)</label>
+                    <input type="email" name="email" th:value="${dpEdit.email}">
+                </div>
+                <div class="admin-field" th:if="${dpEdit.n == null}">
+                    <label>Số điện thoại khách (vãng lai)</label>
+                    <input type="text" name="sdt" th:value="${dpEdit.sdt}">
+                </div>
+
+                <div class="admin-field" th:if="${dpEdit.n != null}">
+                    <label>Khách hàng (đã đăng ký)</label>
+                    <input type="text" th:value="${dpEdit.n.hoTen + ' - ' + dpEdit.n.email}" disabled>
+                </div>
+
+                <div class="admin-field">
+                    <label>CCCD</label>
+                    <input type="text" name="ma_cccd" placeholder="12 so CCCD" th:value="${dpEdit.ma_cccd}">
+                </div>
+
+                <div class="admin-field">
+                    <label>Ngày nhận phòng</label>
+                    <input type="datetime-local" name="ngaydatPhong"
+                           th:value="${dpEdit.ngaydatPhong != null ? #temporals.format(dpEdit.ngaydatPhong, 'yyyy-MM-dd''T''HH:mm') : ''}">
+                </div>
+                <div class="admin-field">
+                    <label>Ngày trả phòng</label>
+                    <input type="datetime-local" name="ngaytraPhong"
+                           th:value="${dpEdit.ngaytraPhong != null ? #temporals.format(dpEdit.ngaytraPhong, 'yyyy-MM-dd''T''HH:mm') : ''}">
+                </div>
+
+                <div class="admin-field">
+                    <label>Số người lớn</label>
+                    <input type="number" name="songuoiLon" min="0" th:value="${dpEdit.songuoiLon}">
+                </div>
+                <div class="admin-field">
+                    <label>Số trẻ em</label>
+                    <input type="number" name="sotreEm" min="0" th:value="${dpEdit.sotreEm}">
+                </div>
+
+                <div class="admin-field">
+                    <label>Yêu cầu thêm</label>
+                    <input type="text" name="yeuCauThem" th:value="${dpEdit.yeuCauThem}">
+                </div>
+
+                <div class="admin-field">
+                    <label>Trạng thái</label>
+                    <select name="trangThai">
+                        <option value="Chua thanh toan" th:selected="${dpEdit.trangThai == 'Chua thanh toan'}">Chưa thanh toán</option>
+                        <option value="Cho xac nhan" th:selected="${dpEdit.trangThai == 'Cho xac nhan'}">Chờ xác nhận</option>
+                        <option value="Da xac nhan" th:selected="${dpEdit.trangThai == 'Da xac nhan'}">Đã xác nhận</option>
+                        <option value="Da nhan phong" th:selected="${dpEdit.trangThai == 'Da nhan phong'}">Đã nhận phòng</option>
+                        <option value="Da tra phong" th:selected="${dpEdit.trangThai == 'Da tra phong'}">Đã trả phòng</option>
+                        <option value="Da huy" th:selected="${dpEdit.trangThai == 'Da huy'}">Đã hủy</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="admin-actions">
+                <button type="submit" class="admin-btn outline">Lưu Thay Đổi</button>
+                <a th:href="@{/nhan-su/admin/dat-phong(page=${currentPage}, size=${pageSize})}" class="admin-btn outline">Hủy</a>
+            </div>
+        </form>
+    </section>
+
+    <section class="admin-panel">
+        <h2>Danh Sách Đơn Đặt Phòng</h2>
+
+        <div class="admin-table-wrap">
+            <table class="admin-table">
+                <thead>
+                <tr>
+                    <th>Mã</th>
+                    <th>Khách hàng</th>
+                    <th>Phòng</th>
+                    <th>Nhân viên</th>
+                    <th>Ngày nhận</th>
+                    <th>Ngày trả</th>
+                    <th>Khách</th>
+                    <th>CCCD</th>
+                    <th>CCCD Từng Phòng</th>
+                    <th>Trạng thái</th>
+                    <th>Hóa đơn</th>
+                    <th>Hành động</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="dp : ${datPhongs}">
+                    <td th:text="${dp.id}"></td>
+                    <td>
+                        <strong th:text="${dp.n != null ? dp.n.hoTen :
+                      (dp.hoten != null ? dp.hoten + ' (Vãng lai)' : 'Không có')}">
+                        </strong>
+                        <div th:text="${dp.n != null ? dp.n.email :
+                  (dp.email != null ? dp.email : '')}">
+                        </div>
+                    </td>
+                    <td>
+                        <span th:each="phong : ${phongTheoDon[dp.id]}"
+                              th:text="${phong.soPhong + ' '}">
+                        </span>
+                    </td>
+                    <td th:text="${dp.nv != null ? dp.nv.email : ''}"></td>
+                    <td th:text="${dp.ngaydatPhong != null ? #temporals.format(dp.ngaydatPhong, 'dd/MM/yyyy') : ''}"></td>
+                    <td th:text="${dp.ngaytraPhong != null ? #temporals.format(dp.ngaytraPhong, 'dd/MM/yyyy') : ''}"></td>
+                    <td th:text="${dp.songuoiLon + ' NL, ' + dp.sotreEm + ' TE'}"></td>
+                    <td th:text="${dp.ma_cccd != null ? dp.ma_cccd : ''}"></td>
+
+                    <!-- CCCD TUNG PHONG - dung cung class voi nut Xem ben hoa-don -->
+                    <td>
+                        <a href="#"
+                           class="admin-btn small outline cccd-btn"
+                           th:attr="data-ma-don=${dp.id}"
+                           th:onclick="|openCccdModal(${dp.id}); return false;|">
+                            Xem (<span th:text="${MapCtdp[dp.id] != null ? MapCtdp[dp.id].size() : 0}"></span>)
+                        </a>
+
+                        <!-- Du lieu an cho modal -->
+                        <span style="display:none;" th:each="ctdp : ${MapCtdp[dp.id]}"
+                              th:class="'cccd-data-' + ${dp.id}"
+                              th:attr="data-so-phong=${ctdp.p != null ? ctdp.p.soPhong : ''}, data-cccd=${ctdp.ma_cccd != null ? ctdp.ma_cccd : ''}">
+                        </span>
+                    </td>
+
+                    <td>
+                        <div class="status-row">
+                            <span th:if="${dp.trangThai == 'Chua thanh toan'}" class="status-badge neutral">
+                                Chưa thanh toán
+                            </span>
+
+                            <form th:if="${dp.trangThai != 'Chua thanh toan' and dp.trangThai != 'Cho huy' and dp.trangThai != 'Da huy' and dp.trangThai != 'Da tra phong'}"
+                                  th:action="@{/nhan-su/admin/dat-phong/update-trang-thai}" method="post" style="margin: 0;">
+                                <input type="hidden" name="id" th:value="${dp.id}">
+                                <input type="hidden" name="page" th:value="${currentPage}">
+                                <input type="hidden" name="size" th:value="${pageSize}">
+                                <button th:if="${dp.trangThai == 'Cho xac nhan'}"
+                                        type="submit" name="trangThai" value="Da xac nhan"
+                                        class="status-badge warning"
+                                        style="cursor: pointer; border: none;"
+                                        th:disabled="${dp.ma_cccd == null or dp.ma_cccd.isEmpty()}">
+                                    Chờ xác nhận
+                                </button>
+                                <button th:if="${dp.trangThai == 'Da xac nhan'}"
+                                        type="submit" name="trangThai" value="Da nhan phong"
+                                        class="status-badge info"
+                                        style="cursor: pointer; border: none;">
+                                    Đã xác nhận
+                                </button>
+                                <button th:if="${dp.trangThai == 'Da nhan phong'}"
+                                        type="submit" name="trangThai" value="Da tra phong"
+                                        class="status-badge success"
+                                        style="cursor: pointer; border: none;">
+                                    Đã nhận phòng
+                                </button>
+                            </form>
+
+                            <span th:if="${dp.trangThai == 'Da tra phong'}" class="status-badge neutral">
+                                Đã trả phòng
+                            </span>
+                            <span th:if="${dp.trangThai == 'Cho huy'}" class="status-badge warning">
+                                Chờ hủy (chờ hoàn tiền)
+                            </span>
+                            <span th:if="${dp.trangThai == 'Da huy'}" class="status-badge danger">
+                                Đã hủy
+                            </span>
+
+                            <form th:if="${dp.trangThai != 'Da nhan phong' and dp.trangThai != 'Da tra phong' and dp.trangThai != 'Da huy' and dp.trangThai != 'Cho huy'}"
+                                  th:action="@{/nhan-su/admin/dat-phong/huy}" method="post" style="margin: 0;">
+                                <input type="hidden" name="id" th:value="${dp.id}">
+                                <input type="hidden" name="page" th:value="${currentPage}">
+                                <input type="hidden" name="size" th:value="${pageSize}">
+                                <button type="submit" class="status-badge danger"
+                                        style="cursor: pointer; border: none;"
+                                        onclick="return confirm('Bạn có chắc muốn hủy đơn đặt phòng này?')">
+                                    Hủy đơn
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                    <td>
+                        <a th:if="${daDatHoaDon != null and !daDatHoaDon.contains(dp.id)}"
+                           th:href="@{/nhan-su/admin/hoa-don/create-from-dat-phong(maDatPhong=${dp.id})}"
+                           class="admin-btn small outline">
+                            Xuất HĐ
+                        </a>
+                        <span th:if="${daDatHoaDon != null and daDatHoaDon.contains(dp.id)}"
+                              class="status-badge success">
+                            Đã xuất HĐ
+                        </span>
+                    </td>
+                    <td>
+                        <a th:href="@{/nhan-su/admin/dat-phong/chi-tiet/{id}(id=${dp.id})}"
+                           class="admin-btn small outline">
+                            Sửa
+                        </a>
+                    </td>
+                </tr>
+                <tr th:if="${datPhongs.isEmpty()}">
+                    <td colspan="11"><div class="empty-state">Không tìm thấy đơn đặt phòng phù hợp.</div></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Phân trang -->
+        <div class="admin-pagination" th:if="${totalPages > 0}">
+            <span class="pagination-info">
+                Hiển thị
+                <strong th:text="${currentPage * pageSize + 1}"></strong>–<strong
+                    th:text="${currentPage * pageSize + datPhongs.size()}"></strong>
+                trong tổng số <strong th:text="${totalItems}"></strong> đơn đặt phòng
+            </span>
+
+            <div class="pagination-links">
+                <a th:if="${currentPage > 0}"
+                   th:href="@{/nhan-su/admin/dat-phong(page=0, size=${pageSize})}"
+                   class="page-btn" aria-label="Trang đầu">&laquo;</a>
+                <span th:if="${currentPage == 0}" class="page-btn disabled">&laquo;</span>
+
+                <a th:if="${currentPage > 0}"
+                   th:href="@{/nhan-su/admin/dat-phong(page=${currentPage - 1}, size=${pageSize})}"
+                   class="page-btn" aria-label="Trang trước">&lsaquo;</a>
+                <span th:if="${currentPage == 0}" class="page-btn disabled">&lsaquo;</span>
+
+                <span th:each="i : ${#numbers.sequence(0, totalPages - 1)}">
+                    <a th:if="${i != currentPage}"
+                       th:href="@{/nhan-su/admin/dat-phong(page=${i}, size=${pageSize})}"
+                       class="page-btn" th:text="${i + 1}"></a>
+                    <span th:if="${i == currentPage}"
+                          class="page-btn active" th:text="${i + 1}"></span>
+                </span>
+
+                <a th:if="${currentPage < totalPages - 1}"
+                   th:href="@{/nhan-su/admin/dat-phong(page=${currentPage + 1}, size=${pageSize})}"
+                   class="page-btn" aria-label="Trang sau">&rsaquo;</a>
+                <span th:if="${currentPage == totalPages - 1}" class="page-btn disabled">&rsaquo;</span>
+
+                <a th:if="${currentPage < totalPages - 1}"
+                   th:href="@{/nhan-su/admin/dat-phong(page=${totalPages - 1}, size=${pageSize})}"
+                   class="page-btn" aria-label="Trang cuối">&raquo;</a>
+                <span th:if="${currentPage == totalPages - 1}" class="page-btn disabled">&raquo;</span>
+            </div>
+        </div>
+    </section>
+</main>
+
+<!-- MODAL HIEN THI CCCD TUNG PHONG -->
+<div class="cccd-modal-overlay" id="cccdModal">
+    <div class="cccd-modal-box">
+        <button class="cccd-modal-close" onclick="closeCccdModal()">&#10005;</button>
+        <div class="cccd-modal-title" id="cccdModalTitle">CCCD Theo Từng Phòng</div>
+        <div id="cccdModalContent"></div>
+    </div>
+</div>
+
+<footer>
+    <p>&copy; 2026 Hotel. All rights reserved.</p>
+</footer>
+
+<script>
+    function openCccdModal(maDon) {
+        const title = document.getElementById('cccdModalTitle');
+        const content = document.getElementById('cccdModalContent');
+
+        title.textContent = 'CCCD Theo Từng Phòng - Đơn #' + maDon;
+        content.innerHTML = '';
+
+        const dataSpans = document.querySelectorAll('.cccd-data-' + maDon);
+
+        if (dataSpans.length === 0) {
+            content.innerHTML = '<div class="cccd-room-empty">Đơn này chưa có phòng nào.</div>';
+        } else {
+            dataSpans.forEach(function (span) {
+                const soPhong = span.dataset.soPhong || '--';
+                const cccd = span.dataset.cccd;
+
+                const row = document.createElement('div');
+                row.className = 'cccd-room-row';
+                row.innerHTML =
+                    '<span class="cccd-room-name">Phòng ' + soPhong + '</span>' +
+                    '<span class="' + (cccd ? 'cccd-room-value' : 'cccd-room-empty') + '">' +
+                    (cccd ? cccd : 'Chưa có CCCD') + '</span>';
+                content.appendChild(row);
+            });
+        }
+
+        document.getElementById('cccdModal').classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeCccdModal() {
+        document.getElementById('cccdModal').classList.remove('open');
+        document.body.style.overflow = '';
+    }
+
+    document.getElementById('cccdModal').addEventListener('click', function (e) {
+        if (e.target === this) closeCccdModal();
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') closeCccdModal();
+    });
+</script>
+</body>
+</html>

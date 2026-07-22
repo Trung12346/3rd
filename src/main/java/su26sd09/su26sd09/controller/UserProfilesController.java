@@ -18,6 +18,7 @@ import java.security.Principal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/profiles")
@@ -49,7 +50,7 @@ public class    UserProfilesController {
 
         KhachHang nguoidung = getNguoiDungByPrincipal(p);
 
-        List<DatPhong> allDatPhong = datPhongRepo.FindbyNguoiDung(nguoidung.getMa_khach_hang());
+        List<DatPhong> allDatPhong = datPhongRepo.FindbyNguoiDung(nguoidung.getMa_khach_hang()).stream().filter(x -> !x.getTrangThai().equalsIgnoreCase("chua thanh toan")).collect(Collectors.toList());
 
         // Sắp xếp giảm dần theo mã đơn (đơn mới nhất lên đầu)
         allDatPhong.sort((a, b) -> b.getId().compareTo(a.getId()));
@@ -57,7 +58,7 @@ public class    UserProfilesController {
         Map<Integer, String> phongTheoDon = new HashMap<>();
         for (DatPhong datPhong : allDatPhong) {
             String tenPhong = chitietPhongrepo.findByDatPhongId(datPhong.getId()).stream()
-                    .filter(ct -> ct.getP() != null)
+                    .filter(ct -> ct.getP() != null )
                     .map(ct -> ct.getP().getSoPhong())
                     .findFirst()
                     .orElse("");
