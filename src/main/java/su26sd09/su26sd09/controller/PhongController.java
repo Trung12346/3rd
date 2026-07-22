@@ -140,7 +140,7 @@ public class PhongController {
         if (dp.getTrangThai().equals("Da xac nhan")){
             return "redirect:/home";
         }
-        BigDecimal resthue = BigDecimal.valueOf(dp.getNgaytraPhong().getDayOfYear() - dp.getNgaydatPhong().getDayOfYear());
+        BigDecimal resthue = BigDecimal.valueOf(soDem(dp.getNgaydatPhong(), dp.getNgaytraPhong()));
         List<ChiTietDatPhong> listCt = chiTietDatPhongService.findByDatPhongId(id);
         List<Chi_tiet_dich_vu> listctdv = ctdvService.findByDatPhongId(id);
         BigDecimal amountDv = BigDecimal.ZERO;
@@ -652,6 +652,17 @@ public class PhongController {
         }
         sb.append("]");
         return sb.toString();
+    }
+
+    /**
+     * Tính số đêm giữa 2 thời điểm: bỏ phần giờ, chỉ so sánh ngày (LocalDate).
+     * Tối thiểu 1 đêm nếu ngày trả > ngày nhận. Xử lý đúng khi qua năm mới
+     * (tránh lỗi âm của getDayOfYear()).
+     */
+    private long soDem(LocalDateTime ngayNhan, LocalDateTime ngayTra) {
+        if (ngayNhan == null || ngayTra == null) return 1;
+        long diff = ChronoUnit.DAYS.between(ngayNhan.toLocalDate(), ngayTra.toLocalDate());
+        return Math.max(1, diff);
     }
 
 

@@ -3,6 +3,7 @@ package su26sd09.su26sd09.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import su26sd09.su26sd09.entity.ChiTietDatPhong;
 import su26sd09.su26sd09.entity.DatPhong;
@@ -34,6 +35,10 @@ public class DatPhongService {
 
     public List<DatPhong> findAll(){
         return repo.findAll();
+    }
+
+    public List<DatPhong> findAll(Sort sort){
+        return repo.findAll(sort);
     }
 
     public Page<DatPhong> findAll(Pageable page){
@@ -92,7 +97,7 @@ public class DatPhongService {
             Integer soNguoiLon, Integer soTreEm, String trangThai, String yeuCauThem,
             String ngayTaoTu, String ngayTaoDen, String ngayCapNhatTu, String ngayCapNhatDen) {
 
-        List<DatPhong> all = repo.findAll();
+        List<DatPhong> all = repo.findAll(Sort.by(Sort.Order.desc("ngayTao"), Sort.Order.desc("id")));
 
         return all.stream().filter(dp -> {
             if (maDatPhong != null && !maDatPhong.equals(dp.getId())) return false;
