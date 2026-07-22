@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xử Lý Hoàn Tiền | Hotel</title>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .refund-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .03em;
+        }
+        .refund-badge.cho-xu-ly { background: #FEF3C7; color: #92400E; border: 1px solid #F59E0B; }
+        .refund-badge.da-hoan   { background: #DCFCE7; color: #166534; border: 1px solid #22C55E; }
+        .refund-badge.tu-choi   { background: #FEE2E2; color: #991B1B; border: 1px solid #EF4444; }
+
+        .refund-summary {
+            background: #f5fbfe;
+            border-radius: 4px;
+            padding: 20px 22px;
+            margin-bottom: 20px;
+        }
+        .refund-row {
+            display: flex; justify-content: space-between;
+            font-size: 14px; padding: 8px 0;
+            border-bottom: 1px dashed #d6e8f0;
+            gap: 12px;
+        }
+        .refund-row:last-child { border-bottom: none; }
+        .refund-row span:first-child { color: #6b7280; }
+        .refund-row span:last-child { font-weight: 600; text-align: right; }
+        .refund-row.total {
+            font-size: 17px; font-weight: 700; color: var(--sky-primary);
+            padding-top: 14px; margin-top: 6px; border-top: 1px solid #d6e8f0;
+        }
+
+        .admin-panel.readonly-note { background: #fafafa; }
+
+        h2 i, h1 i { color: var(--sky-primary); margin-right: 8px; font-size: .92em; }
+
+        .form-hint { display: block; font-size: 11.5px; color: #9ca3af; margin-top: 4px; }
+
+        /* ===== Payment method selector — hotel-checkout style cards ===== */
+        .refund-method-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            margin-bottom: 24px;
+        }
+        .refund-method-card {
+            position: relative;
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            padding: 18px 44px 18px 20px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 6px;
+            background: #fff;
+            cursor: pointer;
+            user-select: none;
+            transition: border-color .18s ease, background .18s ease, box-shadow .18s ease;
+        }
+        .refund-method-card:hover {
+            border-color: var(--sky-primary);
+            box-shadow: 0 2px 12px rgba(0,0,0,.05);
+        }
+        .refund-method-card.active {
+            border-color: var(--sky-primary);
+            background: #f0f9ff;
+            box-shadow: 0 2px 14px rgba(12,68,124,.09);
+        }
+        .refund-method-icon {
+            flex: 0 0 46px;
+            width: 46px; height: 46px;
+            border-radius: 50%;
+            background: #eef2f7;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px; color: #64748b;
+            transition: background .18s ease, color .18s ease;
+        }
+        .refund-method-card.active .refund-method-icon {
+            background: var(--sky-primary);
+            color: #fff;
+        }
+        .refund-method-info { flex: 1; min-width: 0; }
+        .refund-method-title {
+            display: block; font-weight: 700; font-size: 15px;
+            color: var(--text-dark, #1f2937); margin-bottom: 3px;
+        }
+        .refund-method-desc {
+            display: block; font-size: 12.5px; color: #6b7280; line-height: 1.45;
+        }
+        .refund-method-check {
+            position: absolute; top: 14px; right: 14px;
+            font-size: 19px; color: #cbd5e1;
+            transition: color .18s ease;
+        }
+        .refund-method-card.active .refund-method-check { color: var(--sky-primary); }
+
+        @media (max-width: 640px) {
+            .refund-method-grid { grid-template-columns: 1fr; }
+        }
+
+        .refund-note {
+            display: flex; align-items: flex-start; gap: 10px;
+            background: #FFFBEB; border: 1px solid #FDE68A; color: #92400E;
+            font-size: 12.5px; padding: 10px 14px; border-radius: 6px;
+            margin-bottom: 18px;
+        }
+        .refund-note i { margin-top: 2px; }
+
+        /* ===== Toast (góc phải màn hình) — đồng bộ room-detail ===== */
+        .booking-toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: 360px;
+            pointer-events: none;
+        }
+        .booking-toast {
+            pointer-events: auto;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 12px 14px;
+            border-radius: 4px;
+            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.15);
+            font-size: 13.5px;
+            line-height: 1.5;
+            transform: translateX(120%);
+            opacity: 0;
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease;
+            cursor: default;
+        }
+        .booking-toast.show { transform: translateX(0); opacity: 1; }
+        .booking-toast .toast-icon {
+            font-size: 18px;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+        .booking-toast .toast-body { flex: 1; min-width: 0; }
+        .booking-toast .toast-title { font-weight: 700; margin-bottom: 2px; }
+        .booking-toast .toast-close {
+            background: transparent;
+            border: 0;
+            color: inherit;
+            opacity: 0.6;
+            cursor: pointer;
+            font-size: 18px;
+            padding: 0 4px;
+            line-height: 1;
+        }
+        .booking-toast .toast-close:hover { opacity: 1; }
+        .booking-toast.toast-warning {
+            background: #fff8e1;
+            border: 1px solid #ffe082;
+            border-left: 4px solid #e67e22;
+            color: #6b4f00;
+        }
+        .booking-toast.toast-warning .toast-icon { color: #e67e22; }
+        .booking-toast.toast-error {
+            background: #fdecea;
+            border: 1px solid #f5c2c0;
+            border-left: 4px solid #e74c3c;
+            color: #922b21;
+        }
+        .booking-toast.toast-error .toast-icon { color: #e74c3c; }
+    </style>
+</head>
+<body>
+
+<div th:replace="~{fragments/cms-sidebar :: cmsSidebar}"></div>
+<div th:replace="~{fragments/headers/cms-header :: cmsHeader}"></div>
+
+<div class="booking-toast-container" id="bookingToastContainer" aria-live="polite"></div>
+
+<main class="admin-wrapper">
+    <div class="admin-header">
+        <h1><i class="fa-solid fa-rotate-left"></i>Xử Lý Hoàn Tiền — Hóa Đơn #<span th:text="${hoaDon.id}"></span></h1>
+        <a th:href="@{/nhan-su/admin/hoan-tien}" class="admin-btn outline"><i class="fa-solid fa-arrow-left"></i> Quay lại danh sách</a>
+    </div>
+
+    <div th:if="${success}" class="admin-message success">
+        <span th:text="${success}"></span>
+    </div>
+    <div th:if="${error}" class="admin-message error">
+        <span th:text="${error}"></span>
+    </div>
+
+    <!-- ========== THÔNG TIN ĐƠN & KHÁCH HÀNG (chỉ xem) ========== -->
+    <section class="admin-panel readonly-note">
+        <h2><i class="fa-solid fa-file-invoice"></i>Thông Tin Đơn Đặt Phòng</h2>
+        <div class="refund-summary">
+            <div class="refund-row">
+                <span>Mã đơn đặt phòng</span>
+                <span th:text="${'#' + datPhong.id}"></span>
+            </div>
+            <div class="refund-row">
+                <span>Khách hàng</span>
+                <span th:text="${datPhong.n != null ? datPhong.n.hoTen : (datPhong.hoten != null ? datPhong.hoten + ' (Vãng lai)' : 'Không có')}"></span>
+            </div>
+            <div class="refund-row">
+                <span>Email / SĐT</span>
+                <span th:text="${(datPhong.n != null ? datPhong.n.email : datPhong.email) + ' / ' + (datPhong.n != null ? datPhong.n.soDienThoai : datPhong.sdt)}"></span>
+            </div>
+            <div class="refund-row">
+                <span>Ngày nhận phòng dự kiến</span>
+                <span th:text="${datPhong.ngaydatPhong != null ? #temporals.format(datPhong.ngaydatPhong,'dd/MM/yyyy HH:mm') : '-'}"></span>
+            </div>
+            <div class="refund-row">
+                <span>Trạng thái đơn</span>
+                <span th:text="${datPhong.trangThai}"></span>
+            </div>
+        </div>
+    </section>
+
+    <!-- ========== CHI TIẾT HOÀN TIỀN ========== -->
+    <section class="admin-panel">
+        <h2><i class="fa-solid fa-money-bill-transfer"></i>Chi Tiết Hoàn Tiền</h2>
+        <div class="refund-summary">
+            <div class="refund-row">
+                <span>Đã thu (hóa đơn gốc)</span>
+                <span th:text="${hoaDon.daThanhToan != null ? #numbers.formatDecimal(hoaDon.daThanhToan,0,'COMMA',0,'POINT') + ' VND' : '0 VND'}"></span>
+            </div>
+            <div class="refund-row">
+                <span>Tỷ lệ hoàn áp dụng</span>
+                <span th:text="${hoaDon.tyLeHoan != null ? #numbers.formatDecimal(hoaDon.tyLeHoan.multiply(T(java.math.BigDecimal).valueOf(100L)),0,'COMMA',0,'POINT') + '%' : '-'}"></span>
+            </div>
+            <div class="refund-row">
+                <span>Ngày yêu cầu hủy</span>
+                <span th:text="${hoaDon.ngayYeuCauHoan != null ? #temporals.format(hoaDon.ngayYeuCauHoan,'dd/MM/yyyy HH:mm') : '-'}"></span>
+            </div>
+            <div class="refund-row">
+                <span>Trạng thái hoàn tiền</span>
+                <span>
+                    <span class="refund-badge"
+                          th:classappend="${hoaDon.trangThaiHoanTien == 'Cho xu ly' ? 'cho-xu-ly' :
+                                            (hoaDon.trangThaiHoanTien == 'Da hoan' ? 'da-hoan' : 'tu-choi')}"
+                          th:text="${hoaDon.trangThaiHoanTien == 'Cho xu ly' ? 'Chờ xử lý' :
+                                     (hoaDon.trangThaiHoanTien == 'Da hoan' ? 'Đã hoàn' : 'Từ chối')}">
+                    </span>
+                </span>
+            </div>
+            <div class="refund-row total">
+                <span>Số tiền cần hoàn</span>
+                <span th:text="${hoaDon.soTienHoan != null ? #numbers.formatDecimal(hoaDon.soTienHoan,0,'COMMA',0,'POINT') + ' VND' : '0 VND'}"></span>
+            </div>
+        </div>
+
+        <!-- Lịch sử các giao dịch tiền của hóa đơn này (thu + hoàn) -->
+        <div class="admin-table-wrap" th:if="${lichSuGiaoDich != null and !lichSuGiaoDich.isEmpty()}">
+            <table class="admin-table">
+                <thead>
+                <tr>
+                    <th>Loại</th>
+                    <th>Phương thức</th>
+                    <th>Số tiền</th>
+                    <th>Trạng thái</th>
+                    <th>Mã tham chiếu</th>
+                    <th>Thời gian</th>
+                    <th>Người xử lý</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="tt : ${lichSuGiaoDich}">
+                    <td th:text="${tt.loaiGiaoDich == 'Hoan tien' ? 'Hoàn tiền' : 'Thu tiền'}"></td>
+                    <td th:text="${tt.phuongThuc}"></td>
+                    <td th:text="${tt.soTien != null ? #numbers.formatDecimal(tt.soTien,0,'COMMA',0,'POINT') + ' VND' : '-'}"></td>
+                    <td th:text="${tt.trangThai}"></td>
+                    <td th:text="${tt.magiaodich != null ? tt.magiaodich : '-'}"></td>
+                    <td th:text="${tt.ngaythanhToan != null ? #temporals.format(tt.ngaythanhToan,'dd/MM/yyyy HH:mm') : '-'}"></td>
+                    <td th:text="${tt.nv != null ? tt.nv.hoten : '-'}"></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- ========== CHỌN PHƯƠNG THỨC HOÀN TIỀN (chỉ hiện khi đang 'Cho xu ly') ========== -->
+    <section class="admin-panel" th:if="${hoaDon.trangThaiHoanTien == 'Cho xu ly'}">
+        <h2><i class="fa-solid fa-check-double"></i>Xác Nhận Xử Lý Hoàn Tiền</h2>
+
+        <div class="refund-method-grid" id="methodToggle">
+            <div class="refund-method-card active" id="cardTienMat" onclick="chonPhuongThuc('Tien Mat')">
+                <span class="refund-method-icon"><i class="fa-solid fa-sack-dollar"></i></span>
+                <span class="refund-method-info">
+                    <span class="refund-method-title">Tiền mặt tại quầy</span>
+                    <span class="refund-method-desc">Hoàn trả trực tiếp cho khách khi đến quầy lễ tân</span>
+                </span>
+                <span class="refund-method-check"><i class="fa-solid fa-circle-check"></i></span>
+            </div>
+
+            <div class="refund-method-card" id="cardChuyenKhoan" onclick="chonPhuongThuc('Chuyen Khoan')">
+                <span class="refund-method-icon"><i class="fa-solid fa-building-columns"></i></span>
+                <span class="refund-method-info">
+                    <span class="refund-method-title">Chuyển khoản lại</span>
+                    <span class="refund-method-desc">Hoàn tiền qua VNPay về tài khoản ngân hàng khách cung cấp</span>
+                </span>
+                <span class="refund-method-check"><i class="fa-solid fa-circle-check"></i></span>
+            </div>
+        </div>
+
+        <!-- ===== FORM 1: TIỀN MẶT - 1 bước, không qua VNPay ===== -->
+        <form id="formTienMat" th:action="@{/nhan-su/admin/hoan-tien/{id}/xac-nhan(id=${hoaDon.id})}" method="post">
+            <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+            <input type="hidden" name="phuongThucHoan" value="Tien Mat">
+
+            <div class="admin-grid">
+                <div class="admin-field">
+                    <label>Giá hoàn tiền (VND) <span style="color:#dc2626;">*</span></label>
+                    <input type="number" name="soTienHoanNhap" id="soTienHoanNhap" min="0" step="1000"
+                           th:value="${hoaDon.soTienHoan != null ? hoaDon.soTienHoan : 0}" required disabled>
+                    <small class="form-hint">Đã được hệ thống tính sẵn theo tỷ lệ. Có thể chỉnh nếu cần.</small>
+                </div>
+                <div class="admin-field">
+                    <label>Tỷ lệ áp dụng (%)</label>
+                    <input type="text"
+                           th:value="${hoaDon.tyLeHoan != null ? hoaDon.tyLeHoan.multiply(T(java.math.BigDecimal).valueOf(100L)).intValue() : 0}"
+                           readonly disabled>
+                    <small class="form-hint">Tỷ lệ theo rule hệ thống (không chỉnh được).</small>
+                </div>
+                <div class="admin-field">
+                    <label>Thời gian yêu cầu hoàn</label>
+                    <input type="text"
+                           th:value="${hoaDon.ngayYeuCauHoan != null ? #temporals.format(hoaDon.ngayYeuCauHoan, 'dd/MM/yyyy HH:mm:ss') : '—'}"
+                           readonly disabled>
+                    <small class="form-hint">Thời điểm khách tạo yêu cầu hủy.</small>
+                </div>
+                <div class="admin-field full">
+                    <label>Ghi chú</label>
+                    <textarea name="ghiChu" placeholder="VD: Khách đã nhận tiền mặt tại quầy lúc 10h30..."></textarea>
+                </div>
+            </div>
+
+            <div class="admin-actions">
+                <button type="submit" class="admin-btn" onclick="return xacNhanTienMat();">
+                    <i class="fa-solid fa-money-bill-wave"></i> Xác Nhận Đã Trả Tiền Mặt
+                </button>
+            </div>
+        </form>
+
+        <!-- ===== FORM 2: CHUYỂN KHOẢN - bước 1: nhập STK/ngân hàng/ghi chú rồi redirect sang VNPay ===== -->
+        <form id="formChuyenKhoan" th:action="@{/nhan-su/admin/hoan-tien/{id}/chuyen-khoan(id=${hoaDon.id})}" method="post" style="display:none;">
+            <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+
+            <div class="refund-note">
+                <i class="fa-solid fa-circle-info"></i>
+                <span>Sau khi bấm tiếp tục, hệ thống sẽ chuyển sang VNPay để thực hiện giao dịch hoàn tiền cho khách.</span>
+            </div>
+
+            <div class="admin-grid">
+                <div class="admin-field">
+                    <label>Số tài khoản nhận hoàn <span style="color:#dc2626;">*</span></label>
+                    <input type="text" name="stkNhanHoan" required placeholder="Nhập STK khách cung cấp">
+                </div>
+                <div class="admin-field">
+                    <label>Ngân hàng <span style="color:#dc2626;">*</span></label>
+                    <input type="text" name="tenNganHang" required placeholder="Vd: Vietcombank, Techcombank...">
+                </div>
+                <div class="admin-field full">
+                    <label>Ghi chú</label>
+                    <textarea name="ghiChu" placeholder="Ghi chú thêm (lý do hoàn, nội dung CK...)"></textarea>
+                </div>
+            </div>
+
+            <div class="admin-actions">
+                <button type="submit" class="admin-btn" onclick="return xacNhanChuyenKhoan();">
+                    <i class="fa-solid fa-building-columns"></i> Tiếp Tục Qua VNPay
+                </button>
+            </div>
+        </form>
+
+        <!-- ===== FORM TỪ CHỐI - luôn hiển thị ===== -->
+        <hr style="margin: 24px 0; border: none; border-top: 1px dashed #d6e8f0;">
+        <form th:action="@{/nhan-su/admin/hoan-tien/{id}/tu-choi(id=${hoaDon.id})}" method="post"
+              onsubmit="return confirm('Bạn chắc chắn muốn từ chối yêu cầu hoàn tiền này?');">
+            <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+            <div class="admin-grid">
+                <div class="admin-field full">
+                    <label>Lý do từ chối</label>
+                    <textarea name="lyDo" placeholder="Bắt buộc nhập lý do từ chối" required></textarea>
+                </div>
+            </div>
+            <div class="admin-actions">
+                <button type="submit" class="admin-btn outline"><i class="fa-solid fa-ban"></i> Từ Chối Yêu Cầu</button>
+            </div>
+        </form>
+    </section>
+
+    <section class="admin-panel" th:if="${hoaDon.trangThaiHoanTien != 'Cho xu ly'}">
+        <p style="color:#6b7280; font-size:14px;">
+            <i class="fa-regular fa-circle-check" style="margin-right:6px;"></i>
+            Yêu cầu hoàn tiền này đã được xử lý, không thể chỉnh sửa thêm.
+        </p>
+    </section>
+</main>
+
+<footer>
+    <p>&copy; 2026 Hotel. All rights reserved.</p>
+</footer>
+
+<script th:inline="javascript">
+    // ===== TOAST (đồng bộ room-detail) =====
+    function showToast(message, opts) {
+        opts = opts || {};
+        const type = opts.type || 'warning';
+        const title = opts.title || '';
+        const container = document.getElementById('bookingToastContainer');
+        if (!container) return;
+
+        const iconMap = { warning: 'fa-circle-exclamation', info: 'fa-circle-info', error: 'fa-circle-xmark' };
+        const el = document.createElement('div');
+        el.className = 'booking-toast toast-' + type;
+        el.innerHTML =
+            '<i class="fa-solid ' + (iconMap[type] || 'fa-circle-info') + ' toast-icon"></i>' +
+            '<div class="toast-body">' +
+            (title ? '<div class="toast-title">' + escapeHtml(title) + '</div>' : '') +
+            '<div class="toast-message">' + escapeHtml(message) + '</div>' +
+            '</div>' +
+            '<button type="button" class="toast-close" aria-label="Đóng">&times;</button>';
+        container.appendChild(el);
+        requestAnimationFrame(function () { el.classList.add('show'); });
+
+        const close = function () {
+            el.classList.remove('show');
+            setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 400);
+        };
+        el.querySelector('.toast-close').addEventListener('click', close);
+        setTimeout(close, 8000);
+    }
+    function escapeHtml(s) {
+        return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    // Hien thi thoi gian tu luc tao don -> hien tai (hh:mm:ss) hoac canh bao qua han
+    // Bien thoiGianXuLyHuy la optional: chi hoat dong neu controller co truyen vao,
+    // neu khong co thi bo qua, khong lam vo trang.
+    (function () {
+        const tg = /*[[${thoiGianXuLyHuy}]]*/ null;
+        if (!tg) return;
+        if (tg === 'Qua han tao yeu cau huy') {
+            showToast('Don dat phong da qua han tao yeu cau huy (>1 ngay). Ban nen TU CHOI yeu cau hoan tien nay.', {
+                type: 'error',
+                title: 'Qua han xu ly'
+            });
+        } else {
+            showToast('Thoi gian tu khi tao den den hien tai: ' + tg, {
+                type: 'warning',
+                title: 'Thoi gian xu ly yeu cau huy'
+            });
+        }
+    })();
+
+    function chonPhuongThuc(pt) {
+        var cardTM = document.getElementById('cardTienMat');
+        var cardCK = document.getElementById('cardChuyenKhoan');
+        var formTM = document.getElementById('formTienMat');
+        var formCK = document.getElementById('formChuyenKhoan');
+        if (!cardTM || !cardCK) return;
+
+        cardTM.classList.toggle('active', pt === 'Tien Mat');
+        cardCK.classList.toggle('active', pt === 'Chuyen Khoan');
+        if (formTM) formTM.style.display = (pt === 'Tien Mat') ? '' : 'none';
+        if (formCK) formCK.style.display = (pt === 'Chuyen Khoan') ? '' : 'none';
+    }
+
+    function xacNhanTienMat() {
+        var input = document.getElementById('soTienHoanNhap');
+        var soTien = input ? Number(input.value) : 0;
+        if (!soTien || soTien <= 0) {
+            alert('Vui lòng nhập số tiền hoàn hợp lệ (> 0).');
+            return false;
+        }
+        return confirm('Xác nhận đã trả TIỀN MẶT ' + soTien.toLocaleString('vi-VN') + ' VND tại quầy cho khách?');
+    }
+
+    function xacNhanChuyenKhoan() {
+        var stk = document.querySelector('#formChuyenKhoan input[name="stkNhanHoan"]').value.trim();
+        var nh  = document.querySelector('#formChuyenKhoan input[name="tenNganHang"]').value.trim();
+        if (!stk || !nh) {
+            alert('Vui lòng nhập đầy đủ số tài khoản và tên ngân hàng nhận hoàn.');
+            return false;
+        }
+        var soTien = [[${hoaDon.soTienHoan != null ? hoaDon.soTienHoan : 0}]];
+        return confirm('Sẽ chuyển sang VNPay để thực hiện giao dịch ' + soTien.toLocaleString('vi-VN')
+            + ' VND hoàn về STK ' + stk + ' (' + nh + '). Tiếp tục?');
+    }
+</script>
+</body>
+</html>

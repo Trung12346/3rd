@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yêu Cầu Hoàn Tiền | Hotel</title>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .refund-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .03em;
+        }
+        .refund-badge.cho-xu-ly { background: #FEF3C7; color: #92400E; border: 1px solid #F59E0B; }
+        .refund-badge.da-hoan   { background: #DCFCE7; color: #166534; border: 1px solid #22C55E; }
+        .refund-badge.tu-choi   { background: #FEE2E2; color: #991B1B; border: 1px solid #EF4444; }
+        .refund-money { font-weight: 700; color: var(--sky-primary); }
+        .refund-tyle { font-size: 12px; color: #6b7280; }
+    </style>
+</head>
+<body>
+
+<div th:replace="~{fragments/cms-sidebar :: cmsSidebar}"></div>
+<div th:replace="~{fragments/headers/cms-header :: cmsHeader}"></div>
+
+<main class="admin-wrapper">
+    <div class="admin-header">
+        <h1>Yêu Cầu Hoàn Tiền</h1>
+        <a th:href="@{/nhan-su/hoan-tien}" class="admin-btn outline">Làm Mới</a>
+    </div>
+
+    <div th:if="${success}" class="admin-message success">
+        <span th:text="${success}"></span>
+    </div>
+    <div th:if="${error}" class="admin-message error">
+        <span th:text="${error}"></span>
+    </div>
+
+    <section class="admin-panel">
+        <h2>Tìm Kiếm / Lọc</h2>
+        <form th:action="@{/nhan-su/hoan-tien}" method="get">
+            <div class="admin-grid">
+                <div class="admin-field">
+                    <label>Mã hóa đơn</label>
+                    <input type="number" name="maHoaDon" min="1" th:value="${maHoaDon}">
+                </div>
+                <div class="admin-field">
+                    <label>Mã đơn đặt phòng</label>
+                    <input type="number" name="maDatPhong" min="1" th:value="${maDatPhong}">
+                </div>
+                <div class="admin-field">
+                    <label>Tên khách hàng</label>
+                    <input type="text" name="tenKhach" placeholder="Nhập tên khách..." th:value="${tenKhach}">
+                </div>
+                <div class="admin-field">
+                    <label>Trạng thái hoàn tiền</label>
+                    <select name="trangThaiHoanTien">
+                        <option value="" th:selected="${trangThaiHoanTien == null or trangThaiHoanTien == ''}">-- Tất cả --</option>
+                        <option value="Cho xu ly" th:selected="${trangThaiHoanTien == 'Cho xu ly'}">Chờ xử lý</option>
+                        <option value="Da hoan" th:selected="${trangThaiHoanTien == 'Da hoan'}">Đã hoàn</option>
+                        <option value="Tu choi" th:selected="${trangThaiHoanTien == 'Tu choi'}">Từ chối</option>
+                    </select>
+                </div>
+            </div>
+            <div class="admin-actions">
+                <button type="submit" class="admin-btn outline">Tìm Kiếm</button>
+                <a th:href="@{/nhan-su/hoan-tien}" class="admin-btn outline">Xóa Lọc</a>
+            </div>
+        </form>
+    </section>
+
+    <section class="admin-panel">
+        <h2>Danh Sách Yêu Cầu Hoàn Tiền</h2>
+
+        <div class="admin-table-wrap">
+            <table class="admin-table">
+                <thead>
+                <tr>
+                    <th>Mã Hóa Đơn</th>
+                    <th>Mã Đơn Phòng</th>
+                    <th>Khách hàng</th>
+                    <th>Đã thu</th>
+                    <th>Tỷ lệ hoàn</th>
+                    <th>Cần hoàn</th>
+                    <th>Ngày yêu cầu</th>
+                    <th>Trạng thái</th>
+                    <th>Thao tác</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="hd : ${dsHoaDon}">
+
+                    <td th:text="${hd.id}"></td>
+                    <td th:text="${hd.d != null ? hd.d.id : ''}"></td>
+
+                    <td th:text="${hd.d != null and hd.d.n != null ?
+                        hd.d.n.hoTen :
+                        (hd.d != null and hd.d.hoten != null ? hd.d.hoten + ' (Vãng lai)' : 'Không có')}">
+                    </td>
+
+                    <td th:text="${hd.daThanhToan != null ?
+                        #numbers.formatDecimal(hd.daThanhToan,0,'COMMA',0,'POINT') + ' VND' : '0 VND'}">
+                    </td>
+
+                    <td class="refund-tyle"
+                        th:text="${hd.tyLeHoan != null ?
+                        #numbers.formatDecimal(hd.tyLeHoan.multiply(T(java.math.BigDecimal).valueOf(100L)),0,'COMMA',0,'POINT') + '%' : '-'}">
+                    </td>
+
+                    <td class="refund-money"
+                        th:text="${hd.soTienHoan != null ?
+                        #numbers.formatDecimal(hd.soTienHoan,0,'COMMA',0,'POINT') + ' VND' : '0 VND'}">
+                    </td>
+
+                    <td th:text="${hd.ngayYeuCauHoan != null ?
+                        #temporals.format(hd.ngayYeuCauHoan,'dd/MM/yyyy HH:mm') : '-'}">
+                    </td>
+
+                    <td>
+                        <span class="refund-badge"
+                              th:classappend="${hd.trangThaiHoanTien == 'Cho xu ly' ? 'cho-xu-ly' :
+                                                (hd.trangThaiHoanTien == 'Da hoan' ? 'da-hoan' : 'tu-choi')}"
+                              th:text="${hd.trangThaiHoanTien == 'Cho xu ly' ? 'Chờ xử lý' :
+                                         (hd.trangThaiHoanTien == 'Da hoan' ? 'Đã hoàn' : 'Từ chối')}">
+                        </span>
+                    </td>
+
+                    <td>
+                        <a class="admin-btn small"
+                           th:href="@{/nhan-su/hoan-tien/chi-tiet/{id}(id=${hd.id})}">
+                            Xử lý
+                        </a>
+                    </td>
+                </tr>
+                <tr th:if="${dsHoaDon.isEmpty()}">
+                    <td colspan="9"><div class="empty-state">Không có yêu cầu hoàn tiền nào phù hợp.</div></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+
+<footer>
+    <p>&copy; 2026 Hotel. All rights reserved.</p>
+</footer>
+</body>
+</html>

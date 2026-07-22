@@ -1,0 +1,256 @@
+﻿<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Thông tin đặt phòng</title>
+  <link rel="stylesheet" href="/style.css">
+  <style>
+    body { background: #fafafa; }
+    .booking-shell { margin: 0 auto; max-width: 1120px; padding: 42px 5% 70px; }
+    .booking-stepper {
+        align-items: center;
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        display: grid;
+        gap: 14px;
+        grid-template-columns: max-content 1fr max-content 1fr max-content;
+        margin-bottom: 24px;
+        padding: 14px 18px;
+    }
+    .step-item { color: #6b7280; font-size: 13px; font-weight: 700; text-transform: uppercase; }
+    .step-item.active, .step-item.done { color: var(--sky-primary); }
+    .step-line { background: #e5e7eb; height: 2px; }
+    .booking-layout { display: grid; gap: 24px; grid-template-columns: minmax(0, 1fr) 330px; }
+    .guest-panel, .summary-panel {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 4px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+        padding: 24px;
+    }
+    .guest-panel h1, .summary-panel h2 { color: var(--sky-dark); margin-bottom: 18px; }
+    .guest-grid { display: grid; gap: 16px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .guest-field.full { grid-column: 1 / -1; }
+    .guest-field label { color: var(--text-gray); display: block; font-size: 12px; font-weight: 700; margin-bottom: 6px; text-transform: uppercase; }
+    .guest-field input, .guest-field textarea {
+        border: 1px solid #d1d5db;
+        border-radius: 2px;
+        font-family: inherit;
+        font-size: 14px;
+        padding: 11px 12px;
+        width: 100%;
+    }
+    .guest-field textarea { min-height: 82px; resize: vertical; }
+    .required { color: #d22630; }
+    .summary-line, .summary-total { display: flex; justify-content: space-between; margin-bottom: 12px; }
+    .summary-total { border-top: 1px solid #e5e7eb; color: var(--sky-primary); font-size: 18px; font-weight: 700; padding-top: 14px; }
+    .booking-actions { display: grid; gap: 10px; grid-template-columns: 120px 1fr; margin-top: 22px; }
+    .back-btn, .continue-btn {
+        align-items: center;
+        border-radius: 2px;
+        display: inline-flex;
+        font-weight: 700;
+        justify-content: center;
+        min-height: 42px;
+        padding: 10px 14px;
+        text-decoration: none;
+        text-transform: uppercase;
+    }
+    .back-btn { background: #fff; border: 1px solid var(--sky-primary); color: var(--sky-primary); }
+    .continue-btn { background: var(--sky-primary); border: 1px solid var(--sky-primary); color: #fff; cursor: pointer; }
+    .booking-message.error { background: #fff1f1; color: #b42318; font-weight: 600; margin-bottom: 18px; padding: 12px 14px; }
+
+    /* Tóm tắt - đồng bộ style với trang xác nhận dịch vụ */
+    .summary-roomlist {
+        background: #f5fbfe;
+        border-radius: 4px;
+        margin: 12px 0;
+        padding: 12px 14px;
+    }
+    .summary-roomlist .room-line { font-size: 13px; color: var(--text-dark); font-weight: 600; }
+    .summary-roomlist .room-sub { font-size: 12px; color: #6b7280; margin-bottom: 8px; }
+
+    .summary-dv-list { margin-top: 10px; }
+    .summary-dv-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 13px;
+        padding: 4px 0;
+        border-bottom: 1px dashed #e5e7eb;
+    }
+    .summary-dv-item:last-child { border-bottom: none; }
+    .summary-dv-item .dv-name { color: var(--text-dark); }
+    .summary-dv-item .dv-price { color: var(--sky-primary); font-weight: 600; white-space: nowrap; }
+    .summary-dv-title {
+        font-size: 11px; color: #6b7280; font-weight: 700;
+        text-transform: uppercase; letter-spacing: .05em; margin-bottom: 8px;
+    }
+
+    @media (max-width: 900px) {
+        .booking-stepper, .booking-layout, .guest-grid, .booking-actions { grid-template-columns: 1fr; }
+        .step-line { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<div th:replace="~{fragments/headers/app-header :: appHeader}"></div>
+
+<main class="booking-shell">
+
+  <div class="booking-stepper">
+    <div class="step-item done">1. Xác nhận phòng</div>
+    <div class="step-line"></div>
+    <div class="step-item active">2. Thông tin khách</div>
+    <div class="step-line"></div>
+    <div class="step-item">3. Hoàn tất</div>
+  </div>
+
+  <div th:if="${bookingError}" class="booking-message error" th:text="${bookingError}"></div>
+
+  <form th:action="@{/phong/dat-phong/thong-tin-khach/{id}(id=${datPhong.id})}" method="post">
+    <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+    <input type="hidden" name="tongPhuPhiNgoaiGio" id="hidden-tong-phu-phi" th:value="${TongPhuPhi != null ? TongPhuPhi : 0}">
+
+    <div class="booking-layout">
+
+      <!-- ===== PANEL TRÁI: Form nhập thông tin khách ===== -->
+      <section class="guest-panel">
+        <h1>Xác Nhận Thông tin khách đặt phòng</h1>
+        <div class="guest-grid">
+
+          <div class="guest-field full">
+            <label>Họ tên <span class="required">*</span></label>
+            <input type="text" name="hoTen" maxlength="150" required
+                   placeholder="Nhập họ và tên đầy đủ"
+                   th:value="${guestInfo != null ? guestInfo.hoTen : ''}">
+          </div>
+
+          <div class="guest-field">
+            <label>Email <span class="required">*</span></label>
+            <input type="email" name="email" maxlength="150" required
+                   placeholder="example@email.com"
+                   th:value="${guestInfo != null ? guestInfo.email : ''}">
+          </div>
+
+          <div class="guest-field">
+            <label>Số điện thoại <span class="required">*</span></label>
+            <input type="tel" name="sdt" maxlength="20" required
+                   placeholder="0xxxxxxxxx"
+                   th:value="${guestInfo != null ? guestInfo.sdt : ''}">
+          </div>
+
+
+
+          <div class="guest-field full">
+            <label>Yêu cầu thêm</label>
+            <textarea name="yeuCauThem"
+                      placeholder="Ví dụ: phòng tầng cao, giường đôi, ..."
+                      th:text="${guestInfo != null ? guestInfo.yeuCauThem : ''}"></textarea>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ===== PANEL PHẢI: Tóm tắt đặt phòng (đồng bộ với trang xác nhận dịch vụ) ===== -->
+      <aside class="summary-panel">
+        <h2>Tóm Tắt Đặt Phòng</h2>
+
+        <!-- Ngày nhận / trả -->
+        <div class="summary-line">
+          <span th:text="${datPhong.ngaydatPhong != null ? #temporals.format(datPhong.ngaydatPhong, 'EEEE, dd MMM yyyy') : '--'}">--</span>
+          <span>→</span>
+          <span th:text="${datPhong.ngaytraPhong != null ? #temporals.format(datPhong.ngaytraPhong, 'EEEE, dd MMM yyyy') : '--'}">--</span>
+        </div>
+        <div class="summary-line" style="color:#6b7280; font-size:13px;">
+          <span th:text="${nightCount + ' đêm | ' + #lists.size(chiTietDatPhongList) + ' phòng | ' + datPhong.songuoiLon + ' người lớn'}">
+              1 đêm | 1 phòng | 2 người lớn
+          </span>
+        </div>
+
+        <!-- Tiền phòng (giá cơ bản = TienPhong - TongPhuPhi nếu có phụ phí) -->
+        <div class="summary-line" style="margin-top:14px;">
+          <span>Phòng</span>
+          <strong id="summary-tien-phong"
+                  th:text="${'đ ' + #numbers.formatDecimal((TienPhong != null ? TienPhong : 0) - (TongPhuPhi != null ? TongPhuPhi : 0), 0, 'COMMA', 0, 'POINT')}">đ 0</strong>
+        </div>
+
+        <!-- Phụ phí ngoài giờ (chỉ hiển thị khi > 0) -->
+        <div class="summary-line" id="summary-row-phu-phi"
+             th:style="${TongPhuPhi != null and TongPhuPhi.compareTo(T(java.math.BigDecimal).ZERO) > 0} ? 'display:flex; color:#c0392b;' : 'display:none;'">
+          <span>Phụ phí ngoài giờ</span>
+          <strong id="summary-phu-phi"
+                  th:text="${'đ ' + #numbers.formatDecimal(TongPhuPhi != null ? TongPhuPhi : 0, 0, 'COMMA', 0, 'POINT')}">đ 0</strong>
+        </div>
+
+        <!-- Tiền dịch vụ -->
+        <div class="summary-line">
+          <span>Dịch vụ</span>
+          <strong id="summary-tien-dich-vu"
+                  th:text="${'đ ' + (TienDv != null ? #numbers.formatDecimal(TienDv, 0, 'COMMA', 0, 'POINT') : '0')}">đ 0</strong>
+        </div>
+        <div class="summary-line">
+          <span>Tiền VAT:</span>
+          <strong
+                  th:text="${'đ ' + (TienVat != null ? #numbers.formatDecimal(TienVat, 0, 'COMMA', 0, 'POINT') : '0')}">đ 0</strong>
+        </div>
+        <div class="summary-line" th:if="${TienGiam != null and TienGiam.compareTo(T(java.math.BigDecimal).ZERO) > 0}">
+          <span>Giảm giá</span>
+          <strong th:text="${'- đ ' + #numbers.formatDecimal(TienGiam, 0, 'COMMA', 0, 'POINT')}">- đ 0</strong>
+        </div>
+
+        <!-- Danh sách phòng đã chọn -->
+        <div class="summary-roomlist">
+          <div th:each="ct : ${chiTietDatPhongList}">
+            <div class="room-line"
+                 th:text="${'1 × ' + ct.p.soPhong + ' - ' + (ct.p.loaiPhong != null ? ct.p.loaiPhong.tenLoai : '')}">
+              1 × Deluxe 201
+            </div>
+            <div class="room-sub"
+                 th:text="${(datPhong.songuoiLon + datPhong.sotreEm) + ' khách'}">2 khách</div>
+          </div>
+        </div>
+
+        <!-- Danh sách dịch vụ đã chọn -->
+        <div class="summary-dv-list" th:if="${chiTietDichVuList != null and not #lists.isEmpty(chiTietDichVuList)}">
+          <div class="summary-dv-title">Dịch vụ đã chọn</div>
+          <div th:each="dv : ${chiTietDichVuList}" class="summary-dv-item">
+            <span class="dv-name"
+                  th:text="${dv.dv.ten_dich_vu + ' × ' + dv.soluong + ' ' + dv.dv.donVi}">
+              Tên dịch vụ × 1 đơn vị
+            </span>
+            <span class="dv-price"
+                  th:text="${'đ ' + #numbers.formatDecimal(dv.donGia, 0, 'COMMA', 0, 'POINT')}">
+              đ 0
+            </span>
+          </div>
+        </div>
+
+        <!-- Tổng cộng -->
+        <div class="summary-total">
+          <span>Tổng cộng</span>
+          <strong id="summary-tong-cong"
+                  th:text="${'đ ' + #numbers.formatDecimal(TongCong != null ? TongCong : TongTien, 0, 'COMMA', 0, 'POINT')}">đ 0</strong>
+        </div>
+        <div style="color:#9ca3af; font-size:12px; margin-top:-8px;">Giá đã bao gồm thuế và phí</div>
+      </aside>
+
+    </div>
+
+    <!-- Nút hành động -->
+    <div class="booking-actions">
+      <a th:href="@{/phong/dat-phong/xac-nhan/{id}(id=${datPhong.id})}" class="back-btn">Trở về</a>
+      <button type="submit" class="continue-btn">Hoàn tất đặt phòng</button>
+    </div>
+
+  </form>
+</main>
+
+<footer>
+  <p>&copy; 2026 Hotel. All rights reserved.</p>
+</footer>
+
+</body>
+</html>

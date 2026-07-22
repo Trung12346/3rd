@@ -1,0 +1,268 @@
+﻿<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản Lý Khuyến Mãi | Hotel</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<div th:replace="~{fragments/cms-sidebar :: cmsSidebar}"></div>
+<div th:replace="~{fragments/headers/cms-header :: cmsHeader}"></div>
+<main class="admin-wrapper">
+    <div class="admin-header">
+        <h1>Quản Lý Khuyến Mãi</h1>
+        <a th:href="@{/nhan-su/admin/khuyen-mai}" class="admin-btn outline">Làm Mới Form</a>
+    </div>
+
+    <div th:if="${success}" class="admin-message success">
+        <span th:text="${success}"></span>
+    </div>
+    <div th:if="${error}" class="admin-message error">
+        <span th:text="${error}"></span>
+    </div>
+
+    <section class="admin-panel">
+        <h2 th:text="${title}">Thêm khuyến mãi</h2>
+
+        <form th:action="@{/nhan-su/admin/khuyen-mai/save}" th:object="${khuyenMai}" method="post">
+            <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+            <input type="hidden" th:field="*{id}">
+            <input type="hidden" th:field="*{nhanSu.id}">
+
+            <div class="admin-grid">
+                <div class="admin-field">
+                    <label>Ma khuyến mãi</label>
+                    <input type="text" th:field="*{promoCode}" placeholder="VD: SUMMER2026" required>
+                </div>
+                <div class="admin-field">
+                    <label>Loại giảm</label>
+                    <select th:field="*{loaiGiam}">
+                        <option value="PERCENT">Phần trăm</option>
+                        <option value="AMOUNT">Số tiền</option>
+                    </select>
+                </div>
+                <div class="admin-field">
+                    <label>Giá trị giảm</label>
+                    <input type="number" th:field="*{giatriGiam}" min="1" step="any"  required>
+                </div>
+                <div class="admin-field">
+                    <label>giá tối thiểu có thể giảm</label>
+                    <input type="number" th:field="*{giaToiThieuDuocGiam}" min="1" step="any"  required>
+                </div>
+                <div class="admin-field">
+                    <label>Ngày bắt đầu</label>
+                    <input type="date" th:field="*{ngayBatDau}">
+                </div>
+                <div class="admin-field">
+                    <label>Ngày kết thúc</label>
+                    <input type="date" th:field="*{ngayKetThuc}">
+                </div>
+                <div class="admin-field">
+                    <label>Hoạt động</label>
+                    <select th:field="*{hoatDong}">
+                        <option th:value="true">Có</option>
+                        <option th:value="false">Không</option>
+                    </select>
+                </div>
+                <div class="admin-field full">
+                    <label>Mô tả</label>
+                    <textarea th:field="*{moTa}" placeholder="Nhập mô tả khuyến mãi..."></textarea>
+                </div>
+            </div>
+
+            <div class="admin-actions">
+                <button type="submit" class="admin-btn">Lưu Khuyến Mãi</button>
+                <a th:href="@{/nhan-su/admin/khuyen-mai}" class="admin-btn outline">Hủy</a>
+            </div>
+        </form>
+    </section>
+
+    <section class="admin-panel">
+        <h2>Danh Sách Khuyến Mãi</h2>
+
+        <form th:action="@{/nhan-su/admin/khuyen-mai}" method="get" class="admin-grid" style="margin-bottom:16px;">
+
+            <div class="admin-field">
+                <label>Mã khuyến mãi</label>
+                <input type="text" name="promoCode" th:value="${promoCode}">
+            </div>
+
+            <div class="admin-field">
+                <label>Mô tả</label>
+                <input type="text" name="moTa" th:value="${moTa}">
+            </div>
+
+            <div class="admin-field">
+                <label>Loại giảm</label>
+                <select name="loaiGiam">
+                    <option value="">--Tất cả--</option>
+                    <option value="PERCENT"
+                            th:selected="${loaiGiam=='PERCENT'}">
+                        Phần trăm
+                    </option>
+                    <option value="AMOUNT"
+                            th:selected="${loaiGiam=='AMOUNT'}">
+                        Số tiền
+                    </option>
+                </select>
+            </div>
+
+            <div class="admin-field">
+                <label>Giá trị giảm</label>
+                <input type="text"
+                       name="giatriGiam"
+                       th:value="${giatriGiam}">
+            </div>
+
+            <div class="admin-field">
+                <label>Ngày bắt đầu</label>
+                <input type="date"
+                       name="ngayBatDau"
+                       th:value="${ngayBatDau}">
+            </div>
+
+            <div class="admin-field">
+                <label>Ngày kết thúc</label>
+                <input type="date"
+                       name="ngayKetThuc"
+                       th:value="${ngayKetThuc}">
+            </div>
+
+            <div class="admin-field">
+                <label>Hoạt động</label>
+                <select name="hoatDong">
+                    <option value="">--Tất cả--</option>
+                    <option value="true"
+                            th:selected="${hoatDong!=null and hoatDong}">
+                        Có
+                    </option>
+                    <option value="false"
+                            th:selected="${hoatDong!=null and !hoatDong}">
+                        Không
+                    </option>
+                </select>
+            </div>
+
+            <div class="admin-actions">
+                <button class="admin-btn outline">
+                    Tìm Kiếm
+                </button>
+
+                <a th:href="@{/nhan-su/admin/khuyen-mai}"
+                   class="admin-btn outline">
+                    Xóa Lọc
+                </a>
+            </div>
+
+        </form>
+
+        <div class="admin-table-wrap">
+            <table class="admin-table">
+                <thead>
+                <tr>
+                    <th>Ma</th>
+                    <th>Códe</th>
+                    <th>Loai</th>
+                    <th>Gia tri</th>
+                    <th>điều kiện giảm tối thiểu</th>
+                    <th>Thời gian</th>
+                    <th>Người tạo</th>
+                    <th>Trạng thái</th>
+                    <th>Thao tac</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="km : ${khuyenMais}">
+                    <td th:text="${km.id}"></td>
+                    <td><strong th:text="${km.promoCode}"></strong></td>
+                    <td th:text="${km.loaiGiam}"></td>
+                    <td th:text="${km.giatriGiam != null ? #numbers.formatDecimal(km.giatriGiam, 0, 'COMMA', 0, 'POINT') : ''}"></td>
+                    <td th:text="${km.giaToiThieuDuocGiam != null ? #numbers.formatDecimal(km.giaToiThieuDuocGiam, 0, 'COMMA', 0, 'POINT') : ''}"></td>
+                    <td>
+                        <span th:text="${km.ngayBatDau != null ? #temporals.format(km.ngayBatDau, 'dd/MM/yyyy') : ''}"></span>
+                        -
+                        <span th:text="${km.ngayKetThuc != null ? #temporals.format(km.ngayKetThuc, 'dd/MM/yyyy') : ''}"></span>
+                    </td>
+                    <td th:text="${km.nhanSu != null ? km.nhanSu.Email : ''}"></td>
+                    <td>
+                        <span th:if="${km.hoatDong}" class="status-badge active">HOAT DONG</span>
+                        <span th:unless="${km.hoatDong}" class="status-badge inactive">KHONG HOAT DONG</span>
+                    </td>
+                    <td>
+                        <div class="row-actions">
+                            <a class="admin-btn small outline"
+                               th:href="@{/nhan-su/admin/khuyen-mai/edit/{id}(id=${km.id})}">Sửa</a>
+                            <form th:action="@{/nhan-su/admin/khuyen-mai/delete/{id}(id=${km.id})}"
+                                  method="post"
+                                  onsubmit="return confirm('Bạn có chắc muốn xóa khuyến mãi này?')">
+                                <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                                <button type="submit" class="admin-btn small danger">Xóa</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                <tr th:if="${khuyenMais.isEmpty()}">
+                    <td colspan="8"><div class="empty-state">Không tìm thấy khuyến mãi phù hợp.</div></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="admin-actions" th:if="${khuyenMais.totalPages > 1}" style="justify-content:center; gap:6px;">
+            <a th:if="${khuyenMais.hasPrevious()}"
+               class="admin-btn small outline"
+               th:href="@{/nhan-su/admin/khuyen-mai(
+        page=${khuyenMais.number-1},
+        promoCode=${promoCode},
+        moTa=${moTa},
+        loaiGiam=${loaiGiam},
+        giatriGiam=${giatriGiam},
+        ngayBatDau=${ngayBatDau},
+        ngayKetThuc=${ngayKetThuc},
+        hoatDong=${hoatDong})}">
+                « Trước
+            </a>
+
+            <span th:each="i : ${#numbers.sequence(0,khuyenMais.totalPages-1)}">
+
+<a class="admin-btn small outline"
+   th:classappend="${i==khuyenMais.number} ? ' active'"
+   th:text="${i+1}"
+   th:href="@{/nhan-su/admin/khuyen-mai(
+        page=${i},
+        promoCode=${promoCode},
+        moTa=${moTa},
+        loaiGiam=${loaiGiam},
+        giatriGiam=${giatriGiam},
+        ngayBatDau=${ngayBatDau},
+        ngayKetThuc=${ngayKetThuc},
+        hoatDong=${hoatDong})}">
+</a>
+
+</span>
+
+            <a th:if="${khuyenMais.hasNext()}"
+               class="admin-btn small outline"
+               th:href="@{/nhan-su/admin/khuyen-mai(
+        page=${khuyenMais.number+1},
+        promoCode=${promoCode},
+        moTa=${moTa},
+        loaiGiam=${loaiGiam},
+        giatriGiam=${giatriGiam},
+        ngayBatDau=${ngayBatDau},
+        ngayKetThuc=${ngayKetThuc},
+        hoatDong=${hoatDong})}">
+                Sau »
+            </a>
+        </div>
+    </section>
+</main>
+
+<footer>
+    <p>&copy; 2026 Hotel. All rights reserved.</p>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="vi"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<body>
+<th:block th:fragment="appHeader">
+    <th:block sec:authorize="isAnonymous()"
+              th:replace="~{fragments/headers/guest-header :: guestHeader}"></th:block>
+
+    <th:block sec:authorize="hasAuthority('ROLE_ADMIN')"
+              th:replace="~{fragments/headers/admin-header :: adminHeader}"></th:block>
+
+    <th:block sec:authorize="hasAnyAuthority('ROLE_STAFF','ROLE_EMPLOYEE')"
+              th:replace="~{fragments/headers/staff-header :: staffHeader}"></th:block>
+
+    <th:block sec:authorize="isAuthenticated() and !hasAnyAuthority('ROLE_ADMIN','ROLE_STAFF','ROLE_EMPLOYEE')"
+              th:replace="~{fragments/headers/customer-header :: customerHeader}"></th:block>
+</th:block>
+</body>
+</html>

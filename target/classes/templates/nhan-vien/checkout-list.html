@@ -1,0 +1,135 @@
+﻿<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trả Phòng | Hotel</title>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/@tabler/icons-webfont/3.31.0/tabler-icons.min.css">
+</head>
+<body>
+<style>
+    .status-badge {
+        display: inline-block;
+        font-size: 12px;
+        font-weight: 500;
+        padding: 4px 10px;
+        border-radius: 6px;
+        border: 1px solid transparent;
+        white-space: nowrap;
+    }
+    .status-badge.info {
+        background: #E6F1FB;
+        color: #0C447C;
+        border-color: #378ADD;
+    }
+    .checkout-total {
+        font-weight: 600;
+        color: #0C447C;
+        white-space: nowrap;
+    }
+</style>
+<div th:replace="~{fragments/cms-sidebar :: cmsSidebar}"></div>
+<div th:replace="~{fragments/headers/cms-header :: cmsHeader}"></div>
+<main class="admin-wrapper">
+    <div class="admin-header">
+        <h1>Trả Phòng (Checkout)</h1>
+        <a th:href="@{/nhan-su/checkout}" class="admin-btn outline">Làm mới</a>
+    </div>
+
+    <div th:if="${success}" class="admin-message success">
+        <span th:text="${success}"></span>
+    </div>
+    <div th:if="${error}" class="admin-message error">
+        <span th:text="${error}"></span>
+    </div>
+
+    <section class="admin-panel">
+        <h2>Tìm Kiếm Đơn Đang Lưu Trú</h2>
+        <form th:action="@{/nhan-su/checkout}" method="get">
+            <div class="admin-grid">
+                <div class="admin-field">
+                    <label>Mã đặt phòng</label>
+                    <input type="number" name="maDatPhong" min="1" th:value="${maDatPhong}">
+                </div>
+                <div class="admin-field">
+                    <label>Tên khách</label>
+                    <input name="tenKhach" th:value="${tenKhach}">
+                </div>
+                <div class="admin-field">
+                    <label>CCCD</label>
+                    <input type="text" name="maCccd" placeholder="12 số CCCD" th:value="${maCccd}">
+                </div>
+            </div>
+            <div class="admin-actions">
+                <button type="submit" class="admin-btn outline">Tìm Kiếm</button>
+                <a th:href="@{/nhan-su/checkout}" class="admin-btn outline">Xóa Lọc</a>
+            </div>
+        </form>
+    </section>
+
+    <section class="admin-panel">
+        <h2>Danh Sách Đơn Đang Lưu Trú (Chờ Trả Phòng)</h2>
+
+        <div class="admin-table-wrap">
+            <table class="admin-table">
+                <thead>
+                <tr>
+                    <th>Mã</th>
+                    <th>Khách hàng</th>
+                    <th>Phòng</th>
+                    <th>Ngày nhận</th>
+                    <th>Ngày trả dự kiến</th>
+                    <th>Khách</th>
+                    <th>CCCD</th>
+                    <th>Tổng tiền tạm tính</th>
+                    <th>Trạng thái</th>
+                    <th>Hành động</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="dp : ${datPhongs}">
+                    <td th:text="${dp.id}"></td>
+                    <td>
+                        <strong th:text="${dp.n != null ? dp.n.hoTen :
+                      (dp.hoten != null ? dp.hoten + ' (Vãng lai)' : 'Không có')}">
+                        </strong>
+                        <div th:text="${dp.n != null ? dp.n.email :
+                  (dp.email != null ? dp.email : '')}">
+                        </div>
+                    </td>
+                    <td>
+                        <span th:each="phong : ${phongTheoDon[dp.id]}"
+                              th:text="${phong.soPhong + ' '}">
+                        </span>
+                    </td>
+                    <td th:text="${dp.ngaydatPhong != null ? #temporals.format(dp.ngaydatPhong, 'dd/MM/yyyy') : ''}"></td>
+                    <td th:text="${dp.ngaytraPhong != null ? #temporals.format(dp.ngaytraPhong, 'dd/MM/yyyy') : ''}"></td>
+                    <td th:text="${dp.songuoiLon + ' NL, ' + dp.sotreEm + ' TE'}"></td>
+                    <td th:text="${dp.ma_cccd != null ? dp.ma_cccd : ''}"></td>
+                    <td class="checkout-total"
+                        th:text="${#numbers.formatDecimal(tongTienTheoDon[dp.id], 0, 'COMMA', 0, 'POINT') + ' VND'}">
+                    </td>
+                    <td>
+                        <span class="status-badge info">Đang lưu trú</span>
+                    </td>
+                    <td>
+                        <a th:href="@{/nhan-su/checkout/{id}(id=${dp.id})}" class="admin-btn small">
+                            Trả Phòng
+                        </a>
+                    </td>
+                </tr>
+                <tr th:if="${datPhongs.isEmpty()}">
+                    <td colspan="10"><div class="empty-state">Không có đơn nào đang chờ trả phòng.</div></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+
+<footer>
+    <p>&copy; 2026 Hotel. All rights reserved.</p>
+</footer>
+</body>
+</html>

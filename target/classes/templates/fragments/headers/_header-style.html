@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<body>
+<th:block th:fragment="headerStyle">
+    <style>
+        .hb-header-shell {
+            --hb-blue: #3498DB;
+            --hb-blue-dark: #2980B9;
+            --hb-text: #2f3438;
+            --hb-muted: #667085;
+            --hb-border: #d9e2ec;
+            --hb-white: #ffffff;
+
+            background: var(--hb-white);
+            border-top: 2px solid var(--hb-blue-dark);
+            box-shadow: 0 2px 12px rgba(15, 23, 42, 0.06);
+            color: var(--hb-text);
+            font-family: 'Montserrat', Arial, sans-serif;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .hb-header {
+            align-items: center;
+            display: grid;
+            gap: 22px;
+            grid-template-columns: minmax(110px, 170px) minmax(0, 1fr) minmax(220px, max-content);
+            min-height: 64px;
+            padding: 10px 5.5%;
+        }
+
+        .hb-header-compact {
+            gap: 16px;
+            grid-template-columns: minmax(90px, 130px) minmax(0, 1fr) minmax(185px, max-content);
+            padding-left: 4%;
+            padding-right: 4%;
+        }
+
+        .hb-logo {
+            align-items: center;
+            display: inline-flex;
+            justify-self: start;
+            text-decoration: none;
+        }
+
+        .hb-logo img {
+            display: block;
+            height: 38px;
+            object-fit: contain;
+            width: auto;
+        }
+
+        .hb-header-compact .hb-logo img {
+            height: 34px;
+        }
+
+        .hb-nav {
+            align-items: center;
+            display: flex;
+            gap: 24px;
+            justify-content: center;
+            min-width: 0;
+        }
+
+        .hb-nav-dense {
+            gap: 18px;
+        }
+
+        .hb-nav a {
+            color: var(--hb-text);
+            font-size: 13px;
+            font-weight: 500;
+            letter-spacing: 0;
+            line-height: 1;
+            text-decoration: none;
+            text-transform: uppercase;
+            transition: color 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .hb-nav-dense a {
+            font-size: 12px;
+        }
+
+        .hb-nav a:hover,
+        .hb-nav a[aria-current="page"] {
+            color: var(--hb-blue);
+        }
+
+        .hb-nav-item {
+            align-items: center;
+            display: inline-flex;
+            position: relative;
+        }
+
+        .hb-nav-item::after {
+            content: "";
+            height: 14px;
+            left: 0;
+            position: absolute;
+            right: 0;
+            top: 100%;
+        }
+
+        .hb-nav-link {
+            align-items: center;
+            display: inline-flex;
+            gap: 4px;
+        }
+
+        .hb-nav-caret {
+            font-size: 10px;
+            line-height: 1;
+            margin-left: 2px;
+        }
+
+        .hb-dropdown-menu {
+            background: #fff;
+            border: 1px solid var(--hb-border);
+            box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
+            display: none;
+            left: 0;
+            min-width: 220px;
+            padding: 8px 0;
+            position: absolute;
+            top: calc(100% + 14px);
+            z-index: 1010;
+        }
+
+        .hb-nav-item:hover .hb-dropdown-menu,
+        .hb-nav-item:focus-within .hb-dropdown-menu {
+            display: block;
+        }
+
+        .hb-dropdown-menu a {
+            color: var(--hb-text);
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            line-height: 1.25;
+            padding: 10px 16px;
+            text-transform: none;
+            white-space: nowrap;
+        }
+
+        .hb-dropdown-menu a:hover {
+            background: #eef7fd;
+            color: var(--hb-blue);
+        }
+
+        .hb-dropdown-divider {
+            border-top: 1px solid var(--hb-border);
+            margin: 7px 0;
+        }
+
+        .hb-actions,
+        .hb-account {
+            align-items: center;
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            min-width: 0;
+        }
+
+        .hb-auth-button {
+            align-items: center;
+            border-radius: 0;
+            display: inline-flex;
+            font-size: 13px;
+            font-weight: 600;
+            justify-content: center;
+            min-height: 36px;
+            min-width: 104px;
+            padding: 0 18px;
+            text-decoration: none;
+            text-transform: uppercase;
+            transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .hb-auth-button.outline {
+            background: #fff;
+            border: 1px solid var(--hb-blue);
+            color: var(--hb-blue);
+        }
+
+        .hb-auth-button.outline:hover {
+            background: #eef7fd;
+        }
+
+        .hb-auth-button.filled {
+            background: var(--hb-blue);
+            border: 1px solid var(--hb-blue);
+            color: #fff;
+        }
+
+        .hb-auth-button.filled:hover {
+            background: var(--hb-blue-dark);
+            border-color: var(--hb-blue-dark);
+        }
+
+        .hb-greeting {
+            color: var(--hb-text);
+            font-size: 13px;
+            white-space: nowrap;
+        }
+
+        .hb-greeting strong,
+        .hb-account-name {
+            color: var(--hb-blue);
+            font-weight: 700;
+        }
+
+        .hb-profile-link,
+        .hb-logout-link {
+            align-items: center;
+            border: 1px solid var(--hb-border);
+            color: var(--hb-text);
+            display: inline-flex;
+            font-size: 12px;
+            font-weight: 600;
+            justify-content: center;
+            min-height: 32px;
+            padding: 0 15px;
+            text-decoration: none;
+            text-transform: uppercase;
+            transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .hb-profile-link {
+            border-color: var(--hb-blue);
+            color: var(--hb-blue);
+        }
+
+        .hb-profile-link:hover {
+            background: #eef7fd;
+        }
+
+        .hb-logout-link:hover {
+            background: #fff5f5;
+            border-color: #e74c3c;
+            color: #e74c3c;
+        }
+
+        .hb-avatar {
+            align-items: center;
+            background: #eaf6ff;
+            border: 1px solid #cfe8fb;
+            border-radius: 50%;
+            color: var(--hb-blue-dark);
+            display: inline-flex;
+            flex: 0 0 34px;
+            font-size: 12px;
+            font-weight: 700;
+            height: 34px;
+            justify-content: center;
+            text-transform: uppercase;
+            width: 34px;
+        }
+
+        .hb-account-text {
+            display: grid;
+            gap: 2px;
+            min-width: 0;
+        }
+
+        .hb-account-label {
+            color: var(--hb-muted);
+            font-size: 11px;
+            line-height: 1;
+        }
+
+        .hb-account-name {
+            display: block;
+            font-size: 13px;
+            line-height: 1.2;
+            max-width: 190px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        @media (max-width: 1100px) {
+            .hb-header,
+            .hb-header-compact {
+                grid-template-columns: 1fr;
+                justify-items: center;
+                padding: 14px 20px;
+            }
+
+            .hb-logo,
+            .hb-actions,
+            .hb-account {
+                justify-self: center;
+            }
+
+            .hb-nav {
+                flex-wrap: wrap;
+                gap: 16px 24px;
+            }
+
+            .hb-dropdown-menu {
+                left: 50%;
+                transform: translateX(-50%);
+            }
+        }
+
+        @media (max-width: 560px) {
+            .hb-actions,
+            .hb-account {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .hb-auth-button {
+                min-width: 96px;
+            }
+        }
+    </style>
+</th:block>
+</body>
+</html>
