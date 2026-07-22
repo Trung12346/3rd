@@ -94,7 +94,7 @@ public class khuyenMaiService {
     }
 
 
-    @Scheduled(cron = "0 5 0 * * *")
+    @Scheduled(cron = "*/10 * * * * *")
     @Transactional
     public void capNhatTrangThaiKhuyenMai() {
         LocalDate today = LocalDate.now();
