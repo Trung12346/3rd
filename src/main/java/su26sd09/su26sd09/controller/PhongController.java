@@ -55,6 +55,9 @@ public class PhongController {
     @Autowired
     private khuyenMaiService khuyenMaiService;
 
+    @Autowired
+    private ReviewService reviewService;
+
     @GetMapping
     public String index(Model model) {
         // Lấy tất cả phòng
@@ -110,6 +113,14 @@ public class PhongController {
         }
 
         RoomBookingGuardDTO guard = phongService.buildRoomGuardFor(phong.getMaPhong());
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String currentEmail = (authentication != null
+                && authentication.isAuthenticated()
+                && !(authentication instanceof AnonymousAuthenticationToken))
+                ? authentication.getName()
+                : null;
+        model.addAttribute("reviewEligibility", reviewService.getEligibility(phong.getMaPhong(), currentEmail));
 
         model.addAttribute("phong", phong);
         model.addAttribute("loaiPhong", loaiPhong);

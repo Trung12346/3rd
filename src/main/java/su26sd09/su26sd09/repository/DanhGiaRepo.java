@@ -17,6 +17,9 @@ public interface DanhGiaRepo extends JpaRepository<DanhGia,Integer> {
     @Query("select d from DanhGia d where d.n.ma_khach_hang = :id")
     List<DanhGia> FindByNguoiDung(int id);
 
+    @Query("select (count(dg) > 0) from DanhGia dg where dg.d.id = :maDatPhong")
+    boolean existsByDatPhongId(@Param("maDatPhong") Integer maDatPhong);
+
     @Query("""
              select d from DanhGia d
              where d.daDuyet = true

@@ -107,7 +107,7 @@ public class DanhGiaController {
     ) {
         if (principal == null) {
             redirectAttributes.addFlashAttribute("reviewError", "Vui lòng đăng nhập để gửi đánh giá.");
-            return "redirect:/Login";
+            return "redirect:/login";
         }
         if (bindingResult.hasErrors()) {
             redirectAttributes.addFlashAttribute("reviewError", firstError(bindingResult));
@@ -117,7 +117,7 @@ public class DanhGiaController {
         KhachHang nguoiDung = nguoiDungRepository.findByEmail(principal.getName()).orElse(null);
         if (nguoiDung == null) {
             redirectAttributes.addFlashAttribute("reviewError", "Không tìm thấy tài khoản đăng nhập.");
-            return "redirect:/Login";
+            return "redirect:/login";
         }
 
         DatPhong datPhong = null;
@@ -143,9 +143,11 @@ public class DanhGiaController {
     }
 
     @GetMapping("/phong/reviews/rooms/{maPhong}/fragment")
-    public String roomReviewsFragment(@PathVariable int maPhong, Model model) {
+    public String roomReviewsFragment(@PathVariable int maPhong, Model model, Authentication authentication) {
         model.addAttribute("maPhong", maPhong);
         model.addAttribute("roomReviews", reviewService.findApprovedReviewsByRoom(maPhong));
+        model.addAttribute("reviewEligibility",
+                reviewService.getEligibility(maPhong, isLoggedIn(authentication) ? authentication.getName() : null));
         return "fragments/room-reviews :: roomReviews";
     }
 
@@ -173,7 +175,7 @@ public class DanhGiaController {
     ) {
         if (!isLoggedIn(authentication)) {
             redirectAttributes.addFlashAttribute("roomReviewError", "Vui lòng đăng nhập để gửi đánh giá.");
-            return "redirect:/Login";
+            return "redirect:/login";
         }
         if (bindingResult.hasErrors()) {
             redirectAttributes.addFlashAttribute("roomReviewError", firstError(bindingResult));
