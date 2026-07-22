@@ -672,7 +672,11 @@
         }
         const start = new Date(ngayNhanEl.value);
         const end = new Date(ngayTraEl.value);
-        const diff = Math.ceil((end - start) / 86400000);
+        // Tính số đêm theo NGÀY (bỏ phần giờ) — khớp với logic validate & backend:
+        // 16/12 08:30 -> 17/12 18:00 vẫn là 1 đêm, KHÔNG làm tròn lên theo tổng số giờ.
+        const startDay = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+        const endDay   = new Date(end.getFullYear(),   end.getMonth(),   end.getDate());
+        const diff = Math.round((endDay - startDay) / 86400000);
         return diff > 0 ? diff : 0;
     }
 
