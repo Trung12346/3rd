@@ -3,6 +3,7 @@ package su26sd09.su26sd09.controller;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import su26sd09.su26sd09.dto.KetQuaHuyDonDTO;
 import su26sd09.su26sd09.dto.RoomBookingGuardDTO;
+import su26sd09.su26sd09.constants.HuyDonConstants;
 import su26sd09.su26sd09.entity.*;
 import su26sd09.su26sd09.service.*;
 
@@ -51,9 +53,22 @@ public class NhanVienDatPhongController {
             @RequestParam(defaultValue = "10") int size,
             Model model) {
 
-        Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
-        Page<DatPhong> datPhongPage = datPhongService.findAll(pageable);
-        List<DatPhong> datPhongs = datPhongPage.getContent();
+        // Sort theo ngayTao desc (đơn vừa tạo lên đầu) thay vì theo id desc,
+        // vì id có thể bị lủng do sequence/rollback còn ngayTao phản ánh đúng
+        // thứ tự thời gian tạo đơn.
+        Sort sort = Sort.by(Sort.Order.desc("ngayTao"), Sort.Order.desc("id"));
+        Pageable pageable = PageRequest.of(page, size, sort);
+        // Lấy tất cả, lọc bỏ các đơn "Chua thanh toan" rồi mới paging — đảm bảo
+        // trang quản lý đơn đặt phòng của nhân viên chỉ hiển thị đơn đã có
+        // trạng thái nghiệp vụ hợp lệ.
+        List<DatPhong> allFiltered = datPhongService.findAll(sort).stream()
+                .filter(dp -> HuyDonConstants.DP_TRANG_THAI_HIEN_THI.contains(dp.getTrangThai()))
+                .collect(Collectors.toList());
+        int total = allFiltered.size();
+        int fromIndex = Math.min((int) pageable.getOffset(), total);
+        int toIndex = Math.min(fromIndex + pageable.getPageSize(), total);
+        List<DatPhong> datPhongs = allFiltered.subList(fromIndex, toIndex);
+        Page<DatPhong> datPhongPage = new PageImpl<>(datPhongs, pageable, total);
 
         Map<Integer, List<ChiTietDatPhong>> mapCtdp = new HashMap<>();
         Map<Integer, List<Phong>> phongTheoDon = new HashMap<>();
@@ -406,7 +421,11 @@ public class NhanVienDatPhongController {
                 ngayNhanTu, ngayNhanDen, ngayTraTu, ngayTraDen,
                 soNguoiLon, soTreEm, trangThai, yeuCauThem,
                 ngayTaoTu, ngayTaoDen, ngayCapNhatTu, ngayCapNhatDen
-        );
+        ).stream()
+                // Ẩn các đơn "Chua thanh toan" — chỉ hiển thị đơn đã có trạng thái
+                // nghiệp vụ hợp lệ trên trang quản lý đơn đặt phòng nhân viên.
+                .filter(dp -> HuyDonConstants.DP_TRANG_THAI_HIEN_THI.contains(dp.getTrangThai()))
+                .collect(Collectors.toList());
 
         Map<Integer, List<ChiTietDatPhong>> mapCtdp = new HashMap<>();
         Map<Integer, List<Phong>> phongTheoDon = new HashMap<>();
@@ -467,11 +486,27 @@ public class NhanVienDatPhongController {
         dp.setNgayCapNhat(LocalDateTime.now());
         datPhongService.save(dp);
 
-        if ("Da tra phong".equals(trangThai)) {
-            List<ChiTietDatPhong> ctdpList = chiTietDatPhongService.findByDatPhongId(id);
+        // Đồng bộ trạng thái TẤT CẢ phòng trong đơn theo trạng thái đơn mới
+        List<ChiTietDatPhong> ctdpList = chiTietDatPhongService.findByDatPhongId(id);
+
+        if ("Da nhan phong".equals(trangThai)) {
             for (ChiTietDatPhong ct : ctdpList) {
                 Phong p = ct.getP();
-                p.setTrangThai("Trong");
+                if (p == null) continue;
+                p.setTrangThai("Dang su dung");
+                phongService.save1(p);
+            }
+        }
+
+        if ("Da tra phong".equals(trangThai)) {
+            for (ChiTietDatPhong ct : ctdpList) {
+                Phong p = ct.getP();
+                if (p == null) continue;
+                if (datPhongService.hasBookingNotCheckout(p.getMaPhong(), dp.getId())) {
+                    p.setTrangThai("Da dat truoc");
+                } else {
+                    p.setTrangThai("Trong");
+                }
                 phongService.save1(p);
             }
         }

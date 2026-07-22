@@ -4,6 +4,7 @@ package su26sd09.su26sd09.controller;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import su26sd09.su26sd09.dto.KetQuaHuyDonDTO;
 import su26sd09.su26sd09.dto.RoomBookingGuardDTO;
+import su26sd09.su26sd09.constants.HuyDonConstants;
 import su26sd09.su26sd09.entity.*;
 import su26sd09.su26sd09.service.*;
 
@@ -72,9 +74,22 @@ public class AdminDatPhongController {
             @RequestParam(value = "edit", required = false) Integer editId,
             Model model) {
 
-        Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
-        Page<DatPhong> datPhongPage = datPhongService.findAll(pageable);
-        List<DatPhong> datPhongs = datPhongPage.getContent();
+        // Sort theo ngayTao desc (đơn vừa tạo lên đầu) thay vì theo id desc,
+        // vì id có thể bị lủng do sequence/rollback còn ngayTao phản ánh đúng
+        // thứ tự thời gian tạo đơn.
+        Sort sort = Sort.by(Sort.Order.desc("ngayTao"), Sort.Order.desc("id"));
+        Pageable pageable = PageRequest.of(page, size, sort);
+        // Lấy tất cả, lọc bỏ các đơn "Chua thanh toan" rồi mới paging — đảm bảo
+        // trang quản lý đơn đặt phòng của admin chỉ hiển thị đơn đã có trạng thái
+        // nghiệp vụ hợp lệ (Cho xac nhan / Da xac nhan / Da nhan phong / ...).
+        List<DatPhong> allFiltered = datPhongService.findAll(sort).stream()
+                .filter(dp -> HuyDonConstants.DP_TRANG_THAI_HIEN_THI.contains(dp.getTrangThai()))
+                .collect(Collectors.toList());
+        int total = allFiltered.size();
+        int fromIndex = Math.min((int) pageable.getOffset(), total);
+        int toIndex = Math.min(fromIndex + pageable.getPageSize(), total);
+        List<DatPhong> datPhongs = allFiltered.subList(fromIndex, toIndex);
+        Page<DatPhong> datPhongPage = new PageImpl<>(datPhongs, pageable, total);
         Map<Integer,List<ChiTietDatPhong>> Mapctdp = new HashMap<>();
         for(DatPhong dp : datPhongs){
                 Mapctdp.put(dp.getId(),chiTietDatPhongService.findByDatPhongId(dp.getId()));
@@ -471,7 +486,11 @@ public class AdminDatPhongController {
                 ngayNhanTu, ngayNhanDen, ngayTraTu, ngayTraDen,
                 soNguoiLon, soTreEm, trangThai, yeuCauThem,
                 ngayTaoTu, ngayTaoDen, ngayCapNhatTu, ngayCapNhatDen
-        );
+        ).stream()
+                // Ẩn các đơn "Chua thanh toan" — chỉ hiển thị đơn đã có trạng thái
+                // nghiệp vụ hợp lệ trên trang quản lý đơn đặt phòng admin.
+                .filter(dp -> HuyDonConstants.DP_TRANG_THAI_HIEN_THI.contains(dp.getTrangThai()))
+                .collect(Collectors.toList());
 
         if(tenKhach!=null){
             System.out.println("Found!");
