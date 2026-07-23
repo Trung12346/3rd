@@ -28,9 +28,11 @@ public class NhanSu {
 
 
     @Column(name = "ho_ten")
+    @NotBlank(message = "họ tên không được để trống")
     private String hoten;
 
     @Column(name = "dia_chi")
+    @NotBlank(message = "địa chỉ không được để trống")
     private String dia_chi;
 
     @Column(name = "email")
@@ -46,6 +48,7 @@ public class NhanSu {
     private String mat_khau_hash;
 
     @Column(name = "trang_thai")
+    @NotNull(message = "trạng thái không được để trống")
     private boolean trang_thai;
 
     @OneToMany(mappedBy = "nv",cascade = CascadeType.ALL)

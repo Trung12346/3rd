@@ -934,7 +934,7 @@
                 <div th:if="${listDatPhongPhanTrang.isEmpty()}" class="empty-state">
                     <i class="fa-regular fa-calendar-xmark"></i>
                     <p th:if="${keyword != null && !keyword.isEmpty()}"
-                       th:text="'Không tìm thấy đơn đặt phòng nào khớp với' + ${keyword} + '.'"></p>
+                       th:text="'Không tìm thấy đơn đặt phòng nào khớp với: ' + ${keyword} + '.'"></p>
                     <p th:unless="${keyword != null && !keyword.isEmpty()}">Bạn chưa có đơn đặt phòng nào.</p>
                 </div>
             </div>
