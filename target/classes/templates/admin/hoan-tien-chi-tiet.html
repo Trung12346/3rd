@@ -319,7 +319,7 @@
                 <div class="admin-field">
                     <label>Giá hoàn tiền (VND) <span style="color:#dc2626;">*</span></label>
                     <input type="number" name="soTienHoanNhap" id="soTienHoanNhap" min="0" step="1000"
-                           th:value="${hoaDon.soTienHoan != null ? hoaDon.soTienHoan : 0}" required disabled>
+                           th:value="${hoaDon.soTienHoan != null ? hoaDon.soTienHoan : 0}" required readonly>
                     <small class="form-hint">Đã được hệ thống tính sẵn theo tỷ lệ. Có thể chỉnh nếu cần.</small>
                 </div>
                 <div class="admin-field">

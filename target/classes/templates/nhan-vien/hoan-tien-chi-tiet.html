@@ -317,21 +317,21 @@
                 <div class="admin-field">
                     <label>Giá hoàn tiền (VND) <span style="color:#dc2626;">*</span></label>
                     <input type="number" name="soTienHoanNhap" id="soTienHoanNhap" min="0" step="1000"
-                           th:value="${hoaDon.soTienHoan != null ? hoaDon.soTienHoan : 0}" required>
-                    <small class="form-hint">Đã được hệ thống tính sẵn theo tỷ lệ. Có thể chỉnh nếu cần.</small>
+                           th:value="${hoaDon.soTienHoan != null ? hoaDon.soTienHoan : 0}" required readonly>
+                    <small class="form-hint">Đã được hệ thống tính sẵn theo tỷ lệ.</small>
                 </div>
                 <div class="admin-field">
                     <label>Tỷ lệ áp dụng (%)</label>
                     <input type="text" id="tyLeHoanHienThi"
                            th:value="${hoaDon.tyLeHoan != null ? hoaDon.tyLeHoan.multiply(T(java.math.BigDecimal).valueOf(100L)).intValue() : 0}"
-                           readonly disabled>
+                           readonly>
                     <small class="form-hint">Tỷ lệ theo rule hệ thống (không chỉnh được).</small>
-                </div>t
+                </div>
                 <div class="admin-field">
                     <label>Thời gian yêu cầu hoàn</label>
                     <input type="text" id="thoiGianYeuCauHoan"
                            th:value="${hoaDon.ngayYeuCauHoan != null ? #temporals.format(hoaDon.ngayYeuCauHoan, 'dd/MM/yyyy HH:mm:ss') : '—'}"
-                           readonly disabled>
+                           readonly>
                     <small class="form-hint">Thời điểm khách tạo yêu cầu hủy.</small>
                 </div>
                 <div class="admin-field full">
