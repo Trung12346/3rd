@@ -383,14 +383,25 @@
         <aside class="room-review-form-box">
             <div sec:authorize="isAuthenticated()">
                 <h3>Gửi đánh giá</h3>
-                <p class="room-review-muted">Hệ thống sẽ tự kiểm tra mã đặt phòng liên quan với tài khoản của bạn trước khi nhận đánh giá.</p>
 
                 <div class="room-review-alert error room-review-form-alert" th:if="${roomReviewDenied}" role="alert">
                     <strong>Không thể gửi đánh giá</strong>
                     <p th:text="${roomReviewError}">Tài khoản này chưa có mã đặt phòng liên quan với phòng này nên không thể đánh giá.</p>
                 </div>
 
-                <form th:action="@{/phong/reviews/rooms/{maPhong}(maPhong=${roomId})}" method="post" data-review-form>
+                <div class="room-review-alert error room-review-form-alert"
+                     th:if="${reviewEligibility != null && !reviewEligibility.canReview}" role="alert">
+                    <strong>Không thể gửi đánh giá</strong>
+                    <p th:text="${reviewEligibility.reason}">Bạn chưa thể đánh giá phòng này.</p>
+                </div>
+
+                <p class="room-review-muted"
+                   th:if="${reviewEligibility == null || reviewEligibility.canReview}">
+                    Đánh giá này sẽ được gắn với lượt đặt phòng gần nhất của bạn cho phòng này.
+                </p>
+
+                <form th:if="${reviewEligibility != null && reviewEligibility.canReview}"
+                      th:action="@{/phong/reviews/rooms/{maPhong}(maPhong=${roomId})}" method="post" data-review-form>
                     <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
 
                     <div class="room-review-field">

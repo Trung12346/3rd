@@ -1,11 +1,12 @@
 package su26sd09.su26sd09.service;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import su26sd09.su26sd09.dto.RoomReviewEligibilityDTO;
 import su26sd09.su26sd09.dto.RoomReviewReplyRequest;
 import su26sd09.su26sd09.dto.RoomReviewRequest;
 import su26sd09.su26sd09.dto.RoomReviewViewDTO;
-import su26sd09.su26sd09.entity.ChiTietDatPhong;
 import su26sd09.su26sd09.entity.DanhGia;
 import su26sd09.su26sd09.entity.DatPhong;
 import su26sd09.su26sd09.entity.KhachHang;
@@ -66,22 +67,75 @@ public class ReviewService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public RoomReviewEligibilityDTO getEligibility(int maPhong, String email) {
+        assertRoomExists(maPhong);
+
+        if (email == null || email.isBlank()) {
+            return RoomReviewEligibilityDTO.disabled("Vui lòng đăng nhập để viết đánh giá cho phòng này.");
+        }
+
+        KhachHang nguoiDung = nguoiDungRepository.findByEmail(email).orElse(null);
+        if (nguoiDung == null) {
+            return RoomReviewEligibilityDTO.disabled("Không tìm thấy tài khoản đăng nhập.");
+        }
+
+        DatPhong newestBooking = findNewestBooking(nguoiDung, maPhong);
+        if (newestBooking == null) {
+            return RoomReviewEligibilityDTO.disabled("Bạn chưa từng đặt phòng này nên không thể viết đánh giá.");
+        }
+
+        if (danhGiaRepo.existsByDatPhongId(newestBooking.getId())) {
+            return RoomReviewEligibilityDTO.disabled(
+                    "Bạn đã đánh giá cho lượt đặt phòng gần nhất của mình rồi. Mỗi lượt đặt phòng chỉ được đánh giá 1 lần.");
+        }
+
+        return RoomReviewEligibilityDTO.enabled(newestBooking.getId());
+    }
+
     @Transactional
     public DanhGia createRoomReview(int maPhong, String email, RoomReviewRequest request) {
         assertRoomExists(maPhong);
 
         KhachHang nguoiDung = findUserByEmail(email);
-        DatPhong datPhong = resolveBookingForRoom(request.getMaDatPhong(), nguoiDung, maPhong);
+
+        // Không tin tưởng ma_dat_phong client gửi lên: luôn tự xác định lượt đặt
+        // phòng gần nhất của khách hàng cho phòng này ở phía server.
+        DatPhong datPhong = findNewestBooking(nguoiDung, maPhong);
+        if (datPhong == null) {
+            throw new IllegalArgumentException("Bạn chưa từng đặt phòng này nên không thể viết đánh giá.");
+        }
+        if (isCanceledBooking(datPhong)) {
+            throw new IllegalArgumentException("Lượt đặt phòng gần nhất của bạn đã bị hủy nên không thể đánh giá.");
+        }
+        if (danhGiaRepo.existsByDatPhongId(datPhong.getId())) {
+            throw new IllegalArgumentException(
+                    "Bạn đã đánh giá cho lượt đặt phòng gần nhất của mình rồi. Mỗi lượt đặt phòng chỉ được đánh giá 1 lần.");
+        }
 
         DanhGia danhGia = new DanhGia();
         danhGia.setN(nguoiDung);
         danhGia.setD(datPhong);
         danhGia.setDiemDanhGia(Math.max(1, Math.min(5, request.getDiemDanhGia())));
-        danhGia.setNoiDung(toStoredContent(maPhong, datPhong != null, request.getNoiDung()));
+        danhGia.setNoiDung(request.getNoiDung() == null ? "" : request.getNoiDung().trim());
         danhGia.setDaDuyet(true);
         danhGia.setNgayTao(LocalDateTime.now());
 
-        return danhGiaRepo.save(danhGia);
+        try {
+            return danhGiaRepo.save(danhGia);
+        } catch (DataIntegrityViolationException ex) {
+            // Phòng khi có 2 request submit gần như đồng thời cho cùng 1 lượt đặt phòng
+            // (race condition) -> unique index ở DB sẽ chặn, ta trả về lỗi rõ ràng thay vì 500.
+            throw new IllegalArgumentException(
+                    "Lượt đặt phòng này vừa được đánh giá (có thể do gửi trùng). Vui lòng tải lại trang.");
+        }
+    }
+
+    private DatPhong findNewestBooking(KhachHang nguoiDung, int maPhong) {
+        return datPhongRepo.findBookingsForCustomerAndRoom(maPhong, nguoiDung.getMa_khach_hang(), nguoiDung.getEmail())
+                .stream()
+                .findFirst()
+                .orElse(null);
     }
 
     @Transactional
@@ -131,58 +185,8 @@ public class ReviewService {
         return nguoiDung;
     }
 
-    private DatPhong resolveBookingForRoom(Integer maDatPhong, KhachHang nguoiDung, int maPhong) {
-        if (maDatPhong != null) {
-            DatPhong datPhong = datPhongRepo.findById(maDatPhong)
-                    .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy mã đặt phòng."));
-
-            if (!isBookingOwner(datPhong, nguoiDung)) {
-                throw new IllegalArgumentException("Mã đặt phòng không thuộc tài khoản hiện tại.");
-            }
-            if (!bookingContainsRoom(datPhong, maPhong)) {
-                throw new IllegalArgumentException("Mã đặt phòng không thuộc phòng này.");
-            }
-            if (isCanceledBooking(datPhong)) {
-                throw new IllegalArgumentException("Mã đặt phòng đã hủy nên không thể đánh giá phòng này.");
-            }
-            return datPhong;
-        }
-
-        return datPhongRepo.FindByNguoiDung(nguoiDung.getMa_khach_hang())
-                .stream()
-                .filter(datPhong -> bookingContainsRoom(datPhong, maPhong))
-                .filter(datPhong -> !isCanceledBooking(datPhong))
-                .findFirst()
-                .orElse(null);
-    }
-
     private boolean isCanceledBooking(DatPhong datPhong) {
         return datPhong != null && "Da huy".equals(datPhong.getTrangThai());
-    }
-
-    private boolean isBookingOwner(DatPhong datPhong, KhachHang nguoiDung) {
-        return datPhong != null
-                && datPhong.getN() != null
-                && datPhong.getN().getMa_khach_hang() != null
-                && datPhong.getN().getMa_khach_hang().equals(nguoiDung.getMa_khach_hang());
-    }
-
-    private boolean bookingContainsRoom(DatPhong datPhong, int maPhong) {
-        if (datPhong == null || datPhong.getId() == null) {
-            return false;
-        }
-
-        List<ChiTietDatPhong> chiTietDatPhongs = chiTietDatPhongRepo.findByDatPhongId(datPhong.getId());
-        return chiTietDatPhongs.stream()
-                .anyMatch(chiTiet -> chiTiet.getP() != null && chiTiet.getP().getMaPhong() == maPhong);
-    }
-
-    String toStoredContent(int maPhong, boolean hasBooking, String noiDung) {
-        String cleanContent = noiDung == null ? "" : noiDung.trim();
-        if (hasBooking) {
-            return cleanContent;
-        }
-        return roomMarker(maPhong) + " " + cleanContent;
     }
 
     private boolean hasRoomMarker(DanhGia danhGia, int maPhong) {
@@ -215,4 +219,7 @@ public class ReviewService {
     private String roomMarker(int maPhong) {
         return "[ROOM:" + maPhong + "]";
     }
+
+    // Vẫn giữ helper roomMarker() vì ROOM_MARKER_PATTERN/parseRoomMarker/hasRoomMarker
+    // được dùng để đọc các review cũ (đã lưu trước khi có ràng buộc 1-review/booking).
 }
