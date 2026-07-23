@@ -81,7 +81,7 @@ public class ReviewService {
         }
 
         DatPhong newestBooking = findNewestBooking(nguoiDung, maPhong);
-        if (newestBooking == null) {
+        if (newestBooking == null || !newestBooking.getTrangThai().equals("Da tra phong")) {
             return RoomReviewEligibilityDTO.disabled("Bạn chưa từng đặt phòng này nên không thể viết đánh giá.");
         }
 
