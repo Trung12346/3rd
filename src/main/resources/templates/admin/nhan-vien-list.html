@@ -34,58 +34,50 @@
 
                 <div class="admin-field">
                     <label>Ho ten</label>
-                    <input type="text" th:field="*{hoten}" placeholder="VD: Nguyen Van A" >
+                    <input type="text" th:field="*{hoten}" placeholder="VD: Nguyen Van A" required>
                 </div>
 
                 <div class="admin-field">
                     <label>Email</label>
-                    <input type="email" th:field="*{email}" placeholder="example@gmail.com" >
+                    <input type="email" th:field="*{email}" placeholder="example@gmail.com" required>
                 </div>
 
                 <div class="admin-field" th:if="${nhanVien.id == null}">
                     <label>Mat khau</label>
                     <input type="password"
                            th:field="*{mat_khau_hash}"
-                           placeholder="Nhap khi them moi" >
+                           placeholder="Nhap khi them moi" required>
                 </div>
 
-                <div class="admin-field" th:if="${nhanVien.id != null}">
-                    <label>Mat khau</label>
-                    <input type="password"
-                           name="matKhaumoi"
-                           placeholder="Nhap khi neu muon doi" >
-                    <input
-                            th:field="*{mat_khau_hash}"
-                            th:type="hidden" >
-                </div>
+                <!-- Ô đổi mật khẩu khi edit giữ nguyên KHÔNG required, vì để trống nghĩa là không đổi -->
 
                 <div class="admin-field">
                     <label>So dien thoai</label>
-                    <input type="tel" th:field="*{sdt}" placeholder="09xxxxxxxx" pattern="[0-9]{10}">
+                    <input type="tel" th:field="*{sdt}" placeholder="09xxxxxxxx" pattern="[0-9]{10}" required>
                 </div>
                 <div class="admin-field">
                     <label>mã căn cước công dân</label>
-                    <input type="text" inputmode="numeric" th:field="*{maCCCD}" placeholder="0012xxxxxxxx" pattern="[0-9]{12}">
+                    <input type="text" inputmode="numeric" th:field="*{maCCCD}" placeholder="0012xxxxxxxx" pattern="[0-9]{12}" required>
                 </div>
 
                 <div class="admin-field">
                     <label>Trang thai</label>
-                    <select th:field="*{trang_thai}">
+                    <select th:field="*{trang_thai}" required>
                         <option th:value="true">Hoat dong</option>
                         <option th:value="false">Khoa</option>
                     </select>
                 </div>
                 <div class="admin-field">
                     <label>Ngày sinh</label>
-                    <input type="date" th:field="*{ngaySinh}">
+                    <input type="date" th:field="*{ngaySinh}" required>
                 </div>
                 <div class="admin-field full">
                     <label>Dia chi</label>
-                    <textarea th:field="*{dia_chi}" placeholder="So nha, duong, tinh/TP..."></textarea>
+                    <textarea th:field="*{dia_chi}" placeholder="So nha, duong, tinh/TP..." required></textarea>
                 </div>
                 <div class="admin-field">
                     <label>Bộ phận</label>
-                    <input type="text" th:field="*{boPhan}" placeholder="VD: Lễ tân">
+                    <input type="text" th:field="*{boPhan}" placeholder="VD: Lễ tân" required>
                 </div>
 
             </div>
