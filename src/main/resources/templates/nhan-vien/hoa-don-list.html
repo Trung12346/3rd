@@ -104,6 +104,9 @@
     <div th:if="${error}" class="admin-message error">
         <span th:text="${error}"></span>
     </div>
+    <div th:if="${toastWarning}" class="admin-message warning">
+        <span th:text="${toastWarning}"></span>
+    </div>
 
     <section class="admin-panel">
         <h2>Danh Sách Hóa Đơn</h2>
@@ -237,7 +240,8 @@
                         <div class="row-actions">
                             <a class="admin-btn small pdf-btn"
                                th:href="@{/nhan-su/hoa-don/xuat-pdf/{id}(id=${hd.id})}"
-                               target="_blank">
+                               onclick="xuatPdfVaMoTab(this, event)"
+                               th:classappend="${hd.d.trangThai == 'Da tra phong' or hd.d.trangThai == 'Da huy'} ? '' : ' disabled'">
                                 Xuất PDF
                             </a>
                         </div>
@@ -289,6 +293,7 @@
     <p>&copy; 2026 Hotel. All rights reserved.</p>
 </footer>
 
+<script src="/xuat-pdf-handler.js"></script>
 <script>
     function openDvModal(id) {
         document.getElementById('dvModal' + id).classList.add('show');

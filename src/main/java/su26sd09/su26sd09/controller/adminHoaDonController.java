@@ -2,6 +2,7 @@ package su26sd09.su26sd09.controller;
 
 
 import com.lowagie.text.pdf.BaseFont;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cglib.core.Local;
@@ -243,7 +244,8 @@ public class adminHoaDonController {
             hoaDon.setN(nhanVienService.findbyid(maNhanVienXuat));
             System.out.println("Ma nhan vien xuat :"+maNhanVienXuat);
         }
-        hoaDonService.save(hoaDon);
+        // Dùng helper để tự động chuyển trangThai = "Da thanh toan" nếu đã thanh toán đủ
+        hoaDonService.saveWithPaymentStatusCheck(hoaDon);
         redirectAttributes.addFlashAttribute("success", "Lưu hóa đơn thành công!");
         return "redirect:/nhan-su/admin/hoa-don";
     }
@@ -328,9 +330,30 @@ public class adminHoaDonController {
         return "admin/dat-phong-list";
     }
     @GetMapping("/xuat-pdf/{id}")
-    public void xuatPdf(@PathVariable int id, HttpServletResponse response) throws Exception {
+    public void xuatPdf(@PathVariable int id, HttpServletRequest request, HttpServletResponse response) throws Exception {
 
         HoaDon hoaDon = hoaDonService.findById(id);
+        if (hoaDon == null) {
+            response.sendRedirect(request.getContextPath() + "/nhan-su/admin/hoa-don");
+            return;
+        }
+
+        // Validate: chỉ cho xuất PDF khi đơn đã ở trạng thái "Da huy" hoặc "Da tra phong"
+        String trangThaiDon = hoaDon.getD() != null ? hoaDon.getD().getTrangThai() : null;
+        boolean hopLe = "Da huy".equals(trangThaiDon) || "Da tra phong".equals(trangThaiDon);
+        if (!hopLe) {
+            // Lưu flash warning qua session để hiện toast vàng ở trang danh sách,
+            // rồi điều hướng user về trang trước đó.
+            request.getSession().setAttribute("toastWarning",
+                    "Đơn đặt phòng #" + (hoaDon.getD() != null ? hoaDon.getD().getId() : id)
+                            + " đang trong quá trình sử dụng phòng. Vui lòng hoàn tất trả phòng hoặc xử lý hủy đơn trước khi xuất hóa đơn.");
+            String referer = request.getHeader("Referer");
+            String redirect = (referer != null && !referer.isBlank())
+                    ? referer
+                    : (request.getContextPath() + "/nhan-su/admin/hoa-don");
+            response.sendRedirect(redirect);
+            return;
+        }
 
         // Tinh tong phu phi ngoai gio tu cac phong trong don
 //        BigDecimal tongPhuThu = BigDecimal.ZERO;

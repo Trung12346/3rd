@@ -177,7 +177,7 @@
     <div class="admin-header">
         <h1 th:text="${title}">Chi Tiết Hóa Đơn</h1>
         <div class="row-actions">
-            <a th:href="@{/nhan-su/admin/hoa-don/xuat-pdf/{id}(id=${hoaDon.id})}" class="admin-btn" target="_blank" th:classappend="${hoaDon.d.trangThai == 'Da tra phong'} ? ' disabled' : ''">Xuất PDF</a>
+            <a th:href="@{/nhan-su/admin/hoa-don/xuat-pdf/{id}(id=${hoaDon.id})}" class="admin-btn" onclick="xuatPdfVaMoTab(this, event)" th:classappend="${hoaDon.d.trangThai == 'Da tra phong' or hoaDon.d.trangThai == 'Da huy'} ? '' : ' disabled'">Xuất PDF</a>
             <a th:href="@{/nhan-su/admin/hoa-don}" class="admin-btn outline">Quay Lại Danh Sách</a>
         </div>
     </div>
@@ -187,6 +187,9 @@
     </div>
     <div th:if="${error}" class="admin-message error">
         <span th:text="${error}"></span>
+    </div>
+    <div th:if="${toastWarning}" class="admin-message warning">
+        <span th:text="${toastWarning}"></span>
     </div>
 
     <!-- ===== TONG QUAN ===== -->
@@ -509,5 +512,6 @@
     <p>&copy; 2026 Hotel. All rights reserved.</p>
 </footer>
 
+<script src="/xuat-pdf-handler.js"></script>
 </body>
 </html>
