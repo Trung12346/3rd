@@ -13,6 +13,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import su26sd09.su26sd09.dto.DatPhongDTO;
 import su26sd09.su26sd09.dto.KetQuaHuyDonDTO;
 import su26sd09.su26sd09.dto.RoomBookingGuardDTO;
 import su26sd09.su26sd09.constants.HuyDonConstants;
@@ -107,8 +108,14 @@ public class AdminDatPhongController {
         for (DatPhong dp : datPhongs) {
             PhongTheoDon.put(dp.getId(), datPhongService.findPhongByDatPhongId(dp.getId()));
         }
+
+        List<DatPhongDTO> dto = new ArrayList<>();
+        for (DatPhong dp: datPhongs) {
+            dto.add(new DatPhongDTO(dp, hoaDonService.findByDatPhongId(dp.id).getTrangThai()));
+        }
         model.addAttribute("MapCtdp",Mapctdp);
         model.addAttribute("datPhongs", datPhongs);
+        model.addAttribute("dto", dto);
         model.addAttribute("phongTheoDon", PhongTheoDon);
         model.addAttribute("currentPage", page);
         model.addAttribute("totalPages", datPhongPage.getTotalPages());

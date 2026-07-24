@@ -53,6 +53,9 @@ public class HoaDon {
     @Column(name = "da_thanh_toan",precision = 14,scale = 2)
     public BigDecimal daThanhToan;
 
+    @Column(name = "trang_thai")
+    public String trangThai;
+
     @Column(name = "ghi_chu")
     public String ghiChu;
 

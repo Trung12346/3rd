@@ -86,6 +86,8 @@ public class AdminHoaDonChiTietController {
             trangThaiThanhToanClass = "active";
         }
 
+
+
         model.addAttribute("hoaDon", hoaDon);
         model.addAttribute("phongList", phongList);
         model.addAttribute("dichVuList", dichVuList);

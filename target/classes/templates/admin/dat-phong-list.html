@@ -394,68 +394,68 @@
                 </tr>
                 </thead>
                 <tbody>
-                <tr th:each="dp : ${datPhongs}">
-                    <td th:text="${dp.id}"></td>
+                <tr th:each="dp : ${dto}">
+                    <td th:text="${dp.datPhong.id}"></td>
                     <td>
-                        <strong th:text="${dp.n != null ? dp.n.hoTen :
-                      (dp.hoten != null ? dp.hoten + ' (Vãng lai)' : 'Không có')}">
+                        <strong th:text="${dp.datPhong.n != null ? dp.datPhong.n.hoTen :
+                      (dp.datPhong.hoten != null ? dp.datPhong.hoten + ' (Vãng lai)' : 'Không có')}">
                         </strong>
-                        <div th:text="${dp.n != null ? dp.n.email :
-                  (dp.email != null ? dp.email : '')}">
+                        <div th:text="${dp.datPhong.n != null ? dp.datPhong.n.email :
+                  (dp.datPhong.email != null ? dp.datPhong.email : '')}">
                         </div>
                     </td>
                     <td>
-                        <span th:each="phong : ${phongTheoDon[dp.id]}"
+                        <span th:each="phong : ${phongTheoDon[dp.datPhong.id]}"
                               th:text="${phong.soPhong + ' '}">
                         </span>
                     </td>
-                    <td th:text="${dp.nv != null ? dp.nv.email : ''}"></td>
-                    <td th:text="${dp.ngaydatPhong != null ? #temporals.format(dp.ngaydatPhong, 'dd/MM/yyyy') : ''}"></td>
-                    <td th:text="${dp.ngaytraPhong != null ? #temporals.format(dp.ngaytraPhong, 'dd/MM/yyyy') : ''}"></td>
-                    <td th:text="${dp.songuoiLon + ' NL, ' + dp.sotreEm + ' TE'}"></td>
-                    <td th:text="${dp.ma_cccd != null ? dp.ma_cccd : ''}"></td>
+                    <td th:text="${dp.datPhong.nv != null ? dp.datPhong.nv.email : ''}"></td>
+                    <td th:text="${dp.datPhong.ngaydatPhong != null ? #temporals.format(dp.datPhong.ngaydatPhong, 'dd/MM/yyyy') : ''}"></td>
+                    <td th:text="${dp.datPhong.ngaytraPhong != null ? #temporals.format(dp.datPhong.ngaytraPhong, 'dd/MM/yyyy') : ''}"></td>
+                    <td th:text="${dp.datPhong.songuoiLon + ' NL, ' + dp.datPhong.sotreEm + ' TE'}"></td>
+                    <td th:text="${dp.datPhong.ma_cccd != null ? dp.datPhong.ma_cccd : ''}"></td>
 
                     <!-- CCCD TUNG PHONG - dung cung class voi nut Xem ben hoa-don -->
                     <td>
                         <a href="#"
                            class="admin-btn small outline cccd-btn"
-                           th:attr="data-ma-don=${dp.id}"
-                           th:onclick="|openCccdModal(${dp.id}); return false;|">
-                            Xem (<span th:text="${MapCtdp[dp.id] != null ? MapCtdp[dp.id].size() : 0}"></span>)
+                           th:attr="data-ma-don=${dp.datPhong.id}"
+                           th:onclick="|openCccdModal(${dp.datPhong.id}); return false;|">
+                            Xem (<span th:text="${MapCtdp[dp.datPhong.id] != null ? MapCtdp[dp.datPhong.id].size() : 0}"></span>)
                         </a>
 
                         <!-- Du lieu an cho modal -->
-                        <span style="display:none;" th:each="ctdp : ${MapCtdp[dp.id]}"
-                              th:class="'cccd-data-' + ${dp.id}"
+                        <span style="display:none;" th:each="ctdp : ${MapCtdp[dp.datPhong.id]}"
+                              th:class="'cccd-data-' + ${dp.datPhong.id}"
                               th:attr="data-so-phong=${ctdp.p != null ? ctdp.p.soPhong : ''}, data-cccd=${ctdp.ma_cccd != null ? ctdp.ma_cccd : ''}">
                         </span>
                     </td>
 
                     <td>
                         <div class="status-row">
-                            <span th:if="${dp.trangThai == 'Chua thanh toan'}" class="status-badge neutral">
+                            <span th:if="${dp.datPhong.trangThai == 'Chua thanh toan'}" class="status-badge neutral">
                                 Chưa thanh toán
                             </span>
 
-                            <form th:if="${dp.trangThai != 'Chua thanh toan' and dp.trangThai != 'Cho huy' and dp.trangThai != 'Da huy' and dp.trangThai != 'Da tra phong'}"
+                            <form th:if="${dp.datPhong.trangThai != 'Chua thanh toan' and dp.datPhong.trangThai != 'Cho huy' and dp.datPhong.trangThai != 'Da huy' and dp.datPhong.trangThai != 'Da tra phong'}"
                                   th:action="@{/nhan-su/admin/dat-phong/update-trang-thai}" method="post" style="margin: 0;">
-                                <input type="hidden" name="id" th:value="${dp.id}">
+                                <input type="hidden" name="id" th:value="${dp.datPhong.id}">
                                 <input type="hidden" name="page" th:value="${currentPage}">
                                 <input type="hidden" name="size" th:value="${pageSize}">
-                                <button th:if="${dp.trangThai == 'Cho xac nhan'}"
+                                <button th:if="${dp.datPhong.trangThai == 'Cho xac nhan'}"
                                         type="submit" name="trangThai" value="Da xac nhan"
                                         class="status-badge warning"
                                         style="cursor: pointer; border: none;"
-                                        th:disabled="${dp.ma_cccd == null or dp.ma_cccd.isEmpty()}">
+                                        th:disabled="${dp.datPhong.ma_cccd == null or dp.datPhong.ma_cccd.isEmpty()}">
                                     Chờ xác nhận
                                 </button>
-                                <button th:if="${dp.trangThai == 'Da xac nhan'}"
+                                <button th:if="${dp.datPhong.trangThai == 'Da xac nhan'}"
                                         type="submit" name="trangThai" value="Da nhan phong"
                                         class="status-badge info"
                                         style="cursor: pointer; border: none;">
                                     Đã xác nhận
                                 </button>
-                                <button th:if="${dp.trangThai == 'Da nhan phong'}"
+                                <button th:if="${dp.datPhong.trangThai == 'Da nhan phong'}"
                                         type="submit" name="trangThai" value="Da tra phong"
                                         class="status-badge success"
                                         style="cursor: pointer; border: none;">
@@ -463,19 +463,19 @@
                                 </button>
                             </form>
 
-                            <span th:if="${dp.trangThai == 'Da tra phong'}" class="status-badge neutral">
+                            <span th:if="${dp.datPhong.trangThai == 'Da tra phong'}" class="status-badge neutral">
                                 Đã trả phòng
                             </span>
-                            <span th:if="${dp.trangThai == 'Cho huy'}" class="status-badge warning">
+                            <span th:if="${dp.datPhong.trangThai == 'Cho huy'}" class="status-badge warning">
                                 Chờ hủy (chờ hoàn tiền)
                             </span>
-                            <span th:if="${dp.trangThai == 'Da huy'}" class="status-badge danger">
+                            <span th:if="${dp.datPhong.trangThai == 'Da huy'}" class="status-badge danger">
                                 Đã hủy
                             </span>
 
-                            <form th:if="${dp.trangThai != 'Da nhan phong' and dp.trangThai != 'Da tra phong' and dp.trangThai != 'Da huy' and dp.trangThai != 'Cho huy'}"
+                            <form th:if="${dp.datPhong.trangThai != 'Da nhan phong' and dp.datPhong.trangThai != 'Da tra phong' and dp.datPhong.trangThai != 'Da huy' and dp.datPhong.trangThai != 'Cho huy'}"
                                   th:action="@{/nhan-su/admin/dat-phong/huy}" method="post" style="margin: 0;">
-                                <input type="hidden" name="id" th:value="${dp.id}">
+                                <input type="hidden" name="id" th:value="${dp.datPhong.id}">
                                 <input type="hidden" name="page" th:value="${currentPage}">
                                 <input type="hidden" name="size" th:value="${pageSize}">
                                 <button type="submit" class="status-badge danger"
@@ -487,18 +487,21 @@
                         </div>
                     </td>
                     <td>
-                        <a th:if="${daDatHoaDon != null and !daDatHoaDon.contains(dp.id)}"
-                           th:href="@{/nhan-su/admin/hoa-don/create-from-dat-phong(maDatPhong=${dp.id})}"
+                        <!-- <a th:if="${daDatHoaDon != null and !daDatHoaDon.contains(dp.datPhong.id)}"
+                           th:href="@{/nhan-su/admin/hoa-don/create-from-dat-phong(maDatPhong=${dp.datPhong.id})}"
                            class="admin-btn small outline">
                             Xuất HĐ
                         </a>
-                        <span th:if="${daDatHoaDon != null and daDatHoaDon.contains(dp.id)}"
+                        <span th:if="${daDatHoaDon != null and daDatHoaDon.contains(dp.datPhong.id)}"
                               class="status-badge success">
                             Đã xuất HĐ
+                        </span> -->
+                        <span class="status-badge warning" th:text="${dp.hoaDonTrangThai}">
+
                         </span>
                     </td>
                     <td>
-                        <a th:href="@{/nhan-su/admin/dat-phong/chi-tiet/{id}(id=${dp.id})}"
+                        <a th:href="@{/nhan-su/admin/dat-phong/chi-tiet/{id}(id=${dp.datPhong.id})}"
                            class="admin-btn small outline">
                             Sửa
                         </a>
