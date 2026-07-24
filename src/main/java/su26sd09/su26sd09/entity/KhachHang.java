@@ -11,6 +11,7 @@ import lombok.Setter;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Data
 @Entity
@@ -63,4 +64,8 @@ public class KhachHang {
     @JoinColumn(name = "ma_vai_tro",referencedColumnName = "ma_vai_tro")
     @NotNull(message = "vai trò không được để trống")
     private VaiTro vaiTro;
+
+    @OneToOne
+    @JoinColumn(name = "anh_dai_dien", referencedColumnName = "ma_anh")
+    private Anh anhDaiDien;
 }

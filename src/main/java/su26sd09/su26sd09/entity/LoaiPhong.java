@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 @Entity
 @NoArgsConstructor
@@ -38,4 +39,7 @@ public class LoaiPhong {
     @NotBlank(message = "mô tả không được để trống")
     public String mota;
 
+    @OneToOne
+    @JoinColumn(name = "ma_anh",referencedColumnName = "ma_anh")
+    private Anh maAnh;
 }
