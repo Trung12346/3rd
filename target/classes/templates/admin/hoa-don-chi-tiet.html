@@ -162,6 +162,11 @@
             .stat-cards { grid-template-columns: 1fr; }
             .info-grid, .info-grid.cols-2 { grid-template-columns: 1fr; }
         }
+        .disabled {
+            pointer-events: none;
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body>
@@ -172,7 +177,7 @@
     <div class="admin-header">
         <h1 th:text="${title}">Chi Tiết Hóa Đơn</h1>
         <div class="row-actions">
-            <a th:href="@{/nhan-su/admin/hoa-don/xuat-pdf/{id}(id=${hoaDon.id})}" class="admin-btn" target="_blank">Xuất PDF</a>
+            <a th:href="@{/nhan-su/admin/hoa-don/xuat-pdf/{id}(id=${hoaDon.id})}" class="admin-btn" target="_blank" th:classappend="${hoaDon.d.trangThai == 'Da tra phong'} ? ' disabled' : ''">Xuất PDF</a>
             <a th:href="@{/nhan-su/admin/hoa-don}" class="admin-btn outline">Quay Lại Danh Sách</a>
         </div>
     </div>

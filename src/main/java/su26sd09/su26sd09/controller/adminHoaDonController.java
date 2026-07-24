@@ -147,6 +147,7 @@ public class adminHoaDonController {
                         )
                 );
             }
+
         }
 
         model.addAttribute("dvMap", dvMap);
@@ -428,5 +429,8 @@ public class adminHoaDonController {
         renderer.setDocumentFromString(html);
         renderer.layout();
         renderer.createPDF(response.getOutputStream());
+
+        hoaDon.setTrangThai("Da xuat");
+        hoaDonService.save(hoaDon);
     }
 }
