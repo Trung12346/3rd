@@ -289,13 +289,14 @@
 <main class="detail-wrapper">
   <div class="detail-main">
     <div class="gallery-main">
-      <img id="mainImage" src="https://images.unsplash.com/photo-1611892440504-42a792e24d32?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80" alt="Main Room">
+      <img id="mainImage" th:src="@{/media/{file}(file=${thumbAnh != null ? thumbAnh.maAnh : 'ed2d10ce-680a-467e-a83c-c0781f53a5fd'})}" alt="Main Room">
     </div>
     <div class="gallery-thumbs">
-      <img src="https://images.unsplash.com/photo-1611892440504-42a792e24d32?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80" class="active" onclick="changeImage(this)">
-      <img src="https://images.unsplash.com/photo-1584622650111-993a426fbf0a?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80" onclick="changeImage(this)">
-      <img src="https://images.unsplash.com/photo-1631049307264-da0ec9d70304?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80" onclick="changeImage(this)">
-      <img src="https://images.unsplash.com/photo-1595526114035-0d45ed16cfbf?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80" onclick="changeImage(this)">
+<!--      <img src="https://images.unsplash.com/photo-1611892440504-42a792e24d32?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80" class="active" onclick="changeImage(this)">-->
+<!--      <img src="https://images.unsplash.com/photo-1584622650111-993a426fbf0a?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80" onclick="changeImage(this)">-->
+<!--      <img src="https://images.unsplash.com/photo-1631049307264-da0ec9d70304?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80" onclick="changeImage(this)">-->
+<!--      <img src="https://images.unsplash.com/photo-1595526114035-0d45ed16cfbf?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80" onclick="changeImage(this)">-->
+      <img th:each="i, stat: ${anhs}" th:src="@{/media/{file}(file=${i.maAnh})}" onclick="changeImage(this)" th:classappend="${stat.first ? 'active' : ''}">
     </div>
 
     <div class="detail-header">

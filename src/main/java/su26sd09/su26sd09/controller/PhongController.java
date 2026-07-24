@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import su26sd09.su26sd09.dto.RoomBookingGuardDTO;
 import su26sd09.su26sd09.entity.*;
+import su26sd09.su26sd09.repository.PhongAnhRepository;
 import su26sd09.su26sd09.service.*;
 
 import java.math.BigDecimal;
@@ -57,6 +58,9 @@ public class PhongController {
 
     @Autowired
     private ReviewService reviewService;
+
+    @Autowired
+    private PhongAnhRepository phongAnhRepository;
 
     @GetMapping
     public String index(Model model) {
@@ -122,6 +126,14 @@ public class PhongController {
                 : null;
         model.addAttribute("reviewEligibility", reviewService.getEligibility(phong.getMaPhong(), currentEmail));
 
+        List<Anh> anhs = new ArrayList<>();
+        for (PhongAnh pa: phongAnhRepository.findByMaPhong_MaPhong(id)
+             ) {
+            anhs.add(pa.maAnh);
+        }
+        Anh thumbAnh = anhs.size() != 0 ? anhs.get(0) : null;
+        model.addAttribute("thumbAnh", thumbAnh);
+        model.addAttribute("anhs", anhs);
         model.addAttribute("phong", phong);
         model.addAttribute("loaiPhong", loaiPhong);
         model.addAttribute("tienNghi", tienNghi);
