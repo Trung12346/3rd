@@ -94,6 +94,9 @@
     <div th:if="${error}" class="admin-message error">
         <span th:text="${error}"></span>
     </div>
+    <div th:if="${toastWarning}" class="admin-message warning">
+        <span th:text="${toastWarning}"></span>
+    </div>
 
     <!-- ===== THONG TIN KHACH & DON ===== -->
     <section class="admin-panel">
@@ -289,7 +292,8 @@
         <div th:if="${dp.trangThai == 'Da tra phong'}" class="admin-actions" style="margin-top:16px;">
             <a th:if="${hoaDon != null}"
                th:href="@{/nhan-su/checkout/{id}/xuat-pdf(id=${dp.id})}"
-               class="admin-btn" target="_blank">
+               class="admin-btn" onclick="xuatPdfVaMoTab(this, event)"
+               th:classappend="${dp.trangThai == 'Da tra phong' or dp.trangThai == 'Da huy'} ? '' : ' disabled'">
                 Xuất Hóa Đơn PDF
             </a>
             <a th:href="@{/nhan-su/checkout}" class="admin-btn outline">Quay Lại Danh Sách</a>
@@ -304,5 +308,6 @@
 <footer>
     <p>&copy; 2026 Hotel. All rights reserved.</p>
 </footer>
+<script src="/xuat-pdf-handler.js"></script>
 </body>
 </html>

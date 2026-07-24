@@ -111,6 +111,7 @@ public class NhanVienDatPhongController {
         }
 
         model.addAttribute("hoaDon", hoaDonService.findByDatPhongId(id)); // <-- đã thêm chưa?
+        model.addAttribute("hoaDonDaXuat", hoaDonService.isDaXuat(id));
 
         List<ChiTietDatPhong> chiTietDatPhongList = chiTietDatPhongService.findByDatPhongId(id);
 
@@ -125,7 +126,7 @@ public class NhanVienDatPhongController {
         model.addAttribute("datPhong", datPhong);
         model.addAttribute("chiTietDatPhongList", chiTietDatPhongList);
         model.addAttribute("chiTietDichVuList", ctdvService.findByDatPhongId(id));
-        model.addAttribute("dichVuList", dichVuService.findAll());
+        model.addAttribute("dichVuList", dichVuService.findActiveThuong());
         model.addAttribute("kmJson", buildKhuyenMaiJson());
         model.addAttribute("tongPhuThu", tongPhuThu);
 
@@ -158,6 +159,11 @@ public class NhanVienDatPhongController {
         if (datPhong == null) {
             redirectAttributes.addFlashAttribute("error", "Khong tim thay don dat phong #" + id);
             return "redirect:/nhan-su/dat-phong";
+        }
+        if (hoaDonService.isDaXuat(id)) {
+            redirectAttributes.addFlashAttribute("error",
+                    "Hoa don cua don dat phong #" + id + " da duoc xuat PDF, khong the chinh sua.");
+            return "redirect:/nhan-su/dat-phong/chi-tiet/" + id;
         }
         List<String> loiCapNhat = validateChiTietDatPhong(ngayNhan, ngayTra, nguoiLon, treEm, dichVuIds,
                 phatSinhTenList, phatSinhDonGiaList, phatSinhGhiChuList, allParams);
@@ -361,7 +367,11 @@ public class NhanVienDatPhongController {
         hoaDon.setTongTien(defaultMoney(tongCong));
         // thông qua endpoint /thu-tien (thanh toán thật, tiền mặt hoặc VNPay).
         hoaDon.setNgayCapNhat(LocalDateTime.now());
-        hoaDonService.save(hoaDon);
+        // Dùng helper để tự động đồng bộ trangThai:
+        // - "Da thanh toan" nếu đã trả đủ.
+        // - "Cho thanh toan" nếu tổng tiền vừa tăng lên vượt quá daThanhToan.
+        // - Không động vào "Da xuat".
+        hoaDonService.saveWithPaymentStatusCheck(hoaDon);
     }
 
     private int parseIntOrDefault(String value, int defaultValue) {
@@ -801,7 +811,7 @@ public class NhanVienDatPhongController {
         hd.setTongTien(tongCong);
         hd.setDaThanhToan(tongCong);
         hd.setGhiChu("Dat phong va thanh toan tien mat tai quay ma don: " + savedDp.getId());
-        hoaDonService.save(hd);
+        hoaDonService.saveWithPaymentStatusCheck(hd);
 
         ThanhToan tt = new ThanhToan();
         tt.setH(hd);
@@ -841,6 +851,11 @@ public class NhanVienDatPhongController {
             redirectAttributes.addFlashAttribute("error", "Khong tim thay don dat phong #" + id);
             return "redirect:/nhan-su/dat-phong";
         }
+        if (hoaDonService.isDaXuat(id)) {
+            redirectAttributes.addFlashAttribute("error",
+                    "Hoa don cua don dat phong #" + id + " da duoc xuat PDF, khong the chinh sua.");
+            return "redirect:/nhan-su/dat-phong/chi-tiet/" + id;
+        }
 
         dp.setMa_cccd(maCccd);
 
@@ -871,6 +886,11 @@ public class NhanVienDatPhongController {
             redirectAttributes.addFlashAttribute("error","don dat phong chua co hd");
             return "redirect:/nhan-su/dat-phong/chi-tiet/"+id;
         }
+        if (hoaDonService.isDaXuat(id)) {
+            redirectAttributes.addFlashAttribute("error",
+                    "Hoa don cua don dat phong #" + id + " da duoc xuat PDF, khong the chinh sua.");
+            return "redirect:/nhan-su/dat-phong/chi-tiet/" + id;
+        }
 
         BigDecimal daThanhToan = hd.getDaThanhToan() ==null ? BigDecimal.ZERO : hd.getDaThanhToan();
         BigDecimal conNo = hd.getTongTien().subtract(daThanhToan);
@@ -894,7 +914,7 @@ public class NhanVienDatPhongController {
 
         hd.setDaThanhToan(daThanhToan.add(soTien));
         hd.setNgayCapNhat(LocalDateTime.now());
-        hoaDonService.save(hd);
+        hoaDonService.saveWithPaymentStatusCheck(hd);
 
         redirectAttributes.addFlashAttribute("success", "Đã thu " + soTien + " VND tiền mặt.");
         return "redirect:/nhan-su/dat-phong/chi-tiet/" + id;

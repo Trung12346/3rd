@@ -1,6 +1,7 @@
 package su26sd09.su26sd09.controller;
 
 import com.lowagie.text.pdf.BaseFont;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
@@ -314,14 +315,14 @@ public class NhanVienCheckoutController {
             tt.setNv(nvHienTai);
             tt.setGichu(ghiChu != null && !ghiChu.isBlank() ? ghiChu : "Thu tiền còn lại khi trả phòng #" + id);
 
-            hoaDon = hoaDonService.save(hoaDon);
+            hoaDon = hoaDonService.saveWithPaymentStatusCheck(hoaDon);
             tt.setH(hoaDon);
             thanhToanService.save(tt);
 
             hoaDon.setDaThanhToan(tongTien);
-            hoaDon = hoaDonService.save(hoaDon);
+            hoaDon = hoaDonService.saveWithPaymentStatusCheck(hoaDon);
         } else {
-            hoaDon = hoaDonService.save(hoaDon);
+            hoaDon = hoaDonService.saveWithPaymentStatusCheck(hoaDon);
         }
 
         // Cap nhat trang thai don va giai phong cac phong da o
@@ -348,7 +349,7 @@ public class NhanVienCheckoutController {
 
     @GetMapping("/{id}/xuat-pdf")
     public void xuatPdf(@PathVariable Integer id, Authentication authentication,
-                         HttpServletResponse response) throws Exception {
+                         HttpServletRequest request, HttpServletResponse response) throws Exception {
 
         if (!coQuyenCheckout(authentication)) {
             response.sendRedirect("/home");
@@ -358,6 +359,21 @@ public class NhanVienCheckoutController {
         HoaDon hoaDon = hoaDonService.findByDatPhongId(id);
         if (hoaDon == null) {
             response.sendRedirect("/nhan-su/checkout/" + id);
+            return;
+        }
+
+        // Validate: chỉ cho xuất PDF khi đơn đã ở trạng thái "Da huy" hoặc "Da tra phong"
+        String trangThaiDon = hoaDon.getD() != null ? hoaDon.getD().getTrangThai() : null;
+        boolean hopLe = "Da huy".equals(trangThaiDon) || "Da tra phong".equals(trangThaiDon);
+        if (!hopLe) {
+            request.getSession().setAttribute("toastWarning",
+                    "Đơn đặt phòng #" + id
+                            + " đang trong quá trình sử dụng phòng. Vui lòng hoàn tất trả phòng hoặc xử lý hủy đơn trước khi xuất hóa đơn.");
+            String referer = request.getHeader("Referer");
+            String redirect = (referer != null && !referer.isBlank())
+                    ? referer
+                    : ("/nhan-su/checkout/" + id);
+            response.sendRedirect(redirect);
             return;
         }
 

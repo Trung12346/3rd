@@ -368,7 +368,7 @@ public class VnpayService {
 
             hd.setDaThanhToan(daThanhToan.add(amountVnpay));
             hd.setNgayCapNhat(LocalDateTime.now());
-            hoaDonService.save(hd);
+            hoaDonService.saveWithPaymentStatusCheck(hd);
 
             ThanhToan thanhToan = new ThanhToan();
             thanhToan.setH(hd);
@@ -435,7 +435,7 @@ public class VnpayService {
         hd.setDaThanhToan(amountVnpay);
         hd.setGhiChu("So Phong Dat: " + chiTietDatPhong.size() + " Ma Dat Phong: " + maDatPhong);
         hd.setNgayCapNhat(null);
-        hoaDonService.save(hd);
+        hoaDonService.saveWithPaymentStatusCheck(hd);
 
         ThanhToan thanhToan = new ThanhToan();
         thanhToan.setPhuongThuc("Chuyen Khoan");

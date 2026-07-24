@@ -253,6 +253,20 @@
     <div th:if="${thanhCongCapNhat}" class="admin-message success" th:text="${thanhCongCapNhat}"></div>
     <div th:if="${success}" class="admin-message success" th:text="${success}"></div>
     <div th:if="${error}" class="admin-message error" th:text="${error}"></div>
+
+    <div th:if="${hoaDonDaXuat}" class="cdp-readonly-notice"
+         style="background:#eef2ff; border:1px solid #c7d2fe; color:#1e3a8a;
+                padding:14px 18px; border-radius:8px; margin:0 0 20px;
+                font-size:14px; line-height:1.5;">
+        <div style="font-weight:600; margin-bottom:4px;">
+            Chế độ chỉ xem — Hóa đơn đã được xuất PDF
+        </div>
+        <div style="opacity:0.85;">
+            Tất cả các trường thông tin bên dưới đã được khóa. Nếu cần chỉnh sửa,
+            vui lòng liên hệ bộ phận quản lý để được hỗ trợ.
+        </div>
+    </div>
+
     <div class="cdp-panel">
         <div class="cdp-panel-title">
             <i class="fa-solid fa-id-card"></i> Thông Tin Khách Hàng
@@ -267,19 +281,23 @@
             <th:block th:if="${datPhong.n == null}">
                 <div class="stay-field">
                     <label>Họ tên khách</label>
-                    <input type="text" name="hoten" th:value="${datPhong.hoten}" required>
+                    <input type="text" name="hoten" th:value="${datPhong.hoten}" required
+                           th:readonly="${hoaDonDaXuat}">
                 </div>
                 <div class="stay-field">
                     <label>Email</label>
-                    <input type="email" name="email" th:value="${datPhong.email}">
+                    <input type="email" name="email" th:value="${datPhong.email}"
+                           th:readonly="${hoaDonDaXuat}">
                 </div>
                 <div class="stay-field">
                     <label>Số điện thoại</label>
-                    <input type="text" name="sdt" th:value="${datPhong.sdt}">
+                    <input type="text" name="sdt" th:value="${datPhong.sdt}"
+                           th:readonly="${hoaDonDaXuat}">
                 </div>
                 <div class="stay-field">
                     <label>Số CCCD</label>
-                    <input type="text" name="maCccd" th:value="${datPhong.ma_cccd}">
+                    <input type="text" name="maCccd" th:value="${datPhong.ma_cccd}"
+                           th:readonly="${hoaDonDaXuat}">
                 </div>
             </th:block>
 
@@ -287,27 +305,32 @@
             <th:block th:if="${datPhong.n != null}">
                 <div class="stay-field">
                     <label>Họ tên tài khoản</label>
-                    <input type="text" name="hoten" th:value="${datPhong.n.hoTen}" required>
+                    <input type="text" name="hoten" th:value="${datPhong.n.hoTen}" required
+                           th:readonly="${hoaDonDaXuat}">
                 </div>
                 <div class="stay-field">
                     <label>Email tài khoản</label>
-                    <input type="email" name="email" th:value="${datPhong.n.email}">
+                    <input type="email" name="email" th:value="${datPhong.n.email}"
+                           th:readonly="${hoaDonDaXuat}">
                 </div>
                 <div class="stay-field">
                     <label>Số điện thoại tài khoản</label>
-                    <input type="text" name="sdt" th:value="${datPhong.n.soDienThoai}">
+                    <input type="text" name="sdt" th:value="${datPhong.n.soDienThoai}"
+                           th:readonly="${hoaDonDaXuat}">
                 </div>
                 <div class="stay-field">
                     <label>Số CCCD (đơn này)</label>
-                    <input type="text" name="maCccd" th:value="${datPhong.ma_cccd}">
+                    <input type="text" name="maCccd" th:value="${datPhong.ma_cccd}"
+                           th:readonly="${hoaDonDaXuat}">
                 </div>
                 <p style="grid-column:1 / -1; font-size:12px; color:#94a3b8; margin:0;">
                     Họ tên / email / SĐT thuộc tài khoản khách — sửa ở đây sẽ áp dụng cho toàn bộ tài khoản, ảnh hưởng cả các đơn khác của khách này.
                 </p>
             </th:block>
 
-            <button type="submit" class="btn-thu-tien" style="grid-column:1 / -1; justify-self:start;">
-                <i class="fa-solid fa-floppy-disk"></i> Lưu Thông Tin Khách Hàng
+            <button type="submit" class="btn-thu-tien" style="grid-column:1 / -1; justify-self:start;"
+                    th:disabled="${hoaDonDaXuat}">
+                Lưu Thông Tin Khách Hàng
             </button>
         </form>
     </div>
@@ -324,6 +347,7 @@
                 <input type="text" id="promoInput" class="promo-select"
                        placeholder="Nhập mã khuyến mãi (ví dụ: SUMMER2026)"
                        autocomplete="off"
+                       th:readonly="${hoaDonDaXuat}"
                        th:value="${datPhong != null and datPhong.km != null ? datPhong.km.promoCode : ''}">
             </div>
             <div class="promo-info" id="promoInputInfo" style="display:none;"></div>
@@ -351,24 +375,29 @@
             </span>
         </div>
 
-        <form th:action="@{/nhan-su/dat-phong/chi-tiet/{id}/thu-tien(id=${datPhong.id})}" method="post" class="thu-tien-form">
+        <form th:action="@{/nhan-su/dat-phong/chi-tiet/{id}/thu-tien(id=${datPhong.id})}" method="post"
+              class="thu-tien-form">
             <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
 
             <div class="ff">
                 <label>Số tiền thu</label>
-                <input type="number" name="soTien" min="0" step="1000" required>
+                <input type="number" name="soTien" min="0" step="1000" required
+                       th:readonly="${hoaDonDaXuat}"
+                       th:value="${hoaDon != null and hoaDon.tongTien != null and hoaDon.daThanhToan != null
+                                   and hoaDon.tongTien.subtract(hoaDon.daThanhToan).signum() > 0}
+                               ? ${hoaDon.tongTien.subtract(hoaDon.daThanhToan)} : ''">
             </div>
 
             <div class="ff">
                 <label>Phương thức</label>
-                <select name="phuongThuc" required>
+                <select name="phuongThuc" required th:disabled="${hoaDonDaXuat}">
                     <option value="Tien Mat">Tiền mặt</option>
                     <option value="Chuyen Khoan">Chuyển khoản (VNPay)</option>
                 </select>
             </div>
 
-            <button type="submit" class="btn-thu-tien">
-                <i class="fa-solid fa-hand-holding-dollar"></i> Thu Tiền
+            <button type="submit" class="btn-thu-tien" th:disabled="${hoaDonDaXuat}">
+                Thu Tiền
             </button>
         </form>
     </div>
@@ -387,6 +416,7 @@
         <input type="hidden" name="tongCong" id="h-tong-cong" value="0">
         <div id="dichVuHiddenInputs"></div>
 
+        <fieldset th:disabled="${hoaDonDaXuat}" style="border:0; padding:0; margin:0;">
         <div class="cdp-layout">
             <section>
 
@@ -621,6 +651,7 @@
                 </p>
             </aside>
         </div>
+        </fieldset>
     </form>
 </main>
 

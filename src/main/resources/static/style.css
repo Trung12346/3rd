@@ -993,6 +993,12 @@ footer {
     color: #9F2F25;
 }
 
+.admin-message.warning {
+    background: #FFF8E1;
+    border: 1px solid #FFE08A;
+    color: #8A6D1B;
+}
+
 .search-row {
     display: flex;
     gap: 12px;
