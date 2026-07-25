@@ -20,6 +20,7 @@ import su26sd09.su26sd09.entity.NhanSu;
 import su26sd09.su26sd09.entity.VaiTro;
 import su26sd09.su26sd09.repository.NhanVienRepo;
 import su26sd09.su26sd09.repository.VaiTroRepo;
+import su26sd09.su26sd09.service.HoaDonService;
 import su26sd09.su26sd09.service.NhanVienService;
 import su26sd09.su26sd09.service.UserService;
 
@@ -35,14 +36,9 @@ public class AdminNhanVienController {
     @Autowired
     NhanVienService repo;
     @Autowired
-    UserService NguoiDungRepo;
-    @Autowired
     VaiTroRepo vaiTroRepo;
     @Autowired
     NhanVienRepo nvrepo;
-
-
-
 
 
 
@@ -99,13 +95,13 @@ public class AdminNhanVienController {
 
     }
 
-    @PostMapping("/delete/{id}")
-    public String delete(@PathVariable("id") int id,RedirectAttributes redirect){
-        String name = repo.findbyid(id).getHoten();
-        repo.deletebyid(id);
-        redirect.addFlashAttribute("success","đã xóa nhân viên: " + name);
-        return "redirect:/nhan-su/admin/nhan-vien";
-    }
+//    @PostMapping("/delete/{id}")
+//    public String delete(@PathVariable("id") int id,RedirectAttributes redirect){
+//        String name = repo.findbyid(id).getHoten();
+//        repo.deletebyid(id);
+//        redirect.addFlashAttribute("success","đã xóa nhân viên: " + name);
+//        return "redirect:/nhan-su/admin/nhan-vien";
+//    }
 
 
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
