@@ -9,6 +9,7 @@ import su26sd09.su26sd09.repository.LoaiPhongRepository;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class LoaiPhongService {
@@ -55,5 +56,11 @@ public class LoaiPhongService {
                                        Integer soKhach, Pageable pageable) {
         String kw = (keyword == null || keyword.isBlank()) ? null : keyword.trim();
         return repo.searchLoaiPhongPaged(kw, minGia, maxGia, soKhach, pageable);
+    }
+
+    public boolean checktrungAnh(String anhId, int id){
+        UUID IdanhParse = UUID.fromString(anhId);
+     return repo.existsByMaAnhExceptId(IdanhParse,id);
+
     }
 }

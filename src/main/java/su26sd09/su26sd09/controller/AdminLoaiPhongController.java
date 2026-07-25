@@ -10,6 +10,7 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import su26sd09.su26sd09.entity.Anh;
 import su26sd09.su26sd09.entity.LoaiPhong;
 import su26sd09.su26sd09.service.LoaiPhongService;
 import su26sd09.su26sd09.repository.AnhRepository;
