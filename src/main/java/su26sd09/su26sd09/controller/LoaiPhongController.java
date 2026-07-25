@@ -25,6 +25,9 @@ import java.util.Map;
 @RequestMapping("/loai-phong")
 public class LoaiPhongController {
 
+    private static final String ANH_MAC_DINH =
+            "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=800&q=80";
+
     @Autowired
     private PhongService phongService;
 
@@ -32,12 +35,7 @@ public class LoaiPhongController {
     public String index(Model model) {
         List<LoaiPhong> loaiPhongs = phongService.findAllLoai();
         loadLoaiPhongList(model, loaiPhongs);
-        // Thêm ảnh cho các loại phòng
-        Map<Integer, String> anhLoaiPhong = new HashMap<>();
-        for (LoaiPhong lp : loaiPhongs) {
-            anhLoaiPhong.put(lp.getId(), "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=800&q=80");
-        }
-        model.addAttribute("anhLoaiPhong", anhLoaiPhong);
+        model.addAttribute("anhLoaiPhong", buildAnhLoaiPhong(loaiPhongs));
         return "loai-phong";
     }
 
@@ -52,14 +50,8 @@ public class LoaiPhongController {
     ) {
         List<LoaiPhong> loaiPhongs = phongService.searchLoaiPhong(mucGia, nguoiLon, treEm);
         loadLoaiPhongList(model, loaiPhongs);
-        
-        // Thêm ảnh cho các loại phòng
-        Map<Integer, String> anhLoaiPhong = new HashMap<>();
-        for (LoaiPhong lp : loaiPhongs) {
-            anhLoaiPhong.put(lp.getId(), "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=800&q=80");
-        }
-        model.addAttribute("anhLoaiPhong", anhLoaiPhong);
-        
+        model.addAttribute("anhLoaiPhong", buildAnhLoaiPhong(loaiPhongs));
+
         model.addAttribute("ngayNhan", ngayNhan);
         model.addAttribute("ngayTra", ngayTra);
         model.addAttribute("nguoiLon", nguoiLon);
@@ -86,12 +78,8 @@ public class LoaiPhongController {
             tienNghiTheoPhong.put(phong.getMaPhong(), phongService.findTenTienNghiByPhong(phong.getMaPhong()));
         }
 
-        // Lấy tất cả loại phòng cho carousel và dropdown menu
         List<LoaiPhong> tatCaLoaiPhong = phongService.findAllLoai();
-        Map<Integer, String> anhLoaiPhong = new HashMap<>();
-        for (LoaiPhong lp : tatCaLoaiPhong) {
-            anhLoaiPhong.put(lp.getId(), "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=800&q=80");
-        }
+        Map<Integer, String> anhLoaiPhong = buildAnhLoaiPhong(tatCaLoaiPhong);
 
         Map<Integer, RoomBookingGuardDTO> bookingGuardByPhong = phongService.buildRoomGuards(phongs);
 
@@ -117,7 +105,7 @@ public class LoaiPhongController {
         model.addAttribute("tienNghiTheoPhong", tienNghiTheoPhong);
         model.addAttribute("loaiPhongs", tatCaLoaiPhong);
         model.addAttribute("anhLoaiPhong", anhLoaiPhong);
-        model.addAttribute("bookingGuardByPhong", bookingGuardByPhong); // ✅ dùng lại biến đã có, không gọi lại service
+        model.addAttribute("bookingGuardByPhong", bookingGuardByPhong);
         model.addAttribute("gioNhanToiDaMacDinh", LocalTime.of(11,0));
         model.addAttribute("gioTraToiDaMacDinh", LocalTime.of(18,30));
         return "phong-theo-loai";
@@ -131,5 +119,17 @@ public class LoaiPhongController {
 
         model.addAttribute("loaiPhongs", loaiPhongs);
         model.addAttribute("soPhongTrongTheoLoai", soPhongTrongTheoLoai);
+    }
+
+    private Map<Integer, String> buildAnhLoaiPhong(List<LoaiPhong> loaiPhongs) {
+        Map<Integer, String> anhLoaiPhong = new HashMap<>();
+        for (LoaiPhong lp : loaiPhongs) {
+            if (lp.getMaAnh() != null) {
+                anhLoaiPhong.put(lp.getId(), "/media/" + lp.getMaAnh().getMaAnh());
+            } else {
+                anhLoaiPhong.put(lp.getId(), ANH_MAC_DINH);
+            }
+        }
+        return anhLoaiPhong;
     }
 }

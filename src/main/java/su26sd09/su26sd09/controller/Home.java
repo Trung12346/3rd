@@ -78,6 +78,9 @@ public class Home {
         return "index";
     }
 
+    private static final String ANH_MAC_DINH =
+            "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=800&q=80";
+
     private void loadHomeData(Model model) {
         List<LoaiPhong> loaiPhongs = phongService.findAllLoai();
         Map<Integer, Long> soPhongTrongTheoLoai = new HashMap<>();
@@ -85,7 +88,12 @@ public class Home {
 
         for (LoaiPhong loai : loaiPhongs) {
             soPhongTrongTheoLoai.put(loai.getId(), phongService.countPhongTrongTheoLoai(loai.getId()));
-            anhLoaiPhong.put(loai.getId(), "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=800&q=80");
+
+            if (loai.getMaAnh() != null) {
+                anhLoaiPhong.put(loai.getId(), "/media/" + loai.getMaAnh().getMaAnh());
+            } else {
+                anhLoaiPhong.put(loai.getId(), ANH_MAC_DINH);
+            }
         }
 
         model.addAttribute("loaiPhongs", loaiPhongs);

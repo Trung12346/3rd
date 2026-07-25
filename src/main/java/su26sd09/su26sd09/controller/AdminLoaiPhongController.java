@@ -1,5 +1,6 @@
 package su26sd09.su26sd09.controller;
 
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -11,8 +12,10 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import su26sd09.su26sd09.entity.LoaiPhong;
 import su26sd09.su26sd09.service.LoaiPhongService;
+import su26sd09.su26sd09.repository.AnhRepository;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 @Controller
 @RequestMapping("/nhan-su/admin/loai-phong")
@@ -20,6 +23,8 @@ public class AdminLoaiPhongController {
 
     @Autowired
     LoaiPhongService repo;
+     @Autowired
+     AnhRepository anhrepo;
 
     @GetMapping
     public String index(Model model,
@@ -52,7 +57,11 @@ public class AdminLoaiPhongController {
     }
 
     @PostMapping("/save")
-    public String save(RedirectAttributes redirect, @ModelAttribute("loaiPhong") LoaiPhong l, BindingResult b) {
+    public String save(RedirectAttributes redirect,
+                      @Valid @ModelAttribute("loaiPhong") LoaiPhong l,
+                       BindingResult b,
+                       @RequestParam(value = "anhId", required = false) String anhId) {
+
         if (b.hasErrors()) {
             redirect.addFlashAttribute("error", b.getFieldError().getDefaultMessage());
             return "redirect:/nhan-su/admin/loai-phong";
@@ -61,6 +70,13 @@ public class AdminLoaiPhongController {
             redirect.addFlashAttribute("error", "tên loại phòng đã tồn tại");
             return "redirect:/nhan-su/admin/loai-phong";
         }
+
+        if (anhId != null && !anhId.isBlank()) {
+            l.setMaAnh(anhrepo.getReferenceById(UUID.fromString(anhId)));
+        } else {
+            l.setMaAnh(null);
+        }
+
         repo.save(l);
         redirect.addFlashAttribute("success", "lưu loại phòng thành công");
         return "redirect:/nhan-su/admin/loai-phong";
