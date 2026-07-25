@@ -127,11 +127,10 @@ public class AdminNhanVienController {
         if (matKhauMoi != null && !matKhauMoi.isBlank()) {
             nv.setMat_khau_hash(passwordEncoder.encode(matKhauMoi));
         }
-        System.out.println("đây là mật khẩu hash: " + nv.getMat_khau_hash());
-        System.out.println("đây là mật khẩu mới: " + matKhauMoi);
-        System.out.println("đây là vai trò: " + nv.getVaitro().getTenVaiTro());
+        System.out.println(" đây là mật khẩu: " + nv.getMat_khau_hash());
         for (FieldError fe : bindingResult.getFieldErrors()) {
-            if ( (fe.getField().equals("vaitro") || fe.getField().equals("mat_khau_hash") && matKhauMoi != null && !matKhauMoi.isBlank())) {
+            if ( fe.getField().equals("vaitro") || (fe.getField().equals("mat_khau_hash") && matKhauMoi != null && !matKhauMoi.isBlank())) {
+                System.out.println("hello");
                 continue;
             }
             redirect.addFlashAttribute("error", fe.getDefaultMessage());
