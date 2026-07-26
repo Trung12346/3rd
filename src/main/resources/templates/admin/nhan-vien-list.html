@@ -182,13 +182,7 @@
                                         th:text="${nv.trang_thai == true} ? 'Khóa' : 'Mở khóa'">
                                 </button>
                             </form>
-<!--                            <form th:action="@{/nhan-su/admin/nhan-vien/delete/{id}(id=${nv.id})}"-->
-<!--                                  method="post"-->
-<!--                                  onsubmit="return confirm('Bạn có chắc muốn XÓA VĨNH VIỄN nhân viên này? Hành động này không thể hoàn tác.')">-->
-<!--                                <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">-->
-<!--                                <input type="hidden" name="_method" value="delete">-->
-<!--                                <button type="submit" class="admin-btn small danger">Xóa</button>-->
-<!--                            </form>-->
+
                         </div>
                     </td>
                 </tr>
@@ -199,7 +193,6 @@
             </table>
         </div>
 
-        <!-- Phân trang -->
         <div class="admin-actions" th:if="${nhanViensPage.totalPages > 1}" style="justify-content:center; gap:6px;">
             <a th:if="${nhanViensPage.hasPrevious()}"
                class="admin-btn small outline"

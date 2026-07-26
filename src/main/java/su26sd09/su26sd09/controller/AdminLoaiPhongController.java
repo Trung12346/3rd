@@ -83,15 +83,7 @@ public class AdminLoaiPhongController {
         return "redirect:/nhan-su/admin/loai-phong";
     }
 
-    @GetMapping("/delete/{id}")
-    public String delete(@PathVariable("id") int id, RedirectAttributes redirect) {
-        LoaiPhong p = repo.findbyid(id);
-        if (p != null) {
-            repo.delete(p);
-            redirect.addFlashAttribute("success", "xóa loại phòng thành công");
-        }
-        return "redirect:/nhan-su/admin/loai-phong";
-    }
+
 
     @GetMapping("/tim-kiem")
     public String timKiem(Model model,
