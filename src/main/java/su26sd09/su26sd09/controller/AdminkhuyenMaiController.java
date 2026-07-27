@@ -80,10 +80,14 @@ public class AdminkhuyenMaiController {
     }
 
 
-    @PostMapping("/delete/{id}")
+    @PostMapping("/lock-or-unlock/{id}")
     public  String deleteKhuyenMai(@PathVariable("id") int id, Principal p){
-        repo.delete(repo.findbyId(id));
 
+        KhuyenMai km = repo.findbyId(id);
+
+        km.setHoatDong(!km.hoatDong);
+
+         repo.save(km);
 
         return "redirect:/nhan-su/admin/khuyen-mai";
     }

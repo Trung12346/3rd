@@ -194,11 +194,12 @@
                         <div class="row-actions">
                             <a class="admin-btn small outline"
                                th:href="@{/nhan-su/admin/khuyen-mai/edit/{id}(id=${km.id})}">Sửa</a>
-                            <form th:action="@{/nhan-su/admin/khuyen-mai/delete/{id}(id=${km.id})}"
+                            <form th:action="@{/nhan-su/admin/khuyen-mai/lock-or-unlock/{id}(id=${km.id})}"
                                   method="post"
-                                  onsubmit="return confirm('Bạn có chắc muốn xóa khuyến mãi này?')">
+                                  onsubmit="return confirm('Bạn có chắc muốn đổi trạng thái khuyến mãi này?')">
                                 <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
-                                <button type="submit" class="admin-btn small danger">Xóa</button>
+                                <button type="submit" class="admin-btn small outline" th:if="${km.hoatDong == false}">mở khóa</button>
+                                <button type="submit" class="admin-btn small danger" th:if="${km.hoatDong == true}"> khóa</button>
                             </form>
                         </div>
                     </td>
