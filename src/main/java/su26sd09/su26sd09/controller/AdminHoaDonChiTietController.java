@@ -86,6 +86,23 @@ public class AdminHoaDonChiTietController {
             trangThaiThanhToanClass = "active";
         }
 
+        String trangThaiHoaDonLabel;
+        String trangThaiHoaDonClass;
+        switch(hoaDon.getTrangThai())
+        {
+            case "Da thanh toan" -> {
+                trangThaiHoaDonLabel = "Đã thanh toán";
+                trangThaiHoaDonClass = "active";
+            }
+            case "Da xuat" -> {
+                trangThaiHoaDonLabel = "Đã xuất";
+                trangThaiHoaDonClass = "active";
+            }
+            default -> {
+                trangThaiHoaDonLabel = "Chờ thanh toán";
+                trangThaiHoaDonClass = "partial";
+            }
+        }
 
 
         model.addAttribute("hoaDon", hoaDon);
@@ -98,6 +115,8 @@ public class AdminHoaDonChiTietController {
         model.addAttribute("tongPhuThu", tongPhuThu);
         model.addAttribute("trangThaiThanhToanLabel", trangThaiThanhToanLabel);
         model.addAttribute("trangThaiThanhToanClass", trangThaiThanhToanClass);
+        model.addAttribute("trangThaiHoaDonLabel", trangThaiHoaDonLabel);
+        model.addAttribute("trangThaiHoaDonClass", trangThaiHoaDonClass);
         model.addAttribute("title", "Chi Tiết Hóa Đơn #" + id);
 
         return "admin/hoa-don-chi-tiet";
