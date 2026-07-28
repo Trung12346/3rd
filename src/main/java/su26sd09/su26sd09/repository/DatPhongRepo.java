@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import su26sd09.su26sd09.entity.DatPhong;
+import su26sd09.su26sd09.entity.KhuyenMai;
 import su26sd09.su26sd09.entity.Phong;
 
 import java.time.LocalDateTime;
@@ -52,8 +53,8 @@ public interface DatPhongRepo extends JpaRepository<DatPhong,Integer> {
     order by d.ngayTao desc
     """)
     List<DatPhong> findBookingsForCustomerAndRoom(@Param("maPhong") int maPhong,
-                                                   @Param("maKhachHang") int maKhachHang,
-                                                   @Param("email") String email);
+                                                  @Param("maKhachHang") int maKhachHang,
+                                                  @Param("email") String email);
 
     /**
      * Lấy các đơn DatPhong gần nhất còn liên quan tới 1 phòng:
@@ -135,4 +136,7 @@ and d.trangThai = 'Da tra phong'
 order by d.ngaytraPhong desc
 """)
     List<DatPhong> findLatestCheckout(@Param("maPhong") Integer maPhong);
+
+
+    DatPhong findFirstByKmId(Integer kmId);
 }

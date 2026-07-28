@@ -10,6 +10,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import su26sd09.su26sd09.entity.KhuyenMai;
+import su26sd09.su26sd09.repository.DatPhongRepo;
 import su26sd09.su26sd09.repository.khuyenMaiRepo;
 
 import java.math.BigDecimal;
@@ -24,7 +25,8 @@ public class khuyenMaiService {
 
     @Autowired
     khuyenMaiRepo repo;
-
+    @Autowired
+    DatPhongRepo repodatPhong;
 
     public List<KhuyenMai> findAll(){
         return repo.findAll();
@@ -103,4 +105,21 @@ public class khuyenMaiService {
 
         repo.tatKhuyenMaiHetHan(today);
     }
+
+    public String TimKhuyenMaiDaSuDung(KhuyenMai km){
+        boolean isnull = repodatPhong.findFirstByKmId(km.id) == null ? true : false;
+
+        KhuyenMai kmc = isnull == true ? null : repodatPhong.findFirstByKmId(km.id).getKm();
+
+        if (kmc != null ){
+            if ( kmc.ngayKetThuc != km.ngayKetThuc && kmc.ngayBatDau == km.ngayBatDau)
+                return "không thể chỉnh sửa ngày kết thúc của khuyến mãi đã được sử dụng";
+            else if (kmc.ngayKetThuc == km.ngayKetThuc && kmc.ngayBatDau != km.ngayBatDau)
+                return "không thể chỉnh sửa ngày bắt đầu của khuyến mãi đã được sử dụng";
+            else if (kmc.ngayBatDau == km.ngayBatDau && kmc.ngayKetThuc == km.ngayKetThuc)
+                return "";
+        }
+        return "null";
+    }
+
 }
