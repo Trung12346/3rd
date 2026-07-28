@@ -79,7 +79,7 @@ public class Home {
     }
 
     private static final String ANH_MAC_DINH =
-            "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=800&q=80";
+            "/media/ed2d10ce-680a-467e-a83c-c0781f53a5fd";
 
     private void loadHomeData(Model model) {
         List<LoaiPhong> loaiPhongs = phongService.findAllLoai();

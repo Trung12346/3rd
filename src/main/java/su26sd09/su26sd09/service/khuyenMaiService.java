@@ -112,12 +112,12 @@ public class khuyenMaiService {
         KhuyenMai kmc = isnull == true ? null : repodatPhong.findFirstByKmId(km.id).getKm();
 
         if (kmc != null ){
-            if ( kmc.ngayKetThuc != km.ngayKetThuc && kmc.ngayBatDau == km.ngayBatDau)
+            if ( !kmc.ngayKetThuc.equals(km.ngayKetThuc) && kmc.ngayBatDau.equals(km.ngayBatDau))
                 return "không thể chỉnh sửa ngày kết thúc của khuyến mãi đã được sử dụng";
-            else if (kmc.ngayKetThuc == km.ngayKetThuc && kmc.ngayBatDau != km.ngayBatDau)
+            else if (kmc.ngayKetThuc.equals(km.ngayKetThuc) && !kmc.ngayBatDau.equals(km.ngayBatDau))
                 return "không thể chỉnh sửa ngày bắt đầu của khuyến mãi đã được sử dụng";
-            else if (kmc.ngayBatDau == km.ngayBatDau && kmc.ngayKetThuc == km.ngayKetThuc)
-                return "";
+            else if (kmc.ngayBatDau.equals(km.ngayBatDau) && kmc.ngayKetThuc.equals(km.ngayKetThuc));
+            return "";
         }
         return "null";
     }

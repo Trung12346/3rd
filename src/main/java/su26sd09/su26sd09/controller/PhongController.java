@@ -19,10 +19,7 @@ import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Stream;
 
 @Controller
@@ -79,7 +76,19 @@ public class PhongController {
         
         // Lấy tất cả loại phòng cho dropdown menu
         List<LoaiPhong> loaiPhongs = phongService.findAllLoai();
-        
+
+        HashMap<Integer, UUID> thumbAnhs = new HashMap<>();
+        for (Phong p: phongs
+             ) {
+            Integer id = p.getMaPhong();
+            PhongAnh pa = phongAnhRepository.findByMaPhongFirst(p.getMaPhong());
+            thumbAnhs.put(
+                    id,
+                    pa != null ? pa.maAnh.maAnh : null
+            );
+        }
+
+        model.addAttribute("thumbAnhs", thumbAnhs);
         model.addAttribute("phongs", phongs);
         model.addAttribute("tienNghiTheoPhong", tienNghiTheoPhong);
         model.addAttribute("tenLoaiTheoPhong", tenLoaiTheoPhong);
