@@ -676,7 +676,7 @@
              onclick="openRoomDetail(event, this)"
              onkeydown="openRoomDetailByKey(event, this)">
             <div class="phong-card-img">
-                <img src="https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=800&q=80"
+                <img th:src="${loaiPhong.maAnh != null} ? @{/media/{id}(id=${loaiPhong.maAnh.maAnh})} : 'https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=800&q=80'"
                      th:alt="${p.soPhong}">
                 <span class="phong-status-badge"
                       th:classappend="${p.trangThai == 'Trong'} ? 'status-trong' : ((${p.trangThai == 'Dang su dung'} or ${p.trangThai == 'Da dat truoc'}) ? 'status-da-dat' : 'status-bao-tri')"

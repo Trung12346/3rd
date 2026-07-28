@@ -70,6 +70,12 @@ public class AdminPhongController {
             @RequestParam(name = "anhIds", required = false) List<UUID> anhIds,
             RedirectAttributes redirectAttributes
     ) {
+        for (Phong p : phongService.findAllPhong()){
+            if (p.getSoPhong().equals(phong.getSoPhong()) && p.getMaPhong() != phong.getMaPhong()){
+                redirectAttributes.addFlashAttribute("error","số phòng này đã tồn tại ");
+                return "redirect:/nhan-su/admin/phong";
+            }
+        }
         phongService.save(phong, loaiPhongId, tienNghiIds, anhIds);
         redirectAttributes.addFlashAttribute("success", "Lưu phòng thành công");
         return "redirect:/nhan-su/admin/phong";
