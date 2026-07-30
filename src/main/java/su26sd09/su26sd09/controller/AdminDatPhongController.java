@@ -10,6 +10,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
@@ -154,6 +155,30 @@ public class AdminDatPhongController {
             }
         }
 
+        // ===== Data cho modal đổi phòng =====
+        // Lấy tất cả phòng active để render danh sách phòng khả dụng trong modal đổi phòng.
+        List<Phong> tatCaPhong = phongService.findAllPhong();
+        // Lấy danh sách phòng mà chính đơn này đang dùng — sẽ bị loại ra khỏi danh sách chọn phòng mới.
+        List<Integer> phongDangDungTrongDon = new ArrayList<>();
+        for (ChiTietDatPhong ct : chiTietDatPhongList) {
+            if (ct != null && ct.getP() != null) {
+                phongDangDungTrongDon.add(ct.getP().getMaPhong());
+            }
+        }
+        model.addAttribute("phongAvailableList", tatCaPhong);
+        model.addAttribute("phongDangDungTrongDon", phongDangDungTrongDon);
+        model.addAttribute("roomStatusJson", "[" + phongService.buildRoomStatusJson(tatCaPhong) + "]");
+        // Số đêm để hiển thị chênh lệch trong modal
+        long soDem = Math.max(1, java.time.temporal.ChronoUnit.DAYS.between(
+                datPhong.getNgaydatPhong().toLocalDate(),
+                datPhong.getNgaytraPhong().toLocalDate()));
+        model.addAttribute("soDem", soDem);
+        // Cho phép đổi phòng: trạng thái đơn thuộc nhóm này + hóa đơn chưa xuất PDF
+        boolean choPhepDoiPhong = "Cho xac nhan".equals(datPhong.getTrangThai())
+                || "Da xac nhan".equals(datPhong.getTrangThai())
+                || "Da nhan phong".equals(datPhong.getTrangThai());
+        model.addAttribute("choPhepDoiPhong", choPhepDoiPhong);
+
         model.addAttribute("datPhong", datPhong);
         model.addAttribute("chiTietDatPhongList", chiTietDatPhongList);
         model.addAttribute("chiTietDichVuList", chiTietDichVuList);
@@ -162,6 +187,185 @@ public class AdminDatPhongController {
         model.addAttribute("tongPhuThu", tongPhuThu);
 
         return "admin/chi-tiet-dat-phong";
+    }
+
+    /**
+     * Xử lý đổi phòng từ modal trong trang chi tiết đơn đặt phòng.
+     *
+     * Body:
+     *   - ctdpIds: List&lt;Integer&gt; — id các ChiTietDatPhong muốn đổi
+     *   - newRoomIds: List&lt;Integer&gt; — phòng mới tương ứng (cùng index)
+     *   - newCccds: List&lt;String&gt; — CCCD mới (để trống = giữ nguyên)
+     *   - lyDoDoi: String — lý do đổi phòng (bắt buộc)
+     */
+    @PostMapping("/chi-tiet/{id}/doi-phong")
+    @Transactional
+    public String doPhong(@PathVariable Integer id,
+                          @RequestParam("ctdpIds") List<Integer> ctdpIds,
+                          @RequestParam("newRoomIds") List<Integer> newRoomIds,
+                          @RequestParam(value = "newCccds", required = false) List<String> newCccds,
+                          @RequestParam("lyDoDoi") String lyDoDoi,
+                          RedirectAttributes redirectAttributes) {
+        DatPhong datPhong = datPhongService.findById(id);
+        if (datPhong == null) {
+            redirectAttributes.addFlashAttribute("error", "Khong tim thay don dat phong #" + id);
+            return "redirect:/nhan-su/admin/dat-phong";
+        }
+        // Validate trạng thái đơn
+        String trangThai = datPhong.getTrangThai();
+        if (!"Cho xac nhan".equals(trangThai)
+                && !"Da xac nhan".equals(trangThai)
+                && !"Da nhan phong".equals(trangThai)) {
+            redirectAttributes.addFlashAttribute("error",
+                    "Trang thai don '" + trangThai + "' khong cho phep doi phong.");
+            return "redirect:/nhan-su/admin/dat-phong/chi-tiet/" + id;
+        }
+        // Hóa đơn đã xuất PDF -> không cho sửa
+        if (hoaDonService.isDaXuat(id)) {
+            redirectAttributes.addFlashAttribute("error",
+                    "Hoa don cua don dat phong #" + id + " da duoc xuat PDF, khong the doi phong.");
+            return "redirect:/nhan-su/admin/dat-phong/chi-tiet/" + id;
+        }
+        // Lý do bắt buộc
+        if (lyDoDoi == null || lyDoDoi.trim().length() < 5) {
+            redirectAttributes.addFlashAttribute("error", "Ly do doi phong phai co it nhat 5 ky tu.");
+            return "redirect:/nhan-su/admin/dat-phong/chi-tiet/" + id;
+        }
+        // Phải tick ít nhất 1 dòng và danh sách phòng mới khớp độ dài
+        if (ctdpIds == null || ctdpIds.isEmpty()) {
+            redirectAttributes.addFlashAttribute("error", "Vui long chon it nhat 1 phong de doi.");
+            return "redirect:/nhan-su/admin/dat-phong/chi-tiet/" + id;
+        }
+        if (newRoomIds == null || newRoomIds.size() != ctdpIds.size()) {
+            redirectAttributes.addFlashAttribute("error", "Danh sach phong moi khong khop.");
+            return "redirect:/nhan-su/admin/dat-phong/chi-tiet/" + id;
+        }
+
+        // Số đêm giữ nguyên (khoảng ngày đơn không đổi)
+        long soDem = Math.max(1, ChronoUnit.DAYS.between(
+                datPhong.getNgaydatPhong().toLocalDate(),
+                datPhong.getNgaytraPhong().toLocalDate()));
+
+        // Gom CCCD mới theo index
+        Map<Integer, String> cccdMoiTheoIndex = new HashMap<>();
+        if (newCccds != null) {
+            for (int i = 0; i < newCccds.size(); i++) {
+                cccdMoiTheoIndex.put(i, newCccds.get(i));
+            }
+        }
+
+        BigDecimal chenhLechTong = BigDecimal.ZERO;
+        int soPhongDoi = 0;
+        List<String> loiTheoDong = new ArrayList<>();
+
+        for (int i = 0; i < ctdpIds.size(); i++) {
+            int ctdpId = ctdpIds.get(i);
+            Integer newRoomId = newRoomIds.get(i);
+            String cccdMoiRaw = cccdMoiTheoIndex.get(i);
+            if (newRoomId == null) {
+                loiTheoDong.add("Dong #" + ctdpId + ": chua chon phong moi.");
+                continue;
+            }
+            ChiTietDatPhong ct = chiTietDatPhongService.findbyId(ctdpId);
+            if (ct == null || ct.getD() == null || ct.getD().getId() != id) {
+                loiTheoDong.add("Dong #" + ctdpId + ": khong thuoc don dat phong nay.");
+                continue;
+            }
+            if (ct.getP() != null && ct.getP().getMaPhong() == newRoomId) {
+                loiTheoDong.add("Dong '" + ct.getP().getSoPhong() + "': phong moi trung phong cu.");
+                continue;
+            }
+            Phong phongMoi = phongService.findById(newRoomId);
+            if (phongMoi == null || !phongMoi.isHoatDong()) {
+                loiTheoDong.add("Phong moi #" + newRoomId + " khong ton tai hoac da ngung hoat dong.");
+                continue;
+            }
+            if (datPhongService.hasBookingNotCheckout(phongMoi.getMaPhong(), id)) {
+                loiTheoDong.add("Phong '" + phongMoi.getSoPhong() + "' dang bi don khac giu cho.");
+                continue;
+            }
+            String cccdMoi = (cccdMoiRaw == null || cccdMoiRaw.trim().isEmpty())
+                    ? ct.getMa_cccd()
+                    : cccdMoiRaw.trim();
+            if (cccdMoi != null && !cccdMoi.isEmpty() && !cccdMoi.matches("^[0-9]{12}$")) {
+                loiTheoDong.add("Phong '" + phongMoi.getSoPhong() + "': CCCD moi phai la 12 chu so.");
+                continue;
+            }
+
+            // Lưu giá cũ để tính chênh lệch
+            BigDecimal giaKhiDatCu = ct.getGiaKhiDat() != null ? ct.getGiaKhiDat() : BigDecimal.ZERO;
+            BigDecimal phuPhiCu = ct.getPhuPhi() != null ? ct.getPhuPhi() : BigDecimal.ZERO;
+
+            // Lưu phòng cũ để cập nhật trạng thái phòng sau
+            Phong phongCu = ct.getP();
+
+            // Tính giá mới
+            BigDecimal giaMoiDemMoi = phongMoi.getGiaMoiDem();
+            BigDecimal giaKhiDatMoi = giaMoiDemMoi.multiply(BigDecimal.valueOf(soDem));
+            BigDecimal phuPhiMoi = phongService.calculateExtraFeeFor(
+                    phongMoi.getMaPhong(), datPhong.getNgaydatPhong(), datPhong.getNgaytraPhong());
+
+            // Cập nhật ChiTietDatPhong
+            ct.setP(phongMoi);
+            ct.setMa_cccd(cccdMoi);
+            ct.setGiaMoiDem(giaMoiDemMoi);
+            ct.setGiaKhiDat(giaKhiDatMoi);
+            ct.setPhuPhi(phuPhiMoi);
+            chiTietDatPhongService.save(ct);
+
+            // Cập nhật trạng thái phòng cũ: nếu còn đơn khác giữ -> "Da dat truoc", ngược lại -> "Trong"
+            if (phongCu != null) {
+                if (datPhongService.hasBookingNotCheckout(phongCu.getMaPhong(), id)) {
+                    phongCu.setTrangThai("Da dat truoc");
+                } else {
+                    phongCu.setTrangThai("Trong");
+                }
+                phongService.save1(phongCu);
+            }
+            // Cập nhật trạng thái phòng mới
+            if ("Da nhan phong".equals(trangThai)) {
+                phongMoi.setTrangThai("Dang su dung");
+            } else {
+                phongMoi.setTrangThai("Trong");
+            }
+            phongService.save1(phongMoi);
+
+            // Tính chênh lệch: phần chênh giữa tổng tiền phòng (tiền phòng + phụ phí) mới và cũ
+            BigDecimal chenhPhong = giaKhiDatMoi.subtract(giaKhiDatCu);
+            BigDecimal chenhPhuPhi = phuPhiMoi.subtract(phuPhiCu);
+            chenhLechTong = chenhLechTong.add(chenhPhong).add(chenhPhuPhi);
+
+            soPhongDoi++;
+        }
+
+        if (!loiTheoDong.isEmpty()) {
+            redirectAttributes.addFlashAttribute("error",
+                    "Khong the doi " + loiTheoDong.size() + " phong: " + String.join(" | ", loiTheoDong));
+            return "redirect:/nhan-su/admin/dat-phong/chi-tiet/" + id;
+        }
+
+        // Cập nhật hóa đơn (nếu có)
+        if (chenhLechTong.signum() != 0) {
+            HoaDon hd = hoaDonService.findByDatPhongId(id);
+            if (hd != null) {
+                hd.setTienPhong(hd.getTienPhong() == null ? BigDecimal.ZERO : hd.getTienPhong());
+                hd.setTienPhong(hd.getTienPhong().add(chenhLechTong).setScale(2, RoundingMode.HALF_UP));
+                hd.setTongTien(hd.getTongTien() == null ? BigDecimal.ZERO : hd.getTongTien());
+                hd.setTongTien(hd.getTongTien().add(chenhLechTong).setScale(2, RoundingMode.HALF_UP));
+                hd.setNgayCapNhat(LocalDateTime.now());
+                hoaDonService.saveWithPaymentStatusCheck(hd);
+            }
+        }
+
+        datPhong.setNgayCapNhat(LocalDateTime.now());
+        datPhongService.save(datPhong);
+
+        String chenhLechStr = chenhLechTong.signum() > 0
+                ? "+ " + defaultMoney(chenhLechTong).toPlainString() + " VND"
+                : defaultMoney(chenhLechTong).toPlainString() + " VND";
+        redirectAttributes.addFlashAttribute("thanhCongCapNhat",
+                "Da doi thanh cong " + soPhongDoi + " phong. Chenh lech: " + chenhLechStr + ". Ly do: " + lyDoDoi.trim());
+        return "redirect:/nhan-su/admin/dat-phong/chi-tiet/" + id;
     }
 
     @PostMapping("/chi-tiet/{id}/update")

@@ -395,9 +395,9 @@
         }
     
         private Optional<DatPhong> findLatestBooking(int maPhong) {
-    
+
             List<DatPhong> list = datPhongRepo.findRecentBookingsForPhong(maPhong);
-    
+
             System.out.println("===== FIND LATEST BOOKING =====");
             for (DatPhong dp : list) {
                 System.out.println(
@@ -408,11 +408,75 @@
                                 + dp.getNgayTao()
                 );
             }
-    
+
             if (list == null || list.isEmpty()) {
                 return Optional.empty();
             }
-    
+
             return Optional.of(list.get(0));
         }
+
+    /**
+     * Build JSON danh sách phòng kèm khoaLich cho frontend (tái sử dụng ở
+     * cả form đặt phòng tại quầy và form đổi phòng trong chi tiết đơn).
+     *
+     * Output mỗi phần tử:
+     *   { "maPhong": int, "trangThai": "Trong"|"Dang su dung"|...,
+     *     "trangThaiDon": "Da nhan phong"|null,
+     *     "khoaLich": [{ "tu": "...", "den": "...", "trangThai": "..." }] }
+     *
+     * Trả về JSON chưa có cặp dấu [ ] bao ngoài — controller tự wrap.
+     */
+    public String buildRoomStatusJson(List<Phong> tatCaPhong) {
+        Map<Integer, RoomBookingGuardDTO> roomGuards = buildRoomGuards(tatCaPhong);
+        StringBuilder rb = new StringBuilder();
+        for (int i = 0; i < tatCaPhong.size(); i++) {
+            Phong p = tatCaPhong.get(i);
+            RoomBookingGuardDTO guard = roomGuards.get(p.getMaPhong());
+            String trangThaiDon = guard != null ? guard.getTrangThaiDonGanNhat() : null;
+
+            StringBuilder khoaLichArr = new StringBuilder("[");
+            if (guard != null) {
+                List<su26sd09.su26sd09.dto.KhoangNgayBiKhoaDTO> danhSach = guard.getDanhSachKhoaLich();
+                for (int j = 0; j < danhSach.size(); j++) {
+                    su26sd09.su26sd09.dto.KhoangNgayBiKhoaDTO k = danhSach.get(j);
+                    if (j > 0) khoaLichArr.append(",");
+                    khoaLichArr.append("{")
+                            .append("\"tu\":\"").append(k.getNgayBatDau() != null ? k.getNgayBatDau() : "").append("\",")
+                            .append("\"den\":\"").append(k.getNgayKetThuc() != null ? k.getNgayKetThuc() : "").append("\",")
+                            .append("\"trangThai\":\"").append(escapeJsonStr(k.getTrangThaiDon())).append("\"")
+                            .append("}");
+                }
+            }
+            khoaLichArr.append("]");
+
+            if (i > 0) rb.append(",");
+            rb.append("{")
+                    .append("\"maPhong\":").append(p.getMaPhong()).append(",")
+                    .append("\"trangThai\":\"").append(escapeJsonStr(p.getTrangThai())).append("\",")
+                    .append("\"trangThaiDon\":").append(trangThaiDon == null ? "null" : "\"" + escapeJsonStr(trangThaiDon) + "\"").append(",")
+                    .append("\"khoaLich\":").append(khoaLichArr)
+                    .append("}");
+        }
+        return rb.toString();
     }
+
+    private static String escapeJsonStr(String s) {
+        if (s == null) return "";
+        StringBuilder out = new StringBuilder(s.length() + 8);
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            switch (c) {
+                case '"':  out.append("\\\""); break;
+                case '\\': out.append("\\\\"); break;
+                case '\n': out.append("\\n"); break;
+                case '\r': out.append("\\r"); break;
+                case '\t': out.append("\\t"); break;
+                default:
+                    if (c < 0x20) out.append(String.format("\\u%04x", (int) c));
+                    else out.append(c);
+            }
+        }
+        return out.toString();
+    }
+}
