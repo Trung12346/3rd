@@ -220,6 +220,120 @@
             .dv-table td.ten-dv-cell, .dv-table td.ghi-chu-cell { white-space: normal; }
             .thu-tien-form { grid-template-columns: 1fr; }
         }
+
+        /* ===== FORM ĐỔI PHÒNG (inline, không modal) ===== */
+        .dp-form-row {
+            border: 2px solid #e2e8f0; border-radius: 10px; padding: 14px;
+            margin-bottom: 12px; transition: border-color .15s, background .15s;
+        }
+        .dp-form-row.is-selected { border-color: var(--sky-primary); background: #f0f9ff; }
+        .dp-form-row-head {
+            display: grid; grid-template-columns: auto minmax(0,1fr) auto; gap: 12px;
+            align-items: center;
+        }
+        .dp-form-row-head input[type="checkbox"] {
+            width: 18px; height: 18px; cursor: pointer; accent-color: var(--sky-primary);
+        }
+        .dp-form-row-head .dp-checkbox-label {
+            font-weight: 600; font-size: 14px; color: var(--text-dark); cursor: pointer;
+            user-select: none;
+        }
+        .dp-form-row-head .dp-room-current { font-size: 12px; color: #475569; }
+        .dp-form-row-head .dp-room-current strong { color: var(--sky-dark); }
+        .dp-form-row-head .dp-row-price {
+            font-size: 12px; color: var(--sky-primary); font-weight: 700;
+        }
+        .dp-form-row-body { display: none; padding-top: 14px; border-top: 1px dashed #e2e8f0; margin-top: 14px; }
+        .dp-form-row.is-selected .dp-form-row-body { display: block; }
+
+        .dp-form-grid { display: grid; gap: 14px; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); }
+        @media (max-width: 760px) { .dp-form-grid { grid-template-columns: 1fr; } }
+
+        .dp-room-grid {
+            display: grid; gap: 10px; grid-template-columns: repeat(3, minmax(0, 1fr));
+            max-height: 360px; overflow-y: auto; padding-right: 4px;
+        }
+        .dp-room-grid::-webkit-scrollbar { width: 5px; }
+        .dp-room-grid::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 3px; }
+        .dp-room-grid::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        @media (max-width: 1100px) { .dp-room-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+        @media (max-width: 700px) { .dp-room-grid { grid-template-columns: 1fr; } }
+
+        .dp-room-card {
+            border: 2px solid #e2e8f0; border-radius: 8px; padding: 10px 12px;
+            cursor: pointer; transition: border-color .15s, background .15s;
+            user-select: none; position: relative;
+        }
+        .dp-room-card:hover { border-color: var(--sky-primary); background: #f0f9ff; }
+        .dp-room-card.selected { border-color: var(--sky-primary); background: #e0f2fe; box-shadow: 0 0 0 1px var(--sky-primary); }
+        .dp-room-card.selected::after {
+            content: '✓'; position: absolute; top: 6px; right: 8px;
+            background: var(--sky-primary); color: #fff; border-radius: 50%;
+            width: 18px; height: 18px; font-size: 10px; font-weight: 700;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .dp-room-card .dp-room-num { font-size: 13px; font-weight: 700; color: var(--sky-dark); margin-bottom: 2px; }
+        .dp-room-card .dp-room-loai { font-size: 11px; color: var(--sky-primary); font-weight: 600; margin-bottom: 3px; }
+        .dp-room-card .dp-room-meta { font-size: 10px; color: #888; }
+        .dp-room-card .dp-room-price { font-size: 12px; font-weight: 700; color: #0f766e; margin-top: 4px; }
+        .dp-room-card .dp-room-status-badge {
+            display: inline-block; font-size: 9px; font-weight: 700; border-radius: 999px;
+            padding: 1px 6px; margin-left: 4px; vertical-align: middle; text-transform: uppercase;
+        }
+        .dp-room-card .dp-room-status-badge.trong { background: #ecfdf5; color: #15803d; border: 1px solid #bbf7d0; }
+        .dp-room-card .dp-room-status-badge.dang-su-dung { background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; }
+        .dp-room-card .dp-room-status-badge.dat-truoc { background: #eef2ff; color: #4338ca; border: 1px solid #c7d2fe; }
+        .dp-room-card .dp-room-empty { color: #cbd5e1; font-size: 12px; padding: 14px; text-align: center; grid-column: 1/-1; }
+
+        .dp-field { margin-bottom: 10px; }
+        .dp-field label {
+            display: block; color: #64748b; font-size: 11px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: .05em; margin-bottom: 4px;
+        }
+        .dp-field input, .dp-field select, .dp-field textarea {
+            width: 100%; padding: 8px 10px; border: 1px solid #d1d5db;
+            border-radius: 6px; font-size: 13px; font-family: inherit;
+            transition: border-color .15s, box-shadow .15s; background: #fff;
+        }
+        .dp-field input:focus, .dp-field select:focus, .dp-field textarea:focus {
+            outline: none; border-color: var(--sky-primary);
+            box-shadow: 0 0 0 3px rgba(33,150,196,0.12);
+        }
+        .dp-field input:disabled { background: #f1f5f9; cursor: not-allowed; }
+        .dp-field textarea { resize: vertical; min-height: 60px; }
+        .dp-field .dp-hint { font-size: 11px; color: #94a3b8; margin-top: 3px; }
+
+        .dp-delta-hint { font-size: 14px; font-weight: 700; color: #94a3b8; padding: 8px 0; }
+        .dp-delta-hint .positive { color: #dc2626; }
+        .dp-delta-hint .negative { color: #16a34a; }
+
+        .dp-form-reason {
+            background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px;
+            padding: 14px; margin-top: 14px;
+        }
+        .dp-form-reason-title {
+            color: #c2410c; font-size: 13px; font-weight: 700; margin-bottom: 10px;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .dp-form-reason-title i { color: #c2410c; }
+
+        .dp-form-submit-row {
+            display: flex; justify-content: space-between; align-items: center;
+            gap: 12px; margin-top: 18px; padding-top: 16px; border-top: 1px solid #e2e8f0;
+        }
+        .dp-form-total-chenh { font-size: 14px; color: #475569; }
+        .dp-form-total-chenh strong { color: var(--sky-dark); font-size: 16px; }
+        .dp-form-total-chenh .positive { color: #dc2626; }
+        .dp-form-total-chenh .negative { color: #16a34a; }
+
+        .btn-dp-primary {
+            background: var(--sky-primary); color: #fff; border: none;
+            padding: 11px 26px; border-radius: 6px; font-weight: 700; font-size: 13px;
+            cursor: pointer; text-transform: uppercase; letter-spacing: .04em;
+            transition: background .15s;
+        }
+        .btn-dp-primary:hover { background: var(--sky-dark); }
+        .btn-dp-primary:disabled { background: #94a3b8; cursor: not-allowed; }
     </style>
 </head>
 <body>
@@ -358,6 +472,136 @@
             </p>
         </div>
     </div>
+
+    <!-- ===== ĐỔI PHÒNG (form riêng, đặt cùng cấp với form khách hàng / thu tiền) ===== -->
+    <div class="thu-tien-panel" th:if="${choPhepDoiPhong != null and choPhepDoiPhong and chiTietDatPhongList != null and !#lists.isEmpty(chiTietDatPhongList)}">
+        <div class="cdp-panel-title" style="border:none; margin-bottom:14px; padding-bottom:0;">
+            <i class="fa-solid fa-right-left"></i> Đổi Phòng
+            <span class="cdp-panel-sub">Tick phòng muốn đổi, chọn phòng mới, nhập CCCD mới (nếu cần) + lý do</span>
+        </div>
+
+        <form th:action="@{/nhan-su/admin/dat-phong/chi-tiet/{id}/doi-phong(id=${datPhong.id})}"
+              method="post" id="doiPhongForm">
+
+            <div th:each="ct,iter : ${chiTietDatPhongList}"
+                 class="dp-form-row"
+                 th:attr="data-ct-id=${ct.id},
+                          data-old-room-id=${ct.p != null ? ct.p.maPhong : 0},
+                          data-old-room-price=${ct.p != null ? ct.p.giaMoiDem : 0},
+                          data-old-cccd=${ct.ma_cccd != null ? ct.ma_cccd : ''}">
+                <div class="dp-form-row-head">
+                    <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+                        <input type="checkbox" class="dp-toggle dp-ctdp-cb" name="ctdpIds" th:value="${ct.id}">
+                        <span class="dp-checkbox-label">Đổi phòng này</span>
+                    </label>
+                    <div class="dp-room-current">
+                        Hiện tại: <strong th:text="'Phòng ' + (${ct.p != null ? ct.p.soPhong : ''})">Phòng 101</strong>
+                        (<span th:text="${ct.p != null and ct.p.loaiPhong != null ? ct.p.loaiPhong.tenLoai : 'Standard'}">Standard</span>)
+                        · <span th:text="${#numbers.formatDecimal(ct.giaMoiDem, 0, 'COMMA', 0, 'POINT')} + ' VND/đêm'">0 VND/đêm</span>
+                        · CCCD: <strong th:text="${ct.ma_cccd != null ? ct.ma_cccd : '(chưa có)'}">--</strong>
+                    </div>
+                    <div class="dp-row-price">
+                        <span th:text="${#numbers.formatDecimal(ct.giaKhiDat, 0, 'COMMA', 0, 'POINT')} + ' VND'">0 VND</span>
+                        <span style="color:#94a3b8; font-weight:400;"> × <span th:text="${soDem}">1</span> đêm</span>
+                    </div>
+                </div>
+
+                <div class="dp-form-row-body">
+                    <div class="dp-form-grid">
+                        <div>
+                            <div class="dp-field">
+                                <label>Chọn phòng mới</label>
+                                <div class="dp-room-grid">
+                                    <div th:each="p : ${phongAvailableList}"
+                                         th:if="${p != null and p.maPhong != (ct.p != null ? ct.p.maPhong : 0)
+                                                 and !phongDangDungTrongDon.contains(p.maPhong)}"
+                                         class="dp-room-card"
+                                         th:attr="data-ma-phong=${p.maPhong},
+                                                  data-so-phong=${p.soPhong},
+                                                  data-gia=${p.giaMoiDem},
+                                                  data-loai=${p.loaiPhong != null ? p.loaiPhong.tenLoai : ''},
+                                                  data-tang=${p.soTang}">
+                                        <div class="dp-room-num">
+                                            <span th:text="'Phòng ' + ${p.soPhong}">Phòng 101</span>
+                                            <span th:if="${p.trangThai == 'Trong'}" class="dp-room-status-badge trong">Trống</span>
+                                            <span th:if="${p.trangThai == 'Dang su dung'}" class="dp-room-status-badge dang-su-dung">Đang dùng</span>
+                                            <span th:if="${p.trangThai == 'Da dat truoc'}" class="dp-room-status-badge dat-truoc">Đặt trước</span>
+                                        </div>
+                                        <div class="dp-room-loai"
+                                             th:text="${p.loaiPhong != null ? p.loaiPhong.tenLoai : 'Standard'}">Standard</div>
+                                        <div class="dp-room-meta">
+                                            <span th:text="'Tầng ' + ${p.soTang}">Tầng 1</span>
+                                            <span th:if="${p.loaiPhong != null and p.loaiPhong.sucChuaToiDa != null}"
+                                                  th:text="' · ' + ${p.loaiPhong.sucChuaToiDa} + ' khách'"> · 2 khách</span>
+                                        </div>
+                                        <div class="dp-room-price"
+                                             th:text="${#numbers.formatDecimal(p.giaMoiDem, 0, 'COMMA', 0, 'POINT')} + ' VND/đêm'">0 VND/đêm</div>
+                                    </div>
+                                    <div class="dp-room-empty" th:if="${phongAvailableList == null or #lists.isEmpty(phongAvailableList)}">
+                                        Không có phòng khả dụng.
+                                    </div>
+                                </div>
+                                <input type="hidden" class="dp-new-room-id" name="newRoomIds" value="">
+                            </div>
+                        </div>
+                        <div>
+                            <div class="dp-field">
+                                <label>CCCD khách ở phòng mới <span style="color:#94a3b8; font-weight:400;">(để trống = giữ nguyên)</span></label>
+                                <input type="text" class="dp-new-cccd" name="newCccds"
+                                       maxlength="12" pattern="[0-9]{12}" inputmode="numeric"
+                                       placeholder="12 số CCCD" disabled>
+                                <div class="dp-hint">Mặc định giữ CCCD cũ nếu không nhập.</div>
+                            </div>
+                            <div class="dp-field">
+                                <label>Chênh lệch</label>
+                                <div class="dp-delta-hint">
+                                    <span class="dp-delta-text">Chọn phòng mới để tính chênh lệch</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dp-form-reason">
+                <div class="dp-form-reason-title">
+                    <i class="fa-solid fa-clipboard-list"></i> Lý do đổi phòng (bắt buộc)
+                </div>
+                <div class="dp-form-grid">
+                    <div class="dp-field" style="margin-bottom: 0;">
+                        <label>Loại lý do</label>
+                        <select name="lyDoDoiLoai" id="lyDoDoiLoai">
+                            <option value="">-- Chọn --</option>
+                            <option value="Sua chua">Sửa chữa / Bảo trì</option>
+                            <option value="Yeu cau khach hang">Yêu cầu khách hàng</option>
+                            <option value="Nang cap phong">Nâng cấp phòng</option>
+                            <option value="Phong khong dat">Phòng không đạt tiêu chuẩn</option>
+                            <option value="Khac">Khác</option>
+                        </select>
+                    </div>
+                    <div class="dp-field" style="margin-bottom: 0;">
+                        <label>Mô tả chi tiết <span style="color:red">*</span></label>
+                        <textarea name="lyDoDoi" id="lyDoDoiChiTiet" required minlength="5"
+                                  placeholder="Ví dụ: Phòng 101 bị rò nước, chuyển khách sang phòng 205 cùng loại..."></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dp-form-submit-row">
+                <div class="dp-form-total-chenh">
+                    Đang chọn đổi: <strong id="dpSoPhongDoi">0</strong> phòng
+                    · Tổng chênh lệch: <strong id="dpTongChenhLech">đ 0</strong>
+                    <span style="display:block; font-size:11px; color:#94a3b8; margin-top:2px;">
+                        (+) khách phải trả thêm · (-) khách được giảm
+                    </span>
+                </div>
+                <button type="submit" class="btn-dp-primary" id="btnDoiPhongSubmit" disabled>
+                    <i class="fa-solid fa-check"></i> Xác nhận đổi phòng
+                </button>
+            </div>
+        </form>
+    </div>
+
     <!-- ===== THU TIỀN CÒN NỢ (form riêng, tách khỏi form cập nhật đơn) ===== -->
     <div class="thu-tien-panel" th:if="${hoaDon != null}">
         <div class="cdp-panel-title" style="border:none; margin-bottom:12px; padding-bottom:0;">
@@ -1259,6 +1503,183 @@
     veLaiBangDichVu();
     apDungKhuyenMai();
     tinhTongTien();
+
+    /* =====================================================================
+     * ĐỔI PHÒNG — xử lý tick chọn dòng + chọn phòng mới + tính chênh lệch
+     * ===================================================================== */
+    (function () {
+        const SO_DEM = /*[[${soDem}]]*/ 1;
+        const form = document.getElementById('doiPhongForm');
+        if (!form) return;
+
+        function fmtVnd(n) {
+            if (n === null || n === undefined || isNaN(n)) return 'đ 0';
+            const sign = n < 0 ? '-' : '';
+            return sign + 'đ ' + Math.abs(Math.round(n)).toLocaleString('vi-VN');
+        }
+
+        function capNhatTatCa() {
+            let soPhongDoi = 0;
+            let tongChenhLech = 0;
+
+            form.querySelectorAll('.dp-form-row').forEach(function (row) {
+                const cb = row.querySelector('.dp-toggle');
+                const isSelected = cb.checked;
+                row.classList.toggle('is-selected', isSelected);
+
+                const oldRoomId = parseInt(row.dataset.oldRoomId || '0', 10);
+                const oldPrice = parseFloat(row.dataset.oldRoomPrice || '0');
+
+                if (!isSelected) {
+                    row.querySelector('.dp-new-room-id').value = '';
+                    row.querySelectorAll('.dp-room-card.selected').forEach(function (c) {
+                        c.classList.remove('selected');
+                    });
+                    row.querySelector('.dp-new-cccd').value = '';
+                    row.querySelector('.dp-new-cccd').disabled = true;
+                    row.querySelector('.dp-delta-hint').innerHTML =
+                        '<span class="dp-delta-text" style="color:#94a3b8;">Chọn phòng mới để tính chênh lệch</span>';
+                    return;
+                }
+
+                soPhongDoi++;
+                row.querySelector('.dp-new-cccd').disabled = false;
+
+                const newRoomIdInput = row.querySelector('.dp-new-room-id');
+                const newRoomId = parseInt(newRoomIdInput.value || '0', 10);
+                if (newRoomId > 0) {
+                    const card = row.querySelector('.dp-room-card.selected');
+                    const newPrice = parseFloat(card.dataset.gia || '0');
+                    const chenh = (newPrice - oldPrice) * SO_DEM;
+                    tongChenhLech += chenh;
+
+                    const deltaEl = row.querySelector('.dp-delta-hint');
+                    if (chenh > 0) {
+                        deltaEl.innerHTML =
+                            '<span class="positive">+' + fmtVnd(chenh) + '</span>' +
+                            ' <span style="color:#94a3b8; font-weight:400; font-size:12px;">(phải trả thêm)</span>';
+                    } else if (chenh < 0) {
+                        deltaEl.innerHTML =
+                            '<span class="negative">' + fmtVnd(chenh) + '</span>' +
+                            ' <span style="color:#94a3b8; font-weight:400; font-size:12px;">(được giảm)</span>';
+                    } else {
+                        deltaEl.innerHTML =
+                            '<span style="color:#94a3b8;">đ 0 (không đổi)</span>';
+                    }
+                } else {
+                    row.querySelector('.dp-delta-hint').innerHTML =
+                        '<span class="dp-delta-text" style="color:#94a3b8;">Chọn phòng mới để tính chênh lệch</span>';
+                }
+            });
+
+            document.getElementById('dpSoPhongDoi').textContent = soPhongDoi;
+
+            const totalEl = document.getElementById('dpTongChenhLech');
+            totalEl.textContent = (tongChenhLech > 0 ? '+' : '') + fmtVnd(tongChenhLech);
+            totalEl.classList.remove('positive', 'negative');
+            if (tongChenhLech > 0) totalEl.classList.add('positive');
+            else if (tongChenhLech < 0) totalEl.classList.add('negative');
+
+            // Enable submit: tick >= 1, mỗi dòng tick phải chọn phòng mới, có lý do (>=5 ký tự)
+            const lyDoLoai = (document.getElementById('lyDoDoiLoai').value || '').trim();
+            const lyDoChiTiet = (document.getElementById('lyDoDoiChiTiet').value || '').trim();
+            const allSelectedHaveNewRoom = soPhongDoi === 0 ? false : Array.from(form.querySelectorAll('.dp-form-row.is-selected')).every(function (r) {
+                return parseInt(r.querySelector('.dp-new-room-id').value || '0', 10) > 0;
+            });
+            document.getElementById('btnDoiPhongSubmit').disabled = !(soPhongDoi > 0 && allSelectedHaveNewRoom && lyDoLoai && lyDoChiTiet.length >= 5);
+        }
+
+        // Bỏ tick -> reset trạng thái dòng
+        form.querySelectorAll('.dp-toggle').forEach(function (cb) {
+            cb.addEventListener('change', capNhatTatCa);
+        });
+
+        // Click 1 room-card trong dòng -> chọn phòng mới
+        form.querySelectorAll('.dp-form-row').forEach(function (row) {
+            row.querySelectorAll('.dp-room-card').forEach(function (card) {
+                card.addEventListener('click', function () {
+                    if (!row.classList.contains('is-selected')) return; // dòng chưa tick -> bỏ qua
+                    const maPhong = parseInt(card.dataset.maPhong, 10);
+                    const oldRoomId = parseInt(row.dataset.oldRoomId || '0', 10);
+                    if (maPhong === oldRoomId) {
+                        return; // phòng cũ đã bị filter loại ra, nhưng vẫn check
+                    }
+                    row.querySelectorAll('.dp-room-card.selected').forEach(function (c) {
+                        c.classList.remove('selected');
+                    });
+                    card.classList.add('selected');
+                    row.querySelector('.dp-new-room-id').value = maPhong;
+                    capNhatTatCa();
+                });
+            });
+        });
+
+        // Validate CCCD 12 số khi nhập
+        form.querySelectorAll('.dp-new-cccd').forEach(function (inp) {
+            inp.addEventListener('input', function () {
+                const v = (this.value || '').trim();
+                this.style.borderColor = (v && !/^[0-9]{12}$/.test(v)) ? '#dc2626' : '';
+            });
+        });
+
+        // Validate khi gõ lý do
+        document.getElementById('lyDoDoiLoai').addEventListener('change', capNhatTatCa);
+        document.getElementById('lyDoDoiChiTiet').addEventListener('input', capNhatTatCa);
+
+        // Validate khi submit
+        form.addEventListener('submit', function (e) {
+            let hopLe = true;
+            const lyDoLoai = (document.getElementById('lyDoDoiLoai').value || '').trim();
+            const lyDoChiTiet = (document.getElementById('lyDoDoiChiTiet').value || '').trim();
+
+            if (!lyDoLoai) {
+                hopLe = false;
+                alert('Vui lòng chọn loại lý do đổi phòng.');
+            }
+            if (lyDoChiTiet.length < 5) {
+                hopLe = false;
+                alert('Mô tả lý do phải có ít nhất 5 ký tự.');
+            }
+
+            let soDongTick = 0;
+            let soDongHopLe = 0;
+            form.querySelectorAll('.dp-form-row.is-selected').forEach(function (row) {
+                soDongTick++;
+                const newRoomId = parseInt(row.querySelector('.dp-new-room-id').value || '0', 10);
+                if (newRoomId > 0) soDongHopLe++;
+            });
+
+            if (soDongTick === 0) {
+                hopLe = false;
+                alert('Vui lòng tick chọn ít nhất 1 phòng để đổi.');
+            } else if (soDongHopLe < soDongTick) {
+                hopLe = false;
+                alert('Có phòng đã tick nhưng chưa chọn phòng mới.');
+            }
+
+            form.querySelectorAll('.dp-form-row.is-selected .dp-new-cccd').forEach(function (inp) {
+                const v = (inp.value || '').trim();
+                if (v && !/^[0-9]{12}$/.test(v)) {
+                    hopLe = false;
+                    inp.style.borderColor = '#dc2626';
+                    alert('CCCD phải đúng 12 chữ số. Để trống nếu muốn giữ nguyên.');
+                }
+            });
+
+            if (!hopLe) {
+                e.preventDefault();
+                return false;
+            }
+
+            const chenhText = document.getElementById('dpTongChenhLech').textContent;
+            if (!confirm('Xác nhận đổi ' + soDongTick + ' phòng?\n\nTổng chênh lệch: ' + chenhText)) {
+                e.preventDefault();
+                return false;
+            }
+        });
+
+        capNhatTatCa();
+    })();
 </script>
 </body>
 </html>
