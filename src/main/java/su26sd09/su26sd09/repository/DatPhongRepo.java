@@ -139,4 +139,5 @@ order by d.ngaytraPhong desc
 
 
     DatPhong findFirstByKmId(Integer kmId);
+
 }
