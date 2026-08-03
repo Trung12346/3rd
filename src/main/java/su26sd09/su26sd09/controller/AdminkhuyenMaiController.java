@@ -27,10 +27,6 @@
         UserService nguoiDungRepo;
         @Autowired
         NhanVienService nvRepo;
-
-
-
-
         @Autowired
         khuyenMaiService repo;
 
@@ -78,6 +74,7 @@
 
             return "admin/khuyen-mai-list";
         }
+
 
 
         @PostMapping("/lock-or-unlock/{id}")
@@ -129,11 +126,12 @@
                 redirect.addFlashAttribute("error","trạng thái không hợp lệ với mốc ngày đã chỉ định");
                 return "redirect:/nhan-su/admin/khuyen-mai";
             }
-            String TimKhuyenMaiDaSuDung = repo.TimKhuyenMaiDaSuDung(m);
+            String TimKhuyenMaiDaSuDung = repo.ValidUpdateKhuyenMai(m);
             if (!TimKhuyenMaiDaSuDung.equals("null") && !TimKhuyenMaiDaSuDung.equals("")){
                 redirect.addFlashAttribute("error",TimKhuyenMaiDaSuDung);
                 return "redirect:/nhan-su/admin/khuyen-mai";
             }
+
             if(m.id == 0){
                 redirect.addFlashAttribute("success","Luu khuyen mai thanh cong");
 
@@ -165,5 +163,15 @@
             return "admin/khuyen-mai-list";
         }
 
+
+        @GetMapping("/delete/{id}")
+        public String delete(@PathVariable("id") int id,RedirectAttributes redirect){
+            if (repo.doesExitsInDatPhong(id) == false) {
+                repo.delete(repo.findbyId(id));
+            } else {
+                redirect.addFlashAttribute("error", "xóa không thành công: khuyến mãi đã được sử dụng tạm thời ");
+            }
+            return "redirect:/nhan-su/admin/khuyen-mai";
+        }
 
     }

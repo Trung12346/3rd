@@ -2,14 +2,15 @@ package su26sd09.su26sd09.service;
 
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cglib.core.Local;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import su26sd09.su26sd09.entity.DatPhong;
 import su26sd09.su26sd09.entity.KhuyenMai;
+import su26sd09.su26sd09.repository.ChiTietDatPhongRepo;
 import su26sd09.su26sd09.repository.DatPhongRepo;
 import su26sd09.su26sd09.repository.khuyenMaiRepo;
 
@@ -27,6 +28,8 @@ public class khuyenMaiService {
     khuyenMaiRepo repo;
     @Autowired
     DatPhongRepo repodatPhong;
+    @Autowired
+    ChiTietDatPhongService repochitietdatphong;
 
     public List<KhuyenMai> findAll(){
         return repo.findAll();
@@ -121,5 +124,44 @@ public class khuyenMaiService {
         }
         return "null";
     }
+
+
+    public String ValidUpdateKhuyenMai(KhuyenMai m){
+        String CanChangeDate = TimKhuyenMaiDaSuDung(m);
+        DatPhong dp = repodatPhong.findFirstByKmId(m.id);
+
+        if ( dp != null && dp.getKm() != null ){
+            if (CanChangeDate != null && !CanChangeDate.equalsIgnoreCase("")){
+                return CanChangeDate;
+            }
+
+            if (m.hoatDong == false ){
+                return "không thể sửa hoạt động mã đã được sử dụng ở đơn đặt phòng " + dp.id;
+            }
+            else if (!m.loaiGiam.equalsIgnoreCase(dp.getKm().getLoaiGiam())){
+                return "không thể sửa loại giảm vì mã đã được sử dụng ở đơn đặt phòng" + dp.id;
+            }
+            else if (m.giaToiThieuDuocGiam.floatValue() != dp.getKm().giaToiThieuDuocGiam.floatValue()){
+                return "không thể sửa giá tối thiểu được giảm vì mã đã được sử dụng ở đơn đặt phòng " + dp.id;
+            }
+            else if (m.giatriGiam.floatValue() != dp.getKm().giatriGiam.floatValue()){
+                return "không thể sửa giá trị giảm vì mã đã được sử dụng ở đơn đặt phòng " + dp.id;
+            }
+            else if (!m.promoCode.equalsIgnoreCase(dp.getKm().promoCode)){
+                return "không thể sửa tên mã khuyến mãi vì mã được sử dụng ở đơn đặt phòng " + dp.id;
+            }
+            else if (!m.moTa.equalsIgnoreCase(dp.getKm().moTa)){
+                return "không thể sửa mô tả vì khuyến mãi đã được sử dụng ở đơn đặt phòng" + dp.id;
+            }
+        }
+        return "null";
+    }
+
+
+
+    public boolean doesExitsInDatPhong(int id){
+        return repodatPhong.findFirstByKmId(id) != null && repochitietdatphong.exitbyDatPhongid(repodatPhong.findFirstByKmId(id).id) == true ? true : false;
+    }
+
 
 }

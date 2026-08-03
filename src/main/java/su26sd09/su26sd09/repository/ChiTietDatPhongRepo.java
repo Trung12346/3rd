@@ -15,4 +15,8 @@ public interface ChiTietDatPhongRepo extends JpaRepository<ChiTietDatPhong,Integ
     @Transactional
     void deleteByDId(Integer maDatPhong);
 
+
+
+
+    boolean existsByDId(Integer id);
 }

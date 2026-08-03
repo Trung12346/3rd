@@ -1,7 +1,6 @@
 package su26sd09.su26sd09.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.jdbc.repository.query.Query;
 import org.springframework.stereotype.Service;
 import su26sd09.su26sd09.entity.ChiTietDatPhong;
 import su26sd09.su26sd09.repository.ChiTietDatPhongRepo;
@@ -38,5 +37,8 @@ public class ChiTietDatPhongService {
         repo.deleteByDId(maDatPhong);
     }
 
+    public boolean exitbyDatPhongid(Integer id){
+        return repo.existsByDId(id);
+    }
 
 }
