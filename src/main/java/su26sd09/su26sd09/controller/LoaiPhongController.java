@@ -13,6 +13,8 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import su26sd09.su26sd09.dto.RoomBookingGuardDTO;
 import su26sd09.su26sd09.entity.LoaiPhong;
 import su26sd09.su26sd09.entity.Phong;
+import su26sd09.su26sd09.entity.PhongAnh;
+import su26sd09.su26sd09.repository.PhongAnhRepository;
 import su26sd09.su26sd09.service.PhongService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -20,6 +22,7 @@ import java.time.LocalTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @Controller
 @RequestMapping("/loai-phong")
@@ -30,6 +33,9 @@ public class LoaiPhongController {
 
     @Autowired
     private PhongService phongService;
+
+    @Autowired
+    private PhongAnhRepository phongAnhRepository;
 
     @GetMapping
     public String index(Model model) {
@@ -78,6 +84,19 @@ public class LoaiPhongController {
             tienNghiTheoPhong.put(phong.getMaPhong(), phongService.findTenTienNghiByPhong(phong.getMaPhong()));
         }
 
+        List<LoaiPhong> loaiPhongs = phongService.findAllLoai();
+
+        HashMap<Integer, UUID> thumbAnhs = new HashMap<>();
+        for (Phong p: phongs
+        ) {
+            Integer pid = p.getMaPhong();
+            PhongAnh pa = phongAnhRepository.findByMaPhongFirst(p.getMaPhong());
+            thumbAnhs.put(
+                    pid,
+                    pa != null ? pa.maAnh.maAnh : null
+            );
+        }
+
         List<LoaiPhong> tatCaLoaiPhong = phongService.findAllLoai();
         Map<Integer, String> anhLoaiPhong = buildAnhLoaiPhong(tatCaLoaiPhong);
 
@@ -101,6 +120,7 @@ public class LoaiPhongController {
         model.addAttribute("khoaLichJsonByPhong", khoaLichJsonByPhong);
 
         model.addAttribute("loaiPhong", loaiPhong);
+        model.addAttribute("thumbAnhs", thumbAnhs);
         model.addAttribute("phongs", phongs);
         model.addAttribute("tienNghiTheoPhong", tienNghiTheoPhong);
         model.addAttribute("loaiPhongs", tatCaLoaiPhong);

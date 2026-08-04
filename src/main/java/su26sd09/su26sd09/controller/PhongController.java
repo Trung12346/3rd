@@ -73,8 +73,7 @@ public class PhongController {
                 tenLoaiTheoPhong.put(phong.getMaPhong(), phong.getLoaiPhong().getTenLoai());
             }
         }
-        
-        // Lấy tất cả loại phòng cho dropdown menu
+
         List<LoaiPhong> loaiPhongs = phongService.findAllLoai();
 
         HashMap<Integer, UUID> thumbAnhs = new HashMap<>();
