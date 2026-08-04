@@ -271,6 +271,11 @@
                     <input type="text" name="yeuCauThem" th:value="${yeuCauThem}">
                 </div>
                 <div class="admin-field">
+                    <label>Mã tra cứu</label>
+                    <input type="text" name="maTraCuu" placeholder="6 ký tự hex"
+                           maxlength="6" th:value="${maTraCuu}">
+                </div>
+                <div class="admin-field">
                     <label>Ngày tạo từ</label>
                     <input type="date" name="ngayTaoTu" th:value="${ngayTaoTu}">
                 </div>
@@ -351,6 +356,7 @@
                     <label>Yêu cầu thêm</label>
                     <input type="text" name="yeuCauThem" th:value="${dpEdit.yeuCauThem}">
                 </div>
+                
 
                 <div class="admin-field">
                     <label>Trạng thái</label>
@@ -387,6 +393,7 @@
                     <th>Ngày trả</th>
                     <th>Khách</th>
                     <th>CCCD</th>
+                    <th>Mã tra cứu</th>
                     <th>CCCD Từng Phòng</th>
                     <th>Trạng thái</th>
                     <th>Hóa đơn</th>
@@ -414,6 +421,7 @@
                     <td th:text="${dp.datPhong.ngaytraPhong != null ? #temporals.format(dp.datPhong.ngaytraPhong, 'dd/MM/yyyy') : ''}"></td>
                     <td th:text="${dp.datPhong.songuoiLon + ' NL, ' + dp.datPhong.sotreEm + ' TE'}"></td>
                     <td th:text="${dp.datPhong.ma_cccd != null ? dp.datPhong.ma_cccd : ''}"></td>
+                    <td th:text="${dp.datPhong.maTraCuu != null ? dp.datPhong.maTraCuu : 'Null'}"></td>
 
                     <!-- CCCD TUNG PHONG - dung cung class voi nut Xem ben hoa-don -->
                     <td>
@@ -508,7 +516,7 @@
                     </td>
                 </tr>
                 <tr th:if="${datPhongs.isEmpty()}">
-                    <td colspan="11"><div class="empty-state">Không tìm thấy đơn đặt phòng phù hợp.</div></td>
+                    <td colspan="13"><div class="empty-state">Không tìm thấy đơn đặt phòng phù hợp.</div></td>
                 </tr>
                 </tbody>
             </table>

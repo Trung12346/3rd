@@ -76,14 +76,10 @@ public class AdminDatPhongController {
             @RequestParam(value = "edit", required = false) Integer editId,
             Model model) {
 
-        // Sort theo ngayTao desc (đơn vừa tạo lên đầu) thay vì theo id desc,
-        // vì id có thể bị lủng do sequence/rollback còn ngayTao phản ánh đúng
-        // thứ tự thời gian tạo đơn.
+
         Sort sort = Sort.by(Sort.Order.desc("ngayTao"), Sort.Order.desc("id"));
         Pageable pageable = PageRequest.of(page, size, sort);
-        // Lấy tất cả, lọc bỏ các đơn "Chua thanh toan" rồi mới paging — đảm bảo
-        // trang quản lý đơn đặt phòng của admin chỉ hiển thị đơn đã có trạng thái
-        // nghiệp vụ hợp lệ (Cho xac nhan / Da xac nhan / Da nhan phong / ...).
+
         List<DatPhong> allFiltered = datPhongService.findAll(sort).stream()
                 .filter(dp -> HuyDonConstants.DP_TRANG_THAI_HIEN_THI.contains(dp.getTrangThai()))
                 .collect(Collectors.toList());
@@ -738,6 +734,7 @@ public class AdminDatPhongController {
             @RequestParam(required = false) String ngayTaoDen,
             @RequestParam(required = false) String ngayCapNhatTu,
             @RequestParam(required = false) String ngayCapNhatDen,
+            @RequestParam(required = false) String maTraCuu,
             Model model) {
 
         List<Integer> daDatHoaDon = hoaDonService.findAll()
@@ -753,11 +750,17 @@ public class AdminDatPhongController {
                         maDatPhong, tenKhach, maNhanVien, ma_cccd,
                         ngayNhanTu, ngayNhanDen, ngayTraTu, ngayTraDen,
                         soNguoiLon, soTreEm, trangThai, yeuCauThem,
-                        ngayTaoTu, ngayTaoDen, ngayCapNhatTu, ngayCapNhatDen
+                        ngayTaoTu, ngayTaoDen, ngayCapNhatTu, ngayCapNhatDen,
+                        maTraCuu
                 ).stream()
                 // Ẩn các đơn "Chua thanh toan" — chỉ hiển thị đơn đã có trạng thái
                 // nghiệp vụ hợp lệ trên trang quản lý đơn đặt phòng admin.
-                .filter(dp -> HuyDonConstants.DP_TRANG_THAI_HIEN_THI.contains(dp.getTrangThai()))
+                // Ngoại lệ: khi nhân viên/admin tra cứu chính xác theo "ma tra cuu",
+                // phải trả về cả đơn "Chua thanh toan" (đơn của khách vãng lai đặt từ
+                // giỏ nhưng chưa thanh toán — đối tượng chính dùng mã tra cứu).
+                .filter(dp ->
+                        (maTraCuu != null && !maTraCuu.trim().isEmpty())
+                                || HuyDonConstants.DP_TRANG_THAI_HIEN_THI.contains(dp.getTrangThai()))
                 .collect(Collectors.toList());
 
         if(tenKhach!=null){
@@ -767,11 +770,24 @@ public class AdminDatPhongController {
         }
 
         Map<Integer, List<Phong>> phongTheoDon = new HashMap<>();
+        Map<Integer, List<ChiTietDatPhong>> MapCtdp = new HashMap<>();
         for (DatPhong dp : datPhongs) {
             phongTheoDon.put(dp.getId(), datPhongService.findPhongByDatPhongId(dp.getId()));
+            MapCtdp.put(dp.getId(), chiTietDatPhongService.findByDatPhongId(dp.getId()));
+        }
+
+        // View admin lặp theo DatPhongDTO (có sẵn trường hoaDonTrangThai), không phải
+        // List<DatPhong> — nên cần build DTO tương ứng cho kết quả search.
+        List<DatPhongDTO> dto = new ArrayList<>();
+        for (DatPhong dp : datPhongs) {
+            HoaDon hd = hoaDonService.findByDatPhongId(dp.getId());
+            String hoaDonTrangThai = hd == null ? "Chua xuat" : hd.getTrangThai();
+            dto.add(new DatPhongDTO(dp, hoaDonTrangThai));
         }
 
         model.addAttribute("datPhongs", datPhongs);
+        model.addAttribute("dto", dto);
+        model.addAttribute("MapCtdp", MapCtdp);
         model.addAttribute("phongTheoDon", phongTheoDon);
 
         model.addAttribute("maDatPhong", maDatPhong);
@@ -790,6 +806,7 @@ public class AdminDatPhongController {
         model.addAttribute("ngayTaoDen", ngayTaoDen);
         model.addAttribute("ngayCapNhatTu", ngayCapNhatTu);
         model.addAttribute("ngayCapNhatDen", ngayCapNhatDen);
+        model.addAttribute("maTraCuu", maTraCuu);
 
         return "admin/dat-phong-list";
     }

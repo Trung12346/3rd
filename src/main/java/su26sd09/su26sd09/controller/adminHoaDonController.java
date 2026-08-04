@@ -293,7 +293,8 @@ public class adminHoaDonController {
                 maDatPhong, tenKhach, maNhanVien, ma_cccd,
                 ngayNhanTu, ngayNhanDen, ngayTraTu, ngayTraDen,
                 soNguoiLon, soTreEm, trangThai, yeuCauThem,
-                ngayTaoTu, ngayTaoDen, ngayCapNhatTu, ngayCapNhatDen
+                ngayTaoTu, ngayTaoDen, ngayCapNhatTu, ngayCapNhatDen,
+                null
         );
 
         Map<Integer, List<Phong>> phongTheoDon = new HashMap<>();

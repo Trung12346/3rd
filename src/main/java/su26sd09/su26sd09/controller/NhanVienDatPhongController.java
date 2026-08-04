@@ -454,17 +454,23 @@ public class NhanVienDatPhongController {
             @RequestParam(required = false) String ngayTaoDen,
             @RequestParam(required = false) String ngayCapNhatTu,
             @RequestParam(required = false) String ngayCapNhatDen,
+            @RequestParam(required = false) String maTraCuu,
             Model model) {
 
         List<DatPhong> datPhongs = datPhongService.search(
                         maDatPhong, tenKhach, null, ma_cccd,
                         ngayNhanTu, ngayNhanDen, ngayTraTu, ngayTraDen,
                         soNguoiLon, soTreEm, trangThai, yeuCauThem,
-                        ngayTaoTu, ngayTaoDen, ngayCapNhatTu, ngayCapNhatDen
+                        ngayTaoTu, ngayTaoDen, ngayCapNhatTu, ngayCapNhatDen,
+                        maTraCuu
                 ).stream()
                 // Ẩn các đơn "Chua thanh toan" — chỉ hiển thị đơn đã có trạng thái
                 // nghiệp vụ hợp lệ trên trang quản lý đơn đặt phòng nhân viên.
-                .filter(dp -> HuyDonConstants.DP_TRANG_THAI_HIEN_THI.contains(dp.getTrangThai()))
+                // Ngoại lệ: khi tra cứu chính xác theo "ma tra cuu", phải trả về cả đơn
+                // "Chua thanh toan" (đơn của khách vãng lai đặt từ giỏ nhưng chưa thanh toán).
+                .filter(dp ->
+                        (maTraCuu != null && !maTraCuu.trim().isEmpty())
+                                || HuyDonConstants.DP_TRANG_THAI_HIEN_THI.contains(dp.getTrangThai()))
                 .collect(Collectors.toList());
 
         Map<Integer, List<ChiTietDatPhong>> mapCtdp = new HashMap<>();
@@ -499,6 +505,7 @@ public class NhanVienDatPhongController {
         model.addAttribute("ngayTaoDen", ngayTaoDen);
         model.addAttribute("ngayCapNhatTu", ngayCapNhatTu);
         model.addAttribute("ngayCapNhatDen", ngayCapNhatDen);
+        model.addAttribute("maTraCuu", maTraCuu);
 
         return "nhan-vien/dat-phong-list";
     }
