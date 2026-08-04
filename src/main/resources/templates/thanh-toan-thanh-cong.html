@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Đặt phòng thành công</title>
     <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body { background: #fafafa; }
         .booking-shell { margin: 0 auto; max-width: 760px; padding: 42px 5% 70px; }
@@ -21,6 +22,32 @@
         .step-item { color: #6b7280; font-size: 13px; font-weight: 700; text-transform: uppercase; }
         .step-item.done { color: var(--sky-primary); }
         .step-line { background: #e5e7eb; height: 2px; }
+
+        /* Modal thong bao ma tra cuu, hien ngay sau khi dat phong/thanh toan thanh cong */
+        .tc-modal-overlay {
+            position: fixed; inset: 0; background: rgba(15, 23, 42, 0.55);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 1000; padding: 16px;
+        }
+        .tc-modal-box {
+            background: #fff; border-radius: 8px; max-width: 440px; width: 100%;
+            padding: 30px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.25);
+        }
+        .tc-modal-box i.tc-modal-icon { font-size: 36px; color: var(--sky-primary); margin-bottom: 10px; }
+        .tc-modal-box h3 { color: var(--sky-dark); margin-bottom: 8px; font-size: 20px; }
+        .tc-modal-box p { color: #6b7280; font-size: 14px; margin-bottom: 18px; line-height: 1.5; }
+        .tc-modal-code {
+            font-family: 'Courier New', monospace; font-size: 32px; font-weight: 700; letter-spacing: 7px;
+            color: var(--sky-primary); background: var(--sky-light); border: 1px dashed var(--sky-primary);
+            border-radius: 6px; padding: 14px 10px; margin-bottom: 18px;
+        }
+        .tc-modal-actions { display: flex; gap: 10px; }
+        .tc-modal-actions button {
+            flex: 1; padding: 11px; border-radius: 6px; font-weight: 600; font-size: 14px; cursor: pointer;
+        }
+        .tc-modal-copy { border: 1px solid var(--sky-primary); background: #fff; color: var(--sky-primary); }
+        .tc-modal-close { border: none; background: var(--sky-primary); color: #fff; }
+        .tc-modal-warning { font-size: 12px; color: #b91c1c; margin-top: 14px; }
 
         .success-card {
             background: #fff;
@@ -119,6 +146,28 @@
 
 <div th:replace="~{fragments/headers/app-header :: appHeader}"></div>
 
+<!-- Modal thong bao ma tra cuu, chi hien voi don cua khach khong co tai khoan,
+     ngay khi ho vua thanh toan/dat phong thanh cong. -->
+<div class="tc-modal-overlay" id="tcModalOverlay"
+     th:if="${datPhong.n == null and datPhong.maTraCuu != null}">
+    <div class="tc-modal-box">
+        <i class="fa-solid fa-circle-info tc-modal-icon"></i>
+        <h3>Đặt phòng thành công! Hãy lưu mã tra cứu</h3>
+        <p>
+            Vì bạn đặt phòng mà không đăng nhập tài khoản, hãy ghi nhớ mã dưới đây.
+            Bạn sẽ cần mã này để tra cứu lại đơn tại trang <b>Tra cứu đơn</b> sau này.
+        </p>
+        <div class="tc-modal-code" id="tcModalCode" th:text="${datPhong.maTraCuu}"></div>
+        <div class="tc-modal-actions">
+            <button type="button" class="tc-modal-copy" onclick="saoChepMaTraCuu()">
+                <i class="fa-regular fa-copy"></i> Sao chép mã
+            </button>
+            <button type="button" class="tc-modal-close" onclick="dongModalMaTraCuu()">Đã ghi nhớ</button>
+        </div>
+        <div class="tc-modal-warning">Mã này sẽ không được gửi lại nếu bạn làm mất.</div>
+    </div>
+</div>
+
 <main class="booking-shell">
 
     <div class="booking-stepper">
@@ -204,6 +253,11 @@
             <div class="receipt-row muted" th:if="${datPhong.ma_cccd != null and !#strings.isEmpty(datPhong.ma_cccd)}">
                 <span>CCCD/CMND</span>
                 <span th:text="${datPhong.ma_cccd}">--</span>
+            </div>
+            <div class="receipt-row" th:if="${datPhong.n == null and datPhong.maTraCuu != null}"
+                 style="background:#f0f9ff; border:1px dashed var(--sky-primary); border-radius:4px; padding:10px 12px;">
+                <span>Mã tra cứu đơn (khách vãng lai)</span>
+                <span style="font-family:monospace; font-weight:700; letter-spacing:3px;" th:text="${datPhong.maTraCuu}">--</span>
             </div>
 
             <!-- ========== THOI GIAN LUUTRU ========== -->
@@ -293,6 +347,26 @@
             phuthiRow.style.display = 'flex';
         }
     })();
+
+    function dongModalMaTraCuu() {
+        var overlay = document.getElementById('tcModalOverlay');
+        if (overlay) overlay.style.display = 'none';
+    }
+
+    function saoChepMaTraCuu() {
+        var codeEl = document.getElementById('tcModalCode');
+        if (!codeEl) return;
+        var text = codeEl.textContent.trim();
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(text);
+        }
+        var btn = document.querySelector('.tc-modal-copy');
+        if (btn) {
+            var oldHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-check"></i> Đã sao chép';
+            setTimeout(function () { btn.innerHTML = oldHtml; }, 1500);
+        }
+    }
 </script>
 
 </body>

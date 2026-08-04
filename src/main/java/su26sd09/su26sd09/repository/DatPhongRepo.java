@@ -140,4 +140,9 @@ order by d.ngaytraPhong desc
 
     DatPhong findFirstByKmId(Integer kmId);
 
+    // Dung cho tra cuu don cua khach khong co tai khoan
+    java.util.Optional<DatPhong> findByMaTraCuu(String maTraCuu);
+
+    boolean existsByMaTraCuu(String maTraCuu);
+
 }

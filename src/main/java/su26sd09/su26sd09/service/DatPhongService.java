@@ -13,6 +13,7 @@ import su26sd09.su26sd09.repository.DatPhongRepo;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -156,12 +157,50 @@ public class DatPhongService {
             return true;
         }).collect(Collectors.toList());
     }
+    private static final String HEX_CHARS = "0123456789ABCDEF";
+    private static final int MA_TRA_CUU_LENGTH = 6;
+    private final SecureRandom random = new SecureRandom();
+
     public DatPhong save(DatPhong datPhong){
+        // Don dat phong cua khach khong co tai khoan (n == null) can 1 ma tra cuu
+        // 6 ky tu hex de ho co the xem lai don sau nay ma khong can dang nhap.
+        // Chi sinh 1 lan (khi chua co), cac lan save sau (vd cap nhat khuyen mai)
+        // se khong bi sinh lai / ghi de.
+        if (datPhong.getN() == null
+                && (datPhong.getMaTraCuu() == null || datPhong.getMaTraCuu().isBlank())) {
+            datPhong.setMaTraCuu(generateUniqueMaTraCuu());
+        }
         return repo.save(datPhong);
+    }
+
+    private String generateUniqueMaTraCuu() {
+        String ma;
+        int attempt = 0;
+        do {
+            StringBuilder sb = new StringBuilder(MA_TRA_CUU_LENGTH);
+            for (int i = 0; i < MA_TRA_CUU_LENGTH; i++) {
+                sb.append(HEX_CHARS.charAt(random.nextInt(HEX_CHARS.length())));
+            }
+            ma = sb.toString();
+            attempt++;
+        } while (repo.existsByMaTraCuu(ma) && attempt < 20);
+        return ma;
     }
 
     public DatPhong findById(int id){
         return repo.findById(id).orElse(null);
+    }
+
+    /**
+     * Tra cuu don dat phong cua khach khong co tai khoan chi bang ma tra cuu
+     * 6 ky tu hex duoc cap luc dat phong.
+     */
+    public DatPhong findByMaTraCuu(String maTraCuu) {
+        if (maTraCuu == null || maTraCuu.isBlank()) {
+            return null;
+        }
+        String maChuan = maTraCuu.trim().toUpperCase();
+        return repo.findByMaTraCuu(maChuan).orElse(null);
     }
 
     /**

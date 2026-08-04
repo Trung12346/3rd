@@ -200,6 +200,8 @@
                                 <button type="submit" class="admin-btn small outline" th:if="${km.hoatDong == false}">mở khóa</button>
                                 <button type="submit" class="admin-btn small danger" th:if="${km.hoatDong == true}"> khóa</button>
                             </form>
+                            <a class="admin-btn small danger"
+                               th:href="@{/nhan-su/admin/khuyen-mai/delete/{id}(id=${km.id})}">xóa khuyến mãi</a>
                         </div>
                     </td>
                 </tr>
