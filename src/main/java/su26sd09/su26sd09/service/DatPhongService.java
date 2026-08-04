@@ -96,12 +96,19 @@ public class DatPhongService {
             Integer maDatPhong, String tenKhach, Integer maNhanVien, String ma_cccd,
             String ngayNhanTu, String ngayNhanDen, String ngayTraTu, String ngayTraDen,
             Integer soNguoiLon, Integer soTreEm, String trangThai, String yeuCauThem,
-            String ngayTaoTu, String ngayTaoDen, String ngayCapNhatTu, String ngayCapNhatDen) {
+            String ngayTaoTu, String ngayTaoDen, String ngayCapNhatTu, String ngayCapNhatDen,
+            String maTraCuu) {
 
         List<DatPhong> all = repo.findAll(Sort.by(Sort.Order.desc("ngayTao"), Sort.Order.desc("id")));
 
         return all.stream().filter(dp -> {
             if (maDatPhong != null && !maDatPhong.equals(dp.getId())) return false;
+
+            if (maTraCuu != null && !maTraCuu.trim().isEmpty()) {
+                // So sanh khong phan biet hoa/thuong de khop voi ma 6 ky tu hex duoc luu.
+                String maDp = dp.getMaTraCuu() == null ? "" : dp.getMaTraCuu().trim().toUpperCase();
+                if (!maDp.equals(maTraCuu.trim().toUpperCase())) return false;
+            }
 
             if (tenKhach != null && !tenKhach.trim().isEmpty()) {
                 if (dp.getN() == null) return false;
