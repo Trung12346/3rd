@@ -525,7 +525,16 @@
             display: block;
         }
 
-        /* ===== Booking guard banner (phòng đang có khách / vừa trả) ===== */
+        /* ===== Booking guard banner (phòng đang có khách / vừa trả) =====
+           LUU Y: banner hien thi thong tin "da co don dat" da bi AN theo yeu
+           cau khach hang (chi thay thong tin nay khien khach bang khoan,
+           nhieu don se rat lan mat UI).
+           Validation overlap van hoat dong nguyen qua:
+             - kiemTraHopLe() trong IIFE cuoi trang (chan submit + loi do)
+             - kiemTraTrungLichVaCanhBao() (toast canh bao trung lich)
+             - validateRoomBookingGuard() ben PhongController
+           Nen tuy khong hien banner/khoa list, khach van khong the dat
+           trung voi don "Cho xac nhan" / "Da xac nhan" / "Da nhan phong". */
         .booking-guard-banner {
             background: #fff8e1;
             border: 1px solid #ffe082;
@@ -536,14 +545,12 @@
             margin-bottom: 14px;
             font-size: 13px;
             line-height: 1.55;
-            display: none;
+            display: none !important;
         }
-        .booking-guard-banner.show { display: flex; gap: 10px; align-items: flex-start; }
-        .booking-guard-banner i { color: #e67e22; font-size: 16px; margin-top: 1px; flex-shrink: 0; }
-        .booking-guard-banner strong { color: #6b4f00; }
-        .booking-guard-banner .guard-dates { display: block; margin-top: 4px; color: #8a6d00; font-size: 12px; }
 
-        /* ===== Danh sách khoảng ngày bị khóa hiển thị trong card phòng ===== */
+        /* ===== Danh sách khoảng ngày bị khóa hiển thị trong card phòng =====
+           An luon theo yeu cau khach hang (nhieu don se rat lan mat UI, va
+           khong can thiet vi validate da chan o client + server). */
         .locked-dates-list {
             list-style: none;
             margin: 0 0 10px;
@@ -553,12 +560,8 @@
             background: #fff8e1;
             border: 1px solid #ffe082;
             border-radius: 4px;
+            display: none !important;
         }
-        .locked-dates-list li {
-            padding: 5px 10px;
-            border-bottom: 1px dashed #ffe082;
-        }
-        .locked-dates-list li:last-child { border-bottom: none; }
 
         /* ===== Phụ phí ngoài giờ (dòng trong summary-box) ===== */
         .summary-row.extra-fee-row { display: none; color: #c0392b; }
@@ -1030,31 +1033,21 @@
     // (giong het logic validateRoomBookingGuard() o PhongController), khong
     // chi rieng "Da nhan phong" nhu truoc, de tranh cho phep dat trung lich
     // voi don dang "Cho xac nhan" / "Da xac nhan".
+    //
+    // LUU Y: banner hien thi da bi TAT theo yeu cau khach hang (hien thi
+    // nhieu don se rat lan mat, khach se bang khoan). Tuy nhien validate
+    // overlap van hoat dong nguyen (kiemTraHopLe + kiemTraTrungLichVaCanhBao
+    // + server validateRoomBookingGuard), dam bao khong the dat trung don cu.
     function applyGuardBanner() {
         const form = document.getElementById('quickBookingForm');
         if (!form) return;
         const banner = document.getElementById('booking-guard-banner');
-        const bannerTitle = document.getElementById('guard-banner-title');
-        const bannerDates = document.getElementById('guard-banner-dates');
         const ngayNhanEl = document.getElementById('ngay-nhan');
         if (!banner) return;
         const trangThaiDon = form.dataset.trangThaiDon || '';
         const danhSachKhoa = layDanhSachKhoaLich(form.dataset);
 
         if (laTrangThaiBiKhoa(trangThaiDon) && danhSachKhoa.length > 0) {
-            if (bannerTitle) {
-                bannerTitle.textContent = (trangThaiDon === 'Da nhan phong')
-                    ? 'Phòng đang có khách sử dụng'
-                    : 'Phòng đã có khách đặt trước (chờ nhận phòng)';
-            }
-            if (bannerDates) {
-                const dongText = danhSachKhoa.map(function (k) {
-                    return formatDate(String(k.ngayBatDau).substring(0, 10)) + ' → ' + formatDate(String(k.ngayKetThuc).substring(0, 10));
-                }).join(' , ');
-                bannerDates.textContent = 'Các khoảng đã được đặt: ' + dongText;
-            }
-            banner.classList.add('show');
-
             // FIX: KHONG set "min" cho input datetime-local (xem ghi chu cu).
             // Chi goi y ngay nhan mac dinh neu input dang trong: dung ngay
             // sau khoang co han tra XA NHAT (an toan nhat, tranh de xuat
@@ -1065,11 +1058,14 @@
                 d.setDate(d.getDate() + 1);
                 ngayNhanEl.value = d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()) + 'T08:30';
             }
-        } else {
-            banner.classList.remove('show');
-            if (ngayNhanEl) {
-                ngayNhanEl.removeAttribute('min');
-            }
+        }
+        // Dam bao banner luon an (CSS cung da display:none !important, day la
+        // lop phong thu 2 de chac chan khong bao gio hien thi khoang ngay cu
+        // len UI, vi neu nhieu don se rat lan mat).
+        banner.classList.remove('show');
+        banner.style.display = 'none';
+        if (ngayNhanEl) {
+            ngayNhanEl.removeAttribute('min');
         }
     }
 
@@ -1150,6 +1146,12 @@
     // toast moi lan user go phim. Loi UI chi tiet do kiemTraHopLe() o
     // IIFE duoi xu ly khi user blur hoac submit. =====
     let lastOverlapStatePhongTheoLoai = false;
+
+    // FIX: khai báo lastExtraFee de lan dau tien co the so sanh "=== 0"
+    // chinh xac (truoc day bien chua duoc khai bao nen undefined === 0
+    // tra ve false, lam toast canh bao phu phi ngoai gio KHONG BAO GIO
+    // hien, mac du dong "Phu phi ngoai gio" van xuat hien o summary).
+    let lastExtraFee = 0;
 
     // ===== Kiem tra khoang moi co giao (overlap) voi khoang dang bi khoa
     // cua don cu hay khong (ap dung cho ca 3 trang thai don bi khoa).

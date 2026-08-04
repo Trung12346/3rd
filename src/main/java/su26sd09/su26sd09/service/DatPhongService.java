@@ -253,4 +253,8 @@ public class DatPhongService {
         return repo.existsBookingNotCheckout(maPhong, maDatPhong) ;
     }
 
+    public List<DatPhong> findRecentBookingsForPhong(int maPhong) {
+        return repo.findRecentBookingsForPhong(maPhong);
+    }
+
 }
