@@ -457,11 +457,11 @@ public class NhanVienDatPhongController {
             Model model) {
 
         List<DatPhong> datPhongs = datPhongService.search(
-                maDatPhong, tenKhach, null, ma_cccd,
-                ngayNhanTu, ngayNhanDen, ngayTraTu, ngayTraDen,
-                soNguoiLon, soTreEm, trangThai, yeuCauThem,
-                ngayTaoTu, ngayTaoDen, ngayCapNhatTu, ngayCapNhatDen
-        ).stream()
+                        maDatPhong, tenKhach, null, ma_cccd,
+                        ngayNhanTu, ngayNhanDen, ngayTraTu, ngayTraDen,
+                        soNguoiLon, soTreEm, trangThai, yeuCauThem,
+                        ngayTaoTu, ngayTaoDen, ngayCapNhatTu, ngayCapNhatDen
+                ).stream()
                 // Ẩn các đơn "Chua thanh toan" — chỉ hiển thị đơn đã có trạng thái
                 // nghiệp vụ hợp lệ trên trang quản lý đơn đặt phòng nhân viên.
                 .filter(dp -> HuyDonConstants.DP_TRANG_THAI_HIEN_THI.contains(dp.getTrangThai()))
@@ -957,9 +957,13 @@ public class NhanVienDatPhongController {
                 loiTheoDong.add("Phong moi #" + newRoomId + " khong ton tai hoac da ngung hoat dong.");
                 continue;
             }
-            // Phòng mới đang bị đơn khác giữ chỗ?
-            if (datPhongService.hasBookingNotCheckout(phongMoi.getMaPhong(), id)) {
-                loiTheoDong.add("Phong '" + phongMoi.getSoPhong() + "' dang bi don khac giu cho.");
+            // Check overlap khoang ngay voi don khac dang giu phong moi (Cho xac nhan /
+            // Da xac nhan / Da nhan phong). Ham hasBookingNotCheckout() chi check Da nhan
+            // phong nen bi "lot" cac don Cho/Da xac nhan — phai dung helper overlap moi.
+            StringBuilder overlapErr = new StringBuilder();
+            if (coOverlapPhongMoi(phongMoi.getMaPhong(), id,
+                    datPhong.getNgaydatPhong(), datPhong.getNgaytraPhong(), overlapErr)) {
+                loiTheoDong.add(overlapErr.toString());
                 continue;
             }
             // Validate CCCD mới (nếu nhập)
@@ -1045,6 +1049,47 @@ public class NhanVienDatPhongController {
         redirectAttributes.addFlashAttribute("thanhCongCapNhat",
                 "Da doi thanh cong " + soPhongDoi + " phong. Chenh lech: " + chenhLechStr + ". Ly do: " + lyDoDoi.trim());
         return "redirect:/nhan-su/dat-phong/chi-tiet/" + id;
+    }
+
+    /**
+     * Kiem tra khoang ngay [ngayDat, ngayTra) cua don dang doi co bi giao (overlap)
+     * voi bat ky don nao khac dang giu phong moi khong. Tra ve true neu overlap,
+     * dong thoi ghi thong bao loi vao errorOut (de hien thi trong loiTheoDong).
+     *
+     * So sanh voi TAT CA cac don con hieu luc (Cho xac nhan / Da xac nhan /
+     * Da nhan phong) chu khong chi Da nhan phong nhu hasBookingNotCheckout().
+     * Bo qua don hien tai (maDatPhongHienTai) de tranh tu overlap voi chinh minh.
+     *
+     * Logic overlap: aStart < bEnd && aEnd > bStart.
+     */
+    private boolean coOverlapPhongMoi(int maPhong, int maDatPhongHienTai,
+                                      LocalDateTime ngayDat, LocalDateTime ngayTra,
+                                      StringBuilder errorOut) {
+        List<DatPhong> bookings = datPhongService.findRecentBookingsForPhong(maPhong);
+        if (bookings == null || bookings.isEmpty()) return false;
+        for (DatPhong dp : bookings) {
+            if (dp == null || dp.getId() == maDatPhongHienTai) continue;
+            // Chi xet cac trang thai dang giu phong that su (Da tra phong da giai phong)
+            String tt = dp.getTrangThai();
+            if (!"Cho xac nhan".equals(tt) && !"Da xac nhan".equals(tt) && !"Da nhan phong".equals(tt)) {
+                continue;
+            }
+            LocalDateTime tu = dp.getNgaydatPhong();
+            LocalDateTime den = dp.getNgaytraPhong();
+            if (tu == null || den == null) continue;
+            if (ngayDat.isBefore(den) && ngayTra.isAfter(tu)) {
+                Phong p = phongService.findById(maPhong);
+                String soPhong = p != null ? p.getSoPhong() : String.valueOf(maPhong);
+                errorOut.append("Phong '").append(soPhong)
+                        .append("' da bi don #").append(dp.getId())
+                        .append(" (").append(tt).append(") giu tu ")
+                        .append(tu.toLocalDate()).append(" den ")
+                        .append(den.toLocalDate())
+                        .append(", khong the doi vao khoang nay");
+                return true;
+            }
+        }
+        return false;
     }
 
     @PostMapping("/dat-phong/chi-tiet/{id}/khach-hang")
