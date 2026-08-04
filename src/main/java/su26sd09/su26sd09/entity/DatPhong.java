@@ -78,6 +78,12 @@ public class DatPhong {
     @Column(name = "ma_cccd")
     public String ma_cccd;
 
+    // Ma tra cuu 6 ky tu hex (VD: "A3F9C1"), duoc sinh tu dong cho don dat phong
+    // cua khach khong co tai khoan (n == null) de ho co the tra cuu don sau nay
+    // ma khong can dang nhap.
+    @Column(name = "ma_tra_cuu", length = 6, unique = true)
+    public String maTraCuu;
+
     @OneToMany(mappedBy = "d",fetch = FetchType.EAGER)
     private List<ChiTietDatPhong> chiTietDatPhongs;
 
