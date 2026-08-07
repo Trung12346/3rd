@@ -145,4 +145,22 @@ order by d.ngaytraPhong desc
 
     boolean existsByMaTraCuu(String maTraCuu);
 
+    /**
+     * Danh sách mã phòng đã bị "khóa lịch" (không còn trống) trong khoảng
+     * [ngayNhan, ngayTra) do có đơn đặt phòng khác đang giữ chỗ đè lên
+     * khoảng ngày này. Chỉ các trạng thái "Cho xac nhan", "Da xac nhan",
+     * "Da nhan phong" mới thực sự khóa lịch (khớp logic ở PhongService).
+     * Điều kiện chồng lấn khoảng ngày kinh điển: A.start < B.end AND A.end > B.start
+     */
+    @Query("""
+        select distinct c.p.maPhong
+        from DatPhong d
+        join ChiTietDatPhong c on c.d.id = d.id
+        where d.trangThai in ('Cho xac nhan','Da xac nhan','Da nhan phong')
+        and d.ngaydatPhong < :ngayTra
+        and d.ngaytraPhong > :ngayNhan
+    """)
+    List<Integer> findMaPhongDaKhoaLichTrongKhoang(@Param("ngayNhan") LocalDateTime ngayNhan,
+                                                     @Param("ngayTra") LocalDateTime ngayTra);
+
 }

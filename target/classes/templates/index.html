@@ -11,6 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
 </head>
 <body>
 <div th:replace="~{fragments/headers/app-header :: appHeader}"></div>
@@ -23,28 +24,90 @@
     <div class="hero-scroll-cue" aria-hidden="true"><span></span></div>
 </section>
 
-<section class="booking-section">
-    <form class="booking-form" th:action="@{/home}" method="get">
-        <div class="booking-item">
-            <label><i class="fa-solid fa-door-open"></i> Tên phòng</label>
-            <input type="text" name="tenPhong" placeholder="VD: 101, view biển..." th:value="${tenPhong}">
+<!-- LARGE SEARCH BAR (booking.com / agoda style) -->
+<section class="hero-search-wrap">
+    <form class="hero-search-card" id="heroSearchForm" th:action="@{/loai-phong/tim-kiem}" method="get">
+        <input type="hidden" name="ngayNhan" id="ngayNhanPhongInput" th:value="${ngayNhan}">
+        <input type="hidden" name="ngayTra" id="ngayTraPhongInput" th:value="${ngayTra}">
+        <input type="hidden" name="nguoiLon" id="soNguoiLonInput" th:value="${nguoiLon != null ? nguoiLon : 2}">
+        <input type="hidden" name="treEm" id="soTreEmInput" th:value="${treEm != null ? treEm : 0}">
+
+        <div class="hero-search-group" id="heroDatesGroup">
+            <div class="hero-search-field" data-field="checkin" id="heroCheckinField">
+                <label><i class="fa-regular fa-calendar"></i> Nhận phòng</label>
+                <span class="hero-search-value placeholder" id="checkinDisplay">Chọn ngày</span>
+            </div>
+            <div class="hero-search-divider"></div>
+            <div class="hero-search-field" data-field="checkout" id="heroCheckoutField">
+                <label><i class="fa-regular fa-calendar"></i> Trả phòng</label>
+                <span class="hero-search-value placeholder" id="checkoutDisplay">Chọn ngày</span>
+            </div>
+
+            <div class="hero-calendar-popover" id="heroCalendarPopover">
+                <div class="hero-calendar-legend">Chọn ngày <strong>nhận phòng</strong>, sau đó chọn ngày <strong>trả phòng</strong></div>
+                <div id="heroDateRangeCalendar"></div>
+                <div class="hero-calendar-actions">
+                    <button type="button" class="hero-calendar-clear" id="heroCalendarClear">Xóa</button>
+                    <button type="button" class="hero-calendar-apply" id="heroCalendarApply">Áp dụng</button>
+                </div>
+            </div>
         </div>
-        <div class="booking-item">
-            <label><i class="fa-solid fa-bed"></i> Tên loại phòng</label>
-            <input type="text" name="tenLoaiPhong" placeholder="VD: Deluxe, Suite..." th:value="${tenLoaiPhong}">
+
+        <div class="hero-search-divider"></div>
+
+        <div class="hero-search-group" id="heroGuestsGroup">
+            <div class="hero-search-field" data-field="guests" id="heroGuestsField">
+                <label><i class="fa-solid fa-user-group"></i> Khách</label>
+                <span class="hero-search-value" id="guestsDisplay">2 người lớn</span>
+            </div>
+
+            <div class="hero-guests-popover" id="heroGuestsPopover">
+                <div class="hero-guest-row">
+                    <div><strong>Người lớn</strong><span>Từ 13 tuổi trở lên</span></div>
+                    <div class="hero-stepper">
+                        <button type="button" data-action="dec" data-target="adults">−</button>
+                        <span id="adultsCount">2</span>
+                        <button type="button" data-action="inc" data-target="adults">+</button>
+                    </div>
+                </div>
+                <div class="hero-guest-row">
+                    <div><strong>Trẻ em</strong><span>0 - 12 tuổi</span></div>
+                    <div class="hero-stepper">
+                        <button type="button" data-action="dec" data-target="children">−</button>
+                        <span id="childrenCount">0</span>
+                        <button type="button" data-action="inc" data-target="children">+</button>
+                    </div>
+                </div>
+                <button type="button" class="hero-guests-done" id="heroGuestsDone">Xong</button>
+            </div>
         </div>
-        <div class="booking-item">
-            <label><i class="fa-solid fa-sack-dollar"></i> Giá từ</label>
-            <input type="number" name="minGia" min="0" step="100000" placeholder="500000" th:value="${minGia}">
-        </div>
-        <div class="booking-item">
-            <label><i class="fa-solid fa-sack-dollar"></i> Giá đến</label>
-            <input type="number" name="maxGia" min="0" step="100000" placeholder="2000000" th:value="${maxGia}">
-        </div>
-        <button type="submit" class="btn-book"><i class="fa-solid fa-magnifying-glass"></i> Tìm phòng</button>
+
+        <button type="submit" class="hero-search-btn"><i class="fa-solid fa-magnifying-glass"></i> Tìm phòng</button>
     </form>
-    <div class="home-search-error" th:if="${homeSearchError}" th:text="${homeSearchError}"></div>
 </section>
+
+<!--<section class="booking-section">-->
+<!--    <form class="booking-form" th:action="@{/home}" method="get">-->
+<!--        <div class="booking-item">-->
+<!--            <label><i class="fa-solid fa-door-open"></i> Tên phòng</label>-->
+<!--            <input type="text" name="tenPhong" placeholder="VD: 101, view biển..." th:value="${tenPhong}">-->
+<!--        </div>-->
+<!--        <div class="booking-item">-->
+<!--            <label><i class="fa-solid fa-bed"></i> Tên loại phòng</label>-->
+<!--            <input type="text" name="tenLoaiPhong" placeholder="VD: Deluxe, Suite..." th:value="${tenLoaiPhong}">-->
+<!--        </div>-->
+<!--        <div class="booking-item">-->
+<!--            <label><i class="fa-solid fa-sack-dollar"></i> Giá từ</label>-->
+<!--            <input type="number" name="minGia" min="0" step="100000" placeholder="500000" th:value="${minGia}">-->
+<!--        </div>-->
+<!--        <div class="booking-item">-->
+<!--            <label><i class="fa-solid fa-sack-dollar"></i> Giá đến</label>-->
+<!--            <input type="number" name="maxGia" min="0" step="100000" placeholder="2000000" th:value="${maxGia}">-->
+<!--        </div>-->
+<!--        <button type="submit" class="btn-book"><i class="fa-solid fa-magnifying-glass"></i> Tìm phòng</button>-->
+<!--    </form>-->
+<!--    <div class="home-search-error" th:if="${homeSearchError}" th:text="${homeSearchError}"></div>-->
+<!--</section>-->
 
 <section class="home-search-results" th:if="${dangTimKiem == true and homeSearchError == null}">
     <div class="home-search-heading">
@@ -177,7 +240,143 @@
 <footer>
     <p>&copy; 2026 Hotel. All rights reserved.</p>
 </footer>
+<script src="/js/date-range-picker.js"></script>
 <script src="/header-dropdown.js"></script>
+<script>
+    // ===== HERO LARGE SEARCH BAR (booking.com / agoda style) =====
+    (function initHeroSearchBar() {
+        const form = document.getElementById('heroSearchForm');
+        if (!form) return;
+
+        const VN_MONTHS = ['Th1','Th2','Th3','Th4','Th5','Th6','Th7','Th8','Th9','Th10','Th11','Th12'];
+        function formatDisplay(d) {
+            return `${d.getDate()} ${VN_MONTHS[d.getMonth()]}, ${d.getFullYear()}`;
+        }
+        function toISO(d) {
+            const y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, '0'), day = String(d.getDate()).padStart(2, '0');
+            return `${y}-${m}-${day}`;
+        }
+
+        const checkinDisplay = document.getElementById('checkinDisplay');
+        const checkoutDisplay = document.getElementById('checkoutDisplay');
+        const ngayNhanInput = document.getElementById('ngayNhanPhongInput');
+        const ngayTraInput = document.getElementById('ngayTraPhongInput');
+        const calendarPopover = document.getElementById('heroCalendarPopover');
+        const guestsPopover = document.getElementById('heroGuestsPopover');
+
+        const heroCheckinField = document.getElementById('heroCheckinField');
+        const heroCheckoutField = document.getElementById('heroCheckoutField');
+        const heroGuestsFieldEl = document.getElementById('heroGuestsField');
+
+        function closeAllPopovers(except) {
+            [calendarPopover, guestsPopover].forEach(p => { if (p && p !== except) p.classList.remove('open'); });
+            [heroCheckinField, heroCheckoutField, heroGuestsFieldEl].forEach(f => f && f.classList.remove('active'));
+        }
+
+        // --- Date range picker (FullCalendar) ---
+        const picker = new DateRangePicker({
+            calendarElId: 'heroDateRangeCalendar',
+            minDate: new Date(),
+            onChange: function (start, end) {
+                if (start) {
+                    checkinDisplay.textContent = formatDisplay(start);
+                    checkinDisplay.classList.remove('placeholder');
+                    ngayNhanInput.value = toISO(start);
+                } else {
+                    checkinDisplay.textContent = 'Chọn ngày';
+                    checkinDisplay.classList.add('placeholder');
+                    ngayNhanInput.value = '';
+                }
+                if (end) {
+                    checkoutDisplay.textContent = formatDisplay(end);
+                    checkoutDisplay.classList.remove('placeholder');
+                    ngayTraInput.value = toISO(end);
+                } else {
+                    checkoutDisplay.textContent = 'Chọn ngày';
+                    checkoutDisplay.classList.add('placeholder');
+                    ngayTraInput.value = '';
+                }
+                if (start && end) calendarPopover.classList.remove('open');
+            }
+        });
+
+        ['heroCheckinField', 'heroCheckoutField'].forEach(id => {
+            const field = document.getElementById(id);
+            field.addEventListener('click', () => {
+                const willOpen = !calendarPopover.classList.contains('open');
+                closeAllPopovers();
+                if (willOpen) {
+                    calendarPopover.classList.add('open');
+                    heroCheckinField.classList.add('active');
+                    heroCheckoutField.classList.add('active');
+                    // The calendar was measured while hidden (display: none) at
+                    // construction time, so its scaled wrapper size is wrong
+                    // until we re-measure now that it's actually visible.
+                    picker.refresh();
+                }
+            });
+        });
+
+        document.getElementById('heroCalendarClear').addEventListener('click', () => picker.reset());
+        document.getElementById('heroCalendarApply').addEventListener('click', () => calendarPopover.classList.remove('open'));
+
+        // --- Guests popover (adults / children stepper) ---
+        const guestsField = document.getElementById('heroGuestsField');
+        const guestsDisplay = document.getElementById('guestsDisplay');
+        const adultsCountEl = document.getElementById('adultsCount');
+        const childrenCountEl = document.getElementById('childrenCount');
+        const soNguoiLonInput = document.getElementById('soNguoiLonInput');
+        const soTreEmInput = document.getElementById('soTreEmInput');
+
+        let adults = parseInt(soNguoiLonInput.value, 10) || 2;
+        let children = parseInt(soTreEmInput.value, 10) || 0;
+        const MIN_ADULTS = 1, MAX_ADULTS = 10, MIN_CHILDREN = 0, MAX_CHILDREN = 10;
+
+        function renderGuests() {
+            adultsCountEl.textContent = adults;
+            childrenCountEl.textContent = children;
+            soNguoiLonInput.value = adults;
+            soTreEmInput.value = children;
+
+            let text = `${adults} người lớn`;
+            if (children > 0) text += `, ${children} trẻ em`;
+            guestsDisplay.textContent = text;
+
+            form.querySelectorAll('.hero-stepper button[data-target="adults"][data-action="dec"]').forEach(b => b.disabled = adults <= MIN_ADULTS);
+            form.querySelectorAll('.hero-stepper button[data-target="adults"][data-action="inc"]').forEach(b => b.disabled = adults >= MAX_ADULTS);
+            form.querySelectorAll('.hero-stepper button[data-target="children"][data-action="dec"]').forEach(b => b.disabled = children <= MIN_CHILDREN);
+            form.querySelectorAll('.hero-stepper button[data-target="children"][data-action="inc"]').forEach(b => b.disabled = children >= MAX_CHILDREN);
+        }
+
+        form.querySelectorAll('.hero-stepper button').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const target = btn.dataset.target, action = btn.dataset.action;
+                if (target === 'adults') adults = Math.min(MAX_ADULTS, Math.max(MIN_ADULTS, adults + (action === 'inc' ? 1 : -1)));
+                if (target === 'children') children = Math.min(MAX_CHILDREN, Math.max(MIN_CHILDREN, children + (action === 'inc' ? 1 : -1)));
+                renderGuests();
+            });
+        });
+
+        guestsField.addEventListener('click', () => {
+            const willOpen = !guestsPopover.classList.contains('open');
+            closeAllPopovers();
+            if (willOpen) {
+                guestsPopover.classList.add('open');
+                heroGuestsFieldEl.classList.add('active');
+            }
+        });
+        document.getElementById('heroGuestsDone').addEventListener('click', () => guestsPopover.classList.remove('open'));
+
+        renderGuests();
+
+        // --- Close popovers on outside click ---
+        document.addEventListener('click', (e) => {
+            if (!form.contains(e.target)) closeAllPopovers();
+        });
+        form.addEventListener('click', (e) => e.stopPropagation());
+        [calendarPopover, guestsPopover].forEach(p => p.addEventListener('click', e => e.stopPropagation()));
+    })();
+</script>
 </body>
 <script>
     // ===== CAROUSEL LOGIC (giữ nguyên logic gốc) =====

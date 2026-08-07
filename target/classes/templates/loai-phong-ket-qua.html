@@ -1,0 +1,424 @@
+﻿<!DOCTYPE html>
+<html lang="vi"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kết Quả Tìm Kiếm | Hotel</title>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Dropdown menu styles (dong bo voi cac trang khac) */
+        .nav-menu { position: relative; }
+        .nav-item { position: relative; display: inline-block; }
+        .dropdown-menu {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background: white;
+            min-width: 220px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            border-radius: 4px;
+            padding: 8px 0;
+            z-index: 1000;
+            margin-top: 5px;
+        }
+        .nav-item:hover .dropdown-menu { display: block; }
+        .dropdown-menu a {
+            display: block;
+            padding: 10px 20px;
+            color: var(--text-dark);
+            text-decoration: none;
+            font-size: 14px;
+            transition: background 0.2s, color 0.2s;
+        }
+        .dropdown-menu a:hover { background: var(--sky-light); color: var(--sky-primary); }
+        .dropdown-menu a i { margin-right: 8px; color: var(--sky-primary); }
+
+        :root {
+            --sky-primary: #2196F3;
+            --sky-dark: #1565c0;
+            --sky-light: #E3F2FD;
+            --text-dark: #1a1a2e;
+            --text-gray: #666;
+            --border-color: #e8e8e8;
+            --white: #fff;
+        }
+
+        /* ===== BANNER + BREADCRUMB (lay theo layout phong-theo-loai.html) ===== */
+        .detail-banner {
+            position: relative;
+            height: 260px;
+            overflow: hidden;
+            background: linear-gradient(135deg, #0d47a1, #42a5f5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .detail-banner::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: url('https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=1600&q=50') center/cover no-repeat;
+            opacity: 0.2;
+        }
+        .breadcrumb {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+        }
+        .breadcrumb nav {
+            font-size: 13px;
+            color: rgba(255,255,255,0.7);
+            margin-bottom: 10px;
+        }
+        .breadcrumb nav a { color: rgba(255,255,255,0.7); text-decoration: none; }
+        .breadcrumb nav a:hover { color: #fff; }
+        .breadcrumb nav span { margin: 0 8px; }
+        .breadcrumb h1 {
+            font-family: 'Georgia', serif;
+            font-size: 34px;
+            color: #fff;
+            letter-spacing: 1.5px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        .breadcrumb .badge-capacity {
+            display: inline-flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 6px 16px;
+            margin-top: 12px;
+            background: rgba(255,255,255,0.2);
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.4);
+            padding: 7px 18px;
+            border-radius: 20px;
+            font-size: 13px;
+            backdrop-filter: blur(4px);
+        }
+        .breadcrumb .badge-capacity span i { margin-right: 5px; }
+
+        /* ===== MAIN LAYOUT ===== */
+        .ket-qua-layout {
+            padding: 34px 20px 56px;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        .ket-qua-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 22px;
+        }
+        .ket-qua-header h2 {
+            font-family: 'Georgia', serif;
+            font-size: 22px;
+            color: var(--text-dark);
+        }
+        .ket-qua-count {
+            font-size: 13px;
+            color: var(--sky-primary);
+            background: var(--sky-light);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+        .ket-qua-error {
+            padding: 16px 20px;
+            border-radius: 6px;
+            background: #fdecea;
+            border: 1px solid #f5c6cb;
+            color: #c0392b;
+            font-size: 14px;
+            margin-bottom: 22px;
+        }
+        .empty-state {
+            padding: 44px 18px;
+            border: 1px dashed var(--border-color);
+            border-radius: 8px;
+            color: var(--text-gray);
+            text-align: center;
+            background: #f8fbff;
+        }
+        .empty-state i { font-size: 26px; color: var(--sky-primary); margin-bottom: 10px; display: block; }
+        .empty-state a { color: var(--sky-primary); font-weight: 600; text-decoration: none; }
+        .empty-state a:hover { text-decoration: underline; }
+
+        /* ===== TOOLBAR (sort) ===== */
+        .ket-qua-toolbar {
+            display: flex; align-items: center; gap: 10px; margin-bottom: 22px;
+            flex-wrap: wrap;
+        }
+        .ket-qua-toolbar label {
+            font-size: 13px; color: var(--text-gray); font-weight: 600;
+        }
+        .ket-qua-toolbar select {
+            padding: 8px 14px; border-radius: 20px; border: 1px solid var(--border-color);
+            background: var(--white); color: var(--text-dark); font-size: 13px;
+            cursor: pointer; font-family: inherit;
+        }
+        .ket-qua-toolbar select:focus { outline: none; border-color: var(--sky-primary); }
+
+        /* ===== GRID KET QUA (LoaiPhong) ===== */
+        .ket-qua-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 26px;
+        }
+        .loai-phong-card {
+            background: var(--white);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            border: 1px solid var(--border-color);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+        .loai-phong-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 16px 44px rgba(33, 150, 243, 0.18);
+        }
+        .card-img-wrap { position: relative; height: 210px; overflow: hidden; }
+        .card-img-wrap img {
+            width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s ease;
+        }
+        .loai-phong-card:hover .card-img-wrap img { transform: scale(1.06); }
+        .card-img-wrap::after {
+            content: '';
+            position: absolute; inset: auto 0 0 0; height: 60%;
+            background: linear-gradient(to top, rgba(0,0,0,0.55), rgba(0,0,0,0));
+            pointer-events: none;
+        }
+        .card-badge {
+            position: absolute; top: 16px; left: 16px; z-index: 1;
+            background: var(--sky-primary); color: #fff;
+            font-size: 11px; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 1px; padding: 5px 12px; border-radius: 20px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+        }
+        .card-badge-available {
+            position: absolute; top: 16px; right: 16px; z-index: 1;
+            background: rgba(39,174,96,0.95); color: #fff;
+            font-size: 11px; font-weight: 700;
+            padding: 5px 12px; border-radius: 20px;
+            display: flex; align-items: center; gap: 5px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+        }
+        .card-badge-available.low { background: rgba(230,126,34,0.95); }
+        .card-img-caption {
+            position: absolute; left: 18px; bottom: 12px; z-index: 1;
+            color: #fff; font-size: 12.5px; font-weight: 500;
+            display: flex; align-items: center; gap: 6px;
+            text-shadow: 0 1px 4px rgba(0,0,0,0.4);
+        }
+        .card-body { padding: 20px 22px 22px; display: flex; flex-direction: column; flex: 1; }
+        .card-title { font-family: 'Georgia', serif; font-size: 20px; color: var(--text-dark); margin-bottom: 10px; }
+        .card-meta { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+        .card-meta span {
+            font-size: 12.5px; color: var(--text-dark); display: flex; align-items: center; gap: 6px;
+            background: var(--sky-light); padding: 5px 11px; border-radius: 20px; font-weight: 500;
+        }
+        .card-meta i { color: var(--sky-primary); font-size: 12px; }
+
+        .card-amenities {
+            display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 14px;
+            padding-bottom: 14px; border-bottom: 1px dashed var(--border-color);
+        }
+        .card-amenities span {
+            font-size: 12px; color: var(--text-gray); display: flex; align-items: center; gap: 5px;
+        }
+        .card-amenities i { color: var(--sky-primary); font-size: 12px; width: 14px; text-align: center; }
+
+        .card-desc {
+            font-size: 14px; color: var(--text-gray); line-height: 1.65; margin-bottom: 16px;
+            display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+            flex: 1;
+        }
+        .card-stay-total {
+            display: flex; align-items: center; gap: 8px;
+            font-size: 12.5px; color: var(--sky-dark); background: var(--sky-light);
+            padding: 8px 12px; border-radius: 8px; margin-bottom: 16px;
+        }
+        .card-stay-total i { color: var(--sky-primary); }
+        .card-stay-total strong { color: var(--sky-dark); }
+        .card-footer {
+            display: flex; justify-content: space-between; align-items: center;
+            border-top: 1px solid var(--border-color); padding-top: 16px;
+        }
+        .card-price { font-size: 13px; color: var(--text-gray); line-height: 1.3; }
+        .card-price strong { font-size: 21px; color: var(--sky-primary); font-weight: 700; }
+        .btn-view-detail {
+            display: inline-flex; align-items: center; gap: 7px;
+            padding: 10px 22px; background: linear-gradient(135deg, var(--sky-primary), var(--sky-dark, #1565c0)); color: #fff;
+            border: none; border-radius: 20px; font-size: 13px; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer;
+            text-decoration: none; transition: transform 0.15s ease, box-shadow 0.2s ease;
+            box-shadow: 0 6px 16px rgba(33,150,243,0.3);
+        }
+        .btn-view-detail:hover { transform: translateY(-2px); box-shadow: 0 10px 22px rgba(33,150,243,0.4); }
+
+        @media (max-width: 640px) {
+            .detail-banner { height: 220px; }
+            .breadcrumb h1 { font-size: 26px; }
+        }
+
+        /* Dropdown / logout button styling dung chung voi cac trang khac */
+        .btn-logout {
+            border: 1px solid var(--border-color); background: transparent;
+            color: var(--text-gray); padding: 8px 15px; border-radius: 2px;
+            cursor: pointer; font-family: inherit; font-size: 13px;
+            font-weight: 600; text-transform: uppercase; transition: all 0.3s;
+        }
+        .btn-logout:hover { border-color: #E74C3C; color: #E74C3C; background: #FDEDEC; }
+    </style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div th:replace="~{fragments/headers/app-header :: appHeader}"></div>
+
+<!-- BANNER + BREADCRUMB -->
+<section class="detail-banner">
+    <div class="breadcrumb">
+        <nav>
+            <a href="/home">Trang Chủ</a>
+            <span>›</span>
+            <span>Kết Quả Tìm Kiếm</span>
+        </nav>
+        <h1>Kết Quả Tìm Kiếm</h1>
+        <div class="badge-capacity">
+            <span th:if="${ngayNhan != null and ngayTra != null}">
+                <i class="fa-regular fa-calendar"></i>
+                <span th:text="${ngayNhan}">2026-08-10</span> &rarr; <span th:text="${ngayTra}">2026-08-12</span>
+                <span th:if="${soDem != null}" th:text="'(' + ${soDem} + ' đêm)'">(2 đêm)</span>
+            </span>
+            <span th:if="${nguoiLon != null or treEm != null}">
+                <i class="fa-solid fa-user-group"></i>
+                <span th:text="${(nguoiLon != null ? nguoiLon : 0)} + ' người lớn'">2 người lớn</span><span
+                    th:if="${treEm != null and treEm > 0}" th:text="', ' + ${treEm} + ' trẻ em'">, 1 trẻ em</span>
+            </span>
+        </div>
+    </div>
+</section>
+
+<!-- MAIN CONTENT -->
+<div class="ket-qua-layout">
+
+    <div class="ket-qua-error" th:if="${timKiemError}" th:text="${timKiemError}"></div>
+
+    <div class="ket-qua-header">
+        <h2>Loại Phòng Phù Hợp</h2>
+        <span class="ket-qua-count">
+            <span th:text="${loaiPhongs != null ? loaiPhongs.size() : 0}">0</span> loại phòng còn trống
+        </span>
+    </div>
+
+    <div class="ket-qua-toolbar" th:if="${loaiPhongs != null and !loaiPhongs.isEmpty()}">
+        <label for="sortSelect"><i class="fa-solid fa-arrow-down-wide-short"></i> Sắp xếp</label>
+        <select id="sortSelect" onchange="sapXepKetQua(this.value)">
+            <option value="mac-dinh">Mặc định</option>
+            <option value="gia-tang">Giá: Thấp đến cao</option>
+            <option value="gia-giam">Giá: Cao đến thấp</option>
+            <option value="suc-chua">Sức chứa: Nhiều nhất</option>
+            <option value="con-trong">Còn trống: Nhiều nhất</option>
+        </select>
+    </div>
+
+    <div class="ket-qua-grid" id="ketQuaGrid" th:if="${loaiPhongs != null and !loaiPhongs.isEmpty()}">
+        <div class="loai-phong-card"
+             th:each="lp : ${loaiPhongs}"
+             th:attr="data-gia=${lp.giaCoBan},data-suc-chua=${lp.sucChuaToiDa},data-con-trong=${soPhongTrongTheoLoai != null and soPhongTrongTheoLoai[lp.id] != null ? soPhongTrongTheoLoai[lp.id] : 0}">
+            <div class="card-img-wrap">
+                <img th:src="${anhLoaiPhong != null and anhLoaiPhong[lp.id] != null} ? ${anhLoaiPhong[lp.id]} : '/media/ed2d10ce-680a-467e-a83c-c0781f53a5fd'"
+                     th:alt="${lp.tenLoai}">
+                <div class="card-badge" th:text="${lp.tenLoai}">Deluxe</div>
+                <div th:with="conTrong=${soPhongTrongTheoLoai != null and soPhongTrongTheoLoai[lp.id] != null ? soPhongTrongTheoLoai[lp.id] : 0}"
+                     th:class="${conTrong <= 2} ? 'card-badge-available low' : 'card-badge-available'">
+                    <i class="fa-solid fa-check-circle"></i>
+                    <span th:text="${conTrong} + ' phòng trống'">3 phòng trống</span>
+                </div>
+                <div class="card-img-caption">
+                    <i class="fa-solid fa-star"></i> Loại phòng được nhiều khách lựa chọn
+                </div>
+            </div>
+            <div class="card-body">
+                <h3 class="card-title" th:text="${lp.tenLoai}">Phòng Deluxe</h3>
+                <div class="card-meta">
+                    <span><i class="fa-solid fa-users"></i> Tối đa <span th:text="${lp.sucChuaToiDa}">2</span> người</span>
+                    <span><i class="fa-solid fa-bed"></i> 1 giường lớn / 2 giường đơn</span>
+                    <span><i class="fa-solid fa-vector-square"></i> ~ <span th:text="${25 + lp.sucChuaToiDa * 5}">30</span> m²</span>
+                </div>
+
+                <div class="card-amenities">
+                    <span><i class="fa-solid fa-wifi"></i> Wifi miễn phí</span>
+                    <span><i class="fa-solid fa-snowflake"></i> Điều hòa</span>
+                    <span><i class="fa-solid fa-tv"></i> Smart TV</span>
+                    <span><i class="fa-solid fa-mug-hot"></i> Minibar</span>
+                    <span><i class="fa-solid fa-shower"></i> Vòi sen nóng lạnh</span>
+                </div>
+
+                <p class="card-desc" th:text="${lp.mota}">
+                    Không gian sang trọng với đầy đủ tiện nghi hiện đại mang đến kỳ nghỉ tuyệt vời.
+                </p>
+
+                <div class="card-stay-total" th:if="${soDem != null and soDem > 0}">
+                    <i class="fa-solid fa-calculator"></i>
+                    <span th:text="${soDem} + ' đêm × ' + ${#numbers.formatDecimal(lp.giaCoBan, 0, 'COMMA', 0, 'POINT')} + ' = '">2 đêm =</span>
+                    <strong th:text="${#numbers.formatDecimal(lp.giaCoBan.multiply(T(java.math.BigDecimal).valueOf(soDem)), 0, 'COMMA', 0, 'POINT')} + ' VND'">2.400.000 VND</strong>
+                </div>
+
+                <div class="card-footer">
+                    <div class="card-price">
+                        Từ <strong th:text="${#numbers.formatDecimal(lp.giaCoBan, 0, 'COMMA', 0, 'POINT')}">1.200.000</strong>
+                        <span> VND/đêm</span>
+                    </div>
+                    <a th:href="@{'/loai-phong/' + ${lp.id}}" class="btn-view-detail">Xem Phòng <i class="fa-solid fa-arrow-right"></i></a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="empty-state" th:if="${loaiPhongs == null or loaiPhongs.isEmpty()}">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        Không tìm thấy loại phòng nào còn trống phù hợp với tiêu chí tìm kiếm.<br>
+        Vui lòng thử lại với khoảng ngày hoặc số lượng khách khác, hoặc <a href="/loai-phong">xem tất cả loại phòng</a>.
+    </div>
+
+</div>
+
+<!-- FOOTER -->
+<footer>
+    <p>&copy; 2026 Hotel. All rights reserved.</p>
+</footer>
+
+<script src="/header-dropdown.js"></script>
+<script>
+    // Sap xep lai grid ket qua ngay tren trinh duyet (khong goi lai server)
+    function sapXepKetQua(mode) {
+        const grid = document.getElementById('ketQuaGrid');
+        if (!grid) return;
+        const cards = Array.from(grid.querySelectorAll('.loai-phong-card'));
+
+        const getNum = (card, attr) => parseFloat(card.dataset[attr]) || 0;
+
+        let sorted = cards;
+        if (mode === 'gia-tang') {
+            sorted = cards.sort((a, b) => getNum(a, 'gia') - getNum(b, 'gia'));
+        } else if (mode === 'gia-giam') {
+            sorted = cards.sort((a, b) => getNum(b, 'gia') - getNum(a, 'gia'));
+        } else if (mode === 'suc-chua') {
+            sorted = cards.sort((a, b) => getNum(b, 'sucChua') - getNum(a, 'sucChua'));
+        } else if (mode === 'con-trong') {
+            sorted = cards.sort((a, b) => getNum(b, 'conTrong') - getNum(a, 'conTrong'));
+        }
+
+        sorted.forEach(card => grid.appendChild(card));
+    }
+</script>
+</body>
+</html>

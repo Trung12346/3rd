@@ -31,6 +31,8 @@ public interface PhongRepository extends JpaRepository<Phong, Integer> {
     List<Phong> findByHoatDongTrueOrderBySoPhongAsc();
 
     long countByLoaiPhongIdAndHoatDongTrueAndTrangThai(int loaiPhongId, String trangThai);
+
+    long countByLoaiPhongIdAndHoatDongTrue(int loaiPhongId);
     @Query("""
 select d
 from DatPhong d

@@ -18,7 +18,10 @@ import su26sd09.su26sd09.repository.PhongAnhRepository;
 import su26sd09.su26sd09.service.PhongService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.format.DateTimeParseException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -54,16 +57,49 @@ public class LoaiPhongController {
             @RequestParam(name = "mucGia", required = false) String mucGia,
             Model model
     ) {
-        List<LoaiPhong> loaiPhongs = phongService.searchLoaiPhong(mucGia, nguoiLon, treEm);
-        loadLoaiPhongList(model, loaiPhongs);
-        model.addAttribute("anhLoaiPhong", buildAnhLoaiPhong(loaiPhongs));
-
         model.addAttribute("ngayNhan", ngayNhan);
         model.addAttribute("ngayTra", ngayTra);
         model.addAttribute("nguoiLon", nguoiLon);
         model.addAttribute("treEm", treEm);
         model.addAttribute("mucGia", mucGia);
-        return "loai-phong";
+
+        LocalDateTime ngayNhanPhong = null;
+        LocalDateTime ngayTraPhong = null;
+        boolean coNgay = ngayNhan != null && !ngayNhan.isBlank() && ngayTra != null && !ngayTra.isBlank();
+
+        if (coNgay) {
+            try {
+                ngayNhanPhong = LocalDate.parse(ngayNhan.trim()).atStartOfDay();
+                ngayTraPhong = LocalDate.parse(ngayTra.trim()).atStartOfDay();
+            } catch (DateTimeParseException e) {
+                model.addAttribute("timKiemError", "Định dạng ngày không hợp lệ.");
+                model.addAttribute("loaiPhongs", List.of());
+                model.addAttribute("soPhongTrongTheoLoai", Map.of());
+                model.addAttribute("anhLoaiPhong", Map.of());
+                return "loai-phong-ket-qua";
+            }
+            if (!ngayTraPhong.isAfter(ngayNhanPhong)) {
+                model.addAttribute("timKiemError", "Ngày trả phòng phải sau ngày nhận phòng.");
+                model.addAttribute("loaiPhongs", List.of());
+                model.addAttribute("soPhongTrongTheoLoai", Map.of());
+                model.addAttribute("anhLoaiPhong", Map.of());
+                return "loai-phong-ket-qua";
+            }
+        }
+
+        PhongService.LoaiPhongSearchResult ketQua =
+                phongService.searchLoaiPhongKhaDung(ngayNhanPhong, ngayTraPhong, nguoiLon, treEm, mucGia);
+
+        model.addAttribute("loaiPhongs", ketQua.getLoaiPhongs());
+        model.addAttribute("soPhongTrongTheoLoai", ketQua.getSoPhongKhaDungTheoLoai());
+        model.addAttribute("anhLoaiPhong", buildAnhLoaiPhong(ketQua.getLoaiPhongs()));
+
+        if (coNgay) {
+            long soDem = java.time.temporal.ChronoUnit.DAYS.between(ngayNhanPhong.toLocalDate(), ngayTraPhong.toLocalDate());
+            model.addAttribute("soDem", soDem);
+        }
+
+        return "loai-phong-ket-qua";
     }
 
     @GetMapping("/{id}")
