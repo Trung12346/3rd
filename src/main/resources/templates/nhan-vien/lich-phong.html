@@ -1,0 +1,1149 @@
+﻿<!DOCTYPE html>
+<html lang="vi"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lịch Đặt Phòng | Hotel</title>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/@tabler/icons-webfont/3.31.0/tabler-icons.min.css">
+</head>
+<body>
+
+<!-- role markers, invisible; JS reads which one Thymeleaf kept to build detail links -->
+<span id="detail-base-admin" sec:authorize="hasAuthority('ROLE_ADMIN')" style="display:none" data-base="/nhan-su/admin/dat-phong/chi-tiet/"></span>
+<span id="detail-base-staff" sec:authorize="hasAnyAuthority('ROLE_STAFF','ROLE_EMPLOYEE')" style="display:none" data-base="/nhan-su/dat-phong/chi-tiet/"></span>
+
+<style>
+    :root{
+        --lp-blue:#3498DB;
+        --lp-blue-dark:#2980B9;
+        --lp-blue-light:#EBF5FB;
+        --lp-border:#e0e0e0;
+        --lp-border-soft:#eef0f2;
+        --lp-text:#2f3438;
+        --lp-muted:#8a94a3;
+        --lp-bg:#f4f6f8;
+        --lp-radius:10px;
+        --lp-shadow:0 1px 2px rgba(15,23,42,.04), 0 8px 20px rgba(15,23,42,.05);
+    }
+
+    .lp-wrapper{
+        margin:0;
+        padding:18px 20px;
+        box-sizing:border-box;
+        height:calc(100vh - 65px);
+        overflow:hidden;
+        font-family:'Montserrat', Arial, sans-serif;
+        background:var(--lp-bg);
+        color:var(--lp-text);
+    }
+
+    .lp-shell{
+        display:flex;
+        gap:18px;
+        height:100%;
+        min-height:0;
+    }
+
+    /* ============== LEFT PANEL: LoaiPhong list ============== */
+    .lp-side{
+        flex:0 0 300px;
+        max-width:300px;
+        border:1px solid var(--lp-border-soft);
+        border-radius:var(--lp-radius);
+        box-shadow:var(--lp-shadow);
+        display:flex;
+        flex-direction:column;
+        min-height:0;
+        background:#fff;
+        overflow:hidden;
+    }
+
+    .lp-side-head{
+        padding:20px 20px 14px;
+        border-bottom:1px solid var(--lp-border-soft);
+        flex:0 0 auto;
+    }
+
+    .lp-side-head h1{
+        font-size:16.5px;
+        font-weight:700;
+        margin:0 0 4px;
+        color:var(--lp-text);
+        display:flex;
+        align-items:center;
+        gap:9px;
+    }
+
+    .lp-side-head h1 i{
+        color:var(--lp-blue);
+        font-size:17px;
+    }
+
+    .lp-side-head p{
+        margin:0 0 14px;
+        font-size:12px;
+        line-height:1.5;
+        color:var(--lp-muted);
+    }
+
+    .lp-search{
+        position:relative;
+    }
+
+    .lp-search input{
+        width:100%;
+        box-sizing:border-box;
+        padding:9px 12px 9px 34px;
+        border:1px solid var(--lp-border);
+        border-radius:20px;
+        font-size:13px;
+        font-family:inherit;
+        outline:none;
+        transition:border-color .15s, box-shadow .15s;
+        background:var(--lp-bg);
+    }
+
+    .lp-search input:focus{
+        border-color:var(--lp-blue);
+        box-shadow:0 0 0 2px var(--lp-blue-light);
+        background:#fff;
+    }
+
+    .lp-search i{
+        position:absolute;
+        left:12px;
+        top:50%;
+        transform:translateY(-50%);
+        color:var(--lp-muted);
+        font-size:14px;
+    }
+
+    .lp-list{
+        flex:1 1 auto;
+        overflow-y:auto;
+        padding:8px 10px 18px;
+    }
+
+    .lp-list::-webkit-scrollbar{width:6px;}
+    .lp-list::-webkit-scrollbar-thumb{background:var(--lp-border);border-radius:6px;}
+
+    .lp-card{
+        display:flex;
+        align-items:center;
+        gap:12px;
+        padding:10px 10px;
+        border-radius:var(--lp-radius);
+        cursor:pointer;
+        margin-bottom:4px;
+        border:1px solid transparent;
+        transition:background .12s, border-color .12s, transform .12s;
+    }
+
+    .lp-card:hover{ background:var(--lp-bg); transform:translateX(1px); }
+
+    .lp-card.is-active{
+        background:var(--lp-blue-light);
+        border-color:var(--lp-blue);
+    }
+
+    .lp-card-thumb{
+        flex:0 0 46px;
+        width:46px;
+        height:46px;
+        border-radius:8px;
+        background:#eef1f4 center/cover no-repeat;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        color:var(--lp-muted);
+        font-size:18px;
+        overflow:hidden;
+        box-shadow:inset 0 0 0 1px rgba(0,0,0,.04);
+    }
+
+    .lp-card-body{ min-width:0; flex:1 1 auto; }
+
+    .lp-card-title{
+        font-size:13.5px;
+        font-weight:600;
+        color:var(--lp-text);
+        white-space:nowrap;
+        overflow:hidden;
+        text-overflow:ellipsis;
+    }
+
+    .lp-card.is-active .lp-card-title{ color:var(--lp-blue-dark); }
+
+    .lp-card-meta{
+        font-size:11.5px;
+        color:var(--lp-muted);
+        margin-top:3px;
+        display:flex;
+        gap:10px;
+    }
+
+    .lp-card-meta span{ display:inline-flex; align-items:center; gap:3px; }
+
+    .lp-empty-list{
+        padding:24px 12px;
+        text-align:center;
+        color:var(--lp-muted);
+        font-size:13px;
+    }
+
+    .lp-legend{
+        flex:0 0 auto;
+        border-top:1px solid var(--lp-border-soft);
+        background:var(--lp-bg);
+        padding:14px 20px 16px;
+    }
+
+    .lp-legend-title{
+        font-size:10.5px;
+        font-weight:700;
+        letter-spacing:.5px;
+        text-transform:uppercase;
+        color:var(--lp-muted);
+        margin-bottom:9px;
+    }
+
+    .lp-legend-row{
+        display:flex;
+        align-items:center;
+        gap:8px;
+        font-size:12px;
+        color:var(--lp-text);
+        margin-bottom:7px;
+    }
+
+    .lp-legend-row:last-child{ margin-bottom:0; }
+
+    .lp-legend-dot{
+        width:9px;
+        height:9px;
+        border-radius:3px;
+        flex:0 0 auto;
+    }
+
+    /* ============== RIGHT: CALENDAR ============== */
+    .lp-calendar{
+        flex:1 1 auto;
+        display:flex;
+        flex-direction:column;
+        min-width:0;
+        min-height:0;
+        background:#fff;
+        border:1px solid var(--lp-border-soft);
+        border-radius:var(--lp-radius);
+        box-shadow:var(--lp-shadow);
+        overflow:hidden;
+    }
+
+    .lp-toolbar{
+        flex:0 0 auto;
+        display:flex;
+        align-items:center;
+        gap:14px;
+        padding:16px 24px;
+        border-bottom:1px solid var(--lp-border-soft);
+        flex-wrap:wrap;
+    }
+
+    .lp-toolbar-nav{
+        display:flex;
+        align-items:center;
+        gap:4px;
+    }
+
+    .lp-icon-btn{
+        width:34px;
+        height:34px;
+        border:1px solid var(--lp-border);
+        background:#fff;
+        border-radius:50%;
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+        cursor:pointer;
+        color:var(--lp-text);
+        font-size:15px;
+        transition:background .12s, box-shadow .12s;
+    }
+
+    .lp-icon-btn:hover{ background:var(--lp-blue-light); border-color:var(--lp-blue); color:var(--lp-blue-dark); }
+
+    .lp-today-btn{
+        border:1px solid var(--lp-border);
+        background:#fff;
+        border-radius:20px;
+        padding:8px 18px;
+        font-size:13px;
+        font-weight:700;
+        cursor:pointer;
+        color:var(--lp-text);
+        transition:background .12s, border-color .12s, color .12s;
+    }
+
+    .lp-today-btn:hover{ background:var(--lp-blue-light); border-color:var(--lp-blue); color:var(--lp-blue-dark); }
+
+    .lp-month-label{
+        font-size:20px;
+        font-weight:600;
+        color:var(--lp-text);
+        min-width:150px;
+    }
+
+    .lp-toolbar-title{
+        margin-left:auto;
+        text-align:right;
+        min-width:0;
+        padding-left:16px;
+        border-left:1px solid var(--lp-border-soft);
+    }
+
+    .lp-toolbar-title .lp-tt-name{
+        font-size:14px;
+        font-weight:700;
+        color:var(--lp-blue-dark);
+        white-space:nowrap;
+        overflow:hidden;
+        text-overflow:ellipsis;
+        max-width:320px;
+    }
+
+    .lp-toolbar-title .lp-tt-sub{
+        font-size:11.5px;
+        color:var(--lp-muted);
+        margin-top:1px;
+    }
+
+    .lp-grid-wrap{
+        flex:1 1 auto;
+        display:flex;
+        flex-direction:column;
+        min-height:0;
+        padding:0 16px 16px;
+    }
+
+    .lp-weekday-row{
+        flex:0 0 auto;
+        display:grid;
+        grid-template-columns:repeat(7, 1fr);
+        border-bottom:1px solid var(--lp-border-soft);
+    }
+
+    .lp-weekday-row div{
+        padding:10px 8px;
+        text-align:center;
+        font-size:11px;
+        font-weight:700;
+        letter-spacing:.4px;
+        color:var(--lp-muted);
+        text-transform:uppercase;
+    }
+
+    .lp-month-grid{
+        flex:1 1 auto;
+        display:grid;
+        grid-template-columns:repeat(7, 1fr);
+        min-height:0;
+    }
+
+    .lp-week-row{
+        display:grid;
+        grid-template-columns:repeat(7, 1fr);
+        grid-column:1 / -1;
+        position:relative;
+        border-bottom:1px solid var(--lp-border-soft);
+        min-height:112px;
+    }
+
+    .lp-day-cell{
+        border-right:1px solid var(--lp-border-soft);
+        padding:5px 4px 0;
+        position:relative;
+        display:flex;
+        flex-direction:column;
+        min-width:0;
+    }
+
+    .lp-day-cell:last-child{ border-right:none; }
+
+    .lp-day-cell.is-outside .lp-day-num{ color:#c2c8d1; }
+    .lp-day-cell.is-outside{ background:#fbfbfc; }
+
+    .lp-day-num{
+        width:26px;
+        height:26px;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        font-size:12.5px;
+        font-weight:600;
+        color:var(--lp-text);
+        border-radius:50%;
+        margin-bottom:2px;
+        transition:background .12s, color .12s;
+    }
+
+    .lp-day-cell.is-today .lp-day-num{
+        background:var(--lp-blue);
+        color:#fff;
+        box-shadow:0 2px 6px rgba(52,152,219,.35);
+    }
+
+    .lp-day-events-spacer{ flex:1 1 auto; }
+
+    .lp-more-link{
+        font-size:11px;
+        color:var(--lp-muted);
+        font-weight:600;
+        cursor:pointer;
+        padding:1px 6px 4px;
+        border-radius:4px;
+    }
+
+    .lp-more-link:hover{ background:var(--lp-bg); color:var(--lp-text); }
+
+    .lp-events-layer{
+        position:absolute;
+        left:0; right:0; top:29px;
+        pointer-events:none;
+    }
+
+    .lp-event-bar{
+        position:absolute;
+        height:20px;
+        line-height:20px;
+        font-size:11.5px;
+        font-weight:600;
+        border-radius:4px;
+        padding:0 8px;
+        white-space:nowrap;
+        overflow:hidden;
+        text-overflow:ellipsis;
+        cursor:pointer;
+        pointer-events:all;
+        box-sizing:border-box;
+        border-left:3px solid transparent;
+        transition:filter .12s, box-shadow .12s, transform .12s;
+    }
+
+    .lp-event-bar:hover{ filter:brightness(0.96); box-shadow:0 2px 6px rgba(15,23,42,.12); transform:translateY(-1px); }
+
+    /* status colors */
+    .lp-status-cho-xac-nhan{ background:#fef7e0; color:#8a6100; border-left-color:#f9ab00; }
+    .lp-status-da-xac-nhan{ background:#e8f0fe; color:#174ea6; border-left-color:#1a73e8; }
+    .lp-status-da-nhan-phong{ background:#e6f4ea; color:#137333; border-left-color:#188038; }
+    .lp-status-da-tra-phong{ background:#f1f3f4; color:#5f6368; border-left-color:#80868b; }
+    .lp-status-chua-thanh-toan{ background:#f3e8fd; color:#681da8; border-left-color:#9334e6; }
+    .lp-status-cho-huy{ background:#fce8e6; color:#a50e0e; border-left-color:#ea4335; }
+    .lp-status-default{ background:#e8eaed; color:#3c4043; border-left-color:#9aa0a6; }
+
+    /* ============== States ============== */
+    .lp-loading, .lp-error, .lp-placeholder{
+        flex:1 1 auto;
+        display:flex;
+        flex-direction:column;
+        align-items:center;
+        justify-content:center;
+        gap:10px;
+        color:var(--lp-muted);
+        font-size:13.5px;
+        text-align:center;
+        padding:40px;
+    }
+
+    .lp-placeholder i, .lp-loading i, .lp-error i{ font-size:36px; opacity:.5; }
+
+    .lp-spinner{
+        width:22px; height:22px;
+        border:3px solid var(--lp-border);
+        border-top-color:var(--lp-blue);
+        border-radius:50%;
+        animation:lp-spin .7s linear infinite;
+    }
+
+    @keyframes lp-spin{ to{ transform:rotate(360deg); } }
+
+    .lp-fade-hidden{ display:none !important; }
+
+    /* ============== Popover for a single event ============== */
+    .lp-overlay{
+        position:fixed;
+        inset:0;
+        background:rgba(32,33,36,.35);
+        z-index:2000;
+        display:none;
+        align-items:center;
+        justify-content:center;
+    }
+
+    .lp-overlay.is-open{ display:flex; }
+
+    .lp-popover{
+        width:360px;
+        max-width:92vw;
+        max-height:86vh;
+        overflow-y:auto;
+        background:#fff;
+        border-radius:12px;
+        box-shadow:0 8px 28px rgba(0,0,0,.28);
+        padding:0;
+    }
+
+    .lp-pop-head{
+        display:flex;
+        align-items:flex-start;
+        justify-content:space-between;
+        gap:10px;
+        padding:16px 18px 10px;
+    }
+
+    .lp-pop-head-title{
+        font-size:16px;
+        font-weight:700;
+        color:var(--lp-text);
+    }
+
+    .lp-pop-close{
+        border:none;
+        background:none;
+        cursor:pointer;
+        font-size:18px;
+        color:var(--lp-muted);
+        line-height:1;
+        padding:4px;
+    }
+
+    .lp-pop-close:hover{ color:var(--lp-text); }
+
+    .lp-pop-status{
+        margin:0 18px 12px;
+        display:inline-flex;
+        align-items:center;
+        gap:6px;
+        padding:4px 10px;
+        border-radius:20px;
+        font-size:11.5px;
+        font-weight:700;
+    }
+
+    .lp-pop-rows{ padding:0 18px 18px; display:flex; flex-direction:column; gap:12px; }
+
+    .lp-pop-row{ display:flex; align-items:flex-start; gap:12px; font-size:13px; }
+
+    .lp-pop-row i{ width:18px; text-align:center; color:var(--lp-muted); margin-top:2px; }
+
+    .lp-pop-row .lp-pop-row-main{ color:var(--lp-text); font-weight:500; }
+    .lp-pop-row .lp-pop-row-sub{ color:var(--lp-muted); font-size:11.5px; margin-top:1px; }
+
+    .lp-pop-actions{
+        padding:12px 18px 18px;
+        display:flex;
+        justify-content:flex-end;
+    }
+
+    .lp-pop-actions a{
+        display:inline-flex;
+        align-items:center;
+        gap:6px;
+        background:var(--lp-blue);
+        color:#fff;
+        text-decoration:none;
+        padding:9px 16px;
+        border-radius:20px;
+        font-size:13px;
+        font-weight:600;
+        transition:background .12s;
+    }
+
+    .lp-pop-actions a:hover{ background:var(--lp-blue-dark); }
+
+    /* day overflow popover (list) */
+    .lp-daylist-title{ padding:16px 18px 4px; font-size:14px; font-weight:700; color:var(--lp-text); }
+    .lp-daylist{ padding:6px 10px 14px; display:flex; flex-direction:column; gap:2px; }
+    .lp-daylist-item{
+        display:flex; align-items:center; gap:10px;
+        padding:8px 8px;
+        border-radius:8px;
+        cursor:pointer;
+    }
+    .lp-daylist-item:hover{ background:var(--lp-bg); }
+    .lp-daylist-dot{ width:9px; height:9px; border-radius:50%; flex:0 0 auto; }
+    .lp-daylist-item .main{ font-size:13px; font-weight:600; color:var(--lp-text); }
+    .lp-daylist-item .sub{ font-size:11.5px; color:var(--lp-muted); }
+
+    @media (max-width: 900px){
+        .lp-wrapper{ padding:14px; }
+        .lp-side{ flex:0 0 240px; max-width:240px; }
+        .lp-month-label{ font-size:15px; min-width:0; }
+        .lp-toolbar-title .lp-tt-name{ max-width:160px; }
+    }
+
+    @media (max-width: 680px){
+        .lp-shell{ flex-direction:column; gap:14px; }
+        .lp-side{ max-width:none; flex:0 0 auto; max-height:38vh; }
+        .lp-wrapper{ height:auto; overflow:visible; padding:12px; }
+        .lp-calendar{ min-height:520px; }
+    }
+</style>
+
+<div th:replace="~{fragments/cms-sidebar :: cmsSidebar}"></div>
+<div th:replace="~{fragments/headers/cms-header :: cmsHeader}"></div>
+
+<main class="lp-wrapper">
+    <div class="lp-shell">
+
+        <!-- ============ LEFT: LoaiPhong list ============ -->
+        <aside class="lp-side">
+            <div class="lp-side-head">
+                <h1><i class="ti ti-calendar-event"></i> Lịch Đặt Phòng</h1>
+                <p>Chọn 1 loại phòng để xem lịch đặt phòng dạng lịch tháng.</p>
+                <div class="lp-search">
+                    <i class="ti ti-search"></i>
+                    <input type="text" id="lpSearchInput" placeholder="Tìm loại phòng...">
+                </div>
+            </div>
+            <div class="lp-list" id="lpList">
+                <div class="lp-empty-list" id="lpListLoading">Đang tải danh sách loại phòng...</div>
+            </div>
+            <div class="lp-legend">
+                <div class="lp-legend-title">Chú thích trạng thái</div>
+                <div class="lp-legend-row"><span class="lp-legend-dot" style="background:#f9ab00"></span>Chờ xác nhận</div>
+                <div class="lp-legend-row"><span class="lp-legend-dot" style="background:#1a73e8"></span>Đã xác nhận</div>
+                <div class="lp-legend-row"><span class="lp-legend-dot" style="background:#188038"></span>Đã nhận phòng</div>
+                <div class="lp-legend-row"><span class="lp-legend-dot" style="background:#80868b"></span>Đã trả phòng</div>
+                <div class="lp-legend-row"><span class="lp-legend-dot" style="background:#9334e6"></span>Chưa thanh toán</div>
+                <div class="lp-legend-row"><span class="lp-legend-dot" style="background:#ea4335"></span>Chờ hủy</div>
+            </div>
+        </aside>
+
+        <!-- ============ RIGHT: Calendar ============ -->
+        <section class="lp-calendar">
+
+            <div class="lp-toolbar" id="lpToolbar" style="display:none;">
+                <button class="lp-today-btn" id="lpTodayBtn">Hôm nay</button>
+                <div class="lp-toolbar-nav">
+                    <button class="lp-icon-btn" id="lpPrevBtn" aria-label="Tháng trước"><i class="ti ti-chevron-left"></i></button>
+                    <button class="lp-icon-btn" id="lpNextBtn" aria-label="Tháng sau"><i class="ti ti-chevron-right"></i></button>
+                </div>
+                <div class="lp-month-label" id="lpMonthLabel">--</div>
+                <div class="lp-toolbar-title">
+                    <div class="lp-tt-name" id="lpToolbarName">--</div>
+                    <div class="lp-tt-sub" id="lpToolbarSub">--</div>
+                </div>
+            </div>
+
+            <div class="lp-placeholder" id="lpPlaceholder">
+                <i class="ti ti-building-skyscraper"></i>
+                <div>Chọn 1 loại phòng ở danh sách bên trái để xem lịch đặt phòng.</div>
+            </div>
+
+            <div class="lp-loading lp-fade-hidden" id="lpLoading">
+                <div class="lp-spinner"></div>
+                <div>Đang tải lịch đặt phòng...</div>
+            </div>
+
+            <div class="lp-error lp-fade-hidden" id="lpError">
+                <i class="ti ti-alert-triangle"></i>
+                <div id="lpErrorText">Không thể tải dữ liệu.</div>
+            </div>
+
+            <div class="lp-grid-wrap lp-fade-hidden" id="lpGridWrap">
+                <div class="lp-weekday-row">
+                    <div>T2</div><div>T3</div><div>T4</div><div>T5</div><div>T6</div><div>T7</div><div>CN</div>
+                </div>
+                <div class="lp-month-grid" id="lpMonthGrid"></div>
+            </div>
+
+        </section>
+    </div>
+</main>
+
+<!-- Event detail popover -->
+<div class="lp-overlay" id="lpEventOverlay">
+    <div class="lp-popover" id="lpEventPopover"></div>
+</div>
+
+<!-- Day overflow ("+N more") popover -->
+<div class="lp-overlay" id="lpDayOverlay">
+    <div class="lp-popover" id="lpDayPopover"></div>
+</div>
+
+<script th:inline="javascript">
+(function () {
+    'use strict';
+
+    var API_BASE = /*[[@{/nhan-su/lich-phong}]]*/ '/nhan-su/lich-phong';
+    var detailBaseEl = document.getElementById('detail-base-admin') || document.getElementById('detail-base-staff');
+    var DETAIL_BASE = detailBaseEl ? detailBaseEl.getAttribute('data-base') : '/nhan-su/dat-phong/chi-tiet/';
+
+    var WEEKDAY_HEADERS = ['T2','T3','T4','T5','T6','T7','CN'];
+    var STATUS_LABEL = {
+        'Chua thanh toan': 'Chưa thanh toán',
+        'Cho xac nhan': 'Chờ xác nhận',
+        'Da xac nhan': 'Đã xác nhận',
+        'Da nhan phong': 'Đã nhận phòng',
+        'Da tra phong': 'Đã trả phòng',
+        'Cho huy': 'Chờ hủy',
+        'Da huy': 'Đã hủy'
+    };
+    var STATUS_CLASS = {
+        'Chua thanh toan': 'lp-status-chua-thanh-toan',
+        'Cho xac nhan': 'lp-status-cho-xac-nhan',
+        'Da xac nhan': 'lp-status-da-xac-nhan',
+        'Da nhan phong': 'lp-status-da-nhan-phong',
+        'Da tra phong': 'lp-status-da-tra-phong',
+        'Cho huy': 'lp-status-cho-huy'
+    };
+    var STATUS_DOT = {
+        'Chua thanh toan': '#9334e6',
+        'Cho xac nhan': '#f9ab00',
+        'Da xac nhan': '#1a73e8',
+        'Da nhan phong': '#188038',
+        'Da tra phong': '#80868b',
+        'Cho huy': '#ea4335'
+    };
+
+    var MAX_LANES_VISIBLE = 3;
+    var LANE_HEIGHT = 22;
+
+    var state = {
+        loaiPhongs: [],
+        selectedId: null,
+        selectedName: '',
+        currentMonth: startOfMonth(new Date()),
+        events: [],
+        loadToken: 0
+    };
+
+    // ---------- date helpers ----------
+    function startOfMonth(d){ return new Date(d.getFullYear(), d.getMonth(), 1); }
+    function addDays(d, n){ var r = new Date(d); r.setDate(r.getDate() + n); return r; }
+    function addMonths(d, n){ return new Date(d.getFullYear(), d.getMonth() + n, 1); }
+    function isSameDay(a, b){ return a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate(); }
+    function toIsoDate(d){
+        var y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), dd = String(d.getDate()).padStart(2,'0');
+        return y + '-' + m + '-' + dd;
+    }
+    function dayDiff(a, b){ // a - b in whole days, ignoring time
+        var A = new Date(a.getFullYear(), a.getMonth(), a.getDate());
+        var B = new Date(b.getFullYear(), b.getMonth(), b.getDate());
+        return Math.round((A - B) / 86400000);
+    }
+    // Monday-based grid start/end covering the given month
+    function gridStartFor(monthDate){
+        var first = startOfMonth(monthDate);
+        var dow = first.getDay(); // 0=Sun..6=Sat
+        var offset = (dow === 0) ? 6 : dow - 1; // days since Monday
+        return addDays(first, -offset);
+    }
+    function gridWeeksFor(monthDate){
+        var gridStart = gridStartFor(monthDate);
+        var lastOfMonth = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0);
+        var totalDaysNeeded = dayDiff(lastOfMonth, gridStart) + 1;
+        var weeks = Math.ceil(totalDaysNeeded / 7);
+        return { gridStart: gridStart, weeks: Math.max(weeks, 4) };
+    }
+    function formatMonthLabel(d){
+        return 'Tháng ' + (d.getMonth() + 1) + ', ' + d.getFullYear();
+    }
+    function formatDateTimeVN(dtStr){
+        if (!dtStr) return '--';
+        var d = new Date(dtStr);
+        var dd = String(d.getDate()).padStart(2,'0');
+        var mm = String(d.getMonth()+1).padStart(2,'0');
+        var yyyy = d.getFullYear();
+        var hh = String(d.getHours()).padStart(2,'0');
+        var mi = String(d.getMinutes()).padStart(2,'0');
+        return dd + '/' + mm + '/' + yyyy + ' ' + hh + ':' + mi;
+    }
+    function formatDateVN(dtStr){
+        if (!dtStr) return '--';
+        var d = new Date(dtStr);
+        var dd = String(d.getDate()).padStart(2,'0');
+        var mm = String(d.getMonth()+1).padStart(2,'0');
+        return dd + '/' + mm + '/' + d.getFullYear();
+    }
+
+    function statusClass(s){ return STATUS_CLASS[s] || 'lp-status-default'; }
+    function statusLabel(s){ return STATUS_LABEL[s] || s || '--'; }
+
+    // ---------- DOM refs ----------
+    var el = {
+        list: document.getElementById('lpList'),
+        listLoading: document.getElementById('lpListLoading'),
+        searchInput: document.getElementById('lpSearchInput'),
+        toolbar: document.getElementById('lpToolbar'),
+        monthLabel: document.getElementById('lpMonthLabel'),
+        toolbarName: document.getElementById('lpToolbarName'),
+        toolbarSub: document.getElementById('lpToolbarSub'),
+        prevBtn: document.getElementById('lpPrevBtn'),
+        nextBtn: document.getElementById('lpNextBtn'),
+        todayBtn: document.getElementById('lpTodayBtn'),
+        placeholder: document.getElementById('lpPlaceholder'),
+        loading: document.getElementById('lpLoading'),
+        error: document.getElementById('lpError'),
+        errorText: document.getElementById('lpErrorText'),
+        gridWrap: document.getElementById('lpGridWrap'),
+        monthGrid: document.getElementById('lpMonthGrid'),
+        eventOverlay: document.getElementById('lpEventOverlay'),
+        eventPopover: document.getElementById('lpEventPopover'),
+        dayOverlay: document.getElementById('lpDayOverlay'),
+        dayPopover: document.getElementById('lpDayPopover')
+    };
+
+    // ---------- fetch loai phong ----------
+    function loadLoaiPhongList() {
+        fetch(API_BASE + '/api/loai-phong')
+            .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+            .then(function (data) {
+                state.loaiPhongs = data || [];
+                renderList('');
+            })
+            .catch(function () {
+                el.list.innerHTML = '<div class="lp-empty-list">Không thể tải danh sách loại phòng.</div>';
+            });
+    }
+
+    function renderList(filterText) {
+        var q = (filterText || '').trim().toLowerCase();
+        var items = state.loaiPhongs.filter(function (lp) {
+            return !q || lp.tenLoai.toLowerCase().indexOf(q) !== -1;
+        });
+
+        if (items.length === 0) {
+            el.list.innerHTML = '<div class="lp-empty-list">Không tìm thấy loại phòng nào.</div>';
+            return;
+        }
+
+        var html = items.map(function (lp) {
+            var active = (lp.id === state.selectedId) ? ' is-active' : '';
+            var thumb = lp.anhUrl
+                ? '<div class="lp-card-thumb" style="background-image:url(\'' + lp.anhUrl + '\')"></div>'
+                : '<div class="lp-card-thumb"><i class="ti ti-bed"></i></div>';
+            return '' +
+                '<div class="lp-card' + active + '" data-id="' + lp.id + '" data-name="' + escapeHtml(lp.tenLoai) + '">' +
+                    thumb +
+                    '<div class="lp-card-body">' +
+                        '<div class="lp-card-title">' + escapeHtml(lp.tenLoai) + '</div>' +
+                        '<div class="lp-card-meta">' +
+                            '<span><i class="ti ti-door"></i> ' + lp.soLuongPhong + ' phòng</span>' +
+                            '<span><i class="ti ti-users"></i> ' + lp.sucChuaToiDa + ' khách</span>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>';
+        }).join('');
+
+        el.list.innerHTML = html;
+
+        Array.prototype.forEach.call(el.list.querySelectorAll('.lp-card'), function (card) {
+            card.addEventListener('click', function () {
+                var id = parseInt(card.getAttribute('data-id'), 10);
+                var name = card.getAttribute('data-name');
+                selectLoaiPhong(id, name);
+            });
+        });
+    }
+
+    function escapeHtml(s) {
+        if (s === null || s === undefined) return '';
+        return String(s).replace(/[&<>"']/g, function (c) {
+            return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
+        });
+    }
+
+    // ---------- selection ----------
+    function selectLoaiPhong(id, name) {
+        state.selectedId = id;
+        state.selectedName = name;
+        renderList(el.searchInput.value);
+
+        el.placeholder.classList.add('lp-fade-hidden');
+        el.toolbar.style.display = 'flex';
+        el.toolbarName.textContent = name;
+
+        loadEventsAndRender();
+    }
+
+    // ---------- fetch + render calendar ----------
+    function loadEventsAndRender() {
+        if (!state.selectedId) return;
+
+        var g = gridWeeksFor(state.currentMonth);
+        var rangeStart = g.gridStart;
+        var rangeEnd = addDays(g.gridStart, g.weeks * 7); // exclusive
+
+        el.monthLabel.textContent = formatMonthLabel(state.currentMonth);
+        showState('loading');
+
+        var myToken = ++state.loadToken;
+
+        fetch(API_BASE + '/api/loai-phong/' + state.selectedId + '/bookings' +
+            '?start=' + toIsoDate(rangeStart) + '&end=' + toIsoDate(rangeEnd))
+            .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+            .then(function (data) {
+                if (myToken !== state.loadToken) return; // stale response
+                state.events = (data || []).map(function (e) {
+                    return {
+                        chiTietId: e.chiTietId,
+                        datPhongId: e.datPhongId,
+                        maPhong: e.maPhong,
+                        soPhong: e.soPhong,
+                        checkIn: new Date(e.checkIn),
+                        checkOut: new Date(e.checkOut),
+                        trangThai: e.trangThai,
+                        hoTen: e.hoTen,
+                        sdt: e.sdt,
+                        email: e.email,
+                        soNguoiLon: e.soNguoiLon,
+                        soTreEm: e.soTreEm,
+                        maTraCuu: e.maTraCuu
+                    };
+                });
+                el.toolbarSub.textContent = state.events.length + ' lượt đặt trong tháng này';
+                renderMonthGrid(g);
+                showState('grid');
+            })
+            .catch(function () {
+                if (myToken !== state.loadToken) return;
+                el.errorText.textContent = 'Không thể tải lịch đặt phòng. Vui lòng thử lại.';
+                showState('error');
+            });
+    }
+
+    function showState(which) {
+        el.placeholder.classList.add('lp-fade-hidden');
+        el.loading.classList.add('lp-fade-hidden');
+        el.error.classList.add('lp-fade-hidden');
+        el.gridWrap.classList.add('lp-fade-hidden');
+        if (which === 'placeholder') el.placeholder.classList.remove('lp-fade-hidden');
+        if (which === 'loading') el.loading.classList.remove('lp-fade-hidden');
+        if (which === 'error') el.error.classList.remove('lp-fade-hidden');
+        if (which === 'grid') el.gridWrap.classList.remove('lp-fade-hidden');
+    }
+
+    // ---------- month grid rendering (Google-Calendar style spanning bars) ----------
+    function renderMonthGrid(g) {
+        var today = new Date();
+        el.monthGrid.innerHTML = '';
+
+        for (var w = 0; w < g.weeks; w++) {
+            var weekStart = addDays(g.gridStart, w * 7);
+            var weekEnd = addDays(weekStart, 7); // exclusive
+
+            var weekRow = document.createElement('div');
+            weekRow.className = 'lp-week-row';
+
+            var dayCells = [];
+            for (var d = 0; d < 7; d++) {
+                var dayDate = addDays(weekStart, d);
+                var isOutside = dayDate.getMonth() !== state.currentMonth.getMonth();
+                var isToday = isSameDay(dayDate, today);
+
+                var cell = document.createElement('div');
+                cell.className = 'lp-day-cell' + (isOutside ? ' is-outside' : '') + (isToday ? ' is-today' : '');
+
+                var num = document.createElement('div');
+                num.className = 'lp-day-num';
+                num.textContent = dayDate.getDate();
+                cell.appendChild(num);
+
+                var spacer = document.createElement('div');
+                spacer.className = 'lp-day-events-spacer';
+                cell.appendChild(spacer);
+
+                cell._date = dayDate;
+                dayCells.push(cell);
+                weekRow.appendChild(cell);
+            }
+
+            // events touching this week
+            var weekEvents = state.events.filter(function (ev) {
+                return ev.checkOut > weekStart && ev.checkIn < weekEnd;
+            }).map(function (ev) {
+                var startCol = Math.max(0, dayDiff(ev.checkIn, weekStart));
+                var lastOccupied = addDays(ev.checkOut, -1); // checkout day itself is not occupied
+                var endCol = Math.min(6, dayDiff(lastOccupied, weekStart));
+                if (endCol < startCol) endCol = startCol;
+                return { ev: ev, startCol: startCol, endCol: endCol };
+            });
+
+            weekEvents.sort(function (a, b) {
+                if (a.startCol !== b.startCol) return a.startCol - b.startCol;
+                return (b.endCol - b.startCol) - (a.endCol - a.startCol);
+            });
+
+            // lane packing
+            var lanesEnd = []; // lanesEnd[i] = last occupied col of lane i
+            var overflowPerDay = [0,0,0,0,0,0,0];
+
+            weekEvents.forEach(function (item) {
+                var lane = -1;
+                for (var i = 0; i < lanesEnd.length; i++) {
+                    if (lanesEnd[i] < item.startCol) { lane = i; break; }
+                }
+                if (lane === -1) { lane = lanesEnd.length; lanesEnd.push(-1); }
+                lanesEnd[lane] = item.endCol;
+                item.lane = lane;
+
+                if (lane >= MAX_LANES_VISIBLE) {
+                    for (var c = item.startCol; c <= item.endCol; c++) overflowPerDay[c]++;
+                }
+            });
+
+            var eventsLayer = document.createElement('div');
+            eventsLayer.className = 'lp-events-layer';
+            weekRow.appendChild(eventsLayer);
+
+            weekEvents.forEach(function (item) {
+                if (item.lane >= MAX_LANES_VISIBLE) return;
+                var bar = document.createElement('div');
+                bar.className = 'lp-event-bar ' + statusClass(item.ev.trangThai);
+                bar.style.left = (item.startCol / 7 * 100) + '%';
+                bar.style.width = ((item.endCol - item.startCol + 1) / 7 * 100) + '%';
+                bar.style.top = (item.lane * LANE_HEIGHT) + 'px';
+                bar.style.marginLeft = '2px';
+                bar.style.marginRight = '2px';
+                bar.textContent = 'P.' + item.ev.soPhong + ' · ' + (item.ev.hoTen || 'Khách');
+                bar.title = 'Phòng ' + item.ev.soPhong + ' — ' + (item.ev.hoTen || 'Khách') + ' (' + statusLabel(item.ev.trangThai) + ')';
+                bar.addEventListener('click', (function (evObj) {
+                    return function () { openEventPopover(evObj); };
+                })(item.ev));
+                eventsLayer.appendChild(bar);
+            });
+
+            // "+N more" per day, placed at bottom of the cell, pushed below the lanes area
+            var usedLanes = Math.min(lanesEnd.length, MAX_LANES_VISIBLE + 3);
+            var layerHeight = Math.max(usedLanes, MAX_LANES_VISIBLE) * LANE_HEIGHT;
+            eventsLayer.style.minHeight = layerHeight + 'px';
+
+            dayCells.forEach(function (cell, idx) {
+                if (overflowPerDay[idx] > 0) {
+                    var more = document.createElement('div');
+                    more.className = 'lp-more-link';
+                    more.style.marginTop = (layerHeight + 4) + 'px';
+                    more.textContent = '+' + overflowPerDay[idx] + ' khác';
+                    var theDate = cell._date;
+                    more.addEventListener('click', function (e) {
+                        e.stopPropagation();
+                        openDayList(theDate);
+                    });
+                    cell.appendChild(more);
+                } else {
+                    var sp = document.createElement('div');
+                    sp.style.marginTop = layerHeight + 'px';
+                    cell.appendChild(sp);
+                }
+            });
+
+            el.monthGrid.appendChild(weekRow);
+        }
+    }
+
+    // ---------- popovers ----------
+    function openEventPopover(ev) {
+        var dot = STATUS_DOT[ev.trangThai] || '#9aa0a6';
+        var html = '' +
+            '<div class="lp-pop-head">' +
+                '<div class="lp-pop-head-title">Phòng ' + escapeHtml(ev.soPhong) + '</div>' +
+                '<button class="lp-pop-close" id="lpEventCloseBtn"><i class="ti ti-x"></i></button>' +
+            '</div>' +
+            '<div class="lp-pop-status ' + statusClass(ev.trangThai) + '">' +
+                '<span style="width:8px;height:8px;border-radius:50%;background:' + dot + ';display:inline-block;"></span>' +
+                statusLabel(ev.trangThai) +
+            '</div>' +
+            '<div class="lp-pop-rows">' +
+                '<div class="lp-pop-row"><i class="ti ti-user"></i><div><div class="lp-pop-row-main">' + escapeHtml(ev.hoTen || 'Khách chưa rõ tên') + '</div>' +
+                    '<div class="lp-pop-row-sub">' + escapeHtml(ev.sdt || '') + (ev.email ? ' · ' + escapeHtml(ev.email) : '') + '</div></div></div>' +
+                '<div class="lp-pop-row"><i class="ti ti-calendar-event"></i><div><div class="lp-pop-row-main">' + formatDateTimeVN(ev.checkIn) + ' &rarr; ' + formatDateTimeVN(ev.checkOut) + '</div>' +
+                    '<div class="lp-pop-row-sub">Nhận phòng &rarr; Trả phòng</div></div></div>' +
+                '<div class="lp-pop-row"><i class="ti ti-users-group"></i><div><div class="lp-pop-row-main">' + ev.soNguoiLon + ' người lớn' + (ev.soTreEm ? ', ' + ev.soTreEm + ' trẻ em' : '') + '</div></div></div>' +
+                (ev.maTraCuu ? '<div class="lp-pop-row"><i class="ti ti-hash"></i><div><div class="lp-pop-row-main">Mã tra cứu: ' + escapeHtml(ev.maTraCuu) + '</div></div></div>' : '') +
+                '<div class="lp-pop-row"><i class="ti ti-file-invoice"></i><div><div class="lp-pop-row-main">Mã đặt phòng #' + ev.datPhongId + '</div></div></div>' +
+            '</div>' +
+            '<div class="lp-pop-actions">' +
+                '<a href="' + DETAIL_BASE + ev.datPhongId + '">Xem chi tiết đơn <i class="ti ti-arrow-right"></i></a>' +
+            '</div>';
+
+        el.eventPopover.innerHTML = html;
+        el.eventOverlay.classList.add('is-open');
+        document.getElementById('lpEventCloseBtn').addEventListener('click', closeEventPopover);
+    }
+
+    function closeEventPopover() { el.eventOverlay.classList.remove('is-open'); }
+
+    function openDayList(dayDate) {
+        var dayEvents = state.events.filter(function (ev) {
+            return ev.checkIn < addDays(dayDate, 1) && ev.checkOut > dayDate;
+        }).sort(function (a, b) { return a.checkIn - b.checkIn; });
+
+        var itemsHtml = dayEvents.map(function (ev) {
+            var dot = STATUS_DOT[ev.trangThai] || '#9aa0a6';
+            return '' +
+                '<div class="lp-daylist-item" data-cticket="' + ev.chiTietId + '">' +
+                    '<span class="lp-daylist-dot" style="background:' + dot + '"></span>' +
+                    '<div>' +
+                        '<div class="main">Phòng ' + escapeHtml(ev.soPhong) + ' · ' + escapeHtml(ev.hoTen || 'Khách') + '</div>' +
+                        '<div class="sub">' + formatDateVN(ev.checkIn) + ' → ' + formatDateVN(ev.checkOut) + ' · ' + statusLabel(ev.trangThai) + '</div>' +
+                    '</div>' +
+                '</div>';
+        }).join('');
+
+        el.dayPopover.innerHTML = '' +
+            '<div class="lp-pop-head">' +
+                '<div class="lp-pop-head-title">' + formatDateVN(dayDate) + '</div>' +
+                '<button class="lp-pop-close" id="lpDayCloseBtn"><i class="ti ti-x"></i></button>' +
+            '</div>' +
+            '<div class="lp-daylist">' + (itemsHtml || '<div class="lp-empty-list">Không có đặt phòng.</div>') + '</div>';
+
+        el.dayOverlay.classList.add('is-open');
+        document.getElementById('lpDayCloseBtn').addEventListener('click', closeDayPopover);
+
+        Array.prototype.forEach.call(el.dayPopover.querySelectorAll('.lp-daylist-item'), function (row) {
+            row.addEventListener('click', function () {
+                var id = parseInt(row.getAttribute('data-cticket'), 10);
+                var ev = dayEvents.find(function (e) { return e.chiTietId === id; });
+                closeDayPopover();
+                if (ev) openEventPopover(ev);
+            });
+        });
+    }
+
+    function closeDayPopover() { el.dayOverlay.classList.remove('is-open'); }
+
+    el.eventOverlay.addEventListener('click', function (e) { if (e.target === el.eventOverlay) closeEventPopover(); });
+    el.dayOverlay.addEventListener('click', function (e) { if (e.target === el.dayOverlay) closeDayPopover(); });
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') { closeEventPopover(); closeDayPopover(); }
+    });
+
+    // ---------- toolbar controls ----------
+    el.prevBtn.addEventListener('click', function () {
+        state.currentMonth = addMonths(state.currentMonth, -1);
+        loadEventsAndRender();
+    });
+    el.nextBtn.addEventListener('click', function () {
+        state.currentMonth = addMonths(state.currentMonth, 1);
+        loadEventsAndRender();
+    });
+    el.todayBtn.addEventListener('click', function () {
+        state.currentMonth = startOfMonth(new Date());
+        loadEventsAndRender();
+    });
+    el.searchInput.addEventListener('input', function () {
+        renderList(el.searchInput.value);
+    });
+
+    // ---------- init ----------
+    loadLoaiPhongList();
+    showState('placeholder');
+})();
+</script>
+
+</body>
+</html>

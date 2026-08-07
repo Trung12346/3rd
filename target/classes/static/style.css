@@ -11,6 +11,9 @@
     --border-color: #e0e0e0;
     --white: #ffffff;
 }
+.lp-wrapper, .main-wrapper, .admin-wrapper {
+    padding-left: 100px !important;
+}
 .anh-gallery {
     display: flex;
     gap: 14px;
@@ -1786,7 +1789,7 @@ footer {
 .hero-scroll-cue {
     position: absolute;
     left: 50%;
-    bottom: 28px;
+    bottom: 70px;
     transform: translateX(-50%);
     z-index: 1;
     width: 26px;
@@ -1991,4 +1994,359 @@ footer {
 @media (max-width: 640px) {
     .about-stats { grid-template-columns: 1fr; }
     .about-grid { grid-template-columns: 1fr; }
+}
+/* ================= HERO SEARCH BAR (large, booking.com style) ================= */
+.hero-search-wrap {
+    position: relative;
+    margin-top: -54px;
+    z-index: 20;
+    padding: 0 5%;
+}
+
+.hero-search-card {
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    border-radius: 16px;
+    box-shadow: 0 20px 55px rgba(13, 71, 161, 0.22), 0 2px 8px rgba(0, 0, 0, 0.06);
+    display: flex;
+    align-items: stretch;
+    max-width: 1000px;
+    margin: 0 auto;
+    overflow: visible;
+    flex-wrap: wrap;
+    padding: 8px;
+    gap: 2px;
+    transition: box-shadow 0.3s ease;
+}
+
+.hero-search-card:hover {
+    box-shadow: 0 24px 60px rgba(13, 71, 161, 0.26), 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+#heroCheckinField {
+    border-radius: 12px 12px 12px 12px;
+}
+
+.hero-search-group {
+    position: relative;
+    display: flex;
+    flex: 1 1 auto;
+}
+
+.hero-search-field {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    padding: 12px 22px;
+    cursor: pointer;
+    min-width: 150px;
+    user-select: none;
+    border-radius: 10px;
+    transition: background 0.2s ease;
+    position: relative;
+}
+
+.hero-search-field:hover {
+    background: var(--sky-light);
+}
+
+.hero-search-field.active {
+    background: var(--sky-light);
+    box-shadow: inset 0 0 0 1.5px var(--sky-primary);
+}
+
+.hero-search-field label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: var(--sky-primary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.hero-search-value {
+    font-size: 15.5px;
+    font-weight: 600;
+    color: var(--text-dark);
+    white-space: nowrap;
+}
+
+.hero-search-value.placeholder {
+    color: var(--text-gray);
+    font-weight: 400;
+}
+
+.hero-search-divider {
+    width: 1px;
+    background: var(--border-color);
+    align-self: center;
+    height: 40px;
+    margin: 0 2px;
+}
+
+.hero-search-btn {
+    flex: 0 0 auto;
+    background: linear-gradient(135deg, var(--sky-primary), var(--sky-dark));
+    color: var(--white);
+    border: none;
+    padding: 0 40px;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    transition: transform 0.15s ease, box-shadow 0.2s ease, filter 0.2s ease;
+    box-shadow: 0 8px 20px rgba(33, 150, 243, 0.35);
+}
+
+.hero-search-btn:hover {
+    filter: brightness(1.06);
+    box-shadow: 0 10px 26px rgba(33, 150, 243, 0.45);
+}
+
+.hero-search-btn:active {
+    transform: scale(0.98);
+}
+
+@media (max-width: 860px) {
+    .hero-search-card { border-radius: 14px; }
+    .hero-search-btn { border-radius: 10px; flex-basis: 100%; padding: 16px; margin-top: 4px; }
+    .hero-search-divider { display: none; }
+    .hero-search-field { min-width: 130px; }
+}
+
+/* --- Calendar popover --- */
+.hero-calendar-popover {
+    display: none;
+    position: absolute;
+    top: calc(100% + 14px);
+    left: 0;
+    background: var(--white);
+    border-radius: 12px;
+    box-shadow: 0 20px 55px rgba(13, 71, 161, 0.22), 0 2px 10px rgba(0,0,0,0.06);
+    border: 1px solid var(--border-color);
+    padding: 20px;
+    z-index: 60;
+    width: min(680px, 90vw);
+    opacity: 0;
+    transform: translateY(-6px);
+    transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.hero-calendar-popover.open {
+    display: block;
+    animation: hero-popover-in 0.18s ease forwards;
+}
+
+@keyframes hero-popover-in {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.hero-calendar-legend {
+    display: flex;
+    gap: 18px;
+    align-items: center;
+    font-size: 12px;
+    color: var(--text-gray);
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.hero-calendar-legend strong {
+    color: var(--sky-primary);
+}
+
+.hero-calendar-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border-color);
+}
+
+.hero-calendar-actions button {
+    border: none;
+    padding: 9px 20px;
+    font-size: 13px;
+    font-weight: 600;
+    border-radius: 4px;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+.hero-calendar-clear {
+    background: transparent;
+    color: var(--text-gray);
+}
+
+.hero-calendar-clear:hover {
+    color: var(--sky-primary);
+}
+
+.hero-calendar-apply {
+    background-color: var(--sky-primary);
+    color: var(--white);
+}
+
+.hero-calendar-apply:hover {
+    background-color: var(--sky-dark);
+}
+
+/* FullCalendar day cell styling for range selection */
+.hero-calendar-popover .fc {
+    font-family: 'Montserrat', sans-serif;
+}
+
+.hero-calendar-popover .fc-daygrid-day-frame {
+    cursor: pointer;
+}
+
+.hero-calendar-popover .fc-daygrid-day.fc-day-past {
+    opacity: 0.35;
+    pointer-events: none;
+}
+
+.hero-calendar-popover .drp-range-start .fc-daygrid-day-frame,
+.hero-calendar-popover .drp-range-end .fc-daygrid-day-frame,
+.hero-calendar-popover .drp-range-only .fc-daygrid-day-frame {
+    background-color: var(--sky-primary);
+    color: var(--white);
+    border-radius: 4px;
+}
+
+.hero-calendar-popover .drp-range-mid .fc-daygrid-day-frame {
+    background-color: var(--sky-light);
+}
+
+.hero-calendar-popover .fc-toolbar-title {
+    font-size: 16px;
+    font-family: 'Playfair Display', 'Georgia', serif;
+    color: var(--text-dark);
+}
+
+.hero-calendar-popover .fc-button {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-dark);
+}
+
+.hero-calendar-popover .fc-button:hover {
+    background: var(--sky-light);
+    border-color: var(--sky-primary);
+    color: var(--sky-primary);
+}
+
+/* --- Guests popover --- */
+.hero-guests-popover {
+    display: none;
+    position: absolute;
+    top: calc(100% + 14px);
+    right: 0;
+    background: var(--white);
+    border-radius: 12px;
+    box-shadow: 0 20px 55px rgba(13, 71, 161, 0.22), 0 2px 10px rgba(0,0,0,0.06);
+    border: 1px solid var(--border-color);
+    padding: 18px 20px;
+    z-index: 60;
+    width: 280px;
+}
+
+.hero-guests-popover.open {
+    display: block;
+    animation: hero-popover-in 0.18s ease forwards;
+}
+
+.hero-guest-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.hero-guest-row:last-of-type {
+    border-bottom: none;
+}
+
+.hero-guest-row strong {
+    display: block;
+    font-size: 14px;
+    color: var(--text-dark);
+}
+
+.hero-guest-row span {
+    font-size: 12px;
+    color: var(--text-gray);
+}
+
+.hero-stepper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.hero-stepper button {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 1px solid var(--sky-primary);
+    background: var(--white);
+    color: var(--sky-primary);
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    line-height: 1;
+    transition: all 0.15s;
+}
+
+.hero-stepper button:hover:not(:disabled) {
+    background: var(--sky-primary);
+    color: var(--white);
+}
+
+.hero-stepper button:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.hero-stepper span {
+    min-width: 18px;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-dark);
+}
+
+.hero-guests-done {
+    width: 100%;
+    margin-top: 14px;
+    background-color: var(--sky-primary);
+    color: var(--white);
+    border: none;
+    padding: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.hero-guests-done:hover {
+    background-color: var(--sky-dark);
 }

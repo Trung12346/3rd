@@ -72,6 +72,19 @@
         public List<Phong> findAllPhong() {
             return phongRepository.findByHoatDongTrueOrderBySoPhongAsc();
         }
+
+        /**
+         * Trả về tập mã phòng KHÔNG còn trống trong khoảng [ngayNhan, ngayTra)
+         * vì đã có đơn đặt phòng khác (đang giữ chỗ / đang ở) chồng lấn khoảng ngày này.
+         * Dùng cho tìm kiếm ở trang chủ để loại các phòng không đủ điều kiện,
+         * ngay cả khi trạng thái tổng quát của phòng vẫn đang là "Trong".
+         */
+        public java.util.Set<Integer> findMaPhongDaKhoaTrongKhoang(LocalDateTime ngayNhan, LocalDateTime ngayTra) {
+            if (ngayNhan == null || ngayTra == null) {
+                return java.util.Collections.emptySet();
+            }
+            return new java.util.HashSet<>(datPhongRepo.findMaPhongDaKhoaLichTrongKhoang(ngayNhan, ngayTra));
+        }
     
         public List<LoaiPhong> findAllLoai() {
             return loaiPhongRepository.findAllByOrderByTenLoaiAsc();
@@ -96,6 +109,66 @@
             }
     
             return loaiPhongRepository.searchLoaiPhong(minGia, maxGia, soKhach);
+        }
+
+        /**
+         * Ket qua danh cho trang tim kiem loai phong theo ngay o (booking.com/
+         * agoda style): tra ve cac LoaiPhong con it nhat 1 phong THUC SU trong
+         * (trang thai "Trong" VA khong bi khoa lich boi don khac chong lan
+         * khoang [ngayNhan, ngayTra)), dong thoi khop dieu kien gia/suc chua
+         * nhu searchLoaiPhong(). Cac LoaiPhong khong con phong trong nao se
+         * KHONG xuat hien trong ket qua (khong tra ve danh sach Phong rieng le).
+         *
+         * @return Map.Entry gom danh sach LoaiPhong phu hop va so phong con
+         *         trong (thuc su, theo ngay) tuong ung cho tung LoaiPhong.
+         */
+        public LoaiPhongSearchResult searchLoaiPhongKhaDung(LocalDateTime ngayNhan, LocalDateTime ngayTra,
+                                                              Integer nguoiLon, Integer treEm, String mucGia) {
+            List<LoaiPhong> ungVien = searchLoaiPhong(mucGia, nguoiLon, treEm);
+
+            boolean coLocTheoNgay = ngayNhan != null && ngayTra != null;
+            java.util.Set<Integer> maPhongDaKhoaLich = coLocTheoNgay
+                    ? findMaPhongDaKhoaTrongKhoang(ngayNhan, ngayTra)
+                    : java.util.Collections.emptySet();
+
+            List<LoaiPhong> ketQua = new ArrayList<>();
+            Map<Integer, Long> soPhongKhaDungTheoLoai = new HashMap<>();
+
+            for (LoaiPhong loai : ungVien) {
+                long soPhongKhaDung = findPhongTheoLoai(loai.getId()).stream()
+                        .filter(p -> "Trong".equalsIgnoreCase(p.getTrangThai()))
+                        .filter(p -> !maPhongDaKhoaLich.contains(p.getMaPhong()))
+                        .count();
+
+                if (soPhongKhaDung > 0) {
+                    ketQua.add(loai);
+                    soPhongKhaDungTheoLoai.put(loai.getId(), soPhongKhaDung);
+                }
+            }
+
+            return new LoaiPhongSearchResult(ketQua, soPhongKhaDungTheoLoai);
+        }
+
+        /**
+         * Ket qua tra ve tu searchLoaiPhongKhaDung(): danh sach LoaiPhong phu
+         * hop kem so phong con trong thuc su (theo ngay) cho moi loai.
+         */
+        public static final class LoaiPhongSearchResult {
+            private final List<LoaiPhong> loaiPhongs;
+            private final Map<Integer, Long> soPhongKhaDungTheoLoai;
+
+            public LoaiPhongSearchResult(List<LoaiPhong> loaiPhongs, Map<Integer, Long> soPhongKhaDungTheoLoai) {
+                this.loaiPhongs = loaiPhongs;
+                this.soPhongKhaDungTheoLoai = soPhongKhaDungTheoLoai;
+            }
+
+            public List<LoaiPhong> getLoaiPhongs() {
+                return loaiPhongs;
+            }
+
+            public Map<Integer, Long> getSoPhongKhaDungTheoLoai() {
+                return soPhongKhaDungTheoLoai;
+            }
         }
     
         public LoaiPhong findLoaiPhongById(int id) {
