@@ -78,10 +78,18 @@
 
 
         @PostMapping("/lock-or-unlock/{id}")
-        public  String deleteKhuyenMai(@PathVariable("id") int id, Principal p){
+        public  String deleteKhuyenMai(@PathVariable("id") int id, Principal p, RedirectAttributes redirect){
 
             KhuyenMai km = repo.findbyId(id);
-
+            if ((km.ngayKetThuc.equals(LocalDate.now()) || km.ngayBatDau.isAfter(LocalDate.now())) && km.hoatDong == false){
+                redirect.addFlashAttribute("error","trạng thái không hợp lệ với mốc ngày chỉ định ");
+                return "redirect:/nhan-su/admin/khuyen-mai";
+            }
+            String logError = repo.ValidUpdateKhuyenMai(km);
+            if (!logError.equalsIgnoreCase("null") && !logError.equalsIgnoreCase("")){
+                redirect.addFlashAttribute("error",logError);
+                return "redirect:/nhan-su/admin/khuyen-mai";
+            }
             km.setHoatDong(!km.hoatDong);
 
             repo.save(km);
