@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trả Phòng<span th:if="${dp != null}" th:text="' - Đơn #' + ${dp.id}"></span> | Hotel</title>
+    <title>Trả Phòng (Admin)<span th:if="${dp != null}" th:text="' - Đơn #' + ${dp.id}"></span> | Hotel</title>
     <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/@tabler/icons-webfont/3.31.0/tabler-icons.min.css">
 </head>
@@ -536,7 +536,7 @@
     <!-- ============================================================ -->
     <div class="checkout-list-block">
         <div class="checkout-head">
-            <h1>Trả Phòng (Check-out)</h1>
+            <h1>Trả Phòng (Admin Check-out)</h1>
             <span class="checkout-count">
                 <i class="ti ti-logout"></i>
                 <span th:text="${#lists.size(danhSachDon)} + ' đơn trong khoảng đang xem'"></span>
@@ -544,9 +544,7 @@
         </div>
 
         <div class="checkout-list-panel">
-            <form th:action="@{/nhan-su/checkout/{id}(id=${dp == null ? 'today' : dp.id})}" method="get">
-                <input type="hidden" name="id" th:value="${dp == null ? '' : dp.id}">
-
+            <form th:action="@{/nhan-su/admin/dat-phong/checkout/{id}(id=${dp == null ? 'today' : dp.id})}" method="get">
                 <!-- THANH TIM KIEM -->
                 <div class="search-pill">
                     <i class="ti ti-search" aria-hidden="true"></i>
@@ -557,7 +555,7 @@
                 <!-- CHIP CHON MODE LOC -->
                 <div class="filter-mode">
                     <a class="filter-chip" th:classappend="${!dangLocKhoangNgay} ? ' active'"
-                       th:href="@{/nhan-su/checkout/{id}(id=${dp == null ? 'today' : dp.id}, q=${q})}">
+                       th:href="@{/nhan-su/admin/dat-phong/checkout/{id}(id=${dp == null ? 'today' : dp.id}, q=${q})}">
                         <i class="ti ti-calendar-month"></i>
                         <span>Xem theo tháng
                             <span th:if="${thangHienThi != null}"
@@ -585,7 +583,7 @@
                         <button type="submit" class="btn-pill primary">
                             <i class="ti ti-filter"></i> Lọc
                         </button>
-                        <a th:href="@{/nhan-su/checkout/{id}(id=${dp == null ? 'today' : dp.id}, q=${q})}"
+                        <a th:href="@{/nhan-su/admin/dat-phong/checkout/{id}(id=${dp == null ? 'today' : dp.id}, q=${q})}"
                            class="btn-pill ghost">
                             <i class="ti ti-x"></i> Bỏ lọc
                         </a>
@@ -604,18 +602,18 @@
                     </span>
                     <div class="thang-nav">
                         <a class="thang-nav-btn"
-                           th:href="@{/nhan-su/checkout/{id}(id=${dp == null ? 'today' : dp.id}, thang=${thangTruoc}, q=${q})}"
+                           th:href="@{/nhan-su/admin/dat-phong/checkout/{id}(id=${dp == null ? 'today' : dp.id}, thang=${thangTruoc}, q=${q})}"
                            title="Tháng trước" aria-label="Tháng trước">
                             <i class="ti ti-chevron-left"></i>
                         </a>
                         <a class="thang-nav-label"
-                           th:href="@{/nhan-su/checkout/{id}(id=${dp == null ? 'today' : dp.id}, q=${q})}"
+                           th:href="@{/nhan-su/admin/dat-phong/checkout/{id}(id=${dp == null ? 'today' : dp.id}, q=${q})}"
                            title="Về tháng hiện tại">
                             <i class="ti ti-calendar-month"></i>
                             <span>Hôm nay</span>
                         </a>
                         <a class="thang-nav-btn"
-                           th:href="@{/nhan-su/checkout/{id}(id=${dp == null ? 'today' : dp.id}, thang=${thangSau}, q=${q})}"
+                           th:href="@{/nhan-su/admin/dat-phong/checkout/{id}(id=${dp == null ? 'today' : dp.id}, thang=${thangSau}, q=${q})}"
                            title="Tháng sau" aria-label="Tháng sau">
                             <i class="ti ti-chevron-right"></i>
                         </a>
@@ -623,7 +621,7 @@
                 </div>
                 <div class="ngay-strip">
                     <a th:each="ng : ${dsNgayTrongThang}"
-                       th:href="@{/nhan-su/checkout/{id}(id=${dp == null ? 'today' : dp.id}, ngay=${ng.ngay}, q=${q})}"
+                       th:href="@{/nhan-su/admin/dat-phong/checkout/{id}(id=${dp == null ? 'today' : dp.id}, ngay=${ng.ngay}, q=${q})}"
                        th:classappend="${ng.laHomNay} ? ' hom-nay' : ''
                                    + (${ng.dangChon} ? ' dang-chon' : '')
                                    + (${ng.soDon == 0} ? ' trong' : ' co-don')">
@@ -637,7 +635,7 @@
             <!-- DANH SACH DON -->
             <div class="don-checkout-list">
                 <a class="don-checkout-row" th:each="don : ${danhSachDon}"
-                   th:href="@{/nhan-su/checkout/{id}(id=${don.id}, ngay=${ngayChon}, q=${q})}"
+                   th:href="@{/nhan-su/admin/dat-phong/checkout/{id}(id=${don.id}, ngay=${ngayChon}, q=${q})}"
                    th:classappend="${dp != null and dp.id == don.id} ? ' dang-xem' : (${don.trangThai == 'Da tra phong'} ? ' da-tra' : '')">
                     <div class="thong-tin">
                         <p class="ten-khach" th:text="'#' + ${don.id} + ' — ' + (${don.n != null ? don.n.hoTen : (don.hoten != null ? don.hoten : 'Khách vãng lai')})"></p>
@@ -686,7 +684,7 @@
     <!-- ============================================================ -->
     <div class="checkout-page" th:if="${dp != null}" id="chi-tiet-checkout">
         <div class="admin-header">
-            <h1>Rà Soát Trả Phòng — Đơn #<span th:text="${dp.id}"></span></h1>
+            <h1>Rà Soát Trả Phòng (Admin) — Đơn #<span th:text="${dp.id}"></span></h1>
         </div>
 
         <div th:if="${success}" class="admin-message success">
@@ -819,7 +817,7 @@
                     <!-- Them dich vu phat sinh -->
                     <form th:if="${dp.trangThai == 'Da nhan phong'}"
                           class="inline-form"
-                          th:action="@{/nhan-su/checkout/{id}/them-dich-vu(id=${dp.id})}" method="post">
+                          th:action="@{/nhan-su/admin/dat-phong/checkout/{id}/them-dich-vu(id=${dp.id})}" method="post">
                         <div class="admin-field">
                             <label>Thêm dịch vụ phát sinh</label>
                             <select name="maDichVu" required>
@@ -1051,7 +1049,7 @@
                 <form th:if="${dp.trangThai == 'Da nhan phong' and canThu.compareTo(T(java.math.BigDecimal).ZERO) > 0}"
                       id="form-thu-tien"
                       class="inline-form"
-                      th:action="@{/nhan-su/checkout/{id}/thu-tien(id=${dp.id})}" method="post">
+                      th:action="@{/nhan-su/admin/dat-phong/checkout/{id}/thu-tien(id=${dp.id})}" method="post">
                     <div class="admin-field">
                         <label>Hình thức thanh toán <span style="color:#E24B4A;">*</span></label>
                         <select name="phuongThuc" id="phuongThuc-thu" onchange="handlePaymentMethodChange(this)">
@@ -1116,7 +1114,7 @@
                 <!-- FORM HOAN TIEN -->
                 <form th:if="${dp.trangThai == 'Da nhan phong' and canHoan.compareTo(T(java.math.BigDecimal).ZERO) > 0}"
                       class="inline-form"
-                      th:action="@{/nhan-su/checkout/{id}/hoan-tien(id=${dp.id})}" method="post">
+                      th:action="@{/nhan-su/admin/dat-phong/checkout/{id}/hoan-tien(id=${dp.id})}" method="post">
                     <div class="admin-field">
                         <label>Hình thức hoàn</label>
                         <select name="hinhThuc">
@@ -1148,7 +1146,7 @@
                 <!-- CHOT TRA PHONG -->
                 <form th:if="${dp.trangThai == 'Da nhan phong'}"
                       class="inline-form"
-                      th:action="@{/nhan-su/checkout/{id}/xac-nhan(id=${dp.id})}" method="post"
+                      th:action="@{/nhan-su/admin/dat-phong/checkout/{id}/xac-nhan(id=${dp.id})}" method="post"
                       onsubmit="return confirm('Xác nhận chốt trả phòng cho đơn #' + [[${dp.id}]] + '?');">
                     <div class="admin-field" style="min-width:auto; margin-left:auto;">
                         <button type="submit" class="admin-btn"
@@ -1162,7 +1160,7 @@
                 <!-- DA TRA PHONG: nut xuat PDF -->
                 <div th:if="${dp.trangThai == 'Da tra phong'}" style="margin-top:14px;">
                     <a th:if="${hoaDon != null}"
-                       th:href="@{/nhan-su/checkout/{id}/xuat-pdf(id=${dp.id})}"
+                       th:href="@{/nhan-su/admin/dat-phong/checkout/{id}/xuat-pdf(id=${dp.id})}"
                        class="admin-btn" onclick="xuatPdfVaMoTab(this, event)">
                         <i class="ti ti-file-type-pdf"></i> Xuất Hóa Đơn PDF
                     </a>

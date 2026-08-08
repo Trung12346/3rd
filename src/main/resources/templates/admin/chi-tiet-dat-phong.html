@@ -179,6 +179,11 @@
         .sum-total span:first-child { color: rgba(255,255,255,.8); font-size: 13px; }
         .sum-total span:last-child { color: #fff; font-size: 20px; font-weight: 700; text-align: right; word-break: break-word; }
 
+        /* Dong tien thua do doi phong trong tom tat chi phi */
+        .tien-thua-dp { font-weight: 600; }
+        .tien-thua-dp.tien-thua-duong { color: #16a34a; }
+        .tien-thua-dp.tien-thua-am    { color: #dc2626; }
+
         .btn-luu-thay-doi {
             width: 100%; background: var(--sky-primary); color: #fff; border: none;
             padding: 13px; border-radius: 6px; font-weight: 700; font-size: 14px;
@@ -618,6 +623,21 @@
                     0 VND
                 </b>
             </span>
+            <!-- Tien thua do doi phong -->
+            <span th:if="${datPhong.tienThuaDoDoiPhong != null and datPhong.tienThuaDoDoiPhong.signum() > 0}"
+                  style="color:#16a34a;">
+                <i class="fa-solid fa-circle-info"></i> Tiền thừa cần hoàn:
+                <b th:text="${#numbers.formatDecimal(datPhong.tienThuaDoDoiPhong, 0, 'COMMA', 0, 'POINT')} + ' VND'">0 VND</b>
+            </span>
+            <span th:if="${datPhong.tienThuaDoDoiPhong != null and datPhong.tienThuaDoDoiPhong.signum() < 0}"
+                  style="color:#dc2626;">
+                <i class="fa-solid fa-circle-info"></i> Khách nợ thêm:
+                <b th:text="${#numbers.formatDecimal(datPhong.tienThuaDoDoiPhong.abs(), 0, 'COMMA', 0, 'POINT')} + ' VND'">0 VND</b>
+            </span>
+            <span th:unless="${datPhong.tienThuaDoDoiPhong != null and datPhong.tienThuaDoDoiPhong.signum() != 0}"
+                  style="color:#9C9A8F; font-style: italic;">
+                <i class="fa-solid fa-circle-info"></i> Tiền thừa: <b>0 VND (không có)</b>
+            </span>
         </div>
 
         <form th:action="@{/nhan-su/dat-phong/chi-tiet/{id}/thu-tien(id=${datPhong.id})}" method="post"
@@ -886,6 +906,24 @@
                 <div class="sum-total">
                     <span>Tổng cộng</span>
                     <span id="sumTongCong">đ 0</span>
+                </div>
+
+                <!-- Dong tien thua do doi phong -->
+                <div class="sum-row tien-thua-dp" th:if="${datPhong.tienThuaDoDoiPhong != null and datPhong.tienThuaDoDoiPhong.signum() != 0}"
+                     th:classappend="${datPhong.tienThuaDoDoiPhong.signum() > 0} ? ' tien-thua-duong' : ' tien-thua-am'">
+                    <span th:text="${datPhong.tienThuaDoDoiPhong.signum() > 0 ? 'Tiền thừa cần hoàn khách' : 'Khách cần trả thêm'}"></span>
+                    <span th:text="${(datPhong.tienThuaDoDoiPhong.signum() > 0
+                                       ? #numbers.formatDecimal(datPhong.tienThuaDoDoiPhong, 0, 'COMMA', 0, 'POINT')
+                                       : ('-' + #numbers.formatDecimal(datPhong.tienThuaDoDoiPhong.abs(), 0, 'COMMA', 0, 'POINT')))
+                                     + ' VND'}"></span>
+                </div>
+                <div class="sum-row" th:if="${datPhong.trangThaiTienThua == 'CHO_HOAN'}">
+                    <span>Trạng thái tiền thừa</span>
+                    <span class="status-badge warning">Chờ hoàn</span>
+                </div>
+                <div class="sum-row" th:if="${datPhong.trangThaiTienThua == 'KHACH_NO_THEM'}">
+                    <span>Trạng thái tiền thừa</span>
+                    <span class="status-badge danger">Khách nợ thêm</span>
                 </div>
 
                 <button type="submit" class="btn-luu-thay-doi" id="btnLuu">

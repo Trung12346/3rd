@@ -90,4 +90,12 @@ public class DatPhong {
     @OneToMany(mappedBy = "datPhong",cascade = CascadeType.ALL)
     private List<Chi_tiet_dich_vu> ctdv;
 
+    // Chenh lech tien do doi phong: duong = can hoan khach, am = khach no them
+    @Column(name = "tien_thua_do_doi_phong", precision = 14, scale = 2)
+    public java.math.BigDecimal tienThuaDoDoiPhong;
+
+    // Trang thai xu ly tien thua: CHO_HOAN | KHACH_NO_THEM | NULL
+    @Column(name = "trang_thai_tien_thua", length = 50)
+    public String trangThaiTienThua;
+
 }
