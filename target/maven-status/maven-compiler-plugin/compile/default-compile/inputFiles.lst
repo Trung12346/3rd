@@ -48,7 +48,11 @@ C:\Users\ADMIN\Downloads\3rd\src\main\java\su26sd09\su26sd09\dto\DatPhongDTO.jav
 C:\Users\ADMIN\Downloads\3rd\src\main\java\su26sd09\su26sd09\dto\DoanhThuChartDTO.java
 C:\Users\ADMIN\Downloads\3rd\src\main\java\su26sd09\su26sd09\dto\KetQuaHuyDonDTO.java
 C:\Users\ADMIN\Downloads\3rd\src\main\java\su26sd09\su26sd09\dto\KhoangNgayBiKhoaDTO.java
+C:\Users\ADMIN\Downloads\3rd\src\main\java\su26sd09\su26sd09\dto\LoaiPhongDTO.java
+C:\Users\ADMIN\Downloads\3rd\src\main\java\su26sd09\su26sd09\dto\NgayCheckInDTO.java
 C:\Users\ADMIN\Downloads\3rd\src\main\java\su26sd09\su26sd09\dto\NguoiDungDTO.java
+C:\Users\ADMIN\Downloads\3rd\src\main\java\su26sd09\su26sd09\dto\NhomYeuCauPhongDTO.java
+C:\Users\ADMIN\Downloads\3rd\src\main\java\su26sd09\su26sd09\dto\PhongTheoLoaiDTO.java
 C:\Users\ADMIN\Downloads\3rd\src\main\java\su26sd09\su26sd09\dto\RefundDraft.java
 C:\Users\ADMIN\Downloads\3rd\src\main\java\su26sd09\su26sd09\dto\RegisterDTO.java
 C:\Users\ADMIN\Downloads\3rd\src\main\java\su26sd09\su26sd09\dto\RoomBookingGuardDTO.java
@@ -56,6 +60,8 @@ C:\Users\ADMIN\Downloads\3rd\src\main\java\su26sd09\su26sd09\dto\RoomReviewEligi
 C:\Users\ADMIN\Downloads\3rd\src\main\java\su26sd09\su26sd09\dto\RoomReviewReplyRequest.java
 C:\Users\ADMIN\Downloads\3rd\src\main\java\su26sd09\su26sd09\dto\RoomReviewRequest.java
 C:\Users\ADMIN\Downloads\3rd\src\main\java\su26sd09\su26sd09\dto\RoomReviewViewDTO.java
+C:\Users\ADMIN\Downloads\3rd\src\main\java\su26sd09\su26sd09\dto\SlotPhongDTO.java
+C:\Users\ADMIN\Downloads\3rd\src\main\java\su26sd09\su26sd09\dto\TomTatDto.java
 C:\Users\ADMIN\Downloads\3rd\src\main\java\su26sd09\su26sd09\entity\Anh.java
 C:\Users\ADMIN\Downloads\3rd\src\main\java\su26sd09\su26sd09\entity\Chi_tiet_dich_vu.java
 C:\Users\ADMIN\Downloads\3rd\src\main\java\su26sd09\su26sd09\entity\ChiTietDatPhong.java
