@@ -26,7 +26,7 @@ public class EmployeeUserDetailsService implements UserDetailsService {
             NhanSu nv = nvCheck.get();
             System.out.println("nhan su: "+nhanVienRepo.findAll().stream().filter(ns -> ns.getEmail().equalsIgnoreCase(email)).toList().size());
 
-            return  new UserDetail(nv.getId(),nv.getEmail(),nv.getMat_khau_hash(),nv.getVaitro());
+            return  new UserDetail(nv.getId(),nv.getEmail(),nv.getMat_khau_hash(),nv.getVaitro(), nv.isTrang_thai());
         }
         throw new UsernameNotFoundException("Không tìm thấy user với username: " + email);
     }

@@ -14,12 +14,18 @@ public class UserDetail implements org.springframework.security.core.userdetails
     private String email;
     private String passwordhash;
     private VaiTro role;
+    private boolean enabled;
 
     public UserDetail(Integer id,String email,String passwordhash,VaiTro role ) {
+        this(id, email, passwordhash, role, true);
+    }
+
+    public UserDetail(Integer id,String email,String passwordhash,VaiTro role, boolean enabled) {
         this.id = id;
         this.email = email;
         this.passwordhash = passwordhash;
         this.role = role;
+        this.enabled = enabled;
     }
 
 
@@ -55,6 +61,6 @@ public class UserDetail implements org.springframework.security.core.userdetails
 
     @Override
     public boolean isEnabled() {
-        return true;
+        return enabled;
     }
 }

@@ -7,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lịch Đặt Phòng | Hotel</title>
     <link rel="stylesheet" href="/style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/@tabler/icons-webfont/3.31.0/tabler-icons.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/3.44.0/tabler-icons.min.css">
 </head>
 <body>
 
@@ -228,7 +228,7 @@
         flex:0 0 auto;
     }
 
-    /* ============== RIGHT: CALENDAR ============== */
+    /* ============== MIDDLE: CALENDAR ============== */
     .lp-calendar{
         flex:1 1 auto;
         display:flex;
@@ -241,6 +241,265 @@
         box-shadow:var(--lp-shadow);
         overflow:hidden;
     }
+
+    .lp-event-bar.is-selected{
+        box-shadow:0 0 0 2px var(--lp-blue), 0 2px 6px rgba(15,23,42,.18);
+        filter:brightness(0.97);
+    }
+
+    /* ============== RIGHT: DETAIL PANEL ============== */
+    .lp-detail{
+        flex:0 0 380px;
+        max-width:380px;
+        border:1px solid var(--lp-border-soft);
+        border-radius:var(--lp-radius);
+        box-shadow:var(--lp-shadow);
+        background:#fff;
+        display:flex;
+        flex-direction:column;
+        min-height:0;
+        overflow:hidden;
+    }
+
+    .lp-detail-empty{
+        flex:1 1 auto;
+        display:flex;
+        flex-direction:column;
+        align-items:center;
+        justify-content:center;
+        gap:10px;
+        color:var(--lp-muted);
+        font-size:13px;
+        text-align:center;
+        padding:32px 24px;
+    }
+
+    .lp-detail-empty i{ font-size:34px; opacity:.45; }
+
+    .lp-detail-body{
+        flex:1 1 auto;
+        overflow-y:auto;
+        display:flex;
+        flex-direction:column;
+    }
+
+    .lp-detail-body::-webkit-scrollbar{ width:6px; }
+    .lp-detail-body::-webkit-scrollbar-thumb{ background:var(--lp-border); border-radius:6px; }
+
+    .lp-detail-head{
+        padding:18px 20px 14px;
+        border-bottom:1px solid var(--lp-border-soft);
+        position:sticky;
+        top:0;
+        background:#fff;
+        z-index:1;
+    }
+
+    .lp-detail-head-top{
+        display:flex;
+        align-items:flex-start;
+        justify-content:space-between;
+        gap:10px;
+    }
+
+    .lp-detail-room{
+        font-size:18px;
+        font-weight:700;
+        color:var(--lp-text);
+    }
+
+    .lp-detail-room-sub{
+        font-size:12px;
+        color:var(--lp-muted);
+        margin-top:2px;
+    }
+
+    .lp-detail-close{
+        border:none;
+        background:var(--lp-bg);
+        width:28px;
+        height:28px;
+        border-radius:50%;
+        cursor:pointer;
+        color:var(--lp-muted);
+        font-size:14px;
+        flex:0 0 auto;
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+        transition:background .12s, color .12s;
+    }
+
+    .lp-detail-close:hover{ background:#e7eaee; color:var(--lp-text); }
+
+    .lp-detail-status{
+        margin-top:12px;
+        display:inline-flex;
+        align-items:center;
+        gap:6px;
+        padding:4px 10px;
+        border-radius:20px;
+        font-size:11.5px;
+        font-weight:700;
+    }
+
+    .lp-detail-section{
+        padding:16px 20px;
+        border-bottom:1px solid var(--lp-border-soft);
+    }
+
+    .lp-detail-section:last-child{ border-bottom:none; }
+
+    .lp-detail-section-title{
+        font-size:10.5px;
+        font-weight:700;
+        letter-spacing:.5px;
+        text-transform:uppercase;
+        color:var(--lp-muted);
+        margin-bottom:12px;
+        display:flex;
+        align-items:center;
+        gap:6px;
+    }
+
+    .lp-detail-section-title i{ font-size:13px; }
+
+    .lp-detail-row{
+        display:flex;
+        align-items:flex-start;
+        gap:10px;
+        font-size:13px;
+        margin-bottom:10px;
+    }
+
+    .lp-detail-row:last-child{ margin-bottom:0; }
+
+    .lp-detail-row i{
+        width:16px;
+        text-align:center;
+        color:var(--lp-muted);
+        margin-top:2px;
+        font-size:13.5px;
+    }
+
+    .lp-detail-row-label{
+        font-size:11px;
+        color:var(--lp-muted);
+        margin-bottom:1px;
+    }
+
+    .lp-detail-row-value{
+        color:var(--lp-text);
+        font-weight:500;
+        word-break:break-word;
+    }
+
+    .lp-detail-row-value.lp-muted-value{ color:var(--lp-muted); font-weight:400; }
+
+    .lp-detail-grid2{
+        display:grid;
+        grid-template-columns:1fr 1fr;
+        gap:12px;
+    }
+
+    .lp-detail-stat{
+        background:var(--lp-bg);
+        border-radius:8px;
+        padding:10px 12px;
+    }
+
+    .lp-detail-stat-label{
+        font-size:10.5px;
+        color:var(--lp-muted);
+        margin-bottom:3px;
+    }
+
+    .lp-detail-stat-value{
+        font-size:14px;
+        font-weight:700;
+        color:var(--lp-text);
+    }
+
+    .lp-detail-note{
+        background:var(--lp-blue-light);
+        border-radius:8px;
+        padding:10px 12px;
+        font-size:12.5px;
+        color:var(--lp-text);
+        line-height:1.5;
+    }
+
+    .lp-detail-promo{
+        background:#fef7e0;
+        border-radius:8px;
+        padding:10px 12px;
+        font-size:12.5px;
+        color:#8a6100;
+        line-height:1.5;
+    }
+
+    .lp-detail-promo b{ font-weight:700; }
+
+    .lp-detail-svc-list{ display:flex; flex-direction:column; gap:8px; }
+
+    .lp-detail-svc-item{
+        display:flex;
+        align-items:flex-start;
+        justify-content:space-between;
+        gap:10px;
+        font-size:12.5px;
+        padding-bottom:8px;
+        border-bottom:1px dashed var(--lp-border-soft);
+    }
+
+    .lp-detail-svc-item:last-child{ border-bottom:none; padding-bottom:0; }
+
+    .lp-detail-svc-name{ color:var(--lp-text); font-weight:600; }
+    .lp-detail-svc-meta{ color:var(--lp-muted); font-size:11px; margin-top:1px; }
+    .lp-detail-svc-price{ color:var(--lp-text); font-weight:600; white-space:nowrap; }
+
+    .lp-detail-total-row{
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        font-size:13px;
+        margin-bottom:8px;
+        color:var(--lp-text);
+    }
+
+    .lp-detail-total-row:last-child{ margin-bottom:0; }
+
+    .lp-detail-total-row.lp-grand-total{
+        font-size:15px;
+        font-weight:700;
+        padding-top:10px;
+        border-top:1px solid var(--lp-border-soft);
+        color:var(--lp-blue-dark);
+    }
+
+    .lp-detail-actions{
+        padding:16px 20px 20px;
+        display:flex;
+        flex-direction:column;
+        gap:8px;
+    }
+
+    .lp-detail-actions a{
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        gap:7px;
+        background:var(--lp-blue);
+        color:#fff;
+        text-decoration:none;
+        padding:11px 16px;
+        border-radius:8px;
+        font-size:13px;
+        font-weight:600;
+        transition:background .12s;
+    }
+
+    .lp-detail-actions a:hover{ background:var(--lp-blue-dark); }
 
     .lp-toolbar{
         flex:0 0 auto;
@@ -577,6 +836,18 @@
     .lp-daylist-item .main{ font-size:13px; font-weight:600; color:var(--lp-text); }
     .lp-daylist-item .sub{ font-size:11.5px; color:var(--lp-muted); }
 
+    @media (max-width: 1200px){
+        .lp-detail{ flex:0 0 320px; max-width:320px; }
+    }
+
+    @media (max-width: 1000px){
+        .lp-detail{ display:none; }
+        .lp-detail.is-open{ display:flex; }
+        .lp-wrapper.lp-detail-open .lp-side,
+        .lp-wrapper.lp-detail-open .lp-calendar{ display:none; }
+        .lp-wrapper.lp-detail-open .lp-detail{ flex:1 1 auto; max-width:none; }
+    }
+
     @media (max-width: 900px){
         .lp-wrapper{ padding:14px; }
         .lp-side{ flex:0 0 240px; max-width:240px; }
@@ -589,6 +860,7 @@
         .lp-side{ max-width:none; flex:0 0 auto; max-height:38vh; }
         .lp-wrapper{ height:auto; overflow:visible; padding:12px; }
         .lp-calendar{ min-height:520px; }
+        .lp-detail{ max-height:none; }
     }
 </style>
 
@@ -661,13 +933,17 @@
             </div>
 
         </section>
+
+        <!-- ============ RIGHT: Booking detail panel ============ -->
+        <aside class="lp-detail" id="lpDetail">
+            <div class="lp-detail-empty" id="lpDetailEmpty">
+                <i class="ti ti-click"></i>
+                <div>Chọn 1 đặt phòng trên lịch để xem chi tiết đầy đủ tại đây.</div>
+            </div>
+            <div class="lp-detail-body lp-fade-hidden" id="lpDetailBody"></div>
+        </aside>
     </div>
 </main>
-
-<!-- Event detail popover -->
-<div class="lp-overlay" id="lpEventOverlay">
-    <div class="lp-popover" id="lpEventPopover"></div>
-</div>
 
 <!-- Day overflow ("+N more") popover -->
 <div class="lp-overlay" id="lpDayOverlay">
@@ -718,7 +994,8 @@
         selectedName: '',
         currentMonth: startOfMonth(new Date()),
         events: [],
-        loadToken: 0
+        loadToken: 0,
+        selectedEventKey: null
     };
 
     // ---------- date helpers ----------
@@ -769,6 +1046,16 @@
         var mm = String(d.getMonth()+1).padStart(2,'0');
         return dd + '/' + mm + '/' + d.getFullYear();
     }
+    function formatMoney(v){
+        if (v === null || v === undefined || v === '') return '--';
+        var n = Number(v);
+        if (isNaN(n)) return '--';
+        return n.toLocaleString('vi-VN') + ' đ';
+    }
+    function nightsBetween(checkIn, checkOut){
+        var ms = checkOut.getTime() - checkIn.getTime();
+        return Math.max(1, Math.round(ms / 86400000));
+    }
 
     function statusClass(s){ return STATUS_CLASS[s] || 'lp-status-default'; }
     function statusLabel(s){ return STATUS_LABEL[s] || s || '--'; }
@@ -791,8 +1078,10 @@
         errorText: document.getElementById('lpErrorText'),
         gridWrap: document.getElementById('lpGridWrap'),
         monthGrid: document.getElementById('lpMonthGrid'),
-        eventOverlay: document.getElementById('lpEventOverlay'),
-        eventPopover: document.getElementById('lpEventPopover'),
+        detail: document.getElementById('lpDetail'),
+        detailEmpty: document.getElementById('lpDetailEmpty'),
+        detailBody: document.getElementById('lpDetailBody'),
+        wrapper: document.querySelector('.lp-wrapper'),
         dayOverlay: document.getElementById('lpDayOverlay'),
         dayPopover: document.getElementById('lpDayPopover')
     };
@@ -867,6 +1156,7 @@
         el.toolbar.style.display = 'flex';
         el.toolbarName.textContent = name;
 
+        clearDetailPanel();
         loadEventsAndRender();
     }
 
@@ -894,20 +1184,41 @@
                         datPhongId: e.datPhongId,
                         maPhong: e.maPhong,
                         soPhong: e.soPhong,
+                        soTang: e.soTang,
+                        moTaPhong: e.moTaPhong,
                         checkIn: new Date(e.checkIn),
                         checkOut: new Date(e.checkOut),
                         trangThai: e.trangThai,
                         hoTen: e.hoTen,
                         sdt: e.sdt,
                         email: e.email,
+                        maCccd: e.maCccd,
                         soNguoiLon: e.soNguoiLon,
                         soTreEm: e.soTreEm,
-                        maTraCuu: e.maTraCuu
+                        maTraCuu: e.maTraCuu,
+                        giaMoiDem: e.giaMoiDem,
+                        giaKhiDat: e.giaKhiDat,
+                        phuPhi: e.phuPhi,
+                        ngayTaoDon: e.ngayTaoDon,
+                        yeuCauThem: e.yeuCauThem,
+                        khuyenMaiCode: e.khuyenMaiCode,
+                        khuyenMaiMoTa: e.khuyenMaiMoTa,
+                        khuyenMaiLoaiGiam: e.khuyenMaiLoaiGiam,
+                        khuyenMaiGiaTriGiam: e.khuyenMaiGiaTriGiam,
+                        dichVu: e.dichVu || [],
+                        tongTienDichVu: e.tongTienDichVu
                     };
                 });
                 el.toolbarSub.textContent = state.events.length + ' lượt đặt trong tháng này';
                 renderMonthGrid(g);
                 showState('grid');
+
+                // giu lai lua chon dang xem (VD sau khi doi thang) neu su kien do van con tren luoi
+                if (state.selectedEventKey) {
+                    var stillThere = state.events.find(function (e) { return e.chiTietId === state.selectedEventKey; });
+                    if (stillThere) { renderDetailPanel(stillThere); highlightSelectedBar(); }
+                    else { clearDetailPanel(); }
+                }
             })
             .catch(function () {
                 if (myToken !== state.loadToken) return;
@@ -1003,7 +1314,9 @@
             weekEvents.forEach(function (item) {
                 if (item.lane >= MAX_LANES_VISIBLE) return;
                 var bar = document.createElement('div');
-                bar.className = 'lp-event-bar ' + statusClass(item.ev.trangThai);
+                bar.className = 'lp-event-bar ' + statusClass(item.ev.trangThai) +
+                    (item.ev.chiTietId === state.selectedEventKey ? ' is-selected' : '');
+                bar.setAttribute('data-cticket', item.ev.chiTietId);
                 bar.style.left = (item.startCol / 7 * 100) + '%';
                 bar.style.width = ((item.endCol - item.startCol + 1) / 7 * 100) + '%';
                 bar.style.top = (item.lane * LANE_HEIGHT) + 'px';
@@ -1012,7 +1325,7 @@
                 bar.textContent = 'P.' + item.ev.soPhong + ' · ' + (item.ev.hoTen || 'Khách');
                 bar.title = 'Phòng ' + item.ev.soPhong + ' — ' + (item.ev.hoTen || 'Khách') + ' (' + statusLabel(item.ev.trangThai) + ')';
                 bar.addEventListener('click', (function (evObj) {
-                    return function () { openEventPopover(evObj); };
+                    return function () { selectEvent(evObj); };
                 })(item.ev));
                 eventsLayer.appendChild(bar);
             });
@@ -1045,37 +1358,154 @@
         }
     }
 
-    // ---------- popovers ----------
-    function openEventPopover(ev) {
-        var dot = STATUS_DOT[ev.trangThai] || '#9aa0a6';
-        var html = '' +
-            '<div class="lp-pop-head">' +
-                '<div class="lp-pop-head-title">Phòng ' + escapeHtml(ev.soPhong) + '</div>' +
-                '<button class="lp-pop-close" id="lpEventCloseBtn"><i class="ti ti-x"></i></button>' +
-            '</div>' +
-            '<div class="lp-pop-status ' + statusClass(ev.trangThai) + '">' +
-                '<span style="width:8px;height:8px;border-radius:50%;background:' + dot + ';display:inline-block;"></span>' +
-                statusLabel(ev.trangThai) +
-            '</div>' +
-            '<div class="lp-pop-rows">' +
-                '<div class="lp-pop-row"><i class="ti ti-user"></i><div><div class="lp-pop-row-main">' + escapeHtml(ev.hoTen || 'Khách chưa rõ tên') + '</div>' +
-                    '<div class="lp-pop-row-sub">' + escapeHtml(ev.sdt || '') + (ev.email ? ' · ' + escapeHtml(ev.email) : '') + '</div></div></div>' +
-                '<div class="lp-pop-row"><i class="ti ti-calendar-event"></i><div><div class="lp-pop-row-main">' + formatDateTimeVN(ev.checkIn) + ' &rarr; ' + formatDateTimeVN(ev.checkOut) + '</div>' +
-                    '<div class="lp-pop-row-sub">Nhận phòng &rarr; Trả phòng</div></div></div>' +
-                '<div class="lp-pop-row"><i class="ti ti-users-group"></i><div><div class="lp-pop-row-main">' + ev.soNguoiLon + ' người lớn' + (ev.soTreEm ? ', ' + ev.soTreEm + ' trẻ em' : '') + '</div></div></div>' +
-                (ev.maTraCuu ? '<div class="lp-pop-row"><i class="ti ti-hash"></i><div><div class="lp-pop-row-main">Mã tra cứu: ' + escapeHtml(ev.maTraCuu) + '</div></div></div>' : '') +
-                '<div class="lp-pop-row"><i class="ti ti-file-invoice"></i><div><div class="lp-pop-row-main">Mã đặt phòng #' + ev.datPhongId + '</div></div></div>' +
-            '</div>' +
-            '<div class="lp-pop-actions">' +
-                '<a href="' + DETAIL_BASE + ev.datPhongId + '">Xem chi tiết đơn <i class="ti ti-arrow-right"></i></a>' +
-            '</div>';
-
-        el.eventPopover.innerHTML = html;
-        el.eventOverlay.classList.add('is-open');
-        document.getElementById('lpEventCloseBtn').addEventListener('click', closeEventPopover);
+    // ---------- right-side booking detail panel ----------
+    function highlightSelectedBar() {
+        Array.prototype.forEach.call(document.querySelectorAll('.lp-event-bar'), function (bar) {
+            var isSel = parseInt(bar.getAttribute('data-cticket'), 10) === state.selectedEventKey;
+            bar.classList.toggle('is-selected', isSel);
+        });
     }
 
-    function closeEventPopover() { el.eventOverlay.classList.remove('is-open'); }
+    function selectEvent(ev) {
+        state.selectedEventKey = ev.chiTietId;
+        renderDetailPanel(ev);
+        highlightSelectedBar();
+        if (window.matchMedia('(max-width: 1000px)').matches) {
+            el.wrapper.classList.add('lp-detail-open');
+            el.detail.classList.add('is-open');
+        }
+    }
+
+    function clearDetailPanel() {
+        state.selectedEventKey = null;
+        el.detailBody.classList.add('lp-fade-hidden');
+        el.detailEmpty.classList.remove('lp-fade-hidden');
+        el.detailBody.innerHTML = '';
+        el.wrapper && el.wrapper.classList.remove('lp-detail-open');
+        el.detail.classList.remove('is-open');
+        highlightSelectedBar();
+    }
+
+    function renderDetailPanel(ev) {
+        var dot = STATUS_DOT[ev.trangThai] || '#9aa0a6';
+        var nights = nightsBetween(ev.checkIn, ev.checkOut);
+        var giaMoiDem = ev.giaMoiDem != null ? ev.giaMoiDem : ev.giaKhiDat;
+        var tienPhong = (giaMoiDem != null ? Number(giaMoiDem) : 0) * nights;
+        var phuPhi = ev.phuPhi != null ? Number(ev.phuPhi) : 0;
+        var tienDichVu = ev.tongTienDichVu != null ? Number(ev.tongTienDichVu) : 0;
+        var tongCong = tienPhong + phuPhi + tienDichVu;
+
+        var svcHtml = (ev.dichVu && ev.dichVu.length) ? ev.dichVu.map(function (s) {
+            return '' +
+                '<div class="lp-detail-svc-item">' +
+                    '<div>' +
+                        '<div class="lp-detail-svc-name">' + escapeHtml(s.tenDichVu) + '</div>' +
+                        '<div class="lp-detail-svc-meta">' + s.soLuong + ' ' + escapeHtml(s.donVi || 'x') +
+                            (s.ngaySuDung ? ' · ' + formatDateVN(s.ngaySuDung) : '') +
+                            (s.ghiChu ? ' · ' + escapeHtml(s.ghiChu) : '') +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="lp-detail-svc-price">' + formatMoney(s.thanhTien) + '</div>' +
+                '</div>';
+        }).join('') : '<div class="lp-detail-row-value lp-muted-value">Chưa sử dụng dịch vụ nào.</div>';
+
+        var promoHtml = ev.khuyenMaiCode ? (
+            '<div class="lp-detail-section">' +
+                '<div class="lp-detail-section-title"><i class="ti ti-discount-2"></i> Khuyến mãi áp dụng</div>' +
+                '<div class="lp-detail-promo">' +
+                    '<b>' + escapeHtml(ev.khuyenMaiCode) + '</b>' +
+                    (ev.khuyenMaiMoTa ? ' — ' + escapeHtml(ev.khuyenMaiMoTa) : '') + '<br>' +
+                    'Giảm ' + (ev.khuyenMaiLoaiGiam === 'Phan tram' || ev.khuyenMaiLoaiGiam === '%' ?
+                        (ev.khuyenMaiGiaTriGiam + '%') : formatMoney(ev.khuyenMaiGiaTriGiam)) +
+                '</div>' +
+            '</div>'
+        ) : '';
+
+        var html = '' +
+            '<div class="lp-detail-head">' +
+                '<div class="lp-detail-head-top">' +
+                    '<div>' +
+                        '<div class="lp-detail-room">Phòng ' + escapeHtml(ev.soPhong) + '</div>' +
+                        '<div class="lp-detail-room-sub">Tầng ' + ev.soTang + (ev.moTaPhong ? ' · ' + escapeHtml(ev.moTaPhong) : '') + '</div>' +
+                    '</div>' +
+                    '<button class="lp-detail-close" id="lpDetailCloseBtn" aria-label="Đóng"><i class="ti ti-x"></i></button>' +
+                '</div>' +
+                '<div class="lp-detail-status ' + statusClass(ev.trangThai) + '">' +
+                    '<span style="width:8px;height:8px;border-radius:50%;background:' + dot + ';display:inline-block;"></span>' +
+                    statusLabel(ev.trangThai) +
+                '</div>' +
+            '</div>' +
+
+            '<div class="lp-detail-section">' +
+                '<div class="lp-detail-section-title"><i class="ti ti-user"></i> Khách hàng</div>' +
+                '<div class="lp-detail-row"><i class="ti ti-user-circle"></i><div>' +
+                    '<div class="lp-detail-row-value">' + escapeHtml(ev.hoTen || 'Khách chưa rõ tên') + '</div>' +
+                '</div></div>' +
+                '<div class="lp-detail-row"><i class="ti ti-phone"></i><div>' +
+                    '<div class="lp-detail-row-value' + (ev.sdt ? '' : ' lp-muted-value') + '">' + escapeHtml(ev.sdt || 'Chưa có') + '</div>' +
+                '</div></div>' +
+                '<div class="lp-detail-row"><i class="ti ti-mail"></i><div>' +
+                    '<div class="lp-detail-row-value' + (ev.email ? '' : ' lp-muted-value') + '">' + escapeHtml(ev.email || 'Chưa có') + '</div>' +
+                '</div></div>' +
+                (ev.maCccd ? '<div class="lp-detail-row"><i class="ti ti-id"></i><div>' +
+                    '<div class="lp-detail-row-value">CCCD: ' + escapeHtml(ev.maCccd) + '</div>' +
+                '</div></div>' : '') +
+            '</div>' +
+
+            '<div class="lp-detail-section">' +
+                '<div class="lp-detail-section-title"><i class="ti ti-calendar-event"></i> Thời gian lưu trú</div>' +
+                '<div class="lp-detail-grid2">' +
+                    '<div class="lp-detail-stat"><div class="lp-detail-stat-label">Nhận phòng</div><div class="lp-detail-stat-value">' + formatDateTimeVN(ev.checkIn) + '</div></div>' +
+                    '<div class="lp-detail-stat"><div class="lp-detail-stat-label">Trả phòng</div><div class="lp-detail-stat-value">' + formatDateTimeVN(ev.checkOut) + '</div></div>' +
+                '</div>' +
+                '<div class="lp-detail-row" style="margin-top:12px;"><i class="ti ti-moon"></i><div>' +
+                    '<div class="lp-detail-row-value">' + nights + ' đêm</div>' +
+                '</div></div>' +
+                '<div class="lp-detail-row"><i class="ti ti-users-group"></i><div>' +
+                    '<div class="lp-detail-row-value">' + ev.soNguoiLon + ' người lớn' + (ev.soTreEm ? ', ' + ev.soTreEm + ' trẻ em' : '') + '</div>' +
+                '</div></div>' +
+            '</div>' +
+
+            '<div class="lp-detail-section">' +
+                '<div class="lp-detail-section-title"><i class="ti ti-file-invoice"></i> Thông tin đặt phòng</div>' +
+                '<div class="lp-detail-row"><i class="ti ti-hash"></i><div>' +
+                    '<div class="lp-detail-row-value">Mã đặt phòng #' + ev.datPhongId + '</div>' +
+                '</div></div>' +
+                (ev.maTraCuu ? '<div class="lp-detail-row"><i class="ti ti-ticket"></i><div>' +
+                    '<div class="lp-detail-row-value">Mã tra cứu: ' + escapeHtml(ev.maTraCuu) + '</div>' +
+                '</div></div>' : '') +
+                (ev.ngayTaoDon ? '<div class="lp-detail-row"><i class="ti ti-clock"></i><div>' +
+                    '<div class="lp-detail-row-label">Ngày tạo đơn</div>' +
+                    '<div class="lp-detail-row-value">' + formatDateTimeVN(ev.ngayTaoDon) + '</div>' +
+                '</div></div>' : '') +
+                (ev.yeuCauThem ? '<div class="lp-detail-note" style="margin-top:8px;"><i class="ti ti-message-2" style="margin-right:6px;"></i>' + escapeHtml(ev.yeuCauThem) + '</div>' : '') +
+            '</div>' +
+
+            promoHtml +
+
+            '<div class="lp-detail-section">' +
+                '<div class="lp-detail-section-title"><i class="ti ti-room-service" ></i> Dịch vụ đã dùng</div>' +
+                '<div class="lp-detail-svc-list">' + svcHtml + '</div>' +
+            '</div>' +
+
+            '<div class="lp-detail-section">' +
+                '<div class="lp-detail-section-title"><i class="ti ti-report-money"></i> Chi phí</div>' +
+                '<div class="lp-detail-total-row"><span>Giá phòng / đêm</span><span>' + formatMoney(giaMoiDem) + '</span></div>' +
+                '<div class="lp-detail-total-row"><span>Tiền phòng (' + nights + ' đêm)</span><span>' + formatMoney(tienPhong) + '</span></div>' +
+                (phuPhi ? '<div class="lp-detail-total-row"><span>Phụ phí ngoài giờ</span><span>' + formatMoney(phuPhi) + '</span></div>' : '') +
+                '<div class="lp-detail-total-row"><span>Tiền dịch vụ</span><span>' + formatMoney(tienDichVu) + '</span></div>' +
+                '<div class="lp-detail-total-row lp-grand-total"><span>Tổng cộng (ước tính)</span><span>' + formatMoney(tongCong) + '</span></div>' +
+            '</div>' +
+
+            '<div class="lp-detail-actions">' +
+                '<a href="' + DETAIL_BASE + ev.datPhongId + '">Xem chi tiết đơn đầy đủ <i class="ti ti-arrow-right"></i></a>' +
+            '</div>';
+
+        el.detailBody.innerHTML = html;
+        el.detailEmpty.classList.add('lp-fade-hidden');
+        el.detailBody.classList.remove('lp-fade-hidden');
+        document.getElementById('lpDetailCloseBtn').addEventListener('click', clearDetailPanel);
+    }
 
     function openDayList(dayDate) {
         var dayEvents = state.events.filter(function (ev) {
@@ -1109,17 +1539,16 @@
                 var id = parseInt(row.getAttribute('data-cticket'), 10);
                 var ev = dayEvents.find(function (e) { return e.chiTietId === id; });
                 closeDayPopover();
-                if (ev) openEventPopover(ev);
+                if (ev) selectEvent(ev);
             });
         });
     }
 
     function closeDayPopover() { el.dayOverlay.classList.remove('is-open'); }
 
-    el.eventOverlay.addEventListener('click', function (e) { if (e.target === el.eventOverlay) closeEventPopover(); });
     el.dayOverlay.addEventListener('click', function (e) { if (e.target === el.dayOverlay) closeDayPopover(); });
     document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape') { closeEventPopover(); closeDayPopover(); }
+        if (e.key === 'Escape') { closeDayPopover(); }
     });
 
     // ---------- toolbar controls ----------
