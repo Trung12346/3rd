@@ -3,18 +3,26 @@ package su26sd09.su26sd09.controller;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import su26sd09.su26sd09.dto.RoomBookingGuardDTO;
+import su26sd09.su26sd09.entity.DatPhong;
+import su26sd09.su26sd09.entity.KhachHang;
 import su26sd09.su26sd09.entity.LoaiPhong;
 import su26sd09.su26sd09.entity.Phong;
 import su26sd09.su26sd09.entity.PhongAnh;
 import su26sd09.su26sd09.repository.PhongAnhRepository;
+import su26sd09.su26sd09.service.DatPhongService;
+import su26sd09.su26sd09.service.NguoiDungService;
 import su26sd09.su26sd09.service.PhongService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -40,6 +48,12 @@ public class LoaiPhongController {
     @Autowired
     private PhongAnhRepository phongAnhRepository;
 
+    @Autowired
+    private DatPhongService datPhongService;
+
+    @Autowired
+    private NguoiDungService nguoiDungService;
+
     @GetMapping
     public String index(Model model) {
         List<LoaiPhong> loaiPhongs = phongService.findAllLoai();
@@ -55,8 +69,18 @@ public class LoaiPhongController {
             @RequestParam(name = "nguoiLon", required = false) Integer nguoiLon,
             @RequestParam(name = "treEm", required = false) Integer treEm,
             @RequestParam(name = "mucGia", required = false) String mucGia,
-            Model model
+            Model model,
+            RedirectAttributes redirectAttributes
     ) {
+        // Trang ket qua chi hoat dong dung khi co du ngay nhan/tra (nut "Dat phong"
+        // can 2 moc thoi gian nay de tao don). Neu thieu, dua nguoi dung ve trang
+        // chon loai phong / chon ngay thay vi hien thi ket qua khong the dat duoc.
+        if (ngayNhan == null || ngayNhan.isBlank() || ngayTra == null || ngayTra.isBlank()) {
+            redirectAttributes.addFlashAttribute("timKiemError",
+                    "Vui lòng chọn ngày nhận và ngày trả phòng trước khi tìm kiếm.");
+            return "redirect:/home";
+        }
+
         model.addAttribute("ngayNhan", ngayNhan);
         model.addAttribute("ngayTra", ngayTra);
         model.addAttribute("nguoiLon", nguoiLon);
@@ -100,6 +124,115 @@ public class LoaiPhongController {
         }
 
         return "loai-phong-ket-qua";
+    }
+
+    /**
+     * BOOKING ENGINE: dat nhanh 1 phong theo loai, khong can khach tu chon
+     * phong cu the. Engine (PhongService.assignRoomsForType) tu chon 1 phong
+     * con trong hop le cua loaiPhongId trong khoang [ngayNhan, ngayTra), roi
+     * tao don DatPhong va chuyen thang toi trang xac nhan/thanh toan co san
+     * (giong het luong gio-hang cu, chi khac o buoc chon phong).
+     *
+     * Luong gio-hang / chon phong thu cong cho khach da bi ngung su dung va
+     * KHONG duoc goi tu day nua.
+     */
+    // Dinh dang CCCD 12 so (theo mau moi tu 2021) hoac CMND 9 so (mau cu, van con
+    // luu hanh voi mot so khach chua doi). Chi kiem tra do dai/dang so, khong xac
+    // thuc that.
+    private static final java.util.regex.Pattern CCCD_PATTERN =
+            java.util.regex.Pattern.compile("^\\d{9}(\\d{3})?$");
+
+    @PostMapping("/dat-nhanh")
+    public String datNhanh(
+            @RequestParam("loaiPhongId") int loaiPhongId,
+            @RequestParam("ngayNhan") String ngayNhanStr,
+            @RequestParam("ngayTra") String ngayTraStr,
+            @RequestParam(name = "nguoiLon", required = false) String nguoiLonStr,
+            @RequestParam(name = "treEm", required = false) String treEmStr,
+            @RequestParam(name = "mucGia", required = false) String mucGia,
+            @RequestParam(name = "maCccd") String maCccdStr,
+            RedirectAttributes redirectAttributes
+    ) {
+        Integer nguoiLon = parseIntOrNull(nguoiLonStr);
+        Integer treEm = parseIntOrNull(treEmStr);
+
+        String maCccd = maCccdStr == null ? "" : maCccdStr.trim();
+        if (!CCCD_PATTERN.matcher(maCccd).matches()) {
+            redirectAttributes.addFlashAttribute("timKiemError",
+                    "So CCCD/CMND khong hop le. Vui long nhap 9 hoac 12 chu so.");
+            return redirectTimKiem(ngayNhanStr, ngayTraStr, nguoiLon, treEm, mucGia);
+        }
+
+        LocalDateTime ngayNhan;
+        LocalDateTime ngayTra;
+        try {
+            // Gio nhan/tra phong co dinh cho luong dat nhanh: nhan phong 14:00 (2PM),
+            // tra phong 11:00 (11AM), khong phu thuoc gio nguoi dung bam nut.
+            ngayNhan = LocalDate.parse(ngayNhanStr.trim()).atTime(14, 0);
+            ngayTra = LocalDate.parse(ngayTraStr.trim()).atTime(11, 0);
+        } catch (DateTimeParseException | NullPointerException e) {
+            redirectAttributes.addFlashAttribute("timKiemError", "Vui long chon ngay nhan va ngay tra phong.");
+            return redirectTimKiem(ngayNhanStr, ngayTraStr, nguoiLon, treEm, mucGia);
+        }
+
+        if (!ngayTra.isAfter(ngayNhan)) {
+            redirectAttributes.addFlashAttribute("timKiemError", "Ngay tra phong phai sau ngay nhan phong.");
+            return redirectTimKiem(ngayNhanStr, ngayTraStr, nguoiLon, treEm, mucGia);
+        }
+
+        try {
+            List<Phong> phongDuocChon = phongService.assignRoomsForType(loaiPhongId, 1, ngayNhan, ngayTra);
+
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            KhachHang khachHang = null;
+            if (authentication != null && authentication.isAuthenticated()
+                    && !(authentication instanceof AnonymousAuthenticationToken)
+                    && !isNhanVienOrAdmin(authentication)) {
+                khachHang = nguoiDungService.findByEmail(authentication.getName());
+            }
+
+            DatPhong datPhong = datPhongService.createAutoAssignedBooking(
+                    phongDuocChon, khachHang, ngayNhan, ngayTra,
+                    nguoiLon != null ? nguoiLon : 0, treEm != null ? treEm : 0, maCccd);
+
+            return "redirect:/phong/dat-phong/xac-nhan/" + datPhong.getId();
+        } catch (IllegalStateException | IllegalArgumentException e) {
+            redirectAttributes.addFlashAttribute("timKiemError", e.getMessage());
+            return redirectTimKiem(ngayNhanStr, ngayTraStr, nguoiLon, treEm, mucGia);
+        } catch (Exception e) {
+            // Bat moi loi khong luong truoc de tranh forward toi /error (endpoint nay
+            // khong permitAll trong SecurityConfig -> khach vang lai se bi bat ve /login).
+            e.printStackTrace();
+            redirectAttributes.addFlashAttribute("timKiemError",
+                    "Khong the dat phong tu dong luc nay, vui long thu lai. [" + e.getClass().getSimpleName()
+                            + ": " + e.getMessage() + "]");
+            return redirectTimKiem(ngayNhanStr, ngayTraStr, nguoiLon, treEm, mucGia);
+        }
+    }
+
+    private Integer parseIntOrNull(String s) {
+        if (s == null || s.isBlank()) return null;
+        try {
+            return Integer.parseInt(s.trim());
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    private String redirectTimKiem(String ngayNhan, String ngayTra, Integer nguoiLon, Integer treEm, String mucGia) {
+        StringBuilder sb = new StringBuilder("redirect:/loai-phong/tim-kiem?");
+        if (ngayNhan != null) sb.append("ngayNhan=").append(ngayNhan).append("&");
+        if (ngayTra != null) sb.append("ngayTra=").append(ngayTra).append("&");
+        if (nguoiLon != null) sb.append("nguoiLon=").append(nguoiLon).append("&");
+        if (treEm != null) sb.append("treEm=").append(treEm).append("&");
+        if (mucGia != null) sb.append("mucGia=").append(mucGia).append("&");
+        return sb.toString();
+    }
+
+    private boolean isNhanVienOrAdmin(Authentication authentication) {
+        return authentication.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority())
+                        || "ROLE_STAFF".equals(a.getAuthority()));
     }
 
     @GetMapping("/{id}")

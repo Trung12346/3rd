@@ -262,6 +262,78 @@
         }
         .btn-view-detail:hover { transform: translateY(-2px); box-shadow: 0 10px 22px rgba(33,150,243,0.4); }
 
+        /* ===== MODAL: xac nhan CCCD truoc khi dat phong nhanh ===== */
+        .cccd-modal-overlay {
+            display: none;
+            position: fixed; inset: 0; background: rgba(15, 23, 42, 0.55);
+            z-index: 2000; align-items: center; justify-content: center;
+            padding: 16px;
+        }
+        .cccd-modal-overlay.open { display: flex; }
+        .cccd-modal {
+            background: #fff; border-radius: 16px; width: 100%; max-width: 400px;
+            padding: 28px 26px 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: cccdModalIn .18s ease-out;
+        }
+        @keyframes cccdModalIn {
+            from { opacity: 0; transform: translateY(8px) scale(.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .cccd-modal-icon {
+            width: 46px; height: 46px; border-radius: 50%; background: var(--sky-light);
+            color: var(--sky-primary); display: flex; align-items: center; justify-content: center;
+            font-size: 19px; margin-bottom: 14px;
+        }
+        .cccd-modal h3 { font-size: 17px; color: var(--text-dark); margin: 0 0 6px; }
+        .cccd-modal .cccd-modal-sub {
+            font-size: 13px; color: var(--text-gray); line-height: 1.5; margin: 0 0 18px;
+        }
+        .cccd-modal-summary {
+            background: var(--sky-light); border-radius: 10px; padding: 10px 12px;
+            font-size: 12.5px; color: var(--sky-dark); margin-bottom: 18px; line-height: 1.5;
+        }
+        .cccd-field label {
+            display: block; font-size: 12.5px; font-weight: 600; color: var(--text-dark);
+            margin-bottom: 6px;
+        }
+        .cccd-field input {
+            width: 100%; padding: 12px 14px; border: 1.5px solid var(--border-color);
+            border-radius: 10px; font-size: 15px; letter-spacing: 0.5px;
+            transition: border-color .15s ease, box-shadow .15s ease;
+        }
+        .cccd-field input:focus {
+            outline: none; border-color: var(--sky-primary);
+            box-shadow: 0 0 0 3px rgba(33,150,243,0.15);
+        }
+        .cccd-field input.invalid { border-color: #e53935; }
+        .cccd-field-error {
+            display: none; color: #e53935; font-size: 12px; margin-top: 6px;
+        }
+        .cccd-field-error.show { display: block; }
+        .cccd-modal-hint {
+            display: flex; gap: 8px; align-items: flex-start; margin-top: 10px;
+            font-size: 11.5px; color: var(--text-gray); line-height: 1.5;
+        }
+        .cccd-modal-hint i { color: var(--sky-primary); margin-top: 1px; }
+        .cccd-modal-actions {
+            display: flex; gap: 10px; margin-top: 22px;
+        }
+        .cccd-btn-cancel {
+            flex: 0 0 auto; padding: 11px 18px; border-radius: 20px; border: 1.5px solid var(--border-color);
+            background: #fff; color: var(--text-gray); font-size: 13px; font-weight: 600;
+            cursor: pointer; transition: background .15s ease;
+        }
+        .cccd-btn-cancel:hover { background: #f5f5f5; }
+        .cccd-btn-submit {
+            flex: 1; border: none; border-radius: 20px; padding: 11px 18px;
+            background: linear-gradient(135deg, var(--sky-primary), var(--sky-dark, #1565c0)); color: #fff;
+            font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+            cursor: pointer; box-shadow: 0 6px 16px rgba(33,150,243,0.3);
+            transition: transform 0.15s ease, box-shadow 0.2s ease;
+        }
+        .cccd-btn-submit:hover { transform: translateY(-1px); box-shadow: 0 10px 22px rgba(33,150,243,0.4); }
+        .cccd-btn-submit:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
         @media (max-width: 640px) {
             .detail-banner { height: 220px; }
             .breadcrumb h1 { font-size: 26px; }
@@ -377,7 +449,20 @@
                         Từ <strong th:text="${#numbers.formatDecimal(lp.giaCoBan, 0, 'COMMA', 0, 'POINT')}">1.200.000</strong>
                         <span> VND/đêm</span>
                     </div>
-                    <a th:href="@{'/loai-phong/' + ${lp.id}}" class="btn-view-detail">Xem Phòng <i class="fa-solid fa-arrow-right"></i></a>
+                    <button th:with="giaTong=${lp.giaCoBan.multiply(T(java.math.BigDecimal).valueOf(soDem != null and soDem > 0 ? soDem : 1))}"
+                            type="button"
+                            class="btn-view-detail btn-mo-cccd-modal"
+                            th:data-loai-id="${lp.id}"
+                            th:data-ten-loai="${lp.tenLoai}"
+                            th:data-ngay-nhan="${ngayNhan}"
+                            th:data-ngay-tra="${ngayTra}"
+                            th:data-nguoi-lon="${nguoiLon}"
+                            th:data-tre-em="${treEm}"
+                            th:data-muc-gia="${mucGia}"
+                            th:data-so-dem="${soDem}"
+                            th:data-gia-co-ban="${#numbers.formatDecimal(giaTong, 0, 'COMMA', 0, 'POINT')}">
+                        Đặt phòng <i class="fa-solid fa-arrow-right"></i>
+                    </button>
                 </div>
             </div>
         </div>
@@ -396,8 +481,125 @@
     <p>&copy; 2026 Hotel. All rights reserved.</p>
 </footer>
 
+<!-- Modal xac nhan CCCD - dung chung cho tat ca cac the loai phong, duoc dien
+     du lieu bang JS truoc khi mo, chi submit 1 form POST toi /loai-phong/dat-nhanh -->
+<div class="cccd-modal-overlay" id="cccdModalOverlay">
+    <div class="cccd-modal" role="dialog" aria-modal="true" aria-labelledby="cccdModalTitle">
+        <div class="cccd-modal-icon"><i class="fa-solid fa-id-card"></i></div>
+        <h3 id="cccdModalTitle">Xác nhận thông tin đặt phòng</h3>
+        <p class="cccd-modal-sub">Chỉ một bước cuối trước khi giữ phòng cho bạn.</p>
+
+        <div class="cccd-modal-summary" id="cccdModalSummary"></div>
+
+        <form th:action="@{/loai-phong/dat-nhanh}" method="post" id="cccdModalForm">
+            <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+            <input type="hidden" name="loaiPhongId" id="cccdFieldLoaiId">
+            <input type="hidden" name="ngayNhan" id="cccdFieldNgayNhan">
+            <input type="hidden" name="ngayTra" id="cccdFieldNgayTra">
+            <input type="hidden" name="nguoiLon" id="cccdFieldNguoiLon">
+            <input type="hidden" name="treEm" id="cccdFieldTreEm">
+            <input type="hidden" name="mucGia" id="cccdFieldMucGia">
+
+            <div class="cccd-field">
+                <label for="cccdInput">Số CCCD / CMND của người đặt</label>
+                <input type="text" id="cccdInput" name="maCccd" inputmode="numeric"
+                       autocomplete="off" maxlength="12" placeholder="VD: 001204012345" autofocus>
+                <div class="cccd-field-error" id="cccdInputError">Vui lòng nhập đúng 9 hoặc 12 chữ số.</div>
+                <div class="cccd-modal-hint">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    <span>Dùng để lễ tân xác minh đúng bạn khi nhận phòng. Thông tin được bảo mật và chỉ dùng cho đơn đặt phòng này.</span>
+                </div>
+            </div>
+
+            <div class="cccd-modal-actions">
+                <button type="button" class="cccd-btn-cancel" id="cccdModalCancel">Để sau</button>
+                <button type="submit" class="cccd-btn-submit" id="cccdModalSubmit">Xác nhận & giữ phòng</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script src="/header-dropdown.js"></script>
 <script>
+    (function () {
+        const overlay = document.getElementById('cccdModalOverlay');
+        const form = document.getElementById('cccdModalForm');
+        const input = document.getElementById('cccdInput');
+        const errorEl = document.getElementById('cccdInputError');
+        const summaryEl = document.getElementById('cccdModalSummary');
+        const submitBtn = document.getElementById('cccdModalSubmit');
+
+        const CCCD_RE = /^\d{9}(\d{3})?$/;
+
+        function openModal(btn) {
+            document.getElementById('cccdFieldLoaiId').value = btn.dataset.loaiId || '';
+            document.getElementById('cccdFieldNgayNhan').value = btn.dataset.ngayNhan || '';
+            document.getElementById('cccdFieldNgayTra').value = btn.dataset.ngayTra || '';
+            document.getElementById('cccdFieldNguoiLon').value = btn.dataset.nguoiLon || '';
+            document.getElementById('cccdFieldTreEm').value = btn.dataset.treEm || '';
+            document.getElementById('cccdFieldMucGia').value = btn.dataset.mucGia || '';
+
+            const soDem = btn.dataset.soDem || '';
+            const tenLoai = btn.dataset.tenLoai || '';
+            const giaCoBan = btn.dataset.giaCoBan || '';
+            summaryEl.innerHTML =
+                '<i class="fa-solid fa-bed"></i> ' + tenLoai +
+                (soDem ? ' &middot; ' + soDem + ' đêm' : '') +
+                (giaCoBan ? ' &middot; <strong>' + giaCoBan + ' VND</strong>' : '');
+
+            input.value = '';
+            input.classList.remove('invalid');
+            errorEl.classList.remove('show');
+            submitBtn.disabled = false;
+
+            overlay.classList.add('open');
+            // Autofocus sau khi modal render de tranh giat layout tren mobile
+            setTimeout(() => input.focus(), 50);
+        }
+
+        function closeModal() {
+            overlay.classList.remove('open');
+        }
+
+        function validate() {
+            const val = input.value.trim();
+            const ok = CCCD_RE.test(val);
+            input.classList.toggle('invalid', val.length > 0 && !ok);
+            errorEl.classList.toggle('show', val.length > 0 && !ok);
+            return ok;
+        }
+
+        document.querySelectorAll('.btn-mo-cccd-modal').forEach(btn => {
+            btn.addEventListener('click', () => openModal(btn));
+        });
+
+        document.getElementById('cccdModalCancel').addEventListener('click', closeModal);
+
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) closeModal();
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && overlay.classList.contains('open')) closeModal();
+        });
+
+        input.addEventListener('input', () => {
+            // Chi cho nhap so
+            input.value = input.value.replace(/\D/g, '').slice(0, 12);
+            validate();
+        });
+
+        form.addEventListener('submit', (e) => {
+            if (!validate()) {
+                e.preventDefault();
+                input.focus();
+                return;
+            }
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang giữ phòng...';
+        });
+    })();
+
     // Sap xep lai grid ket qua ngay tren trinh duyet (khong goi lai server)
     function sapXepKetQua(mode) {
         const grid = document.getElementById('ketQuaGrid');

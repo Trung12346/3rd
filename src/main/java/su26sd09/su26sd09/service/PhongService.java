@@ -201,6 +201,68 @@
         public List<Phong> findPhongTheoLoai(int loaiPhongId) {
             return phongRepository.findByLoaiPhongIdAndHoatDongTrueOrderBySoPhongAsc(loaiPhongId);
         }
+
+        /**
+         * BOOKING ENGINE: tu dong chon (soLuong) phong con trong thuc su cua
+         * 1 loai phong cho khoang [ngayNhan, ngayTra), thay vi de khach tu
+         * chon tay tung phong. Dung cho luong dat phong nhanh tu trang tim kiem.
+         *
+         * Quy tac chon phong (theo thu tu uu tien):
+         *  1) Dieu kien du (bat buoc): hoatDong=true, trangThai="Trong",
+         *     KHONG bi khoa lich (khong trung khoang ngay voi don dang giu cho).
+         *  2) Uu tien phong co it luot dat gan day nhat (findAllByPhong size nho nhat)
+         *     de trai deu muc su dung giua cac phong cung loai.
+         *  3) Tie-break: tang dan theo so tang (soTang).
+         *  4) Tie-break cuoi: tang dan theo so phong (soPhong) de ket qua on dinh,
+         *     de kiem thu.
+         *
+         * Neu khong du (soLuong) phong hop le tai thoi diem goi -> nem
+         * IllegalStateException voi thong bao ro rang; KHONG dat mot phan.
+         */
+        @Transactional
+        public synchronized List<Phong> assignRoomsForType(int loaiPhongId, int soLuong,
+                                                             LocalDateTime ngayNhan, LocalDateTime ngayTra) {
+            if (soLuong <= 0) {
+                throw new IllegalArgumentException("So luong phong can dat phai lon hon 0.");
+            }
+            if (ngayNhan == null || ngayTra == null || !ngayTra.isAfter(ngayNhan)) {
+                throw new IllegalArgumentException("Ngay nhan/tra phong khong hop le.");
+            }
+
+            java.util.Set<Integer> maPhongDaKhoaLich = findMaPhongDaKhoaTrongKhoang(ngayNhan, ngayTra);
+
+            List<Phong> hopLe = findPhongTheoLoai(loaiPhongId).stream()
+                    .filter(p -> "Trong".equalsIgnoreCase(p.getTrangThai()))
+                    .filter(p -> !maPhongDaKhoaLich.contains(p.getMaPhong()))
+                    .toList();
+
+            // Tinh truoc so luot dat cho tung phong (1 lan/phong) thay vi goi lai
+            // trong comparator, de tranh N+1 query va tranh loi
+            // "Comparison method violates its general contract" neu du lieu
+            // thay doi giua cac lan so sanh.
+            Map<Integer, Integer> soLuotDatTheoPhong = new HashMap<>();
+            for (Phong p : hopLe) {
+                soLuotDatTheoPhong.put(p.getMaPhong(), phongRepository.findAllByPhong(p.getMaPhong()).size());
+            }
+
+            List<Phong> ungVien = hopLe.stream()
+                    .sorted((a, b) -> {
+                        int soLuotA = soLuotDatTheoPhong.getOrDefault(a.getMaPhong(), 0);
+                        int soLuotB = soLuotDatTheoPhong.getOrDefault(b.getMaPhong(), 0);
+                        if (soLuotA != soLuotB) return Integer.compare(soLuotA, soLuotB);
+                        if (a.getSoTang() != b.getSoTang()) return Integer.compare(a.getSoTang(), b.getSoTang());
+                        return a.getSoPhong().compareTo(b.getSoPhong());
+                    })
+                    .toList();
+
+            if (ungVien.size() < soLuong) {
+                throw new IllegalStateException(
+                        "Khong du phong trong cho loai phong nay trong khoang ngay da chon (con "
+                                + ungVien.size() + "/" + soLuong + " phong).");
+            }
+
+            return new ArrayList<>(ungVien.subList(0, soLuong));
+        }
     
         public long countPhongTrongTheoLoai(int loaiPhongId) {
             return phongRepository.countByLoaiPhongIdAndHoatDongTrueAndTrangThai(loaiPhongId, "Trong");
