@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import su26sd09.su26sd09.entity.ChiTietDatPhong;
 import su26sd09.su26sd09.entity.DatPhong;
 import su26sd09.su26sd09.entity.HoaDon;
+import su26sd09.su26sd09.entity.KhachHang;
 import su26sd09.su26sd09.entity.Phong;
 import su26sd09.su26sd09.repository.DatPhongRepo;
 
@@ -17,6 +18,7 @@ import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -30,6 +32,9 @@ public class DatPhongService {
 
     @Autowired
     ChiTietDatPhongService chiTietDatPhongService;
+
+    @Autowired
+    PhongService phongService;
 
 
 
@@ -262,6 +267,52 @@ public class DatPhongService {
 
     public List<DatPhong> findRecentBookingsForPhong(int maPhong) {
         return repo.findRecentBookingsForPhong(maPhong);
+    }
+
+    /**
+     * BOOKING ENGINE (luong dat nhanh tu /loai-phong/tim-kiem): tao 1 don
+     * DatPhong + cac ChiTietDatPhong tuong ung cho danh sach phong DA duoc
+     * PhongService.assignRoomsForType() chon san. Gia/phu phi tinh giong het
+     * luong checkout gio hang cu (gia moi dem x so dem + phu phi ngoai gio),
+     * chi khac o cho phong duoc engine chon thay vi khach tu chon.
+     */
+    public DatPhong createAutoAssignedBooking(List<Phong> danhSachPhong, KhachHang khachHang,
+                                               LocalDateTime ngayNhan, LocalDateTime ngayTra,
+                                               int nguoiLon, int treEm, String maCccd) {
+        long soDem = ChronoUnit.DAYS.between(ngayNhan.toLocalDate(), ngayTra.toLocalDate());
+        if (soDem < 1) soDem = 1;
+
+        DatPhong datPhong = new DatPhong();
+        datPhong.setN(khachHang);
+        datPhong.setMa_cccd(maCccd);
+        datPhong.setNgaydatPhong(ngayNhan);
+        datPhong.setNgaytraPhong(ngayTra);
+        datPhong.setSonguoiLon(nguoiLon);
+        datPhong.setSotreEm(treEm);
+        datPhong.setYeuCauThem(null);
+        datPhong.setTrangThai("Chua thanh toan");
+        datPhong.setNgayTao(LocalDateTime.now());
+        datPhong.setNgayCapNhat(null);
+        datPhong.setSdt(null);
+        save(datPhong);
+
+        List<ChiTietDatPhong> chiTietList = new ArrayList<>();
+        for (Phong p : danhSachPhong) {
+            BigDecimal phuPhi = phongService.calculateExtraFeeFor(p.getMaPhong(), ngayNhan, ngayTra);
+            BigDecimal giaKhiDat = p.getGiaMoiDem().multiply(BigDecimal.valueOf(soDem)).add(phuPhi);
+
+            ChiTietDatPhong chiTiet = new ChiTietDatPhong();
+            chiTiet.setP(p);
+            chiTiet.setGiaMoiDem(p.getGiaMoiDem());
+            chiTiet.setGiaKhiDat(giaKhiDat);
+            chiTiet.setPhuPhi(phuPhi);
+            chiTiet.setD(datPhong);
+            chiTiet.setMa_cccd(maCccd);
+            chiTietDatPhongService.save(chiTiet);
+            chiTietList.add(chiTiet);
+        }
+
+        return datPhong;
     }
 
 }

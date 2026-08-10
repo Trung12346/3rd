@@ -2138,7 +2138,7 @@ footer {
     border: 1px solid var(--border-color);
     padding: 20px;
     z-index: 60;
-    width: min(680px, 90vw);
+    width: min(680px, 70vw);
     opacity: 0;
     transform: translateY(-6px);
     transition: opacity 0.18s ease, transform 0.18s ease;
