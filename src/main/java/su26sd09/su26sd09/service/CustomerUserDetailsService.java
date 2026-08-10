@@ -28,7 +28,7 @@ public class CustomerUserDetailsService implements UserDetailsService {
         if(nguoiDung.isPresent()){
             KhachHang kh = nguoiDung.get();
 //            System.out.println(nhanVienRepo.findAll().stream().filter(nv -> nv.getEmail().equalsIgnoreCase(email)));
-            return new UserDetail(kh.getMa_khach_hang(),kh.getEmail(),kh.getMatKhau_hash(),kh.getVaiTro());
+            return new UserDetail(kh.getMa_khach_hang(),kh.getEmail(),kh.getMatKhau_hash(),kh.getVaiTro(), kh.isTrangThai());
 
         }
         throw new UsernameNotFoundException("Không tìm thấy user với username: " + email);
