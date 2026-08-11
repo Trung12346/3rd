@@ -164,4 +164,24 @@ public class khuyenMaiService {
     }
 
 
+    /**
+     * Kiểm tra đơn có được phép đổi/gán khuyến mãi hay không.
+     * <p>
+     * Quy tắc nghiệp vụ MỚI: một đơn đặt phòng được phép đổi khuyến mãi nhiều lần
+     * (qua nhiều lần cập nhật), miễn là đơn chưa hoàn tất checkout.
+     * <ul>
+     *   <li>Cho phép: thêm KM mới, đổi sang KM khác, xóa KM (set null).</li>
+     *   <li>Chặn nếu: đơn đã ở trạng thái "Da tra phong" (đã checkout).</li>
+     * </ul>
+     * @return {@code null} nếu thao tác hợp lệ; ngược lại trả về thông báo lỗi tiếng Việt.
+     */
+    public String validateGanKhuyenMai(DatPhong dp, KhuyenMai kmMoi) {
+        // Chặn nếu đơn đã trả phòng (checkout) - không cho sửa KM sau khi đã xuất hóa đơn
+        if (dp.getTrangThai() != null && "Da tra phong".equals(dp.getTrangThai())) {
+            return "Đơn #" + dp.getId() + " đã hoàn tất trả phòng, không thể thay đổi khuyến mãi.";
+        }
+        
+        // Cho phép mọi thao tác khác: thêm KM mới, đổi KM, xóa KM
+        return null;
+    }
 }

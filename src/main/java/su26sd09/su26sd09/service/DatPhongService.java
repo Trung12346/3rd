@@ -290,7 +290,7 @@ public class DatPhongService {
         datPhong.setSonguoiLon(nguoiLon);
         datPhong.setSotreEm(treEm);
         datPhong.setYeuCauThem(null);
-        datPhong.setTrangThai("Chua thanh toan");
+        datPhong.setTrangThai("Yeu cau dat phong");
         datPhong.setNgayTao(LocalDateTime.now());
         datPhong.setNgayCapNhat(null);
         datPhong.setSdt(null);

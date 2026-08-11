@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="vi"
       xmlns:th="http://www.thymeleaf.org"
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
@@ -8,46 +8,24 @@
     <title>Kết Quả Tìm Kiếm | Hotel</title>
     <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
     <style>
-        /* Dropdown menu styles (dong bo voi cac trang khac) */
-        .nav-menu { position: relative; }
-        .nav-item { position: relative; display: inline-block; }
-        .dropdown-menu {
-            display: none;
-            position: absolute;
-            top: 100%;
-            left: 0;
-            background: white;
-            min-width: 220px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-            border-radius: 4px;
-            padding: 8px 0;
-            z-index: 1000;
-            margin-top: 5px;
-        }
-        .nav-item:hover .dropdown-menu { display: block; }
-        .dropdown-menu a {
-            display: block;
-            padding: 10px 20px;
-            color: var(--text-dark);
-            text-decoration: none;
-            font-size: 14px;
-            transition: background 0.2s, color 0.2s;
-        }
-        .dropdown-menu a:hover { background: var(--sky-light); color: var(--sky-primary); }
-        .dropdown-menu a i { margin-right: 8px; color: var(--sky-primary); }
-
         :root {
-            --sky-primary: #2196F3;
-            --sky-dark: #1565c0;
-            --sky-light: #E3F2FD;
+            --brand: #2196F3;
+            --brand-dark: #1565c0;
+            --brand-soft: #E3F2FD;
+            --bg-page: #f8fbff;
+            --border-color: #e8e8e8;
             --text-dark: #1a1a2e;
             --text-gray: #666;
-            --border-color: #e8e8e8;
             --white: #fff;
+            --danger: #D23F3F;
+            --success: #2F9E4D;
         }
 
-        /* ===== BANNER + BREADCRUMB (lay theo layout phong-theo-loai.html) ===== */
+        body { background: var(--bg-page); }
+
+        /* ===== BANNER + BREADCRUMB (lay theo layout phong-theo-loai.html cu) ===== */
         .detail-banner {
             position: relative;
             height: 260px;
@@ -99,254 +77,770 @@
             backdrop-filter: blur(4px);
         }
         .breadcrumb .badge-capacity span i { margin-right: 5px; }
-
-        /* ===== MAIN LAYOUT ===== */
-        .ket-qua-layout {
-            padding: 34px 20px 56px;
-            max-width: 1100px;
-            margin: 0 auto;
-        }
-        .ket-qua-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 22px;
-        }
-        .ket-qua-header h2 {
-            font-family: 'Georgia', serif;
-            font-size: 22px;
-            color: var(--text-dark);
-        }
-        .ket-qua-count {
-            font-size: 13px;
-            color: var(--sky-primary);
-            background: var(--sky-light);
-            padding: 6px 16px;
-            border-radius: 20px;
-            font-weight: 600;
-        }
-        .ket-qua-error {
-            padding: 16px 20px;
-            border-radius: 6px;
-            background: #fdecea;
-            border: 1px solid #f5c6cb;
-            color: #c0392b;
-            font-size: 14px;
-            margin-bottom: 22px;
-        }
-        .empty-state {
-            padding: 44px 18px;
-            border: 1px dashed var(--border-color);
-            border-radius: 8px;
-            color: var(--text-gray);
-            text-align: center;
-            background: #f8fbff;
-        }
-        .empty-state i { font-size: 26px; color: var(--sky-primary); margin-bottom: 10px; display: block; }
-        .empty-state a { color: var(--sky-primary); font-weight: 600; text-decoration: none; }
-        .empty-state a:hover { text-decoration: underline; }
-
-        /* ===== TOOLBAR (sort) ===== */
-        .ket-qua-toolbar {
-            display: flex; align-items: center; gap: 10px; margin-bottom: 22px;
-            flex-wrap: wrap;
-        }
-        .ket-qua-toolbar label {
-            font-size: 13px; color: var(--text-gray); font-weight: 600;
-        }
-        .ket-qua-toolbar select {
-            padding: 8px 14px; border-radius: 20px; border: 1px solid var(--border-color);
-            background: var(--white); color: var(--text-dark); font-size: 13px;
-            cursor: pointer; font-family: inherit;
-        }
-        .ket-qua-toolbar select:focus { outline: none; border-color: var(--sky-primary); }
-
-        /* ===== GRID KET QUA (LoaiPhong) ===== */
-        .ket-qua-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 26px;
-        }
-        .loai-phong-card {
-            background: var(--white);
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-            border: 1px solid var(--border-color);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            display: flex;
-            flex-direction: column;
-        }
-        .loai-phong-card:hover {
-            transform: translateY(-6px);
-            box-shadow: 0 16px 44px rgba(33, 150, 243, 0.18);
-        }
-        .card-img-wrap { position: relative; height: 210px; overflow: hidden; }
-        .card-img-wrap img {
-            width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s ease;
-        }
-        .loai-phong-card:hover .card-img-wrap img { transform: scale(1.06); }
-        .card-img-wrap::after {
-            content: '';
-            position: absolute; inset: auto 0 0 0; height: 60%;
-            background: linear-gradient(to top, rgba(0,0,0,0.55), rgba(0,0,0,0));
-            pointer-events: none;
-        }
-        .card-badge {
-            position: absolute; top: 16px; left: 16px; z-index: 1;
-            background: var(--sky-primary); color: #fff;
-            font-size: 11px; font-weight: 700; text-transform: uppercase;
-            letter-spacing: 1px; padding: 5px 12px; border-radius: 20px;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
-        }
-        .card-badge-available {
-            position: absolute; top: 16px; right: 16px; z-index: 1;
-            background: rgba(39,174,96,0.95); color: #fff;
-            font-size: 11px; font-weight: 700;
-            padding: 5px 12px; border-radius: 20px;
-            display: flex; align-items: center; gap: 5px;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
-        }
-        .card-badge-available.low { background: rgba(230,126,34,0.95); }
-        .card-img-caption {
-            position: absolute; left: 18px; bottom: 12px; z-index: 1;
-            color: #fff; font-size: 12.5px; font-weight: 500;
-            display: flex; align-items: center; gap: 6px;
-            text-shadow: 0 1px 4px rgba(0,0,0,0.4);
-        }
-        .card-body { padding: 20px 22px 22px; display: flex; flex-direction: column; flex: 1; }
-        .card-title { font-family: 'Georgia', serif; font-size: 20px; color: var(--text-dark); margin-bottom: 10px; }
-        .card-meta { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
-        .card-meta span {
-            font-size: 12.5px; color: var(--text-dark); display: flex; align-items: center; gap: 6px;
-            background: var(--sky-light); padding: 5px 11px; border-radius: 20px; font-weight: 500;
-        }
-        .card-meta i { color: var(--sky-primary); font-size: 12px; }
-
-        .card-amenities {
-            display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 14px;
-            padding-bottom: 14px; border-bottom: 1px dashed var(--border-color);
-        }
-        .card-amenities span {
-            font-size: 12px; color: var(--text-gray); display: flex; align-items: center; gap: 5px;
-        }
-        .card-amenities i { color: var(--sky-primary); font-size: 12px; width: 14px; text-align: center; }
-
-        .card-desc {
-            font-size: 14px; color: var(--text-gray); line-height: 1.65; margin-bottom: 16px;
-            display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
-            flex: 1;
-        }
-        .card-stay-total {
-            display: flex; align-items: center; gap: 8px;
-            font-size: 12.5px; color: var(--sky-dark); background: var(--sky-light);
-            padding: 8px 12px; border-radius: 8px; margin-bottom: 16px;
-        }
-        .card-stay-total i { color: var(--sky-primary); }
-        .card-stay-total strong { color: var(--sky-dark); }
-        .card-footer {
-            display: flex; justify-content: space-between; align-items: center;
-            border-top: 1px solid var(--border-color); padding-top: 16px;
-        }
-        .card-price { font-size: 13px; color: var(--text-gray); line-height: 1.3; }
-        .card-price strong { font-size: 21px; color: var(--sky-primary); font-weight: 700; }
-        .btn-view-detail {
-            display: inline-flex; align-items: center; gap: 7px;
-            padding: 10px 22px; background: linear-gradient(135deg, var(--sky-primary), var(--sky-dark, #1565c0)); color: #fff;
-            border: none; border-radius: 20px; font-size: 13px; font-weight: 600;
-            text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer;
-            text-decoration: none; transition: transform 0.15s ease, box-shadow 0.2s ease;
-            box-shadow: 0 6px 16px rgba(33,150,243,0.3);
-        }
-        .btn-view-detail:hover { transform: translateY(-2px); box-shadow: 0 10px 22px rgba(33,150,243,0.4); }
-
-        /* ===== MODAL: xac nhan CCCD truoc khi dat phong nhanh ===== */
-        .cccd-modal-overlay {
-            display: none;
-            position: fixed; inset: 0; background: rgba(15, 23, 42, 0.55);
-            z-index: 2000; align-items: center; justify-content: center;
-            padding: 16px;
-        }
-        .cccd-modal-overlay.open { display: flex; }
-        .cccd-modal {
-            background: #fff; border-radius: 16px; width: 100%; max-width: 400px;
-            padding: 28px 26px 24px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            animation: cccdModalIn .18s ease-out;
-        }
-        @keyframes cccdModalIn {
-            from { opacity: 0; transform: translateY(8px) scale(.98); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
-        }
-        .cccd-modal-icon {
-            width: 46px; height: 46px; border-radius: 50%; background: var(--sky-light);
-            color: var(--sky-primary); display: flex; align-items: center; justify-content: center;
-            font-size: 19px; margin-bottom: 14px;
-        }
-        .cccd-modal h3 { font-size: 17px; color: var(--text-dark); margin: 0 0 6px; }
-        .cccd-modal .cccd-modal-sub {
-            font-size: 13px; color: var(--text-gray); line-height: 1.5; margin: 0 0 18px;
-        }
-        .cccd-modal-summary {
-            background: var(--sky-light); border-radius: 10px; padding: 10px 12px;
-            font-size: 12.5px; color: var(--sky-dark); margin-bottom: 18px; line-height: 1.5;
-        }
-        .cccd-field label {
-            display: block; font-size: 12.5px; font-weight: 600; color: var(--text-dark);
-            margin-bottom: 6px;
-        }
-        .cccd-field input {
-            width: 100%; padding: 12px 14px; border: 1.5px solid var(--border-color);
-            border-radius: 10px; font-size: 15px; letter-spacing: 0.5px;
-            transition: border-color .15s ease, box-shadow .15s ease;
-        }
-        .cccd-field input:focus {
-            outline: none; border-color: var(--sky-primary);
-            box-shadow: 0 0 0 3px rgba(33,150,243,0.15);
-        }
-        .cccd-field input.invalid { border-color: #e53935; }
-        .cccd-field-error {
-            display: none; color: #e53935; font-size: 12px; margin-top: 6px;
-        }
-        .cccd-field-error.show { display: block; }
-        .cccd-modal-hint {
-            display: flex; gap: 8px; align-items: flex-start; margin-top: 10px;
-            font-size: 11.5px; color: var(--text-gray); line-height: 1.5;
-        }
-        .cccd-modal-hint i { color: var(--sky-primary); margin-top: 1px; }
-        .cccd-modal-actions {
-            display: flex; gap: 10px; margin-top: 22px;
-        }
-        .cccd-btn-cancel {
-            flex: 0 0 auto; padding: 11px 18px; border-radius: 20px; border: 1.5px solid var(--border-color);
-            background: #fff; color: var(--text-gray); font-size: 13px; font-weight: 600;
-            cursor: pointer; transition: background .15s ease;
-        }
-        .cccd-btn-cancel:hover { background: #f5f5f5; }
-        .cccd-btn-submit {
-            flex: 1; border: none; border-radius: 20px; padding: 11px 18px;
-            background: linear-gradient(135deg, var(--sky-primary), var(--sky-dark, #1565c0)); color: #fff;
-            font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
-            cursor: pointer; box-shadow: 0 6px 16px rgba(33,150,243,0.3);
-            transition: transform 0.15s ease, box-shadow 0.2s ease;
-        }
-        .cccd-btn-submit:hover { transform: translateY(-1px); box-shadow: 0 10px 22px rgba(33,150,243,0.4); }
-        .cccd-btn-submit:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
-
         @media (max-width: 640px) {
             .detail-banner { height: 220px; }
             .breadcrumb h1 { font-size: 26px; }
         }
 
-        /* Dropdown / logout button styling dung chung voi cac trang khac */
+        /* ===== SEARCH HEADER (form sua nhanh ngay nhap/tra) =====
+           Dang the "floating card" bo tron, do bong, noi de len phia duoi
+           banner, cac truong khong con vien rieng ma chi ngan cach bang
+           duong ke mo, giong mau card tim kiem trang chu. */
+        .search-bar-wrap {
+            background: transparent;
+            border-bottom: none;
+            padding: 0 24px;
+            margin-top: -34px;
+            position: relative;
+            z-index: 2;
+        }
+        .search-bar {
+            max-width: 1220px;
+            margin: 0 auto;
+            display: flex;
+            align-items: stretch;
+            flex-wrap: wrap;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 10px 34px rgba(13, 71, 161, 0.18);
+            overflow: hidden;
+        }
+        .search-bar .field {
+            flex: 1 1 0;
+            min-width: 170px;
+            padding: 14px 22px;
+            background: #fff;
+            border-right: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .search-bar .field label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            color: var(--brand);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+        .search-bar .field label i { font-size: 11px; }
+        .search-bar .field strong {
+            display: block;
+            font-size: 14px;
+            color: var(--text-dark);
+        }
+        .search-bar .field input {
+            border: none;
+            outline: none;
+            padding: 0;
+            font: inherit;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-dark);
+            width: 100%;
+            background: transparent;
+        }
+        .search-bar .field.field-currency {
+            flex: 0 0 150px;
+            padding: 14px 18px;
+        }
+        /* --- Cac field ngay (Nhan/Tra phong) co the bam de mo lich chon ngay,
+           giong thanh search lon o trang chu --- */
+        .search-bar .field.field-date {
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.15s ease;
+        }
+        .search-bar .field.field-date:hover {
+            background: var(--brand-soft);
+        }
+        .search-bar .field.field-date.active {
+            background: var(--brand-soft);
+            box-shadow: inset 0 0 0 1.5px var(--brand);
+        }
+        .search-bar .field.field-date strong.placeholder {
+            color: var(--text-gray);
+            font-weight: 400;
+        }
+        #kqDatesGroup {
+            position: relative;
+            display: flex;
+            flex: 2 1 0;
+        }
+        .search-bar .btn-search {
+            flex: 0 0 auto;
+            padding: 0 34px;
+            margin: 10px 10px 10px 0;
+            background: var(--brand);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .search-bar .btn-search:hover { background: var(--brand-dark); }
+        @media (max-width: 900px) {
+            .search-bar-wrap { margin-top: -20px; }
+            .search-bar { border-radius: 10px; }
+            .search-bar .field { border-right: none; border-bottom: 1px solid var(--border-color); }
+            .search-bar .btn-search { margin: 10px; width: calc(100% - 20px); padding: 13px 0; }
+        }
+        .switch-tab.active {
+            background: var(--brand-soft);
+            color: var(--brand-dark);
+            border-color: var(--brand);
+        }
+        .currency-select {
+            padding: 0 14px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background: #fff;
+            font-size: 13px;
+            color: var(--text-dark);
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* ===== TAB CHUYEN NOI ===== */
+        .switch-tabs {
+            max-width: 1180px;
+            margin: 20px auto 0;
+            padding: 0 28px;
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .switch-tab {
+            padding: 9px 18px;
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            background: #fff;
+            color: var(--text-dark);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .switch-tab.active {
+            background: var(--brand-soft);
+            color: var(--brand-dark);
+            border-color: var(--brand);
+        }
+
+        /* ===== MAIN GRID ===== */
+        .kq-grid {
+            max-width: 1180px;
+            margin: 18px auto 60px;
+            padding: 0 28px;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 340px;
+            gap: 24px;
+        }
+        .kq-left h2 {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 6px;
+            white-space: normal;
+            letter-spacing: 0;
+            word-spacing: 0;
+        }
+        .kq-left .sub {
+            font-size: 13px;
+            color: var(--text-gray);
+            margin-bottom: 18px;
+        }
+
+        .kq-error {
+            background: #fff1f1;
+            color: var(--danger);
+            border: 1px solid #f5c6cb;
+            padding: 12px 16px;
+            border-radius: 4px;
+            margin-bottom: 16px;
+            font-size: 13.5px;
+        }
+
+        /* ===== ROOM CARD (dung layout: hang tren = tieu de full-width,
+           hang duoi chia 2 cot: trai = anh + thong tin phong (giuong/dien
+           tich/mo ta/tien ich), phai = uu dai + gia + so luong) ===== */
+        .room-card {
+            background: #fff;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            margin-bottom: 18px;
+            display: grid;
+            grid-template-columns: 240px 1fr;
+            grid-template-areas:
+                "header header"
+                "left   right";
+            overflow: hidden;
+        }
+        .room-card .card-header {
+            grid-area: header;
+            padding: 16px 16px 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .room-card .header-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .room-card .room-avail {
+            font-size: 12.5px;
+            color: var(--text-gray);
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .room-card .room-avail i { color: var(--brand); margin-right: 4px; }
+        .room-card .room-avail--low { color: var(--danger); }
+        .room-card .room-avail--low i { color: var(--danger); }
+        .room-card .header-meta {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 4px;
+        }
+        .room-card .header-meta .divider { color: var(--border-color); }
+        .room-card .left-col {
+            grid-area: left;
+            padding: 14px 16px 16px;
+            border-right: 1px solid var(--border-color);
+            min-width: 0;
+        }
+        .room-card .thumb {
+            width: 100%;
+            height: 190px;
+            border-radius: 4px;
+            overflow: hidden;
+            background: #eee;
+            margin-bottom: 12px;
+        }
+        .room-card .thumb img {
+            width: 100%; height: 100%; object-fit: cover; display: block;
+        }
+        .room-card .info-right {
+            grid-area: right;
+            padding: 14px 16px 16px;
+            min-width: 0;
+        }
+        .room-card .offer-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .room-card .offer-left { flex: 1 1 260px; min-width: 0; }
+        .room-card .offer-box {
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 16px;
+            background: #fcfdff;
+        }
+        .room-card .child-toggle-row {
+            margin-top: 12px;
+        }
+        .room-card .child-panel {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px dashed var(--border-color);
+        }
+        .room-card .child-hint {
+            font-size: 11.5px;
+            color: var(--text-gray);
+            margin: 0 0 10px;
+            line-height: 1.5;
+        }
+        .room-card .child-rows {
+            display: flex;
+            flex-direction: column;
+        }
+        .room-card .child-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 7px 0;
+            border-bottom: 1px dashed var(--border-color);
+        }
+        .room-card .child-row:last-child { border-bottom: none; }
+        .room-card .child-row-label {
+            font-size: 12.5px;
+            color: var(--text-dark);
+            font-weight: 600;
+        }
+        .room-card select.child-select {
+            padding: 6px 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background: #fff;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-dark);
+            cursor: pointer;
+            min-width: 100px;
+        }
+        .room-card .child-empty {
+            font-size: 12px;
+            color: var(--text-gray);
+            font-style: italic;
+        }
+
+        /* ===== NUT "THEM TRE EM" — sua thanh dang button ro rang, co vien +
+           nen nhat + icon dau cong, de nguoi dung nhan ra ngay la co the bam. ===== */
+        .room-card .child-toggle-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #fff;
+            border: 1px solid var(--brand);
+            border-radius: 4px;
+            padding: 8px 14px;
+            font-size: 12.5px;
+            font-weight: 700;
+            color: var(--brand-dark);
+            cursor: pointer;
+            transition: background 0.15s ease, color 0.15s ease;
+        }
+        .room-card .child-toggle-btn i.fa-user-plus,
+        .room-card .child-toggle-btn i.fa-user { color: var(--brand-dark); font-size: 12px; }
+        .room-card .child-toggle-btn .toggle-caret { color: var(--brand-dark); font-size: 10px; margin-left: 2px; }
+        .room-card .child-toggle-btn:hover {
+            background: var(--brand-soft);
+        }
+        .room-card .child-toggle-btn.has-children {
+            background: var(--brand-soft);
+        }
+
+        .room-card .child-fee-summary {
+            margin-top: 12px;
+            padding-top: 10px;
+            border-top: 1px solid var(--border-color);
+        }
+        .room-card .child-fee-row,
+        .room-card .child-fee-total {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12.5px;
+            color: var(--text-dark);
+            padding: 4px 0;
+        }
+        .room-card .child-fee-total {
+            border-top: 1px dashed var(--border-color);
+            margin-top: 4px;
+            padding-top: 8px;
+            font-weight: 700;
+            color: var(--brand-dark);
+        }
+        .room-card .offer-right {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            text-align: right;
+            gap: 8px;
+            flex: 0 0 auto;
+            min-width: 190px;
+            margin-left: auto;
+        }
+        @media (max-width: 980px) {
+            .room-card {
+                grid-template-columns: 1fr;
+                grid-template-areas:
+                    "header"
+                    "left"
+                    "right";
+            }
+            .room-card .thumb { height: 220px; }
+            .room-card .left-col {
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+            }
+            .room-card .offer-row { flex-direction: column; }
+            .room-card .offer-right { align-items: flex-start; }
+        }
+        .room-card .room-title {
+            font-family: 'Georgia', serif;
+            font-size: 18px;
+            color: var(--text-dark);
+            margin: 0 0 4px;
+        }
+        .room-card .only-1 {
+            color: var(--danger);
+            font-size: 12.5px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            display: inline-block;
+        }
+        .room-card .only-1 i { margin-right: 4px; }
+        .room-card .note {
+            font-size: 12px;
+            color: var(--text-gray);
+            margin-bottom: 10px;
+        }
+        .room-card .deal-title {
+            font-weight: 700;
+            color: var(--text-dark);
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+        .room-card .perk {
+            font-size: 13px;
+            color: var(--text-dark);
+            margin: 4px 0;
+        }
+        .room-card .perk i {
+            color: var(--success);
+            margin-right: 6px;
+        }
+        .room-card .perk.warn i { color: #E0A800; }
+        .room-card .perk .price-note {
+            color: var(--text-gray);
+            font-size: 11.5px;
+            margin-left: 6px;
+        }
+
+        /* Phan info ben phai anh phong (card ngang): hien thi deal + gia + qty + them tre em. */
+        .room-card .room-info {
+            display: block;
+        }
+        .room-card .price-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 10px;
+        }
+        .room-card .price-old {
+            text-decoration: line-through;
+            color: var(--text-gray);
+            font-size: 12px;
+        }
+        .room-card .price-now {
+            color: var(--brand);
+            font-size: 18px;
+            font-weight: 700;
+            font-family: 'Georgia', serif;
+        }
+        .room-card .price-line {
+            margin-top: 10px;
+        }
+        .room-card .price-stack {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            text-align: right;
+        }
+        .room-card .price-caption {
+            font-size: 11px;
+            color: var(--text-gray);
+            margin-top: 2px;
+        }
+        .room-card .price-caption-tax {
+            margin-top: 1px;
+        }
+        .room-card .tax-note {
+            font-size: 11.5px;
+            color: var(--text-gray);
+        }
+        .room-card .qty-row {
+            margin-top: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 10px;
+        }
+        .room-card .qty-row label {
+            font-size: 12.5px;
+            color: var(--text-gray);
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .room-card select.qty-select {
+            padding: 6px 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            background: #fff;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-dark);
+            cursor: pointer;
+            min-width: 84px;
+        }
+        .room-card .children-note {
+            font-size: 12px;
+            color: var(--text-gray);
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+            gap: 6px;
+            width: 100%;
+            text-align: right;
+        }
+        .room-card .children-note i { margin-right: 5px; }
+        .room-card .add-child-btn {
+            background: transparent;
+            border: 1px dashed var(--border-color);
+            color: var(--text-gray);
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        /* So giuong + dien tich: hien thi dang xep chong (moi thong tin 1 dong)
+           giong mockup — khong con gop chung 1 hang voi dau "|". */
+        .room-card .room-spec {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 4px;
+            font-size: 12.5px;
+            color: var(--text-gray);
+            margin: 6px 0 12px;
+        }
+        .room-card .room-spec .spec-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .room-card .room-spec .spec-item i {
+            color: var(--brand);
+            font-size: 13px;
+        }
+        .room-card .room-spec .spec-divider {
+            display: none;
+        }
+
+        /* Tien ich (list doc, giong anh mau). */
+        .room-card .room-section-title {
+            font-weight: 700;
+            color: var(--text-dark);
+            font-size: 14px;
+            margin: 8px 0 8px;
+        }
+        .room-card .amenity-list {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 12px;
+        }
+        .room-card .amenity-item {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 12.5px;
+            color: var(--text-dark);
+            font-weight: 500;
+        }
+        .room-card .amenity-item i {
+            color: var(--success);
+            font-size: 12px;
+            width: 14px;
+            text-align: center;
+        }
+        .room-card .btn-see-more {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 14px;
+            background: #fff;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            color: var(--text-dark);
+            font-size: 12.5px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .room-card .btn-see-more:hover {
+            border-color: var(--brand);
+            color: var(--brand);
+        }
+
+        .empty-state {
+            background: #fff;
+            border: 1px dashed var(--border-color);
+            border-radius: 6px;
+            padding: 40px 20px;
+            color: var(--text-gray);
+            text-align: center;
+        }
+        .empty-state i {
+            font-size: 24px; color: var(--brand); margin-bottom: 10px; display: block;
+        }
+
+        /* ===== RIGHT SUMMARY PANEL ===== */
+        .summary-panel {
+            position: sticky;
+            top: 24px;
+            align-self: start;
+            background: #fff;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 22px;
+            box-shadow: 0 4px 18px rgba(0,0,0,0.06);
+        }
+        .summary-panel h3 {
+            font-family: 'Georgia', serif;
+            font-size: 17px;
+            color: var(--text-dark);
+            margin: 0 0 14px;
+        }
+        .summary-panel .stay-info {
+            font-size: 13px;
+            color: var(--text-dark);
+            font-weight: 600;
+            line-height: 1.6;
+        }
+        .summary-panel .stay-info .stay-dates {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            align-items: center;
+        }
+        .summary-panel .stay-info .stay-dates > div { flex: 1; }
+        .summary-panel .stay-info .stay-dates .label {
+            display: block;
+            font-size: 11px;
+            color: var(--text-gray);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .summary-panel .stay-info .arrow { color: var(--brand); padding: 0 4px; }
+
+        .summary-panel .summary-line-tam-tinh {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            letter-spacing: 0;
+            word-spacing: 0;
+        }
+
+        .summary-guests {
+            margin-top: 10px;
+            font-size: 13px;
+            color: var(--text-dark);
+        }
+        .summary-guests a {
+            color: var(--brand-dark);
+            font-size: 12px;
+            text-decoration: underline;
+            margin-left: 8px;
+        }
+        .summary-room-section {
+            border-top: 1px dashed var(--border-color);
+            margin-top: 14px;
+            padding-top: 14px;
+        }
+        .summary-room-section .label {
+            font-size: 11.5px;
+            color: var(--text-gray);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+        .summary-room-item {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            color: var(--text-dark);
+            margin-bottom: 4px;
+        }
+        .summary-room-item .name { font-weight: 600; }
+        .summary-room-item .price { color: var(--brand-dark); font-weight: 600; }
+
+        .summary-line {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            color: var(--text-dark);
+            margin: 8px 0;
+        }
+        .summary-line.discount .price { color: var(--success); }
+        .summary-total {
+            border-top: 1px solid var(--border-color);
+            margin-top: 14px;
+            padding-top: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .summary-total .label {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-dark);
+        }
+        .summary-total .price {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--brand-dark);
+        }
+        .summary-tax-note {
+            font-size: 11px;
+            color: var(--text-gray);
+            margin-top: 4px;
+            text-align: right;
+        }
+
+        .summary-cta {
+            margin-top: 18px;
+            width: 100%;
+            padding: 13px 18px;
+            background: var(--brand);
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+        .summary-cta:hover { background: var(--brand-dark); }
+        .summary-cta:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        .summary-note {
+            font-size: 11.5px;
+            color: var(--text-gray);
+            margin-top: 10px;
+            line-height: 1.5;
+        }
+        .summary-note i { color: var(--brand); margin-right: 4px; }
+
+        @media (max-width: 980px) {
+            .kq-grid { grid-template-columns: 1fr; }
+            .summary-panel { position: static; }
+            .room-card { grid-template-columns: 1fr; }
+            .room-card .thumb { height: 220px; }
+        }
+
+        /* Dropdown / logout button styling */
         .btn-logout {
             border: 1px solid var(--border-color); background: transparent;
             color: var(--text-gray); padding: 8px 15px; border-radius: 2px;
             cursor: pointer; font-family: inherit; font-size: 13px;
             font-weight: 600; text-transform: uppercase; transition: all 0.3s;
         }
-        .btn-logout:hover { border-color: #E74C3C; color: #E74C3C; background: #FDEDEC; }
+        .btn-logout:hover { border-color: var(--danger); color: var(--danger); background: #FDEDEC; }
     </style>
 </head>
 <body>
@@ -366,114 +860,339 @@
         <div class="badge-capacity">
             <span th:if="${ngayNhan != null and ngayTra != null}">
                 <i class="fa-regular fa-calendar"></i>
-                <span th:text="${ngayNhan}">2026-08-10</span> &rarr; <span th:text="${ngayTra}">2026-08-12</span>
-                <span th:if="${soDem != null}" th:text="'(' + ${soDem} + ' đêm)'">(2 đêm)</span>
+                <span th:text="${ngayNhan}">2026-08-10</span> &rarr; <span th:text="${ngayTra}">2026-08-11</span>
+                <span th:if="${soDem != null}" th:text="'(' + ${soDem} + ' đêm)'">(1 đêm)</span>
             </span>
             <span th:if="${nguoiLon != null or treEm != null}">
                 <i class="fa-solid fa-user-group"></i>
-                <span th:text="${(nguoiLon != null ? nguoiLon : 0)} + ' người lớn'">2 người lớn</span><span
-                    th:if="${treEm != null and treEm > 0}" th:text="', ' + ${treEm} + ' trẻ em'">, 1 trẻ em</span>
+                <span th:text="${(nguoiLon != null ? nguoiLon : 0)} + ' người lớn'">2 người lớn</span>
+                <span th:if="${treEm != null and treEm > 0}" th:text="', ' + ${treEm} + ' trẻ em'">, 1 trẻ em</span>
             </span>
         </div>
     </div>
 </section>
 
-<!-- MAIN CONTENT -->
-<div class="ket-qua-layout">
-
-    <div class="ket-qua-error" th:if="${timKiemError}" th:text="${timKiemError}"></div>
-
-    <div class="ket-qua-header">
-        <h2>Loại Phòng Phù Hợp</h2>
-        <span class="ket-qua-count">
-            <span th:text="${loaiPhongs != null ? loaiPhongs.size() : 0}">0</span> loại phòng còn trống
-        </span>
-    </div>
-
-    <div class="ket-qua-toolbar" th:if="${loaiPhongs != null and !loaiPhongs.isEmpty()}">
-        <label for="sortSelect"><i class="fa-solid fa-arrow-down-wide-short"></i> Sắp xếp</label>
-        <select id="sortSelect" onchange="sapXepKetQua(this.value)">
-            <option value="mac-dinh">Mặc định</option>
-            <option value="gia-tang">Giá: Thấp đến cao</option>
-            <option value="gia-giam">Giá: Cao đến thấp</option>
-            <option value="suc-chua">Sức chứa: Nhiều nhất</option>
-            <option value="con-trong">Còn trống: Nhiều nhất</option>
-        </select>
-    </div>
-
-    <div class="ket-qua-grid" id="ketQuaGrid" th:if="${loaiPhongs != null and !loaiPhongs.isEmpty()}">
-        <div class="loai-phong-card"
-             th:each="lp : ${loaiPhongs}"
-             th:attr="data-gia=${lp.giaCoBan},data-suc-chua=${lp.sucChuaToiDa},data-con-trong=${soPhongTrongTheoLoai != null and soPhongTrongTheoLoai[lp.id] != null ? soPhongTrongTheoLoai[lp.id] : 0}">
-            <div class="card-img-wrap">
-                <img th:src="${anhLoaiPhong != null and anhLoaiPhong[lp.id] != null} ? ${anhLoaiPhong[lp.id]} : '/media/ed2d10ce-680a-467e-a83c-c0781f53a5fd'"
-                     th:alt="${lp.tenLoai}">
-                <div class="card-badge" th:text="${lp.tenLoai}">Deluxe</div>
-                <div th:with="conTrong=${soPhongTrongTheoLoai != null and soPhongTrongTheoLoai[lp.id] != null ? soPhongTrongTheoLoai[lp.id] : 0}"
-                     th:class="${conTrong <= 2} ? 'card-badge-available low' : 'card-badge-available'">
-                    <i class="fa-solid fa-check-circle"></i>
-                    <span th:text="${conTrong} + ' phòng trống'">3 phòng trống</span>
-                </div>
-                <div class="card-img-caption">
-                    <i class="fa-solid fa-star"></i> Loại phòng được nhiều khách lựa chọn
-                </div>
+<!-- THANH TIM KIEM NHANH (sua ngay/sl khach/loai phong) -->
+<form class="search-bar-wrap" id="kqSearchForm" th:action="@{/loai-phong/tim-kiem}" method="get">
+    <div class="search-bar">
+        <div id="kqDatesGroup">
+            <div class="field field-date" id="kqCheckinField">
+                <label><i class="fa-regular fa-calendar"></i> Nhận Phòng</label>
+                <strong id="kqCheckinDisplay" th:text="${ngayNhan != null ? ngayNhan : 'Chọn ngày'}"
+                        th:classappend="${ngayNhan == null} ? 'placeholder'">2026-08-10</strong>
+                <input type="hidden" name="ngayNhan" id="kqNgayNhanInput" th:value="${ngayNhan}">
             </div>
-            <div class="card-body">
-                <h3 class="card-title" th:text="${lp.tenLoai}">Phòng Deluxe</h3>
-                <div class="card-meta">
-                    <span><i class="fa-solid fa-users"></i> Tối đa <span th:text="${lp.sucChuaToiDa}">2</span> người</span>
-                    <span><i class="fa-solid fa-bed"></i> 1 giường lớn / 2 giường đơn</span>
-                    <span><i class="fa-solid fa-vector-square"></i> ~ <span th:text="${25 + lp.sucChuaToiDa * 5}">30</span> m²</span>
-                </div>
+            <div class="field field-date" id="kqCheckoutField">
+                <label><i class="fa-regular fa-calendar"></i> Trả Phòng</label>
+                <strong id="kqCheckoutDisplay" th:text="${ngayTra != null ? ngayTra : 'Chọn ngày'}"
+                        th:classappend="${ngayTra == null} ? 'placeholder'">2026-08-11</strong>
+                <input type="hidden" name="ngayTra" id="kqNgayTraInput" th:value="${ngayTra}">
+            </div>
 
-                <div class="card-amenities">
-                    <span><i class="fa-solid fa-wifi"></i> Wifi miễn phí</span>
-                    <span><i class="fa-solid fa-snowflake"></i> Điều hòa</span>
-                    <span><i class="fa-solid fa-tv"></i> Smart TV</span>
-                    <span><i class="fa-solid fa-mug-hot"></i> Minibar</span>
-                    <span><i class="fa-solid fa-shower"></i> Vòi sen nóng lạnh</span>
-                </div>
-
-                <p class="card-desc" th:text="${lp.mota}">
-                    Không gian sang trọng với đầy đủ tiện nghi hiện đại mang đến kỳ nghỉ tuyệt vời.
-                </p>
-
-                <div class="card-stay-total" th:if="${soDem != null and soDem > 0}">
-                    <i class="fa-solid fa-calculator"></i>
-                    <span th:text="${soDem} + ' đêm × ' + ${#numbers.formatDecimal(lp.giaCoBan, 0, 'COMMA', 0, 'POINT')} + ' = '">2 đêm =</span>
-                    <strong th:text="${#numbers.formatDecimal(lp.giaCoBan.multiply(T(java.math.BigDecimal).valueOf(soDem)), 0, 'COMMA', 0, 'POINT')} + ' VND'">2.400.000 VND</strong>
-                </div>
-
-                <div class="card-footer">
-                    <div class="card-price">
-                        Từ <strong th:text="${#numbers.formatDecimal(lp.giaCoBan, 0, 'COMMA', 0, 'POINT')}">1.200.000</strong>
-                        <span> VND/đêm</span>
-                    </div>
-                    <button th:with="giaTong=${lp.giaCoBan.multiply(T(java.math.BigDecimal).valueOf(soDem != null and soDem > 0 ? soDem : 1))}"
-                            type="button"
-                            class="btn-view-detail btn-mo-cccd-modal"
-                            th:data-loai-id="${lp.id}"
-                            th:data-ten-loai="${lp.tenLoai}"
-                            th:data-ngay-nhan="${ngayNhan}"
-                            th:data-ngay-tra="${ngayTra}"
-                            th:data-nguoi-lon="${nguoiLon}"
-                            th:data-tre-em="${treEm}"
-                            th:data-muc-gia="${mucGia}"
-                            th:data-so-dem="${soDem}"
-                            th:data-gia-co-ban="${#numbers.formatDecimal(giaTong, 0, 'COMMA', 0, 'POINT')}">
-                        Đặt phòng <i class="fa-solid fa-arrow-right"></i>
-                    </button>
+            <div class="hero-calendar-popover" id="kqCalendarPopover">
+                <div class="hero-calendar-legend">Chọn ngày <strong>nhận phòng</strong>, sau đó chọn ngày <strong>trả phòng</strong></div>
+                <div id="kqDateRangeCalendar"></div>
+                <div class="hero-calendar-actions">
+                    <button type="button" class="hero-calendar-clear" id="kqCalendarClear">Xóa</button>
+                    <button type="button" class="hero-calendar-apply" id="kqCalendarApply">Áp dụng</button>
                 </div>
             </div>
         </div>
+        <div class="field">
+            <label><i class="fa-solid fa-user-group"></i> Người lớn &amp; Trẻ em</label>
+            <strong>
+                <span th:text="${(nguoiLon != null ? nguoiLon : 0)}">2</span> người lớn
+                <span th:if="${treEm != null and treEm > 0}" th:text="', ' + ${treEm} + ' trẻ em'">, 1 trẻ em</span>
+            </strong>
+            <input type="hidden" name="nguoiLon" th:value="${nguoiLon}">
+            <input type="hidden" name="treEm" th:value="${treEm}">
+        </div>
+        <div class="field field-currency">
+            <label><i class="fa-solid fa-coins"></i> Loại tiền</label>
+            <select name="mucGia" onchange="this.form.submit()" style="border:none; background:transparent; font:inherit; font-size:14px; font-weight:600; color:var(--text-dark); outline:none; padding:0; cursor:pointer;">
+                <option value="">VND</option>
+                <option value="duoi1tr">Dưới 1tr</option>
+                <option value="1tr-2tr">1-2tr</option>
+                <option value="tren2tr">Trên 2tr</option>
+            </select>
+        </div>
+        <button type="submit" class="btn-search">
+            <i class="fa-solid fa-magnifying-glass"></i> Tìm kiếm
+        </button>
+    </div>
+</form>
+
+<!-- TAB CHUYEN TRANG -->
+<div class="switch-tabs">
+    <button class="switch-tab active" type="button">Phòng được đề xuất</button>
+    <button class="switch-tab" type="button" onclick="window.location.href='/loai-phong'">
+        Các lựa chọn khác
+    </button>
+</div>
+
+<!-- MAIN GRID: ds loai phong + tom tat dat phong -->
+<div class="kq-grid">
+
+    <!-- LEFT: ROOM LIST -->
+    <div class="kq-left">
+        <h2>Phòng được đề xuất</h2>
+        <p class="sub">Dựa trên yêu cầu của bạn, chúng tôi đề xuất các phòng sau</p>
+
+        <div class="kq-error" th:if="${timKiemError}" th:text="${timKiemError}"></div>
+
+        <div th:if="${loaiPhongs != null and !loaiPhongs.isEmpty()}">
+            <div class="room-card"
+                 th:each="lp : ${loaiPhongs}"
+                 th:with="
+                     conTrong=${soPhongTrongTheoLoai != null and soPhongTrongTheoLoai[lp.id] != null ? soPhongTrongTheoLoai[lp.id] : 0},
+                     giaMotDem=${lp.giaCoBan},
+                     giaTong=${giaMotDem.multiply(T(java.math.BigDecimal).valueOf(soDem != null and soDem > 0 ? soDem : 1))},
+                     maxQty=${conTrong > 5 ? 5 : conTrong}"
+                 th:attr="data-loai-id=${lp.id},
+                         data-ten-loai=${lp.tenLoai},
+                         data-gia-mot-dem=${giaMotDem},
+                         data-so-dem=${soDem != null ? soDem : 1},
+                         data-max-qty=${maxQty},
+                         data-only-one=${conTrong == 1}">
+
+                <div class="card-header">
+                    <div class="header-top">
+                        <h3 class="room-title" th:text="${lp.tenLoai}">Deluxe Twin Ocean</h3>
+                        <span class="room-avail" th:classappend="${conTrong == 1} ? ' room-avail--low' : ''">
+                            <i class="fa-solid fa-circle-info"></i>
+                            Còn <strong th:text="${conTrong}">3</strong> phòng trống
+                        </span>
+                    </div>
+                </div>
+
+                <!-- ===== TRAI: anh + thong tin phong (giuong/dien tich/mo ta/tien ich) ===== -->
+                <div class="left-col">
+                    <div class="thumb">
+                        <img th:src="${anhLoaiPhong != null and anhLoaiPhong[lp.id] != null} ? ${anhLoaiPhong[lp.id]} : 'https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=800&q=80'"
+                             th:alt="${lp.tenLoai}">
+                    </div>
+
+                    <!-- So giuong + dien tich phong (moi thong tin 1 dong, giong anh mau).
+                         So giuong duoc suy ra theo sucChuaToiDa cua loai phong
+                         (entity LoaiPhong khong luu truong nay).
+                         Dien tich fix cung theo cong thuc 25 + sucChuaToiDa*5. -->
+                    <div class="room-spec" th:with="
+                        sucChua=${lp.sucChuaToiDa},
+                        soGiuong=${sucChua <= 2 ? '1 giường lớn / 2 giường đơn' : (sucChua <= 4 ? '2 giường lớn' : '3 giường lớn')},
+                        dienTich=${25 + (sucChua * 5)}">
+                        <span class="spec-item">
+                            <i class="fa-solid fa-bed"></i> <span th:text="${soGiuong}">1 giường lớn / 2 giường đơn</span>
+                        </span>
+                        <span class="spec-item">
+                            <i class="fa-solid fa-vector-square"></i> <span th:text="${dienTich}">30</span> m²
+                        </span>
+                    </div>
+
+                    <p class="note" th:text="${lp.mota}">Phòng sang trọng...</p>
+
+                    <!-- Tien ich phong (lay tien nghi that cua phong dai dien cua loai). -->
+                    <div class="room-section-title">Tiện ích</div>
+                    <div class="amenity-list"
+                         th:if="${tienNghiTheoLoai != null and tienNghiTheoLoai[lp.id] != null and !tienNghiTheoLoai[lp.id].isEmpty()}">
+                        <div class="amenity-item" th:each="tn : ${tienNghiTheoLoai[lp.id]}">
+                            <i class="fa-solid fa-check"></i> <span th:text="${tn}">Wifi miễn phí</span>
+                        </div>
+                    </div>
+                    <div class="amenity-list"
+                         th:if="${tienNghiTheoLoai == null or tienNghiTheoLoai[lp.id] == null or tienNghiTheoLoai[lp.id].isEmpty()}">
+                        <div class="amenity-item"><i class="fa-solid fa-check"></i> Điều hòa</div>
+                        <div class="amenity-item"><i class="fa-solid fa-check"></i> Phòng tắm - vòi sen</div>
+                        <div class="amenity-item"><i class="fa-solid fa-check"></i> Nước khoáng hàng ngày</div>
+                    </div>
+
+                    <button type="button" class="btn-see-more">
+                        Xem thêm thông tin phòng
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </button>
+                </div>
+
+                <!-- ===== PHAI: chuong trinh uu dai + gia + so luong phong ===== -->
+                <div class="info-right">
+                    <div class="offer-row">
+                        <div class="offer-left">
+                            <div class="offer-box">
+                                <div class="deal-title">Chương trình ưu đãi</div>
+
+                                <div class="perk">
+                                    <i class="fa-solid fa-check"></i> Phòng hoàn trả khi hủy phòng
+                                    <span class="price-note" th:if="${soDem != null and soDem > 0}">cho
+                                        <span th:text="${soDem}">1</span> đêm</span>
+                                </div>
+                                <div class="perk">
+                                    <i class="fa-solid fa-check"></i> Vệ sinh phòng mỗi ngày
+                                </div>
+                                <div class="perk">
+                                    <i class="fa-solid fa-check"></i> Bữa sáng đã bao gồm
+                                </div>
+
+                                <div class="price-line">
+                                    <div class="price-stack">
+                                        <div class="price-now"
+                                             th:text="${#numbers.formatDecimal(giaTong, 0, 'COMMA', 0, 'POINT')}">
+                                            5,000,000
+                                        </div>
+                                        <div class="price-caption" th:if="${soDem != null and soDem > 0}">
+                                            <span th:text="${soDem} + ' đêm, ' + ${lp.sucChuaToiDa} + ' người lớn'">1 đêm, 2 người lớn</span>
+                                        </div>
+                                        <div class="price-caption price-caption-tax">Đã bao gồm thuế và phí</div>
+                                    </div>
+                                </div>
+
+                                <!-- Combobox so luong phong: max = so phong con trong -->
+                                <div class="qty-row">
+                                    <label><i class="fa-solid fa-door-open"></i> Số phòng:</label>
+                                    <select class="qty-select js-qty-select"
+                                            th:attr="data-loai-id=${lp.id}">
+                                        <option th:each="i : ${#numbers.sequence(0, maxQty)}"
+                                                th:value="${i}"
+                                                th:text="${i == 0 ? '0 phòng' : i + ' phòng'}"
+                                                th:selected="${i == 1 and maxQty >= 1}">
+                                            1 phòng
+                                        </option>
+                                    </select>
+                                </div>
+
+                                <!-- Them tre em: moi phong toi da 1 tre em, moi tre em +250.000/dem.
+                                     Nut duoc sua thanh dang button ro rang (co vien, nen, icon +)
+                                     de nguoi dung nhan ra ngay va dam bam vao. -->
+                                <div class="child-toggle-row">
+                                    <button type="button" class="child-toggle-btn js-child-toggle">
+                                        <i class="fa-solid fa-user-plus"></i>
+                                        <span class="js-child-label">Thêm trẻ em</span>
+                                        <i class="fa-solid fa-chevron-down toggle-caret"></i>
+                                    </button>
+                                </div>
+                                <div class="child-panel js-child-panel" style="display:none;">
+                                    <p class="child-hint">
+                                        Lưu ý: mỗi phòng chỉ được thêm tối đa 1 trẻ em. Mỗi trẻ em tính thêm 250.000đ/đêm.
+                                    </p>
+                                    <div class="child-rows js-child-rows"></div>
+                                    <div class="child-fee-summary js-child-fee-summary" style="display:none;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- kq-left vẫn còn mở ở đây để bọc luôn cả empty-state bên dưới -->
+
+        <div class="empty-state" th:if="${loaiPhongs == null or loaiPhongs.isEmpty()}">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            Không tìm thấy loại phòng nào còn trống phù hợp với tiêu chí tìm kiếm.<br>
+            Vui lòng thử lại với khoảng ngày hoặc số lượng khách khác.
+        </div>
     </div>
 
-    <div class="empty-state" th:if="${loaiPhongs == null or loaiPhongs.isEmpty()}">
-        <i class="fa-solid fa-magnifying-glass"></i>
-        Không tìm thấy loại phòng nào còn trống phù hợp với tiêu chí tìm kiếm.<br>
-        Vui lòng thử lại với khoảng ngày hoặc số lượng khách khác, hoặc <a href="/loai-phong">xem tất cả loại phòng</a>.
-    </div>
+    <!-- RIGHT: SUMMARY PANEL -->
+    <aside class="summary-panel">
+        <h3>Tóm Tắt Đặt Phòng</h3>
 
+        <div class="stay-info">
+            <div class="stay-dates">
+                <div>
+                    <span class="label">Nhận phòng</span>
+                    <span th:text="${ngayNhan != null ? ngayNhan : '—'}">2026-08-10</span><br>
+                    <small style="font-size:11.5px; color:var(--text-gray);">từ 14:00</small>
+                </div>
+                <i class="fa-solid fa-arrow-right arrow"></i>
+                <div>
+                    <span class="label">Trả phòng</span>
+                    <span th:text="${ngayTra != null ? ngayTra : '—'}">2026-08-11</span><br>
+                    <small style="font-size:11.5px; color:var(--text-gray);">cho đến 12:00</small>
+                </div>
+            </div>
+        </div>
+        <div class="summary-guests">
+            <i class="fa-solid fa-user-group"></i>
+            <span th:text="${(nguoiLon != null ? nguoiLon : 0)} + ' người lớn, ' + ${(treEm != null ? treEm : 0)} + ' trẻ em'">2 người lớn, 1 trẻ em</span>
+            <a href="#" onclick="event.preventDefault();">Sửa lựa chọn</a>
+        </div>
+
+        <!-- Phong da chon (filled by JS) -->
+        <div class="summary-room-section">
+            <div class="label">Thông tin phòng</div>
+            <div id="summaryRoomList">
+                <div style="font-size:12.5px; color:var(--text-gray); font-style:italic;">
+                    Chưa chọn phòng nào.
+                </div>
+            </div>
+        </div>
+
+        <div class="summary-line summary-line-tam-tinh">
+            <span>Tổng tạm tính</span>
+            <span class="price" id="summaryTamTinh">0</span>
+        </div>
+
+        <div class="summary-total">
+            <span class="label">Tổng cộng</span>
+            <span class="price" id="summaryTotal">0</span>
+        </div>
+        <div class="summary-tax-note">Đã bao gồm tất cả các loại thuế và phí</div>
+
+        <!-- FORM submit dat phong nhieu phong -->
+        <form id="bookingForm" th:action="@{/loai-phong/dat-nhanh}" method="post">
+            <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+            <input type="hidden" name="ngayNhan" id="hiddenNgayNhan" th:value="${ngayNhan}">
+            <input type="hidden" name="ngayTra" id="hiddenNgayTra" th:value="${ngayTra}">
+            <input type="hidden" name="nguoiLon" id="hiddenNguoiLon" th:value="${nguoiLon}">
+            <input type="hidden" name="treEm" id="hiddenTreEm" th:value="${treEm}">
+            <input type="hidden" name="mucGia" id="hiddenMucGia" th:value="${mucGia}">
+            <input type="hidden" name="loaiPhongId" id="hiddenLoaiId">
+            <input type="hidden" name="soLuong" id="hiddenSoLuong" value="1">
+            <input type="hidden" name="maCccd" id="hiddenMaCccd">
+
+            <button type="button" class="summary-cta" id="summaryCta" disabled>
+                Đặt chỗ
+            </button>
+        </form>
+
+        <p class="summary-note">
+            <i class="fa-solid fa-shield-halved"></i>
+            Bạn chưa bị trừ tiền. Thanh toán khi nhận phòng hoặc theo chính sách khách sạn.
+        </p>
+    </aside>
+</div>
+
+<!-- MODAL xac nhan CCCD truoc khi submit -->
+<div class="cccd-modal-overlay" id="cccdModalOverlay" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.55); z-index:2000; align-items:center; justify-content:center; padding:16px;">
+    <div class="cccd-modal" role="dialog" aria-modal="true"
+         style="background:#fff; border-radius:12px; width:100%; max-width:420px; padding:26px; box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+        <h3 style="margin:0 0 8px; color:var(--text-dark); font-family:'Georgia', serif;">
+            <i class="fa-solid fa-id-card" style="color:var(--brand); margin-right:6px;"></i>
+            Xác nhận thông tin đặt phòng
+        </h3>
+        <p style="font-size:13px; color:var(--text-gray); margin:0 0 14px;">
+            Nhập số CCCD/CMND của người đặt để lễ tân xác minh khi nhận phòng.
+        </p>
+        <div id="cccdModalSummary"
+             style="background:var(--brand-soft); padding:10px 12px; border-radius:6px; font-size:12.5px; color:var(--brand-dark); margin-bottom:14px;">
+        </div>
+        <label style="display:block; font-size:12.5px; font-weight:600; color:var(--text-dark); margin-bottom:6px;">
+            Số CCCD / CMND
+        </label>
+        <input type="text" id="cccdInput" maxlength="12" inputmode="numeric"
+               placeholder="VD: 001204012345"
+               style="width:100%; padding:11px 12px; border:1.5px solid var(--border-color); border-radius:6px; font-size:15px;">
+        <div id="cccdError" style="display:none; color:var(--danger); font-size:12px; margin-top:6px;">
+            Vui lòng nhập đúng 9 hoặc 12 chữ số.
+        </div>
+        <div style="display:flex; gap:10px; margin-top:18px;">
+            <button type="button" id="cccdCancel"
+                    style="flex:0 0 auto; padding:10px 18px; border-radius:4px; border:1px solid var(--border-color); background:#fff; color:var(--text-gray); font-weight:600; cursor:pointer;">
+                Để sau
+            </button>
+            <button type="button" id="cccdConfirm"
+                    style="flex:1; border:none; border-radius:4px; padding:10px 18px; background:var(--brand); color:#fff; font-weight:700; cursor:pointer;">
+                Xác nhận & đặt phòng
+            </button>
+        </div>
+    </div>
 </div>
 
 <!-- FOOTER -->
@@ -481,146 +1200,355 @@
     <p>&copy; 2026 Hotel. All rights reserved.</p>
 </footer>
 
-<!-- Modal xac nhan CCCD - dung chung cho tat ca cac the loai phong, duoc dien
-     du lieu bang JS truoc khi mo, chi submit 1 form POST toi /loai-phong/dat-nhanh -->
-<div class="cccd-modal-overlay" id="cccdModalOverlay">
-    <div class="cccd-modal" role="dialog" aria-modal="true" aria-labelledby="cccdModalTitle">
-        <div class="cccd-modal-icon"><i class="fa-solid fa-id-card"></i></div>
-        <h3 id="cccdModalTitle">Xác nhận thông tin đặt phòng</h3>
-        <p class="cccd-modal-sub">Chỉ một bước cuối trước khi giữ phòng cho bạn.</p>
-
-        <div class="cccd-modal-summary" id="cccdModalSummary"></div>
-
-        <form th:action="@{/loai-phong/dat-nhanh}" method="post" id="cccdModalForm">
-            <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
-            <input type="hidden" name="loaiPhongId" id="cccdFieldLoaiId">
-            <input type="hidden" name="ngayNhan" id="cccdFieldNgayNhan">
-            <input type="hidden" name="ngayTra" id="cccdFieldNgayTra">
-            <input type="hidden" name="nguoiLon" id="cccdFieldNguoiLon">
-            <input type="hidden" name="treEm" id="cccdFieldTreEm">
-            <input type="hidden" name="mucGia" id="cccdFieldMucGia">
-
-            <div class="cccd-field">
-                <label for="cccdInput">Số CCCD / CMND của người đặt</label>
-                <input type="text" id="cccdInput" name="maCccd" inputmode="numeric"
-                       autocomplete="off" maxlength="12" placeholder="VD: 001204012345" autofocus>
-                <div class="cccd-field-error" id="cccdInputError">Vui lòng nhập đúng 9 hoặc 12 chữ số.</div>
-                <div class="cccd-modal-hint">
-                    <i class="fa-solid fa-shield-halved"></i>
-                    <span>Dùng để lễ tân xác minh đúng bạn khi nhận phòng. Thông tin được bảo mật và chỉ dùng cho đơn đặt phòng này.</span>
-                </div>
-            </div>
-
-            <div class="cccd-modal-actions">
-                <button type="button" class="cccd-btn-cancel" id="cccdModalCancel">Để sau</button>
-                <button type="submit" class="cccd-btn-submit" id="cccdModalSubmit">Xác nhận & giữ phòng</button>
-            </div>
-        </form>
-    </div>
-</div>
-
 <script src="/header-dropdown.js"></script>
+<script src="/js/date-range-picker.js"></script>
+<script>
+    // ===== THANH TIM KIEM NHANH: lich chon ngay (giong trang chu) =====
+    (function initKqSearchBarCalendar() {
+        const form = document.getElementById('kqSearchForm');
+        const datesGroup = document.getElementById('kqDatesGroup');
+        if (!form || !datesGroup) return;
+
+        const VN_MONTHS = ['Th1','Th2','Th3','Th4','Th5','Th6','Th7','Th8','Th9','Th10','Th11','Th12'];
+        function formatDisplay(d) {
+            return `${d.getDate()} ${VN_MONTHS[d.getMonth()]}, ${d.getFullYear()}`;
+        }
+        function toISO(d) {
+            const y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, '0'), day = String(d.getDate()).padStart(2, '0');
+            return `${y}-${m}-${day}`;
+        }
+        function parseISO(str) {
+            if (!str) return null;
+            const parts = str.split('-');
+            if (parts.length !== 3) return null;
+            const d = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+            return isNaN(d.getTime()) ? null : d;
+        }
+
+        const checkinDisplay = document.getElementById('kqCheckinDisplay');
+        const checkoutDisplay = document.getElementById('kqCheckoutDisplay');
+        const ngayNhanInput = document.getElementById('kqNgayNhanInput');
+        const ngayTraInput = document.getElementById('kqNgayTraInput');
+        const calendarPopover = document.getElementById('kqCalendarPopover');
+        const checkinField = document.getElementById('kqCheckinField');
+        const checkoutField = document.getElementById('kqCheckoutField');
+
+        function closePopover() {
+            calendarPopover.classList.remove('open');
+            checkinField.classList.remove('active');
+            checkoutField.classList.remove('active');
+        }
+
+        const initialStart = parseISO(ngayNhanInput.value);
+        const initialEnd = parseISO(ngayTraInput.value);
+
+        const picker = new DateRangePicker({
+            calendarElId: 'kqDateRangeCalendar',
+            minDate: new Date(),
+            startDate: initialStart,
+            endDate: initialEnd,
+            onChange: function (start, end) {
+                if (start) {
+                    checkinDisplay.textContent = formatDisplay(start);
+                    checkinDisplay.classList.remove('placeholder');
+                    ngayNhanInput.value = toISO(start);
+                } else {
+                    checkinDisplay.textContent = 'Chọn ngày';
+                    checkinDisplay.classList.add('placeholder');
+                    ngayNhanInput.value = '';
+                }
+                if (end) {
+                    checkoutDisplay.textContent = formatDisplay(end);
+                    checkoutDisplay.classList.remove('placeholder');
+                    ngayTraInput.value = toISO(end);
+                } else {
+                    checkoutDisplay.textContent = 'Chọn ngày';
+                    checkoutDisplay.classList.add('placeholder');
+                    ngayTraInput.value = '';
+                }
+                if (start && end) closePopover();
+            }
+        });
+
+        [checkinField, checkoutField].forEach(field => {
+            field.addEventListener('click', () => {
+                const willOpen = !calendarPopover.classList.contains('open');
+                closePopover();
+                if (willOpen) {
+                    calendarPopover.classList.add('open');
+                    checkinField.classList.add('active');
+                    checkoutField.classList.add('active');
+                    picker.refresh();
+                }
+            });
+        });
+
+        document.getElementById('kqCalendarClear').addEventListener('click', () => picker.reset());
+        document.getElementById('kqCalendarApply').addEventListener('click', () => closePopover());
+
+        document.addEventListener('click', (e) => {
+            if (!datesGroup.contains(e.target)) closePopover();
+        });
+        calendarPopover.addEventListener('click', e => e.stopPropagation());
+    })();
+</script>
 <script>
     (function () {
-        const overlay = document.getElementById('cccdModalOverlay');
-        const form = document.getElementById('cccdModalForm');
-        const input = document.getElementById('cccdInput');
-        const errorEl = document.getElementById('cccdInputError');
-        const summaryEl = document.getElementById('cccdModalSummary');
-        const submitBtn = document.getElementById('cccdModalSubmit');
-
         const CCCD_RE = /^\d{9}(\d{3})?$/;
 
-        function openModal(btn) {
-            document.getElementById('cccdFieldLoaiId').value = btn.dataset.loaiId || '';
-            document.getElementById('cccdFieldNgayNhan').value = btn.dataset.ngayNhan || '';
-            document.getElementById('cccdFieldNgayTra').value = btn.dataset.ngayTra || '';
-            document.getElementById('cccdFieldNguoiLon').value = btn.dataset.nguoiLon || '';
-            document.getElementById('cccdFieldTreEm').value = btn.dataset.treEm || '';
-            document.getElementById('cccdFieldMucGia').value = btn.dataset.mucGia || '';
+        const cards = document.querySelectorAll('.room-card');
+        const summaryList = document.getElementById('summaryRoomList');
+        const tamTinhEl = document.getElementById('summaryTamTinh');
+        const totalEl = document.getElementById('summaryTotal');
+        const cta = document.getElementById('summaryCta');
+        const form = document.getElementById('bookingForm');
+        const hiddenLoaiId = document.getElementById('hiddenLoaiId');
+        const hiddenSoLuong = document.getElementById('hiddenSoLuong');
 
-            const soDem = btn.dataset.soDem || '';
-            const tenLoai = btn.dataset.tenLoai || '';
-            const giaCoBan = btn.dataset.giaCoBan || '';
-            summaryEl.innerHTML =
-                '<i class="fa-solid fa-bed"></i> ' + tenLoai +
-                (soDem ? ' &middot; ' + soDem + ' đêm' : '') +
-                (giaCoBan ? ' &middot; <strong>' + giaCoBan + ' VND</strong>' : '');
+        const overlay = document.getElementById('cccdModalOverlay');
+        const cccdInput = document.getElementById('cccdInput');
+        const cccdError = document.getElementById('cccdError');
+        const cccdCancel = document.getElementById('cccdCancel');
+        const cccdConfirm = document.getElementById('cccdConfirm');
+        const cccdSummary = document.getElementById('cccdModalSummary');
+        const hiddenCccd = document.getElementById('hiddenMaCccd');
 
-            input.value = '';
-            input.classList.remove('invalid');
-            errorEl.classList.remove('show');
-            submitBtn.disabled = false;
-
-            overlay.classList.add('open');
-            // Autofocus sau khi modal render de tranh giat layout tren mobile
-            setTimeout(() => input.focus(), 50);
+        function fmt(n) {
+            return n.toLocaleString('en-US').replace(/,/g, '.');
         }
 
-        function closeModal() {
-            overlay.classList.remove('open');
+        // ===== THEM TRE EM: moi phong toi da 1 tre em, moi tre em +250.000d/dem =====
+        const PHI_TRE_EM_MOI_DEM = 250000;
+        const childState = new Map(); // card -> mang so tre em theo tung phong (0 hoac 1)
+
+        function getChildArray(card, qty) {
+            let arr = childState.get(card) || [];
+            if (arr.length > qty) arr = arr.slice(0, qty);
+            while (arr.length < qty) arr.push(0);
+            childState.set(card, arr);
+            return arr;
         }
 
-        function validate() {
-            const val = input.value.trim();
-            const ok = CCCD_RE.test(val);
-            input.classList.toggle('invalid', val.length > 0 && !ok);
-            errorEl.classList.toggle('show', val.length > 0 && !ok);
-            return ok;
+        function totalChildrenForCard(card) {
+            const arr = childState.get(card) || [];
+            return arr.reduce((s, v) => s + v, 0);
         }
 
-        document.querySelectorAll('.btn-mo-cccd-modal').forEach(btn => {
-            btn.addEventListener('click', () => openModal(btn));
-        });
+        // Cap nhat nhan cua nut "Them tre em": khi chua chon thi hien "Them tre em",
+        // khi da chon thi hien "Tre em (n)" va them class hightlight cho nut.
+        function updateChildToggleLabel(card) {
+            const label = card.querySelector('.js-child-label');
+            const btn = card.querySelector('.js-child-toggle');
+            if (!label) return;
+            const count = totalChildrenForCard(card);
+            label.textContent = count > 0 ? ('Trẻ em (' + count + ')') : 'Thêm trẻ em';
+            if (btn) btn.classList.toggle('has-children', count > 0);
+        }
 
-        document.getElementById('cccdModalCancel').addEventListener('click', closeModal);
+        function syncChildStateSize(card) {
+            const qtySelect = card.querySelector('.js-qty-select');
+            const qty = parseInt(qtySelect.value, 10) || 0;
+            getChildArray(card, qty);
+        }
 
-        overlay.addEventListener('click', (e) => {
-            if (e.target === overlay) closeModal();
-        });
-
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && overlay.classList.contains('open')) closeModal();
-        });
-
-        input.addEventListener('input', () => {
-            // Chi cho nhap so
-            input.value = input.value.replace(/\D/g, '').slice(0, 12);
-            validate();
-        });
-
-        form.addEventListener('submit', (e) => {
-            if (!validate()) {
-                e.preventDefault();
-                input.focus();
+        function renderChildFeeSummary(card) {
+            const summaryWrap = card.querySelector('.js-child-fee-summary');
+            if (!summaryWrap) return;
+            const count = totalChildrenForCard(card);
+            if (count === 0) {
+                summaryWrap.style.display = 'none';
+                summaryWrap.innerHTML = '';
                 return;
             }
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang giữ phòng...';
-        });
-    })();
-
-    // Sap xep lai grid ket qua ngay tren trinh duyet (khong goi lai server)
-    function sapXepKetQua(mode) {
-        const grid = document.getElementById('ketQuaGrid');
-        if (!grid) return;
-        const cards = Array.from(grid.querySelectorAll('.loai-phong-card'));
-
-        const getNum = (card, attr) => parseFloat(card.dataset[attr]) || 0;
-
-        let sorted = cards;
-        if (mode === 'gia-tang') {
-            sorted = cards.sort((a, b) => getNum(a, 'gia') - getNum(b, 'gia'));
-        } else if (mode === 'gia-giam') {
-            sorted = cards.sort((a, b) => getNum(b, 'gia') - getNum(a, 'gia'));
-        } else if (mode === 'suc-chua') {
-            sorted = cards.sort((a, b) => getNum(b, 'sucChua') - getNum(a, 'sucChua'));
-        } else if (mode === 'con-trong') {
-            sorted = cards.sort((a, b) => getNum(b, 'conTrong') - getNum(a, 'conTrong'));
+            const soDem = parseInt(card.dataset.soDem, 10) || 1;
+            const donGia = PHI_TRE_EM_MOI_DEM * soDem;
+            const tong = donGia * count;
+            summaryWrap.innerHTML =
+                '<div class="child-fee-row">'
+                + '<span>' + count + ' trẻ em</span>'
+                + '<span>đ ' + fmt(donGia) + ' / trẻ</span>'
+                + '</div>'
+                + '<div class="child-fee-total">'
+                + '<span>Tổng cộng</span>'
+                + '<span>đ ' + fmt(tong) + '</span>'
+                + '</div>';
+            summaryWrap.style.display = 'block';
         }
 
-        sorted.forEach(card => grid.appendChild(card));
-    }
+        function renderChildRows(card) {
+            const qtySelect = card.querySelector('.js-qty-select');
+            const qty = parseInt(qtySelect.value, 10) || 0;
+            const rowsWrap = card.querySelector('.js-child-rows');
+            if (!rowsWrap) return;
+
+            if (qty === 0) {
+                rowsWrap.innerHTML = '<div class="child-empty">Vui lòng chọn số phòng trước.</div>';
+                renderChildFeeSummary(card);
+                return;
+            }
+
+            const arr = getChildArray(card, qty);
+            rowsWrap.innerHTML = arr.map((val, idx) =>
+                '<div class="child-row">'
+                + '<span class="child-row-label">Phòng ' + (idx + 1) + '</span>'
+                + '<select class="child-select js-child-select" data-room-idx="' + idx + '">'
+                + '<option value="0"' + (val === 0 ? ' selected' : '') + '>0 trẻ em</option>'
+                + '<option value="1"' + (val === 1 ? ' selected' : '') + '>1 trẻ em</option>'
+                + '</select>'
+                + '</div>'
+            ).join('');
+
+            rowsWrap.querySelectorAll('.js-child-select').forEach(sel => {
+                sel.addEventListener('change', () => {
+                    const idx = parseInt(sel.dataset.roomIdx, 10);
+                    const a = childState.get(card) || [];
+                    a[idx] = parseInt(sel.value, 10) || 0;
+                    childState.set(card, a);
+                    updateChildToggleLabel(card);
+                    renderChildFeeSummary(card);
+                    recompute();
+                });
+            });
+
+            renderChildFeeSummary(card);
+        }
+
+        function recompute() {
+            let tong = 0;
+            let firstSelectedId = null;
+            let firstSelectedQty = 0;
+
+            const items = [];
+            cards.forEach(card => {
+                const qtySelect = card.querySelector('.js-qty-select');
+                const qty = parseInt(qtySelect.value, 10) || 0;
+                if (qty > 0) {
+                    const giaMotDem = parseFloat(card.dataset.giaMotDem);
+                    const soDem = parseInt(card.dataset.soDem, 10) || 1;
+                    const soConTreEm = totalChildrenForCard(card);
+                    const phiTreEm = soConTreEm * PHI_TRE_EM_MOI_DEM * soDem;
+                    const giaTong = (giaMotDem * soDem * qty) + phiTreEm;
+                    tong += giaTong;
+
+                    items.push({
+                        tenLoai: card.dataset.tenLoai,
+                        qty: qty,
+                        price: giaTong,
+                        soConTreEm: soConTreEm
+                    });
+                    if (!firstSelectedId) {
+                        firstSelectedId = card.dataset.loaiId;
+                        firstSelectedQty = qty;
+                    }
+                }
+            });
+
+            // Render summary panel
+            if (items.length === 0) {
+                summaryList.innerHTML =
+                    '<div style="font-size:12.5px; color:var(--text-gray); font-style:italic;">Chưa chọn phòng nào.</div>';
+            } else {
+                summaryList.innerHTML = items.map(it =>
+                    '<div class="summary-room-item">'
+                    + '<span class="name">' + it.tenLoai + ' × ' + it.qty
+                    + (it.soConTreEm > 0 ? ' (+' + it.soConTreEm + ' trẻ em)' : '')
+                    + '</span>'
+                    + '<span class="price">' + fmt(it.price) + ' VND</span>'
+                    + '</div>'
+                ).join('');
+            }
+
+            // Hien thi gia GOC (khong co giam gia tren trang nay — khuyen mai/khuyen
+            // mai voucher se duoc ap o buoc xac nhan dich vu bo sung sau khi dat cho).
+            tamTinhEl.textContent = fmt(tong) + ' VND';
+            totalEl.textContent = fmt(tong) + ' VND';
+
+            cta.disabled = items.length === 0;
+            hiddenLoaiId.value = firstSelectedId || '';
+            hiddenSoLuong.value = firstSelectedQty || 0;
+        }
+
+        cards.forEach(card => {
+            const sel = card.querySelector('.js-qty-select');
+            sel.addEventListener('change', () => {
+                syncChildStateSize(card);
+                const panel = card.querySelector('.js-child-panel');
+                if (panel && panel.style.display !== 'none') {
+                    renderChildRows(card);
+                }
+                updateChildToggleLabel(card);
+                recompute();
+            });
+
+            const toggleBtn = card.querySelector('.js-child-toggle');
+            const panel = card.querySelector('.js-child-panel');
+            if (toggleBtn && panel) {
+                toggleBtn.addEventListener('click', () => {
+                    const isOpen = panel.style.display !== 'none';
+                    if (isOpen) {
+                        panel.style.display = 'none';
+                    } else {
+                        renderChildRows(card);
+                        panel.style.display = 'block';
+                    }
+                });
+            }
+        });
+
+        // ===== CCCD MODAL =====
+        function openCccdModal() {
+            const loaiId = hiddenLoaiId.value;
+            const soLuong = parseInt(hiddenSoLuong.value, 10);
+            if (!loaiId || !soLuong) {
+                alert('Vui lòng chọn ít nhất 1 phòng.');
+                return;
+            }
+            const card = Array.from(cards).find(c => c.dataset.loaiId === loaiId);
+            const tenLoai = card ? card.dataset.tenLoai : '';
+            const soDem = card ? card.dataset.soDem : '1';
+            cccdSummary.innerHTML =
+                '<i class="fa-solid fa-bed"></i> <strong>' + tenLoai + '</strong>'
+                + ' · ' + soLuong + ' phòng · ' + soDem + ' đêm';
+            cccdInput.value = '';
+            cccdError.style.display = 'none';
+            cccdInput.classList.remove('invalid');
+            overlay.style.display = 'flex';
+            setTimeout(() => cccdInput.focus(), 50);
+        }
+        function closeCccdModal() { overlay.style.display = 'none'; }
+
+        cta.addEventListener('click', openCccdModal);
+        cccdCancel.addEventListener('click', closeCccdModal);
+        overlay.addEventListener('click', e => { if (e.target === overlay) closeCccdModal(); });
+        cccdInput.addEventListener('input', () => {
+            cccdInput.value = cccdInput.value.replace(/\D/g, '').slice(0, 12);
+        });
+        cccdConfirm.addEventListener('click', () => {
+            const val = cccdInput.value.trim();
+            if (!CCCD_RE.test(val)) {
+                cccdInput.classList.add('invalid');
+                cccdError.style.display = 'block';
+                cccdInput.focus();
+                return;
+            }
+            hiddenCccd.value = val;
+            cccdConfirm.disabled = true;
+            cccdConfirm.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang xử lý...';
+            form.submit();
+        });
+
+        // ESC to close
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape' && overlay.style.display === 'flex') closeCccdModal();
+        });
+
+        // Khoi tao
+        cards.forEach(card => {
+            syncChildStateSize(card);
+            updateChildToggleLabel(card);
+        });
+        recompute();
+    })();
 </script>
 </body>
 </html>

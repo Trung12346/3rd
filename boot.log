@@ -1,0 +1,2230 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ------------------------< SU26-SD-09:su26sd09 >-------------------------
+[INFO] Building su26sd09 0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] >>> spring-boot:4.0.6:run (default-cli) > test-compile @ su26sd09 >>>
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ su26sd09 ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 74 resources from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.14.1:compile (default-compile) @ su26sd09 ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ su26sd09 ---
+[INFO] skip non existing resourceDirectory C:\Users\ADMIN\Downloads\3rd\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.14.1:testCompile (default-testCompile) @ su26sd09 ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] 
+[INFO] <<< spring-boot:4.0.6:run (default-cli) < test-compile @ su26sd09 <<<
+[INFO] 
+[INFO] 
+[INFO] --- spring-boot:4.0.6:run (default-cli) @ su26sd09 ---
+[INFO] Attaching agents: []
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v4.0.6)
+
+2026-08-10T18:00:09.868+07:00  INFO 16988 --- [su26sd09] [           main] su26sd09.su26sd09.Su26sd09Application    : Starting Su26sd09Application using Java 21.0.11 with PID 16988 (C:\Users\ADMIN\Downloads\3rd\target\classes started by ADMIN in C:\Users\ADMIN\Downloads\3rd)
+2026-08-10T18:00:09.873+07:00  INFO 16988 --- [su26sd09] [           main] su26sd09.su26sd09.Su26sd09Application    : No active profile set, falling back to 1 default profile: "default"
+2026-08-10T18:00:11.364+07:00  INFO 16988 --- [su26sd09] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Multiple Spring Data modules found, entering strict repository configuration mode
+2026-08-10T18:00:11.367+07:00  INFO 16988 --- [su26sd09] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JDBC repositories in DEFAULT mode.
+2026-08-10T18:00:11.437+07:00  INFO 16988 --- [su26sd09] [           main] .RepositoryConfigurationExtensionSupport : Spring Data JDBC - Could not safely identify store assignment for repository candidate interface su26sd09.su26sd09.repository.AnhRepository; If you want this repository to be a JDBC repository, consider annotating your entities with one of these annotations: org.springframework.data.relational.core.mapping.Table.
+2026-08-10T18:00:11.444+07:00  INFO 16988 --- [su26sd09] [           main] .RepositoryConfigurationExtensionSupport : Spring Data JDBC - Could not safely identify store assignment for repository candidate interface su26sd09.su26sd09.repository.ChiTietDatPhongRepo; If you want this repository to be a JDBC repository, consider annotating your entities with one of these annotations: org.springframework.data.relational.core.mapping.Table.
+2026-08-10T18:00:11.450+07:00  INFO 16988 --- [su26sd09] [           main] .RepositoryConfigurationExtensionSupport : Spring Data JDBC - Could not safely identify store assignment for repository candidate interface su26sd09.su26sd09.repository.ChiTietDichvuRepo; If you want this repository to be a JDBC repository, consider annotating your entities with one of these annotations: org.springframework.data.relational.core.mapping.Table.
+2026-08-10T18:00:11.455+07:00  INFO 16988 --- [su26sd09] [           main] .RepositoryConfigurationExtensionSupport : Spring Data JDBC - Could not safely identify store assignment for repository candidate interface su26sd09.su26sd09.repository.DanhGiaRepo; If you want this repository to be a JDBC repository, consider annotating your entities with one of these annotations: org.springframework.data.relational.core.mapping.Table.
+2026-08-10T18:00:11.459+07:00  INFO 16988 --- [su26sd09] [           main] .RepositoryConfigurationExtensionSupport : Spring Data JDBC - Could not safely identify store assignment for repository candidate interface su26sd09.su26sd09.repository.DatPhongRepo; If you want this repository to be a JDBC repository, consider annotating your entities with one of these annotations: org.springframework.data.relational.core.mapping.Table.
+2026-08-10T18:00:11.462+07:00  INFO 16988 --- [su26sd09] [           main] .RepositoryConfigurationExtensionSupport : Spring Data JDBC - Could not safely identify store assignment for repository candidate interface su26sd09.su26sd09.repository.DichVuRepo; If you want this repository to be a JDBC repository, consider annotating your entities with one of these annotations: org.springframework.data.relational.core.mapping.Table.
+2026-08-10T18:00:11.466+07:00  INFO 16988 --- [su26sd09] [           main] .RepositoryConfigurationExtensionSupport : Spring Data JDBC - Could not safely identify store assignment for repository candidate interface su26sd09.su26sd09.repository.HoaDonRepo; If you want this repository to be a JDBC repository, consider annotating your entities with one of these annotations: org.springframework.data.relational.core.mapping.Table.
+2026-08-10T18:00:11.469+07:00  INFO 16988 --- [su26sd09] [           main] .RepositoryConfigurationExtensionSupport : Spring Data JDBC - Could not safely identify store assignment for repository candidate interface su26sd09.su26sd09.repository.KhachHangRepository; If you want this repository to be a JDBC repository, consider annotating your entities with one of these annotations: org.springframework.data.relational.core.mapping.Table.
+2026-08-10T18:00:11.473+07:00  INFO 16988 --- [su26sd09] [           main] .RepositoryConfigurationExtensionSupport : Spring Data JDBC - Could not safely identify store assignment for repository candidate interface su26sd09.su26sd09.repository.khuyenMaiRepo; If you want this repository to be a JDBC repository, consider annotating your entities with one of these annotations: org.springframework.data.relational.core.mapping.Table.
+2026-08-10T18:00:11.476+07:00  INFO 16988 --- [su26sd09] [           main] .RepositoryConfigurationExtensionSupport : Spring Data JDBC - Could not safely identify store assignment for repository candidate interface su26sd09.su26sd09.repository.LoaiPhongRepository; If you want this repository to be a JDBC repository, consider annotating your entities with one of these annotations: org.springframework.data.relational.core.mapping.Table.
+2026-08-10T18:00:11.479+07:00  INFO 16988 --- [su26sd09] [           main] .RepositoryConfigurationExtensionSupport : Spring Data JDBC - Could not safely identify store assignment for repository candidate interface su26sd09.su26sd09.repository.NhanVienRepo; If you want this repository to be a JDBC repository, consider annotating your entities with one of these annotations: org.springframework.data.relational.core.mapping.Table.
+2026-08-10T18:00:11.485+07:00  INFO 16988 --- [su26sd09] [           main] .RepositoryConfigurationExtensionSupport : Spring Data JDBC - Could not safely identify store assignment for repository candidate interface su26sd09.su26sd09.repository.PhongAnhRepository; If you want this repository to be a JDBC repository, consider annotating your entities with one of these annotations: org.springframework.data.relational.core.mapping.Table.
+2026-08-10T18:00:11.489+07:00  INFO 16988 --- [su26sd09] [           main] .RepositoryConfigurationExtensionSupport : Spring Data JDBC - Could not safely identify store assignment for repository candidate interface su26sd09.su26sd09.repository.PhongRepository; If you want this repository to be a JDBC repository, consider annotating your entities with one of these annotations: org.springframework.data.relational.core.mapping.Table.
+2026-08-10T18:00:11.493+07:00  INFO 16988 --- [su26sd09] [           main] .RepositoryConfigurationExtensionSupport : Spring Data JDBC - Could not safely identify store assignment for repository candidate interface su26sd09.su26sd09.repository.ThanhToanRepo; If you want this repository to be a JDBC repository, consider annotating your entities with one of these annotations: org.springframework.data.relational.core.mapping.Table.
+2026-08-10T18:00:11.495+07:00  INFO 16988 --- [su26sd09] [           main] .RepositoryConfigurationExtensionSupport : Spring Data JDBC - Could not safely identify store assignment for repository candidate interface su26sd09.su26sd09.repository.ThongKeRepo; If you want this repository to be a JDBC repository, consider annotating your entities with one of these annotations: org.springframework.data.relational.core.mapping.Table.
+2026-08-10T18:00:11.500+07:00  INFO 16988 --- [su26sd09] [           main] .RepositoryConfigurationExtensionSupport : Spring Data JDBC - Could not safely identify store assignment for repository candidate interface su26sd09.su26sd09.repository.TienNghiPhongRepository; If you want this repository to be a JDBC repository, consider annotating your entities with one of these annotations: org.springframework.data.relational.core.mapping.Table.
+2026-08-10T18:00:11.503+07:00  INFO 16988 --- [su26sd09] [           main] .RepositoryConfigurationExtensionSupport : Spring Data JDBC - Could not safely identify store assignment for repository candidate interface su26sd09.su26sd09.repository.TienNghiRepository; If you want this repository to be a JDBC repository, consider annotating your entities with one of these annotations: org.springframework.data.relational.core.mapping.Table.
+2026-08-10T18:00:11.506+07:00  INFO 16988 --- [su26sd09] [           main] .RepositoryConfigurationExtensionSupport : Spring Data JDBC - Could not safely identify store assignment for repository candidate interface su26sd09.su26sd09.repository.VaiTroRepo; If you want this repository to be a JDBC repository, consider annotating your entities with one of these annotations: org.springframework.data.relational.core.mapping.Table.
+2026-08-10T18:00:11.510+07:00  INFO 16988 --- [su26sd09] [           main] .RepositoryConfigurationExtensionSupport : Spring Data JDBC - Could not safely identify store assignment for repository candidate interface su26sd09.su26sd09.repository.VerificationTokenRepo; If you want this repository to be a JDBC repository, consider annotating your entities with one of these annotations: org.springframework.data.relational.core.mapping.Table.
+2026-08-10T18:00:11.512+07:00  INFO 16988 --- [su26sd09] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 136 ms. Found 0 JDBC repository interfaces.
+2026-08-10T18:00:11.534+07:00  INFO 16988 --- [su26sd09] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Multiple Spring Data modules found, entering strict repository configuration mode
+2026-08-10T18:00:11.536+07:00  INFO 16988 --- [su26sd09] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-08-10T18:00:11.647+07:00  INFO 16988 --- [su26sd09] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 101 ms. Found 19 JPA repository interfaces.
+2026-08-10T18:00:12.696+07:00  INFO 16988 --- [su26sd09] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 8080 (http)
+2026-08-10T18:00:12.721+07:00  INFO 16988 --- [su26sd09] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-08-10T18:00:12.722+07:00  INFO 16988 --- [su26sd09] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.21]
+2026-08-10T18:00:12.851+07:00  INFO 16988 --- [su26sd09] [           main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 2896 ms
+2026-08-10T18:00:13.352+07:00  INFO 16988 --- [su26sd09] [           main] org.hibernate.orm.jpa                    : HHH008540: Processing PersistenceUnitInfo [name: default]
+2026-08-10T18:00:13.484+07:00  INFO 16988 --- [su26sd09] [           main] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.2.12.Final
+2026-08-10T18:00:14.518+07:00  INFO 16988 --- [su26sd09] [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-08-10T18:00:14.585+07:00  INFO 16988 --- [su26sd09] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-08-10T18:00:15.166+07:00  INFO 16988 --- [su26sd09] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection ConnectionID:1 ClientConnectionId: b8cce63d-663d-41d1-828a-9ca904d4c5e3
+2026-08-10T18:00:15.170+07:00  INFO 16988 --- [su26sd09] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-08-10T18:00:15.297+07:00  WARN 16988 --- [su26sd09] [           main] org.hibernate.orm.deprecation            : HHH90000025: SQLServerDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-08-10T18:00:15.339+07:00  INFO 16988 --- [su26sd09] [           main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [jdbc:sqlserver://localhost:1433;concatNullYieldsNull=ON;quotedIdentifier=ON;connectRetryInterval=10;connectRetryCount=1;maxResultBuffer=-1;sendTemporalDataTypesAsStringForBulkCopy=true;delayLoadingLobs=true;useFmtOnly=false;vectorTypeSupport=v1;cacheBulkCopyMetadata=false;bulkCopyForBatchInsertAllowEncryptedValueModifications=false;bulkCopyForBatchInsertTableLock=false;bulkCopyForBatchInsertKeepNulls=false;bulkCopyForBatchInsertKeepIdentity=false;bulkCopyForBatchInsertFireTriggers=false;bulkCopyForBatchInsertCheckConstraints=false;bulkCopyForBatchInsertBatchSize=0;useBulkCopyForBatchInsert=false;cancelQueryTimeout=-1;sslProtocol=TLS;calcBigDecimalPrecision=false;useDefaultJaasConfig=false;jaasConfigurationName=SQLJDBCDriver;statementPoolingCacheSize=0;serverPreparedStatementDiscardThreshold=10;enablePrepareOnFirstPreparedStatementCall=false;fips=false;socketTimeout=0;authentication=NotSpecified;authenticationScheme=nativeAuthentication;xopenStates=false;datetimeParameterType=datetime2;sendTimeAsDatetime=true;replication=false;trustStoreType=JKS;trustServerCertificate=true;TransparentNetworkIPResolution=true;iPAddressPreference=IPv4First;serverNameAsACE=false;sendStringParametersAsUnicode=true;selectMethod=direct;responseBuffering=adaptive;queryTimeout=-1;packetSize=8000;multiSubnetFailover=false;loginTimeout=30;lockTimeout=-1;lastUpdateCount=true;useDefaultGSSCredential=false;prepareMethod=prepexec;encrypt=true;disableStatementPooling=true;databaseName=quan_ly_khach_san;columnEncryptionSetting=Disabled;applicationName=Microsoft JDBC Driver for SQL Server;applicationIntent=readwrite;]
+	Database driver: Microsoft JDBC Driver 13.2 for SQL Server
+	Database dialect: SQLServerDialect
+	Database version: 16.0
+	Default catalog/schema: quan_ly_khach_san/dbo
+	Autocommit mode: undefined/unknown
+	Isolation level: READ_COMMITTED [default READ_COMMITTED]
+	JDBC fetch size: 128
+	Pool: DataSourceConnectionProvider
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-08-10T18:00:19.039+07:00  INFO 16988 --- [su26sd09] [           main] org.hibernate.orm.core                   : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-08-10T18:00:19.058+07:00  INFO 16988 --- [su26sd09] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-08-10T18:00:19.235+07:00  INFO 16988 --- [su26sd09] [           main] o.s.d.j.r.query.QueryEnhancerFactories   : Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-08-10T18:00:24.854+07:00  WARN 16988 --- [su26sd09] [           main] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-08-10T18:00:25.004+07:00  INFO 16988 --- [su26sd09] [           main] eAuthenticationProviderManagerConfigurer : Found 2 AuthenticationProvider beans, with names [customerAuthenticationProvider, employeeAuthenticationProvider]. Global Authentication Manager will not be configured with AuthenticationProviders. Consider publishing a single AuthenticationProvider bean, or wiring your Providers directly using the DSL.
+2026-08-10T18:00:25.005+07:00  WARN 16988 --- [su26sd09] [           main] r$InitializeUserDetailsManagerConfigurer : Found 2 UserDetailsService beans, with names [customerUserDetailsService, employeeUserDetailsService]. Global Authentication Manager will not use a UserDetailsService for username/password login. Consider publishing a single UserDetailsService bean.
+2026-08-10T18:00:25.557+07:00  INFO 16988 --- [su26sd09] [           main] o.s.b.w.a.WelcomePageHandlerMapping      : Adding welcome page template: index
+2026-08-10T18:00:26.437+07:00  INFO 16988 --- [su26sd09] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 8080 (http) with context path '/'
+2026-08-10T18:00:26.458+07:00  INFO 16988 --- [su26sd09] [           main] su26sd09.su26sd09.Su26sd09Application    : Started Su26sd09Application in 17.269 seconds (process running for 18.008)
+Scheduler chay: 2026-08-10T18:00:26.481251300
+2026-08-10T18:00:26.653+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        dp1_0.ma_dat_phong,
+        dp1_0.email,
+        dp1_0.ho_ten,
+        dp1_0.ma_khuyen_mai,
+        dp1_0.ma_tra_cuu,
+        dp1_0.ma_cccd,
+        dp1_0.ma_khach,
+        dp1_0.ngay_cap_nhat,
+        dp1_0.ngay_tao,
+        dp1_0.ngay_nhan_phong,
+        dp1_0.ngay_tra_phong,
+        dp1_0.ma_nhan_vien,
+        dp1_0.so_dien_thoai,
+        dp1_0.so_nguoi_lon,
+        dp1_0.so_tre_em,
+        dp1_0.tien_thua_do_doi_phong,
+        dp1_0.trang_thai,
+        dp1_0.trang_thai_tien_thua,
+        dp1_0.yeu_cau_them 
+    from
+        dat_phong dp1_0 
+    where
+        dp1_0.trang_thai=? 
+        and dp1_0.ngay_tao<?
+Hibernate: 
+    select
+        dp1_0.ma_dat_phong,
+        dp1_0.email,
+        dp1_0.ho_ten,
+        dp1_0.ma_khuyen_mai,
+        dp1_0.ma_tra_cuu,
+        dp1_0.ma_cccd,
+        dp1_0.ma_khach,
+        dp1_0.ngay_cap_nhat,
+        dp1_0.ngay_tao,
+        dp1_0.ngay_nhan_phong,
+        dp1_0.ngay_tra_phong,
+        dp1_0.ma_nhan_vien,
+        dp1_0.so_dien_thoai,
+        dp1_0.so_nguoi_lon,
+        dp1_0.so_tre_em,
+        dp1_0.tien_thua_do_doi_phong,
+        dp1_0.trang_thai,
+        dp1_0.trang_thai_tien_thua,
+        dp1_0.yeu_cau_them 
+    from
+        dat_phong dp1_0 
+    where
+        dp1_0.trang_thai=? 
+        and dp1_0.ngay_tao<?
+2026-08-10T18:00:26.684+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:VARCHAR) <- [Chua thanh toan]
+2026-08-10T18:00:26.690+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (2:TIMESTAMP) <- [2026-08-10T17:45:26.482247600]
+2026-08-10T18:00:26.779+07:00  INFO 16988 --- [su26sd09] [nio-8080-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-08-10T18:00:26.779+07:00  INFO 16988 --- [su26sd09] [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-08-10T18:00:26.781+07:00  INFO 16988 --- [su26sd09] [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 2 ms
+2026-08-10T18:00:26.874+07:00 DEBUG 16988 --- [su26sd09] [nio-8080-exec-1] org.hibernate.SQL                        : 
+    select
+        lp1_0.ma_loai_phong,
+        lp1_0.gia_co_ban,
+        lp1_0.ma_anh,
+        lp1_0.mo_ta,
+        lp1_0.suc_chua_toi_da,
+        lp1_0.ten_loai 
+    from
+        loai_phong lp1_0 
+    order by
+        lp1_0.ten_loai
+Hibernate: 
+    select
+        lp1_0.ma_loai_phong,
+        lp1_0.gia_co_ban,
+        lp1_0.ma_anh,
+        lp1_0.mo_ta,
+        lp1_0.suc_chua_toi_da,
+        lp1_0.ten_loai 
+    from
+        loai_phong lp1_0 
+    order by
+        lp1_0.ten_loai
+2026-08-10T18:00:26.916+07:00 DEBUG 16988 --- [su26sd09] [nio-8080-exec-1] org.hibernate.SQL                        : 
+    select
+        count_big(p1_0.ma_phong) 
+    from
+        phong p1_0 
+    where
+        p1_0.ma_loai_phong=? 
+        and p1_0.hoat_dong=1 
+        and p1_0.trang_thai=?
+Hibernate: 
+    select
+        count_big(p1_0.ma_phong) 
+    from
+        phong p1_0 
+    where
+        p1_0.ma_loai_phong=? 
+        and p1_0.hoat_dong=1 
+        and p1_0.trang_thai=?
+2026-08-10T18:00:26.917+07:00 TRACE 16988 --- [su26sd09] [nio-8080-exec-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:INTEGER) <- [2]
+2026-08-10T18:00:26.917+07:00 TRACE 16988 --- [su26sd09] [nio-8080-exec-1] org.hibernate.orm.jdbc.bind              : binding parameter (2:VARCHAR) <- [Trong]
+2026-08-10T18:00:26.925+07:00 DEBUG 16988 --- [su26sd09] [nio-8080-exec-1] org.hibernate.SQL                        : 
+    select
+        count_big(p1_0.ma_phong) 
+    from
+        phong p1_0 
+    where
+        p1_0.ma_loai_phong=? 
+        and p1_0.hoat_dong=1 
+        and p1_0.trang_thai=?
+Hibernate: 
+    select
+        count_big(p1_0.ma_phong) 
+    from
+        phong p1_0 
+    where
+        p1_0.ma_loai_phong=? 
+        and p1_0.hoat_dong=1 
+        and p1_0.trang_thai=?
+2026-08-10T18:00:26.925+07:00 TRACE 16988 --- [su26sd09] [nio-8080-exec-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:INTEGER) <- [4]
+2026-08-10T18:00:26.926+07:00 TRACE 16988 --- [su26sd09] [nio-8080-exec-1] org.hibernate.orm.jdbc.bind              : binding parameter (2:VARCHAR) <- [Trong]
+2026-08-10T18:00:26.929+07:00 DEBUG 16988 --- [su26sd09] [nio-8080-exec-1] org.hibernate.SQL                        : 
+    select
+        count_big(p1_0.ma_phong) 
+    from
+        phong p1_0 
+    where
+        p1_0.ma_loai_phong=? 
+        and p1_0.hoat_dong=1 
+        and p1_0.trang_thai=?
+Hibernate: 
+    select
+        count_big(p1_0.ma_phong) 
+    from
+        phong p1_0 
+    where
+        p1_0.ma_loai_phong=? 
+        and p1_0.hoat_dong=1 
+        and p1_0.trang_thai=?
+2026-08-10T18:00:26.930+07:00 TRACE 16988 --- [su26sd09] [nio-8080-exec-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:INTEGER) <- [1]
+2026-08-10T18:00:26.930+07:00 TRACE 16988 --- [su26sd09] [nio-8080-exec-1] org.hibernate.orm.jdbc.bind              : binding parameter (2:VARCHAR) <- [Trong]
+2026-08-10T18:00:26.933+07:00 DEBUG 16988 --- [su26sd09] [nio-8080-exec-1] org.hibernate.SQL                        : 
+    select
+        count_big(p1_0.ma_phong) 
+    from
+        phong p1_0 
+    where
+        p1_0.ma_loai_phong=? 
+        and p1_0.hoat_dong=1 
+        and p1_0.trang_thai=?
+Hibernate: 
+    select
+        count_big(p1_0.ma_phong) 
+    from
+        phong p1_0 
+    where
+        p1_0.ma_loai_phong=? 
+        and p1_0.hoat_dong=1 
+        and p1_0.trang_thai=?
+2026-08-10T18:00:26.933+07:00 TRACE 16988 --- [su26sd09] [nio-8080-exec-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:INTEGER) <- [3]
+2026-08-10T18:00:26.934+07:00 TRACE 16988 --- [su26sd09] [nio-8080-exec-1] org.hibernate.orm.jdbc.bind              : binding parameter (2:VARCHAR) <- [Trong]
+2026-08-10T18:00:30.022+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+2026-08-10T18:00:30.023+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:00:30.023+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (2:DATE) <- [2026-08-10]
+2026-08-10T18:00:30.036+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+2026-08-10T18:00:30.037+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:00:40.019+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+2026-08-10T18:00:40.019+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:00:40.020+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (2:DATE) <- [2026-08-10]
+2026-08-10T18:00:40.023+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+2026-08-10T18:00:40.023+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:00:40.807+07:00 DEBUG 16988 --- [su26sd09] [nio-8080-exec-8] org.hibernate.SQL                        : 
+    select
+        lp1_0.ma_loai_phong,
+        lp1_0.gia_co_ban,
+        lp1_0.ma_anh,
+        lp1_0.mo_ta,
+        lp1_0.suc_chua_toi_da,
+        lp1_0.ten_loai 
+    from
+        loai_phong lp1_0 
+    order by
+        lp1_0.ten_loai
+Hibernate: 
+    select
+        lp1_0.ma_loai_phong,
+        lp1_0.gia_co_ban,
+        lp1_0.ma_anh,
+        lp1_0.mo_ta,
+        lp1_0.suc_chua_toi_da,
+        lp1_0.ten_loai 
+    from
+        loai_phong lp1_0 
+    order by
+        lp1_0.ten_loai
+2026-08-10T18:00:40.811+07:00 DEBUG 16988 --- [su26sd09] [nio-8080-exec-8] org.hibernate.SQL                        : 
+    select
+        count_big(p1_0.ma_phong) 
+    from
+        phong p1_0 
+    where
+        p1_0.ma_loai_phong=? 
+        and p1_0.hoat_dong=1 
+        and p1_0.trang_thai=?
+Hibernate: 
+    select
+        count_big(p1_0.ma_phong) 
+    from
+        phong p1_0 
+    where
+        p1_0.ma_loai_phong=? 
+        and p1_0.hoat_dong=1 
+        and p1_0.trang_thai=?
+2026-08-10T18:00:40.811+07:00 TRACE 16988 --- [su26sd09] [nio-8080-exec-8] org.hibernate.orm.jdbc.bind              : binding parameter (1:INTEGER) <- [2]
+2026-08-10T18:00:40.811+07:00 TRACE 16988 --- [su26sd09] [nio-8080-exec-8] org.hibernate.orm.jdbc.bind              : binding parameter (2:VARCHAR) <- [Trong]
+2026-08-10T18:00:40.814+07:00 DEBUG 16988 --- [su26sd09] [nio-8080-exec-8] org.hibernate.SQL                        : 
+    select
+        count_big(p1_0.ma_phong) 
+    from
+        phong p1_0 
+    where
+        p1_0.ma_loai_phong=? 
+        and p1_0.hoat_dong=1 
+        and p1_0.trang_thai=?
+Hibernate: 
+    select
+        count_big(p1_0.ma_phong) 
+    from
+        phong p1_0 
+    where
+        p1_0.ma_loai_phong=? 
+        and p1_0.hoat_dong=1 
+        and p1_0.trang_thai=?
+2026-08-10T18:00:40.815+07:00 TRACE 16988 --- [su26sd09] [nio-8080-exec-8] org.hibernate.orm.jdbc.bind              : binding parameter (1:INTEGER) <- [4]
+2026-08-10T18:00:40.815+07:00 TRACE 16988 --- [su26sd09] [nio-8080-exec-8] org.hibernate.orm.jdbc.bind              : binding parameter (2:VARCHAR) <- [Trong]
+2026-08-10T18:00:40.817+07:00 DEBUG 16988 --- [su26sd09] [nio-8080-exec-8] org.hibernate.SQL                        : 
+    select
+        count_big(p1_0.ma_phong) 
+    from
+        phong p1_0 
+    where
+        p1_0.ma_loai_phong=? 
+        and p1_0.hoat_dong=1 
+        and p1_0.trang_thai=?
+Hibernate: 
+    select
+        count_big(p1_0.ma_phong) 
+    from
+        phong p1_0 
+    where
+        p1_0.ma_loai_phong=? 
+        and p1_0.hoat_dong=1 
+        and p1_0.trang_thai=?
+2026-08-10T18:00:40.817+07:00 TRACE 16988 --- [su26sd09] [nio-8080-exec-8] org.hibernate.orm.jdbc.bind              : binding parameter (1:INTEGER) <- [1]
+2026-08-10T18:00:40.817+07:00 TRACE 16988 --- [su26sd09] [nio-8080-exec-8] org.hibernate.orm.jdbc.bind              : binding parameter (2:VARCHAR) <- [Trong]
+2026-08-10T18:00:40.821+07:00 DEBUG 16988 --- [su26sd09] [nio-8080-exec-8] org.hibernate.SQL                        : 
+    select
+        count_big(p1_0.ma_phong) 
+    from
+        phong p1_0 
+    where
+        p1_0.ma_loai_phong=? 
+        and p1_0.hoat_dong=1 
+        and p1_0.trang_thai=?
+Hibernate: 
+    select
+        count_big(p1_0.ma_phong) 
+    from
+        phong p1_0 
+    where
+        p1_0.ma_loai_phong=? 
+        and p1_0.hoat_dong=1 
+        and p1_0.trang_thai=?
+2026-08-10T18:00:40.821+07:00 TRACE 16988 --- [su26sd09] [nio-8080-exec-8] org.hibernate.orm.jdbc.bind              : binding parameter (1:INTEGER) <- [3]
+2026-08-10T18:00:40.821+07:00 TRACE 16988 --- [su26sd09] [nio-8080-exec-8] org.hibernate.orm.jdbc.bind              : binding parameter (2:VARCHAR) <- [Trong]
+2026-08-10T18:00:50.005+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+2026-08-10T18:00:50.006+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:00:50.006+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (2:DATE) <- [2026-08-10]
+2026-08-10T18:00:50.008+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+2026-08-10T18:00:50.009+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:01:00.021+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+2026-08-10T18:01:00.022+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:01:00.023+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (2:DATE) <- [2026-08-10]
+2026-08-10T18:01:00.027+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+2026-08-10T18:01:00.028+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:01:10.011+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+2026-08-10T18:01:10.011+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:01:10.013+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (2:DATE) <- [2026-08-10]
+2026-08-10T18:01:10.020+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+2026-08-10T18:01:10.020+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:01:20.009+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+2026-08-10T18:01:20.009+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:01:20.009+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (2:DATE) <- [2026-08-10]
+2026-08-10T18:01:20.013+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+2026-08-10T18:01:20.013+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:01:30.009+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+2026-08-10T18:01:30.009+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:01:30.010+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (2:DATE) <- [2026-08-10]
+2026-08-10T18:01:30.012+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+2026-08-10T18:01:30.012+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:01:40.011+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+2026-08-10T18:01:40.012+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:01:40.012+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (2:DATE) <- [2026-08-10]
+2026-08-10T18:01:40.015+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+2026-08-10T18:01:40.015+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:01:50.014+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+2026-08-10T18:01:50.014+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:01:50.014+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (2:DATE) <- [2026-08-10]
+2026-08-10T18:01:50.017+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+2026-08-10T18:01:50.017+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:02:00.008+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+2026-08-10T18:02:00.011+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:02:00.012+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (2:DATE) <- [2026-08-10]
+2026-08-10T18:02:00.017+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+2026-08-10T18:02:00.017+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:02:10.008+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+2026-08-10T18:02:10.010+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:02:10.010+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (2:DATE) <- [2026-08-10]
+2026-08-10T18:02:10.017+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+2026-08-10T18:02:10.017+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:02:20.016+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+2026-08-10T18:02:20.016+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:02:20.016+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (2:DATE) <- [2026-08-10]
+2026-08-10T18:02:20.024+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+2026-08-10T18:02:20.025+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:02:30.006+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+2026-08-10T18:02:30.006+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:02:30.006+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (2:DATE) <- [2026-08-10]
+2026-08-10T18:02:30.008+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+2026-08-10T18:02:30.009+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:02:40.006+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+2026-08-10T18:02:40.007+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:02:40.008+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (2:DATE) <- [2026-08-10]
+2026-08-10T18:02:40.010+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+2026-08-10T18:02:40.011+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:02:50.007+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+2026-08-10T18:02:50.007+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:02:50.007+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (2:DATE) <- [2026-08-10]
+2026-08-10T18:02:50.011+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+2026-08-10T18:02:50.011+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:03:00.010+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+2026-08-10T18:03:00.011+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:03:00.011+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (2:DATE) <- [2026-08-10]
+2026-08-10T18:03:00.014+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+2026-08-10T18:03:00.015+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:03:10.007+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+2026-08-10T18:03:10.008+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:03:10.008+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (2:DATE) <- [2026-08-10]
+2026-08-10T18:03:10.011+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+2026-08-10T18:03:10.011+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:03:20.044+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+2026-08-10T18:03:20.045+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:03:20.046+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (2:DATE) <- [2026-08-10]
+2026-08-10T18:03:20.107+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+2026-08-10T18:03:20.107+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:03:30.009+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+2026-08-10T18:03:30.009+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:03:30.009+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (2:DATE) <- [2026-08-10]
+2026-08-10T18:03:30.015+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+2026-08-10T18:03:30.016+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:03:40.011+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+2026-08-10T18:03:40.012+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:03:40.012+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (2:DATE) <- [2026-08-10]
+2026-08-10T18:03:40.015+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+2026-08-10T18:03:40.015+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:03:50.014+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+2026-08-10T18:03:50.014+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:03:50.014+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (2:DATE) <- [2026-08-10]
+2026-08-10T18:03:50.018+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+2026-08-10T18:03:50.018+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:04:00.005+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+2026-08-10T18:04:00.005+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:04:00.005+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (2:DATE) <- [2026-08-10]
+2026-08-10T18:04:00.009+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+2026-08-10T18:04:00.009+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:04:10.010+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+2026-08-10T18:04:10.010+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:04:10.010+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (2:DATE) <- [2026-08-10]
+2026-08-10T18:04:10.013+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+2026-08-10T18:04:10.014+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:04:20.015+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+2026-08-10T18:04:20.016+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:04:20.016+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (2:DATE) <- [2026-08-10]
+2026-08-10T18:04:20.025+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+2026-08-10T18:04:20.025+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:04:30.009+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+2026-08-10T18:04:30.009+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:04:30.009+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (2:DATE) <- [2026-08-10]
+2026-08-10T18:04:30.017+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+2026-08-10T18:04:30.017+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:04:40.005+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+2026-08-10T18:04:40.006+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:04:40.006+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (2:DATE) <- [2026-08-10]
+2026-08-10T18:04:40.060+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+2026-08-10T18:04:40.060+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:04:50.009+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+2026-08-10T18:04:50.009+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:04:50.009+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (2:DATE) <- [2026-08-10]
+2026-08-10T18:04:50.012+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+2026-08-10T18:04:50.013+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:05:00.005+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+2026-08-10T18:05:00.005+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:05:00.006+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (2:DATE) <- [2026-08-10]
+2026-08-10T18:05:00.009+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+2026-08-10T18:05:00.010+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:05:10.017+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+2026-08-10T18:05:10.017+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:05:10.017+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (2:DATE) <- [2026-08-10]
+2026-08-10T18:05:10.020+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+2026-08-10T18:05:10.020+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:05:20.005+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+2026-08-10T18:05:20.007+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:05:20.007+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (2:DATE) <- [2026-08-10]
+2026-08-10T18:05:20.010+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+2026-08-10T18:05:20.010+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+Scheduler chay: 2026-08-10T18:05:26.459254800
+2026-08-10T18:05:26.460+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    select
+        dp1_0.ma_dat_phong,
+        dp1_0.email,
+        dp1_0.ho_ten,
+        dp1_0.ma_khuyen_mai,
+        dp1_0.ma_tra_cuu,
+        dp1_0.ma_cccd,
+        dp1_0.ma_khach,
+        dp1_0.ngay_cap_nhat,
+        dp1_0.ngay_tao,
+        dp1_0.ngay_nhan_phong,
+        dp1_0.ngay_tra_phong,
+        dp1_0.ma_nhan_vien,
+        dp1_0.so_dien_thoai,
+        dp1_0.so_nguoi_lon,
+        dp1_0.so_tre_em,
+        dp1_0.tien_thua_do_doi_phong,
+        dp1_0.trang_thai,
+        dp1_0.trang_thai_tien_thua,
+        dp1_0.yeu_cau_them 
+    from
+        dat_phong dp1_0 
+    where
+        dp1_0.trang_thai=? 
+        and dp1_0.ngay_tao<?
+Hibernate: 
+    select
+        dp1_0.ma_dat_phong,
+        dp1_0.email,
+        dp1_0.ho_ten,
+        dp1_0.ma_khuyen_mai,
+        dp1_0.ma_tra_cuu,
+        dp1_0.ma_cccd,
+        dp1_0.ma_khach,
+        dp1_0.ngay_cap_nhat,
+        dp1_0.ngay_tao,
+        dp1_0.ngay_nhan_phong,
+        dp1_0.ngay_tra_phong,
+        dp1_0.ma_nhan_vien,
+        dp1_0.so_dien_thoai,
+        dp1_0.so_nguoi_lon,
+        dp1_0.so_tre_em,
+        dp1_0.tien_thua_do_doi_phong,
+        dp1_0.trang_thai,
+        dp1_0.trang_thai_tien_thua,
+        dp1_0.yeu_cau_them 
+    from
+        dat_phong dp1_0 
+    where
+        dp1_0.trang_thai=? 
+        and dp1_0.ngay_tao<?
+2026-08-10T18:05:26.460+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:VARCHAR) <- [Chua thanh toan]
+2026-08-10T18:05:26.461+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (2:TIMESTAMP) <- [2026-08-10T17:50:26.459254800]
+2026-08-10T18:05:30.008+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+2026-08-10T18:05:30.008+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:05:30.008+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (2:DATE) <- [2026-08-10]
+2026-08-10T18:05:30.018+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+2026-08-10T18:05:30.018+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:05:40.019+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+2026-08-10T18:05:40.019+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:05:40.020+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (2:DATE) <- [2026-08-10]
+2026-08-10T18:05:40.030+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+2026-08-10T18:05:40.030+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:05:50.018+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+2026-08-10T18:05:50.018+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:05:50.018+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (2:DATE) <- [2026-08-10]
+2026-08-10T18:05:50.020+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+2026-08-10T18:05:50.020+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:06:00.015+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+2026-08-10T18:06:00.015+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:06:00.015+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (2:DATE) <- [2026-08-10]
+2026-08-10T18:06:00.018+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+2026-08-10T18:06:00.018+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:06:10.010+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+2026-08-10T18:06:10.010+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:06:10.010+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (2:DATE) <- [2026-08-10]
+2026-08-10T18:06:10.014+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+2026-08-10T18:06:10.015+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:06:20.008+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+2026-08-10T18:06:20.008+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:06:20.008+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (2:DATE) <- [2026-08-10]
+2026-08-10T18:06:20.011+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+2026-08-10T18:06:20.011+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:06:30.014+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+2026-08-10T18:06:30.015+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:06:30.015+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (2:DATE) <- [2026-08-10]
+2026-08-10T18:06:30.017+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+2026-08-10T18:06:30.017+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:06:40.006+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+2026-08-10T18:06:40.007+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:06:40.007+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (2:DATE) <- [2026-08-10]
+2026-08-10T18:06:40.014+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+2026-08-10T18:06:40.014+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:06:50.008+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+2026-08-10T18:06:50.009+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:06:50.009+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (2:DATE) <- [2026-08-10]
+2026-08-10T18:06:50.011+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+2026-08-10T18:06:50.011+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:07:00.010+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=1 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=0 
+        and km1_0.ngay_bat_dau<=? 
+        and km1_0.ngay_ket_thuc>=?
+2026-08-10T18:07:00.011+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+2026-08-10T18:07:00.011+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (2:DATE) <- [2026-08-10]
+2026-08-10T18:07:00.014+07:00 DEBUG 16988 --- [su26sd09] [   scheduling-1] org.hibernate.SQL                        : 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+Hibernate: 
+    update
+        km1_0 
+    set
+        hoat_dong=0 
+    from
+        khuyen_mai km1_0 
+    where
+        km1_0.hoat_dong=1 
+        and km1_0.ngay_ket_thuc<?
+2026-08-10T18:07:00.014+07:00 TRACE 16988 --- [su26sd09] [   scheduling-1] org.hibernate.orm.jdbc.bind              : binding parameter (1:DATE) <- [2026-08-10]
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  07:10 min
+[INFO] Finished at: 2026-08-10T18:07:09+07:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.springframework.boot:spring-boot-maven-plugin:4.0.6:run (default-cli) on project su26sd09: Process terminated with exit code: 1 -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoExecutionException

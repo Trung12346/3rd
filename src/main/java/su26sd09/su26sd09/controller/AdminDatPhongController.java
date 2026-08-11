@@ -97,8 +97,19 @@ public class AdminDatPhongController {
         Pageable pageable = PageRequest.of(page, size, sort);
 
         List<DatPhong> allFiltered = datPhongService.findAll(sort).stream()
-                .filter(dp -> HuyDonConstants.DP_TRANG_THAI_HIEN_THI.contains(dp.getTrangThai()))
+                .filter(dp -> HuyDonConstants.DP_TRANG_THAI_HIEN_THI_BOOKING_MGMT.contains(dp.getTrangThai()))
                 .collect(Collectors.toList());
+
+        // Đếm số đơn "Cho xac nhan" / "Da xac nhan" đã quá giờ nhận > 1 ngày
+        // để hiển thị toast cảnh báo vàng 10s trên trang quản lý đơn.
+        // KHÔNG tự động hủy — nhân viên tự xử lý.
+        LocalDateTime nowForToast = LocalDateTime.now();
+        LocalDateTime nguongTreToast = nowForToast.minusDays(HuyDonConstants.CANH_BAO_TRE_SONGAY);
+        long soDonTreCanhBao = datPhongService.findAll().stream()
+                .filter(dp -> HuyDonConstants.DP_TRANG_THAI_CHUA_NHAN_PHONG.contains(dp.getTrangThai()))
+                .filter(dp -> dp.getNgaydatPhong() != null && dp.getNgaydatPhong().isBefore(nguongTreToast))
+                .count();
+        model.addAttribute("soDonTreCanhBao", soDonTreCanhBao);
         int total = allFiltered.size();
         int fromIndex = Math.min((int) pageable.getOffset(), total);
         int toIndex = Math.min(fromIndex + pageable.getPageSize(), total);
@@ -124,7 +135,11 @@ public class AdminDatPhongController {
 
         List<DatPhongDTO> dto = new ArrayList<>();
         for (DatPhong dp: datPhongs) {
-            dto.add(new DatPhongDTO(dp, hoaDonService.findByDatPhongId(dp.id).getTrangThai()));
+            // Đơn "Yeu cau dat phong" (mới thêm vào set hiển thị) chưa qua thanh toán
+            // -> chưa có HoaDon -> findByDatPhongId() trả null. Tránh NPE bằng cách
+            // truyền null trực tiếp vào DTO, template sẽ tự xử lý.
+            HoaDon hoaDon = hoaDonService.findByDatPhongId(dp.getId());
+            dto.add(new DatPhongDTO(dp, hoaDon != null ? hoaDon.getTrangThai() : null));
         }
         model.addAttribute("MapCtdp",Mapctdp);
         model.addAttribute("datPhongs", datPhongs);
@@ -494,6 +509,11 @@ public class AdminDatPhongController {
         datPhong.setSotreEm(treEm);
         datPhong.setNgayCapNhat(LocalDateTime.now());
         KhuyenMai km = maKhuyenMai == null ? null : khuyenMaiService.findbyId(maKhuyenMai);
+        String loiKm = khuyenMaiService.validateGanKhuyenMai(datPhong, km);
+        if (loiKm != null) {
+            redirectAttributes.addFlashAttribute("error", loiKm);
+            return "redirect:/nhan-su/admin/dat-phong/chi-tiet/" + id;
+        }
         datPhong.setKm(km);
         datPhongService.save(datPhong);
 
@@ -797,8 +817,19 @@ public class AdminDatPhongController {
                 // giỏ nhưng chưa thanh toán — đối tượng chính dùng mã tra cứu).
                 .filter(dp ->
                         (maTraCuu != null && !maTraCuu.trim().isEmpty())
-                                || HuyDonConstants.DP_TRANG_THAI_HIEN_THI.contains(dp.getTrangThai()))
+                                || HuyDonConstants.DP_TRANG_THAI_HIEN_THI_BOOKING_MGMT.contains(dp.getTrangThai()))
                 .collect(Collectors.toList());
+
+        // Đếm số đơn trễ > 1 ngày (chưa nhận phòng) để hiện toast cảnh báo.
+        // Tính trên TOÀN BỘ đơn (không phụ thuộc filter search) vì đây là cảnh báo
+        // tổng quan — nhân viên cần biết ngay cả khi đang lọc đơn khác.
+        LocalDateTime nowForToastSearch = LocalDateTime.now();
+        LocalDateTime nguongTreToastSearch = nowForToastSearch.minusDays(HuyDonConstants.CANH_BAO_TRE_SONGAY);
+        long soDonTreCanhBao = datPhongService.findAll().stream()
+                .filter(dp -> HuyDonConstants.DP_TRANG_THAI_CHUA_NHAN_PHONG.contains(dp.getTrangThai()))
+                .filter(dp -> dp.getNgaydatPhong() != null && dp.getNgaydatPhong().isBefore(nguongTreToastSearch))
+                .count();
+        model.addAttribute("soDonTreCanhBao", soDonTreCanhBao);
 
         if(tenKhach!=null){
             System.out.println("Found!");
@@ -851,6 +882,12 @@ public class AdminDatPhongController {
     @PostMapping("/update-trang-thai")
     public String updateTrangThai(@RequestParam Integer id,
                                   @RequestParam String trangThai,
+                                  @RequestParam(required = false)
+                                  @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime gioKhachTaiQuay,
+                                  @RequestParam(required = false, defaultValue = "0") BigDecimal phuPhiTre,
+                                  // Them dich vu (chon tu dropdown trong form check-in)
+                                  @RequestParam(required = false) Integer maDichVuThem,
+                                  @RequestParam(required = false, defaultValue = "1") Integer soLuongDichVuThem,
                                   RedirectAttributes redirectAttributes) {
 
         DatPhong dp = datPhongService.findById(id);
@@ -887,6 +924,19 @@ public class AdminDatPhongController {
 
                 phongService.save1(p);
             }
+
+            // Cong phu phi check-in tre (neu co) vao DUNG 1 ChiTietDatPhong
+            // (phong dau tien trong danh sach). Khong cong don / khong chia deu
+            // — phu phi chi tinh 1 lan cho ca don, theo yeu cau cua user.
+            // GioKhachTaiQuay duoc submit cung form, nhung hien tai chi dung de
+            // backend validate nguong (se su dung o luong sau). Phu phi da duoc
+            // template tinh san va gui qua hidden input phuPhiTre.
+            if (phuPhiTre != null && phuPhiTre.signum() > 0 && !chiTietDatPhongs.isEmpty()) {
+                ChiTietDatPhong first = chiTietDatPhongs.get(0);
+                BigDecimal current = first.getPhuPhi() == null ? BigDecimal.ZERO : first.getPhuPhi();
+                first.setPhuPhi(current.add(phuPhiTre));
+                chiTietDatPhongService.save(first);
+            }
         }
 
 
@@ -903,7 +953,41 @@ public class AdminDatPhongController {
             }
         }
 
-        redirectAttributes.addFlashAttribute("success", "Cap nhat trang thai thanh cong");
+        // Them dich vu (neu co) — dropdown "Them dich vu" trong form check-in.
+        // Ap dung cho moi trang thai de nhan vien co the bo sung dich vu phat
+        // sinh bat ky khi nao can.
+        String themDichVuMsg = null;
+        if (maDichVuThem != null && maDichVuThem > 0) {
+            Dich_vu dichVu = dichVuService.findById(maDichVuThem);
+            if (dichVu != null) {
+                int sl = (soLuongDichVuThem == null || soLuongDichVuThem <= 0) ? 1 : soLuongDichVuThem;
+                Chi_tiet_dich_vu chiTiet = new Chi_tiet_dich_vu();
+                chiTiet.setDatPhong(dp);
+                chiTiet.setDv(dichVu);
+                chiTiet.setSoluong(sl);
+                chiTiet.setNgay_su_dung(LocalDateTime.now());
+                chiTiet.setDonGia(dichVu.getGia().multiply(BigDecimal.valueOf(sl)));
+                chiTietDichVuService.save(chiTiet);
+                themDichVuMsg = "Đã thêm " + sl + " x " + dichVu.getTen_dich_vu() + " vào đơn.";
+            } else {
+                themDichVuMsg = "Không tìm thấy dịch vụ #" + maDichVuThem + " — bỏ qua.";
+            }
+        }
+
+        if (phuPhiTre != null && phuPhiTre.signum() > 0 && themDichVuMsg != null) {
+            redirectAttributes.addFlashAttribute("success",
+                    "Cập nhật đơn #" + id + " thành công. Phụ phí check-in trễ: "
+                            + phuPhiTre.toPlainString() + " VND. " + themDichVuMsg);
+        } else if (phuPhiTre != null && phuPhiTre.signum() > 0) {
+            redirectAttributes.addFlashAttribute("success",
+                    "Cập nhật đơn #" + id + " thành công. Phụ phí check-in trễ: "
+                            + phuPhiTre.toPlainString() + " VND.");
+        } else if (themDichVuMsg != null) {
+            redirectAttributes.addFlashAttribute("success",
+                    "Cập nhật trạng thái đơn #" + id + " thành công. " + themDichVuMsg);
+        } else {
+            redirectAttributes.addFlashAttribute("success", "Cap nhat trang thai thanh cong");
+        }
         return "redirect:/nhan-su/admin/dat-phong";
     }
     @PostMapping("/update")

@@ -808,6 +808,14 @@
     .alert-error > i {
         color: #E87A00;
     }
+    .alert-warning {
+        background: #FFF8E1;
+        color: #8B6E00;
+        border: 1px solid #FFD54F;
+    }
+    .alert-warning > i {
+        color: #FFC107;
+    }
     
     /* Disabled button */
     .admin-btn:disabled,
@@ -1245,7 +1253,7 @@
          th:with="
              duKien=${dp.ngaydatPhong},
              diff=${duKien == null ? null : T(java.time.Duration).between(duKien, gioKhachTaiQuay)},
-             somQuaMuc=${diff != null and diff.toMillis() < 0 and diff.abs().toMinutes() > 120}">
+             somQuaMuc=${diff != null and diff.toMillis() < 0 and diff.abs().toMinutes() > 60}">
         <div class="admin-header">
             <h1>Xử Lý Nhận Phòng — Đơn #<span th:text="${dp.id}"></span></h1>
         </div>
@@ -1312,12 +1320,13 @@
                                  soPhut=${diff == null ? null : diff.toMinutes()},
                                  laTre=${diff != null and diff.toMillis() > 0},
                                  laSom=${diff != null and diff.toMillis() < 0},
-                                 somQuaMuc=${diff != null and diff.toMillis() < 0 and diff.abs().toMinutes() > 120},
+                                 somQuaMuc=${diff != null and diff.toMillis() < 0 and diff.abs().toMinutes() > 60},
+                                 treQua60Phut=${diff != null and diff.toMillis() > 0 and diff.toMinutes() >= 60},
+                                 phuPhiTre=${diff != null and diff.toMillis() > 0 and diff.toMinutes() >= 60 ? 100000 : 0},
                                  trangThaiChenhLech=${duKien == null ? 'khong-ro'
                                                    : (diff.isZero() ? 'dung-gio'
                                                    : (laTre ? 'tre'
-                                                   : (soPhut >= -30 ? 'tam-on' 
-                                                   : (soPhut >= -120 ? 'som-tren-30' : 'som-qua-muc'))))},
+                                                   : (soPhut >= -30 ? 'tam-on' : 'som-qua-muc')))},
                                  labelChenhLech=${duKien == null ? '—'
                                                : (diff.isZero() ? 'Đúng giờ'
                                                : (laTre ? ('Trễ ' + diff.toHours() + 'h ' + diff.toMinutesPart() + 'p')
@@ -1353,17 +1362,31 @@
                                 </span>
                             </div>
                         </div>
-                        
-                        <!-- Cảnh báo check-in quá sớm -->
+
+                        <!-- Cảnh báo check-in quá sớm (đến sớm > 1 giờ) -->
                         <div th:if="${somQuaMuc}" class="alert alert-error" style="margin-top: 16px;">
                             <i class="ti ti-alert-triangle"></i>
                             <div>
-                                <strong>Không thể nhận phòng:</strong> 
-                                Khách đến quá sớm (<span th:text="${labelChenhLech}"></span>). 
-                                Chỉ cho phép check-in sớm tối đa 2 giờ trước giờ dự kiến 
+                                <strong>Không thể nhận phòng:</strong>
+                                Khách đến quá sớm (<span th:text="${labelChenhLech}"></span>).
+                                Chỉ cho phép check-in sớm tối đa 1 giờ trước giờ dự kiến
                                 (<span th:text="${#temporals.format(duKien, 'dd/MM/yyyy HH:mm')}"></span>).
                             </div>
                         </div>
+
+                        <!-- Cảnh báo check-in trễ & hiển thị phụ phí 100k VND -->
+                        <div th:if="${treQua60Phut}" class="alert alert-warning" style="margin-top: 16px;">
+                            <i class="ti ti-alert-triangle"></i>
+                            <div>
+                                <strong>Khách đến trễ ≥ 1 giờ</strong>
+                                (<span th:text="${labelChenhLech}"></span>).
+                                Phụ phí check-in trễ: <strong>100.000 VND</strong>
+                                — sẽ được cộng vào hóa đơn (tính 1 lần cho cả đơn).
+                            </div>
+                        </div>
+
+                        <!-- Hidden input gửi phụ phí trễ lên controller để lưu vào DB -->
+                        <input type="hidden" name="phuPhiTre" th:value="${phuPhiTre}">
                     </section>
 
                     <section class="admin-panel" th:each="nhom : ${nhomYeuCauPhong}">

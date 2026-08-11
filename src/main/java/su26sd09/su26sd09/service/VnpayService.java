@@ -48,6 +48,9 @@ public class VnpayService {
     NhanVienService nhanVienService;
 
     @Autowired
+    BookingEmailService bookingEmailService;
+
+    @Autowired
     HuyDonService huyDonService;
 
     /** Phân biệt các luồng callback VNPay. */
@@ -409,18 +412,16 @@ public class VnpayService {
             return 0;
         }
 
-        dp.setTrangThai("Cho xac nhan");
-        dp.setNv(nvGan);
+        // KHONG doi trangThai DatPhong o day — don dang o trang thai "Yeu cau dat phong"
+        // (khach online dat qua he thong), nhan vien se xac nhan + xep phong trong
+        // trang /nhan-su/yeu-cau-dat-phong. Viec gan NV + set trang thai chi do NV thuc hien.
+        // Cap nhat ngayCapNhat de audit lich su giao dich.
+        dp.setNgayCapNhat(LocalDateTime.now());
         datPhongService.save(dp);
 
-        for (ChiTietDatPhong ctdp : chiTietDatPhong) {
-            Phong p = ctdp.getP();
-            if (datPhongService.findPendingBookingsByPhong(p.getMaPhong())){
-                p.setTrangThai("Dang su dung");
-            }
-            p.setTrangThai("Dang su dung");
-            phongService.save1(p);
-        }
+        // KHONG cap nhat trang thai Phong thanh "Dang su dung" o day — cho den khi NV
+        // xac nhan yeu cau va kiem tra phong, phong moi chinh thuc duoc danh dau.
+        // Phong chi chuyen sang "Da dat truoc" qua createAutoAssignedBooking() luc tao don.
 
         HoaDon hd = new HoaDon();
         hd.setNgayXuat(LocalDateTime.now());
@@ -447,6 +448,13 @@ public class VnpayService {
         thanhToan.setNgaythanhToan(thoiGianThanhToan);
         thanhToan.setGichu("Thanh Toan Don Dat Phong: " + maDatPhong);
         thanhToanService.save(thanhToan);
+
+        // Gui email xac nhan cho khach (async)
+        try {
+            bookingEmailService.guiEmailThanhToanThanhCong(maDatPhong);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
 
         System.out.println("Thanh toan thanh cong (dat phong lan dau): " + amountVnpay + " Ma GD: " + vnp_TransactionNo);
         return 1;
