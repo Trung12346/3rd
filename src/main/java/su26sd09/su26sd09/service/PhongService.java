@@ -135,8 +135,16 @@
             Map<Integer, Long> soPhongKhaDungTheoLoai = new HashMap<>();
 
             for (LoaiPhong loai : ungVien) {
+                // CHI dua vao chong lan lich (maPhongDaKhoaLich, tinh tu chinh cac don
+                // dat con hieu luc voi gio nhan 14:00 / tra 11:00) de xet kha dung theo
+                // ngay. KHONG con loc theo trangThai tuc thoi cua phong nua: truong nay
+                // chi phan anh trang thai TAI THOI DIEM HIEN TAI (vd "Da dat truoc" ngay
+                // khi co bat ky don tuong lai nao, "Dang su dung" khi dang co khach o),
+                // nen se loai oan cac phong THUC SU trong trong khoang ngay dang tim
+                // kiem chi vi chung dang ban o thoi diem khac (truoc/sau khoang nay).
+                // hoatDong=false (ngung hoat dong han) da duoc loc san trong
+                // findPhongTheoLoai().
                 long soPhongKhaDung = findPhongTheoLoai(loai.getId()).stream()
-                        .filter(p -> "Trong".equalsIgnoreCase(p.getTrangThai()))
                         .filter(p -> !maPhongDaKhoaLich.contains(p.getMaPhong()))
                         .count();
 
@@ -208,8 +216,11 @@
          * chon tay tung phong. Dung cho luong dat phong nhanh tu trang tim kiem.
          *
          * Quy tac chon phong (theo thu tu uu tien):
-         *  1) Dieu kien du (bat buoc): hoatDong=true, trangThai="Trong",
-         *     KHONG bi khoa lich (khong trung khoang ngay voi don dang giu cho).
+         *  1) Dieu kien du (bat buoc): hoatDong=true, KHONG bi khoa lich (khong
+         *     chong lan khoang ngay [ngayNhan, ngayTra) voi bat ky don nao dang
+         *     hieu luc). Khong con doi hoi trangThai tuc thoi = "Trong" vi truong
+         *     do chi phan anh trang thai TAI THOI DIEM HIEN TAI, khong dai dien
+         *     dung cho kha dung trong mot khoang ngay tuong lai cu the.
          *  2) Uu tien phong co it luot dat gan day nhat (findAllByPhong size nho nhat)
          *     de trai deu muc su dung giua cac phong cung loai.
          *  3) Tie-break: tang dan theo so tang (soTang).
@@ -231,8 +242,11 @@
 
             java.util.Set<Integer> maPhongDaKhoaLich = findMaPhongDaKhoaTrongKhoang(ngayNhan, ngayTra);
 
+            // CHI dua vao chong lan lich theo ngay (khong con doi hoi trangThai tuc
+            // thoi = "Trong"): xem giai thich chi tiet trong searchLoaiPhongKhaDung()
+            // o tren - trangThai tuc thoi khong dai dien dung cho kha dung trong MOT
+            // KHOANG NGAY TUONG LAI cu the.
             List<Phong> hopLe = findPhongTheoLoai(loaiPhongId).stream()
-                    .filter(p -> "Trong".equalsIgnoreCase(p.getTrangThai()))
                     .filter(p -> !maPhongDaKhoaLich.contains(p.getMaPhong()))
                     .toList();
 

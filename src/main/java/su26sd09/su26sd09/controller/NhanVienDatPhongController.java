@@ -1353,6 +1353,13 @@ public class NhanVienDatPhongController {
                                 ? ct.getP().getLoaiPhong().getTenLoai() : "Chưa xác định",
                         LinkedHashMap::new, Collectors.toList()));
 
+        // Phong nao dang bi khoa lich (chong lan ngay) voi dung khoang luu tru cua don
+        // nay [ngaydatPhong, ngaytraPhong) (gio nhan 14:00 / tra 11:00 da duoc ap dung
+        // luc tao don). Dung de xet phong nao THUC SU co the doi sang, thay vi chi
+        // nhin trang thai tuc thoi (trangThai) cua phong.
+        java.util.Set<Integer> maPhongDaKhoaLich = phongService.findMaPhongDaKhoaTrongKhoang(
+                dp.getNgaydatPhong(), dp.getNgaytraPhong());
+
         List<NhomYeuCauPhongDTO> nhomYeuCauPhong = new ArrayList<>();
         for (Map.Entry<String, List<ChiTietDatPhong>> e : nhomTheoLoai.entrySet()) {
             List<SlotPhongDTO> slots = new ArrayList<>();
@@ -1366,9 +1373,12 @@ public class NhanVienDatPhongController {
                         List<PhongTheoLoaiDTO> dsPhong = new ArrayList<>();
                         for (Phong p : phongService.findPhongTheoLoai(lp.getId())) {
                             if (p.getMaPhong() == pDaGan.getMaPhong()) continue;
+                            // Kha dung theo chong lan ngay thuc su, khong con dua vao
+                            // trangThai tuc thoi cua phong nua.
+                            boolean khaDung = !maPhongDaKhoaLich.contains(p.getMaPhong());
                             dsPhong.add(new PhongTheoLoaiDTO(
                                     p.getMaPhong(), p.getSoPhong(), p.getSoTang(),
-                                    p.getTrangThai(), "Trong".equals(p.getTrangThai()),
+                                    p.getTrangThai(), khaDung,
                                     p.getGiaMoiDem()));
                         }
                         if (!dsPhong.isEmpty()) {

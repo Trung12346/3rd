@@ -1184,6 +1184,15 @@ public class AdminDatPhongController {
                                 ? ct.getP().getLoaiPhong().getTenLoai() : "Chưa xác định",
                         LinkedHashMap::new, Collectors.toList()));
 
+        // Phong nao dang bi khoa lich (chong lan ngay) voi dung khoang luu tru cua don
+        // nay [ngaydatPhong, ngaytraPhong) (gio nhan 14:00 / tra 11:00 da duoc ap dung
+        // luc tao don). Dung de xet phong nao THUC SU co the doi sang, thay vi chi
+        // nhin trang thai tuc thoi (trangThai) cua phong - trang thai co the la "Da dat
+        // truoc" chi vi phong co 1 don khac trong TUONG LAI khong he chong ngay voi don
+        // dang check-in nay.
+        java.util.Set<Integer> maPhongDaKhoaLich = phongService.findMaPhongDaKhoaTrongKhoang(
+                dp.getNgaydatPhong(), dp.getNgaytraPhong());
+
         List<NhomYeuCauPhongDTO> nhomYeuCauPhong = new ArrayList<>();
         for (Map.Entry<String, List<ChiTietDatPhong>> e : nhomTheoLoai.entrySet()) {
             List<SlotPhongDTO> slots = new ArrayList<>();
@@ -1195,16 +1204,21 @@ public class AdminDatPhongController {
                 // LUON build options (ke ca khi phong hien dang Trong) de nhan vien co the
                 // doi phong theo yeu cau khach (nang cap, doi view, hang re hon, khac loai, ...)
                 if (pDaGan != null && pDaGan.getLoaiPhong() != null) {
-                    // BO filter gia/loai: lay TAT CA phong Trong (ke ca re hon / khac loai)
+                    // BO filter gia/loai: lay TAT CA phong (ke ca re hon / khac loai) roi xet
+                    // kha dung theo CHONG LAN NGAY thuc su, khong chi dua vao trangThai tuc thoi,
                     // de khach co the doi xuong phong re hon (hoan tien thua) hoac len phong dat hon (tra them).
                     for (LoaiPhong lp : phongService.findAllLoai()) {
                         List<PhongTheoLoaiDTO> dsPhong = new ArrayList<>();
                         for (Phong p : phongService.findPhongTheoLoai(lp.getId())) {
                             // BO QUA phong hien tai (khong the doi sang chinh no)
                             if (p.getMaPhong() == pDaGan.getMaPhong()) continue;
+                            // Phong kha dung khi: dang hoat dong VA khong bi khoa lich boi
+                            // don khac chong lan khoang [ngaydatPhong, ngaytraPhong) cua don nay.
+                            // KHONG con dua vao trangThai tuc thoi cua phong nua.
+                            boolean khaDung = !maPhongDaKhoaLich.contains(p.getMaPhong());
                             dsPhong.add(new PhongTheoLoaiDTO(
                                     p.getMaPhong(), p.getSoPhong(), p.getSoTang(),
-                                    p.getTrangThai(), "Trong".equals(p.getTrangThai()),
+                                    p.getTrangThai(), khaDung,
                                     p.getGiaMoiDem()));
                         }
                         if (!dsPhong.isEmpty()) {
