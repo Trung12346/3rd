@@ -93,8 +93,11 @@ public class LoaiPhongController {
 
         if (coNgay) {
             try {
-                ngayNhanPhong = LocalDate.parse(ngayNhan.trim()).atStartOfDay();
-                ngayTraPhong = LocalDate.parse(ngayTra.trim()).atStartOfDay();
+                // Ap dung dung quy tac nhan phong 14:00 / tra phong 11:00 khi tinh
+                // khoang tim kiem, dong bo voi luc tao don thuc su (dat-nhanh ben duoi)
+                // de tranh sai lech gio gay chong lan gia (khoa lich nham).
+                ngayNhanPhong = LocalDate.parse(ngayNhan.trim()).atTime(14, 0);
+                ngayTraPhong = LocalDate.parse(ngayTra.trim()).atTime(11, 0);
             } catch (DateTimeParseException e) {
                 model.addAttribute("timKiemError", "Định dạng ngày không hợp lệ.");
                 model.addAttribute("loaiPhongs", List.of());
