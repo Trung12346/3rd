@@ -1,0 +1,1248 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trả Phòng (Admin)<span th:if="${dp != null}" th:text="' - Đơn #' + ${dp.id}"></span> | Hotel</title>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/3.44.0/tabler-icons.min.css">
+</head>
+<body>
+<style>
+    /* ===== PHAN DANH SACH / TIM KIEM / DAI NGAY ===== */
+    .checkout-list-block { margin-bottom: 0; }
+    .checkout-list-block .checkout-list-panel { padding: 18px 20px 20px; background: #fff; border: 1px solid #E9E6DC; border-radius: 12px; box-shadow: 0 1px 3px rgba(20,20,15,0.05); }
+    .checkout-head {
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 12px; margin-bottom: 14px; flex-wrap: wrap;
+    }
+    .checkout-head h1 {
+        font-size: 21px; font-weight: 700; letter-spacing: -0.01em;
+        color: var(--sky-dark, #1B4965); margin: 0;
+    }
+    .checkout-count {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 5px 12px; border-radius: 100px;
+        background: #E7F1F8; color: #1B4965;
+        font-size: 12.5px; font-weight: 600; border: 1px solid #B6D6E9;
+    }
+    .checkout-count i { font-size: 14px; }
+
+    /* ===== TIM KIEM (PILL) ===== */
+    .search-pill { position: relative; margin-bottom: 12px; }
+    .search-pill i { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); font-size: 17px; color: #8C8878; }
+    .search-pill input[type="text"] {
+        width: 100%; box-sizing: border-box;
+        padding: 12px 16px 12px 44px;
+        border: 1px solid #DDD9CC; border-radius: 100px; font-size: 14px;
+        background: #FBFAF6; transition: border-color .15s ease, box-shadow .15s ease;
+    }
+    .search-pill input[type="text"]:focus {
+        outline: none; border-color: #2F6690;
+        box-shadow: 0 0 0 3px rgba(47,102,144,0.12); background: #fff;
+    }
+
+    /* ===== CHIP FILTER ===== */
+    .filter-mode { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+    .filter-chip {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 7px 14px; border-radius: 100px;
+        border: 1px solid #DDD9CC; background: #fff; color: #57564E;
+        font-size: 13px; font-weight: 500; cursor: pointer; transition: all .15s ease; text-decoration: none;
+    }
+    .filter-chip:hover { border-color: #2F6690; color: #1B4965; }
+    .filter-chip i { font-size: 14px; }
+    .filter-chip.active { background: #2F6690; border-color: #2F6690; color: #fff; box-shadow: 0 1px 3px rgba(47,102,144,0.25); }
+
+    .khoang-ngay-form {
+        display: none; gap: 12px; align-items: flex-end; margin-bottom: 14px;
+        padding: 14px 16px; background: #F7F6F1; border: 1px dashed #DEDBCF; border-radius: 10px; flex-wrap: wrap;
+    }
+    .khoang-ngay-form.mo { display: flex; }
+    .khoang-ngay-form .admin-field { margin-bottom: 0; min-width: 150px; }
+    .khoang-ngay-form label { display: block; font-size: 11px; font-weight: 600; color: #8C8878; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px; }
+    .khoang-ngay-form input[type="date"] { padding: 8px 12px; border: 1px solid #DDD9CC; border-radius: 8px; font-size: 13px; background: #fff; }
+    .khoang-ngay-form .btn-group { display: flex; gap: 8px; margin-left: auto; }
+    .khoang-ngay-form .btn-pill {
+        padding: 8px 16px; border-radius: 100px; border: 1px solid transparent;
+        font-size: 13px; font-weight: 600; cursor: pointer;
+        display: inline-flex; align-items: center; gap: 6px; text-decoration: none;
+    }
+    .khoang-ngay-form .btn-pill.primary { background: #2F6690; color: #fff; border-color: #2F6690; }
+    .khoang-ngay-form .btn-pill.primary:hover { background: #1B4965; border-color: #1B4965; }
+    .khoang-ngay-form .btn-pill.ghost { background: #fff; color: #57564E; border-color: #DDD9CC; }
+    .khoang-ngay-form .btn-pill.ghost:hover { background: #F1EFE8; }
+
+    /* ===== DAI NGAY ===== */
+    .ngay-strip-wrap { margin-bottom: 14px; padding: 4px 0 6px; }
+    .ngay-strip-head {
+        display: flex; align-items: center; justify-content: space-between;
+        margin-bottom: 8px; padding: 0 2px; font-size: 12px; color: #8C8878;
+        gap: 8px; flex-wrap: wrap;
+    }
+    .ngay-strip-head .ten-thang {
+        font-weight: 600; color: #57564E; text-transform: capitalize;
+        display: inline-flex; align-items: center; gap: 6px;
+    }
+    .thang-nav { display: inline-flex; align-items: center; gap: 4px; margin-left: auto; }
+    .thang-nav-btn {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 30px; height: 30px; border-radius: 8px; border: 1px solid #DDD9CC;
+        background: #fff; color: #57564E; text-decoration: none; transition: all .15s ease; font-size: 14px;
+    }
+    .thang-nav-btn:hover { border-color: #2F6690; color: #1B4965; background: #F2F8FC; }
+    .thang-nav-btn i { font-size: 16px; line-height: 1; }
+    .thang-nav-label {
+        display: inline-flex; align-items: center; gap: 4px;
+        padding: 4px 10px; border-radius: 8px; background: #F1EFE8; color: #57564E;
+        font-size: 12px; font-weight: 600; text-decoration: none; transition: all .15s ease;
+    }
+    .thang-nav-label:hover { background: #E7F1F8; color: #1B4965; }
+    .thang-nav-label i { font-size: 13px; }
+
+    .ngay-strip {
+        display: grid; grid-template-columns: repeat(auto-fill, minmax(78px, 1fr));
+        gap: 8px; padding: 4px 2px 8px;
+    }
+    .ngay-strip a {
+        text-align: center; padding: 10px 8px; border-radius: 12px;
+        border: 1px solid #E9E6DC; background: #FCFCFA;
+        text-decoration: none; color: #57564E; transition: all .15s ease;
+        position: relative; display: flex; flex-direction: column;
+        align-items: center; justify-content: center; min-height: 70px;
+    }
+    .ngay-strip a:hover { border-color: #2F6690; background: #F2F8FC; }
+    .ngay-strip a .nhan { font-size: 10.5px; color: #9C9A8F; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; }
+    .ngay-strip a .so { font-size: 14px; font-weight: 700; margin-top: 2px; color: #2C2C2A; }
+    .ngay-strip a .dem { font-size: 10.5px; color: #8C8878; margin-top: 2px; }
+    .ngay-strip a.hom-nay { border-color: #2F6690; background: #fff; }
+    .ngay-strip a.hom-nay .nhan { color: #2F6690; }
+    .ngay-strip a.dang-chon { background: #2F6690; border-color: #2F6690; color: #fff; box-shadow: 0 2px 6px rgba(47,102,144,0.25); }
+    .ngay-strip a.dang-chon .nhan, .ngay-strip a.dang-chon .so, .ngay-strip a.dang-chon .dem { color: #fff; }
+    .ngay-strip a.trong { opacity: 0.45; }
+    .ngay-strip a.trong:hover { opacity: 0.7; }
+    .ngay-strip a.co-don .dem::before {
+        content: ""; display: inline-block; width: 6px; height: 6px;
+        border-radius: 100px; background: #2F6690; margin-right: 5px; vertical-align: middle;
+    }
+    .ngay-strip a.dang-chon.co-don .dem::before { background: #fff; }
+
+    /* ===== DANH SACH DON ===== */
+    .don-checkout-list { display: flex; flex-direction: column; gap: 6px; }
+    .don-checkout-row {
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 12px; padding: 12px 14px; border: 1px solid #E9E6DC;
+        border-radius: 10px; background: #fff; text-decoration: none;
+        transition: border-color .15s ease, background .15s ease, transform .12s ease;
+        position: relative;
+    }
+    .don-checkout-row:hover { border-color: #B6D6E9; background: #F8FCFD; transform: translateX(2px); }
+    .don-checkout-row.dang-xem {
+        border-color: #2F6690; background: #E7F1F8;
+        box-shadow: inset 3px 0 0 0 #2F6690;
+    }
+    .don-checkout-row.da-tra { opacity: 0.65; background: #FAF8F1; }
+    .don-checkout-row .thong-tin { min-width: 0; flex: 1; }
+    .don-checkout-row .thong-tin p { margin: 0; }
+    .don-checkout-row .ten-khach {
+        font-size: 14px; font-weight: 600; color: #2C2C2A;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .don-checkout-row .meta {
+        font-size: 12px; color: #85837A; margin-top: 3px;
+        display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center;
+    }
+    .don-checkout-row .meta .dot { color: #C9C6B9; }
+    .don-checkout-row .meta .tu-chip {
+        display: inline-flex; align-items: center; gap: 4px;
+        padding: 2px 8px; border-radius: 100px; background: #F1EFE8; color: #57564E;
+        font-size: 11.5px; font-weight: 500;
+    }
+    .don-checkout-row .meta .tu-chip i { font-size: 12px; color: #8C8878; }
+    .don-checkout-row .trang-thai { flex-shrink: 0; }
+    .don-checkout-row .trang-thai .status-badge { font-size: 11px; padding: 4px 10px; }
+
+    /* ===== BANNER NHAC NHO ===== */
+    .checkout-hint {
+        display: flex; align-items: center; gap: 10px;
+        margin: 16px 0; padding: 14px 18px;
+        background: #EBF5FB; border: 1px solid #B7DDF2; border-radius: 10px;
+        color: #1B4965; font-size: 14px;
+    }
+    .checkout-hint i { font-size: 20px; color: #2980B9; }
+    .checkout-hint strong { font-weight: 700; }
+
+    .empty-state {
+        padding: 24px 16px; text-align: center; color: #8C8878;
+        background: #FAF9F4; border: 1px dashed #DEDBCF; border-radius: 10px; font-size: 13px;
+    }
+
+    /* ===== STATUS BADGE ===== */
+    .status-badge {
+        display: inline-block; font-size: 12px; font-weight: 500;
+        padding: 4px 10px; border-radius: 6px;
+        border: 1px solid transparent; white-space: nowrap;
+    }
+    .status-badge.warning { background: #FAEEDA; color: #633806; border-color: #BA7517; }
+    .status-badge.info { background: #E6F1FB; color: #0C447C; border-color: #378ADD; }
+    .status-badge.success { background: #EAF3DE; color: #27500A; border-color: #639922; }
+    .status-badge.neutral { background: #F1EFE8; color: #2C2C2A; border-color: #888780; }
+    .status-badge.danger { background: #FCEBEB; color: #791F1F; border-color: #E24B4A; }
+
+    /* ===== PHAN CHI TIET ===== */
+    .checkout-page .admin-header h1 {
+        font-size: 21px; font-weight: 700; letter-spacing: -0.01em;
+        color: var(--sky-dark, #1B4965);
+    }
+    .checkout-page .admin-panel {
+        background: #fff; border: 1px solid #E9E6DC; border-radius: 12px;
+        padding: 22px 24px; margin-bottom: 18px;
+        box-shadow: 0 1px 3px rgba(20,20,15,0.05);
+    }
+    .checkout-page .admin-panel h2 {
+        font-size: 15px; font-weight: 600; color: var(--sky-dark, #1B4965);
+        margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px;
+    }
+
+    .checkout-layout {
+        display: grid; grid-template-columns: 1.6fr 1fr;
+        gap: 24px; align-items: start;
+    }
+    @media (max-width: 900px) { .checkout-layout { grid-template-columns: 1fr; } }
+
+    /* ===== TONG HOP BEN PHAI ===== */
+    .summary-panel {
+        background: #fff; border: 1px solid #E9E6DC; border-radius: 12px;
+        padding: 22px; position: sticky; top: 16px;
+        box-shadow: 0 1px 3px rgba(20,20,15,0.05);
+    }
+    .summary-panel h3 {
+        font-size: 15px; font-weight: 700; color: var(--sky-dark, #1B4965);
+        margin: 0 0 14px 0; padding-bottom: 10px; border-bottom: 1px solid #EEECE3;
+    }
+    .summary-row {
+        display: flex; justify-content: space-between; font-size: 13px; color: #6B6A62;
+        padding: 4px 0; gap: 12px;
+    }
+    .summary-row.grand {
+        font-size: 16px; font-weight: 700; color: var(--sky-dark, #1B4965);
+        border-top: 1px solid #EEECE3; margin-top: 8px; padding-top: 10px;
+    }
+    .summary-row.discount { color: #C0392B; }
+    .summary-row.paid { color: #27500A; }
+    .summary-row.due { font-size: 15px; font-weight: 700; color: #791F1F; }
+    .summary-row.due.thua { color: #27500A; }
+    .summary-block {
+        margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px solid #EEECE3;
+    }
+    .summary-block:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+    .summary-block .summary-label {
+        font-size: 11.5px; font-weight: 600; color: #9C9A8F;
+        text-transform: uppercase; letter-spacing: .04em; margin-bottom: 8px;
+    }
+
+    /* ===== FOLIO DAY DU TRONG PANEL TRAI ===== */
+    .inline-form {
+        display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end;
+        margin-top: 14px; padding-top: 14px; border-top: 1px dashed #e5e5e5;
+    }
+    .inline-form .admin-field { margin-bottom: 0; min-width: 180px; }
+    .inline-form .admin-field label {
+        display: block; font-size: 12px; font-weight: 600; color: #8C8878;
+        text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 6px;
+    }
+    .inline-form input, .inline-form select {
+        width: 100%; box-sizing: border-box;
+        padding: 9px 12px; border: 1px solid #DDD9CC; border-radius: 8px; font-size: 13.5px;
+        background: #fff;
+    }
+
+    .guest-info-grid {
+        display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 14px 24px;
+    }
+    .guest-info-item .label {
+        font-size: 12px; color: #6b6b6b; margin-bottom: 2px;
+    }
+    .guest-info-item .value {
+        font-size: 14px; font-weight: 600; color: #1a1a1a;
+    }
+
+    .admin-message {
+        padding: 12px 16px; border-radius: 8px; margin-bottom: 12px;
+        display: flex; align-items: center; gap: 8px;
+    }
+    .admin-message.success { background: #EAF3DE; border: 1px solid #639922; color: #27500A; }
+    .admin-message.warning { background: #FAEEDA; border: 1px solid #BA7517; color: #633806; }
+    .admin-message.error   { background: #FCEBEB; border: 1px solid #E24B4A; color: #791F1F; }
+    .admin-message.info    { background: #E6F1FB; border: 1px solid #378ADD; color: #0C447C; }
+    .admin-message i { font-size: 18px; }
+
+    .lich-su-table {
+        width: 100%; border-collapse: collapse;
+        background: #FCFCFA; border: 1px solid #EEECE3; border-radius: 10px; overflow: hidden;
+    }
+    .lich-su-table th {
+        text-align: left; padding: 10px 12px; font-size: 11.5px; font-weight: 600;
+        color: #57564E; background: #F7F6F1; text-transform: uppercase; letter-spacing: 0.04em;
+        border-bottom: 1px solid #E9E6DC;
+    }
+    .lich-su-table td {
+        padding: 9px 12px; font-size: 13px; color: #2C2C2A;
+        border-bottom: 1px solid #EEECE3;
+    }
+    .lich-su-table tr:last-child td { border-bottom: none; }
+    .lich-su-table .loai-thu { color: #27500A; font-weight: 600; }
+    .lich-su-table .loai-hoan { color: #791F1F; font-weight: 600; }
+
+    /* Invoice Summary Styles */
+    .invoice-summary {
+        background: #FCFCFA;
+        border: 1px solid #E9E6DC;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    .invoice-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        padding: 20px 24px;
+        background: #F7F6F1;
+        border-bottom: 2px solid #E9E6DC;
+    }
+    .invoice-logo {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    .invoice-logo i {
+        font-size: 40px;
+        color: #2F6690;
+    }
+    .invoice-logo h3 {
+        margin: 0;
+        font-size: 18px;
+        color: #2C2C2A;
+    }
+    .invoice-logo p {
+        margin: 4px 0 0 0;
+        font-size: 13px;
+        color: #6B6A61;
+    }
+    .invoice-meta {
+        text-align: right;
+    }
+    .invoice-meta p {
+        margin: 4px 0;
+        font-size: 13px;
+        color: #57564E;
+    }
+    .invoice-customer {
+        padding: 16px 24px;
+        background: #FEFDFB;
+        border-bottom: 1px solid #EEECE3;
+    }
+    .invoice-customer p {
+        margin: 6px 0;
+        font-size: 13px;
+        color: #2C2C2A;
+    }
+    .invoice-customer strong {
+        font-weight: 600;
+        color: #57564E;
+        margin-right: 8px;
+    }
+    .invoice-items {
+        padding: 0;
+    }
+    .invoice-items table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .invoice-items thead th {
+        text-align: left;
+        padding: 12px 24px;
+        font-size: 12px;
+        font-weight: 600;
+        color: #57564E;
+        background: #F7F6F1;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        border-bottom: 1px solid #E9E6DC;
+    }
+    .invoice-items tbody td {
+        padding: 10px 24px;
+        font-size: 13px;
+        color: #2C2C2A;
+        border-bottom: 1px solid #EEECE3;
+    }
+    .invoice-items tbody tr.discount-row td {
+        color: #E87A00;
+    }
+    .invoice-items tfoot td {
+        padding: 12px 24px;
+        font-size: 14px;
+        border-top: 2px solid #E9E6DC;
+    }
+    .invoice-items tfoot .total-row td {
+        background: #F7F6F1;
+        font-size: 16px;
+        padding: 16px 24px;
+    }
+    .invoice-items tfoot .balance-row td {
+        padding: 16px 24px;
+        font-size: 15px;
+    }
+    .invoice-items tfoot .balance-row.due td {
+        background: #FEF3E6;
+        color: #B95000;
+    }
+    .invoice-items tfoot .balance-row.overpaid td {
+        background: #FEF3E6;
+        color: #B95000;
+    }
+    .invoice-items tfoot .balance-row.paid td {
+        background: #E9F4DE;
+        color: #285D0E;
+    }
+
+    /* Modal Styles */
+    .modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+    }
+    .modal-content {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        width: 90%;
+        max-width: 600px;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px 24px;
+        border-bottom: 1px solid #E9E6DC;
+    }
+    .modal-header h3 {
+        margin: 0;
+        font-size: 18px;
+        color: #2C2C2A;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .modal-header h3 i {
+        font-size: 24px;
+        color: #2F6690;
+    }
+    .close-btn {
+        background: none;
+        border: none;
+        font-size: 24px;
+        color: #85837A;
+        cursor: pointer;
+        padding: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: color 0.2s;
+    }
+    .close-btn:hover {
+        color: #2C2C2A;
+    }
+    .modal-body {
+        padding: 24px;
+    }
+    .qr-container {
+        text-align: center;
+    }
+    .qr-placeholder {
+        background: #F7F6F1;
+        border: 2px dashed #DEDBCF;
+        border-radius: 12px;
+        padding: 40px 20px;
+        margin-bottom: 24px;
+    }
+    .qr-placeholder i {
+        font-size: 80px;
+        color: #9C9A8F;
+        margin-bottom: 12px;
+    }
+    .qr-placeholder p {
+        margin: 8px 0;
+        font-size: 14px;
+        color: #6B6A61;
+    }
+    .qr-placeholder .amount-display {
+        font-size: 16px;
+        color: #2C2C2A;
+        margin-top: 16px;
+    }
+    .qr-placeholder .amount-display strong {
+        color: #2F6690;
+        font-size: 18px;
+    }
+    .qr-instructions {
+        text-align: left;
+        background: #FEFDFB;
+        padding: 16px;
+        border-radius: 8px;
+        border: 1px solid #EEECE3;
+    }
+    .qr-instructions h4 {
+        margin: 0 0 12px 0;
+        font-size: 14px;
+        color: #57564E;
+    }
+    .qr-instructions ol {
+        margin: 0;
+        padding-left: 20px;
+    }
+    .qr-instructions li {
+        margin: 8px 0;
+        font-size: 13px;
+        color: #6B6A61;
+        line-height: 1.5;
+    }
+    .modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+        padding: 16px 24px;
+        border-top: 1px solid #E9E6DC;
+        background: #F7F6F1;
+    }
+</style>
+
+<div th:replace="~{fragments/cms-sidebar :: cmsSidebar}"></div>
+<div th:replace="~{fragments/headers/cms-header :: cmsHeader}"></div>
+
+<main class="admin-wrapper">
+
+    <!-- ============================================================ -->
+    <!-- PHAN 1: TIM KIEM + DAI NGAY + DANH SACH — LUON HIEN            -->
+    <!-- ============================================================ -->
+    <div class="checkout-list-block">
+        <div class="checkout-head">
+            <h1>Trả Phòng (Admin Check-out)</h1>
+            <span class="checkout-count">
+                <i class="ti ti-logout"></i>
+                <span th:text="${#lists.size(danhSachDon)} + ' đơn trong khoảng đang xem'"></span>
+            </span>
+        </div>
+
+        <div class="checkout-list-panel">
+            <form th:action="@{/nhan-su/admin/dat-phong/checkout/{id}(id=${dp == null ? 'today' : dp.id})}" method="get">
+                <!-- THANH TIM KIEM -->
+                <div class="search-pill">
+                    <i class="ti ti-search" aria-hidden="true"></i>
+                    <input type="text" name="q" th:value="${q}"
+                           placeholder="Tìm theo tên khách, số điện thoại hoặc mã đơn">
+                </div>
+
+                <!-- CHIP CHON MODE LOC -->
+                <div class="filter-mode">
+                    <a class="filter-chip" th:classappend="${!dangLocKhoangNgay} ? ' active'"
+                       th:href="@{/nhan-su/admin/dat-phong/checkout/{id}(id=${dp == null ? 'today' : dp.id}, q=${q})}">
+                        <i class="ti ti-calendar-month"></i>
+                        <span>Xem theo tháng
+                            <span th:if="${thangHienThi != null}"
+                                  th:text="${#temporals.format(thangHienThi, 'MM/yyyy')}"></span>
+                        </span>
+                    </a>
+                    <span class="filter-chip" th:classappend="${dangLocKhoangNgay} ? ' active'"
+                          onclick="toggleKhoangNgay()" style="cursor:pointer;">
+                        <i class="ti ti-calendar-range"></i>
+                        <span>Theo khoảng ngày</span>
+                    </span>
+                </div>
+
+                <!-- FORM KHOANG NGAY -->
+                <div class="khoang-ngay-form" th:classappend="${dangLocKhoangNgay} ? ' mo'">
+                    <div class="admin-field">
+                        <label>Từ ngày</label>
+                        <input type="date" name="tuNgay" th:value="${tuNgay}">
+                    </div>
+                    <div class="admin-field">
+                        <label>Đến ngày</label>
+                        <input type="date" name="denNgay" th:value="${denNgay}">
+                    </div>
+                    <div class="btn-group">
+                        <button type="submit" class="btn-pill primary">
+                            <i class="ti ti-filter"></i> Lọc
+                        </button>
+                        <a th:href="@{/nhan-su/admin/dat-phong/checkout/{id}(id=${dp == null ? 'today' : dp.id}, q=${q})}"
+                           class="btn-pill ghost">
+                            <i class="ti ti-x"></i> Bỏ lọc
+                        </a>
+                    </div>
+                </div>
+            </form>
+
+            <!-- DAI NGAY TRONG THANG -->
+            <div class="ngay-strip-wrap" th:unless="${dangLocKhoangNgay}">
+                <div class="ngay-strip-head">
+                    <span class="ten-thang">
+                        <i class="ti ti-calendar-stats"></i>
+                        Chọn ngày trong tháng
+                        <span th:if="${thangHienThi != null}"
+                              th:text="${#temporals.format(thangHienThi, 'MM/yyyy')}"></span>
+                    </span>
+                    <div class="thang-nav">
+                        <a class="thang-nav-btn"
+                           th:href="@{/nhan-su/admin/dat-phong/checkout/{id}(id=${dp == null ? 'today' : dp.id}, thang=${thangTruoc}, q=${q})}"
+                           title="Tháng trước" aria-label="Tháng trước">
+                            <i class="ti ti-chevron-left"></i>
+                        </a>
+                        <a class="thang-nav-label"
+                           th:href="@{/nhan-su/admin/dat-phong/checkout/{id}(id=${dp == null ? 'today' : dp.id}, q=${q})}"
+                           title="Về tháng hiện tại">
+                            <i class="ti ti-calendar-month"></i>
+                            <span>Hôm nay</span>
+                        </a>
+                        <a class="thang-nav-btn"
+                           th:href="@{/nhan-su/admin/dat-phong/checkout/{id}(id=${dp == null ? 'today' : dp.id}, thang=${thangSau}, q=${q})}"
+                           title="Tháng sau" aria-label="Tháng sau">
+                            <i class="ti ti-chevron-right"></i>
+                        </a>
+                    </div>
+                </div>
+                <div class="ngay-strip">
+                    <a th:each="ng : ${dsNgayTrongThang}"
+                       th:href="@{/nhan-su/admin/dat-phong/checkout/{id}(id=${dp == null ? 'today' : dp.id}, ngay=${ng.ngay}, q=${q})}"
+                       th:classappend="${ng.laHomNay} ? ' hom-nay' : ''
+                                   + (${ng.dangChon} ? ' dang-chon' : '')
+                                   + (${ng.soDon == 0} ? ' trong' : ' co-don')">
+                        <div class="nhan" th:text="${ng.laHomNay} ? 'hôm nay' : ${#temporals.format(ng.ngay, 'EEE dd/MM')}"></div>
+                        <div class="so" th:text="${#temporals.day(ng.ngay)} + '/' + ${#temporals.month(ng.ngay)}"></div>
+                        <div class="dem" th:text="${ng.soDon} + ' đơn'"></div>
+                    </a>
+                </div>
+            </div>
+
+            <!-- DANH SACH DON -->
+            <div class="don-checkout-list">
+                <a class="don-checkout-row" th:each="don : ${danhSachDon}"
+                   th:href="@{/nhan-su/admin/dat-phong/checkout/{id}(id=${don.id}, ngay=${ngayChon}, q=${q})}"
+                   th:classappend="${dp != null and dp.id == don.id} ? ' dang-xem' : (${don.trangThai == 'Da tra phong'} ? ' da-tra' : '')">
+                    <div class="thong-tin">
+                        <p class="ten-khach" th:text="'#' + ${don.id} + ' — ' + (${don.n != null ? don.n.hoTen : (don.hoten != null ? don.hoten : 'Khách vãng lai')})"></p>
+                        <p class="meta">
+                            <span class="tu-chip">
+                                <i class="ti ti-clock"></i>
+                                <span th:text="${don.ngaytraPhong != null ? #temporals.format(don.ngaytraPhong, 'HH:mm dd/MM') : '—'}"></span>
+                            </span>
+                            <span th:each="ct, iter : ${mapCtdp.get(don.id)}">
+                                <span th:if="${ct.p != null}"
+                                      th:text="'P' + ${ct.p.soPhong} + (${!iter.last} ? ', ' : '')"></span>
+                            </span>
+                            <span class="dot">·</span>
+                            <span class="tu-chip">
+                                <i class="ti ti-users"></i>
+                                <span th:text="${don.songuoiLon + ' NL, ' + don.sotreEm + ' TE'}"></span>
+                            </span>
+                            <span class="dot">·</span>
+                            <span th:text="${don.n != null ? don.n.soDienThoai : don.sdt}"></span>
+                        </p>
+                    </div>
+                    <span class="trang-thai">
+                        <span th:if="${don.trangThai == 'Da nhan phong'}" class="status-badge info">Đang lưu trú</span>
+                        <span th:if="${don.trangThai == 'Da tra phong'}" class="status-badge success">Đã trả phòng</span>
+                    </span>
+                </a>
+
+                <div th:if="${danhSachDon.isEmpty()}" class="empty-state">
+                    <i class="ti ti-mood-empty" style="font-size:18px;vertical-align:middle;margin-right:6px;"></i>
+                    Không có đơn nào cần trả phòng trong khoảng đã chọn.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- BANNER NHAC NHO KHI CHUA CHON DON                              -->
+    <!-- ============================================================ -->
+    <div class="checkout-hint" th:if="${dp == null}">
+        <i class="ti ti-info-circle"></i>
+        <span>Chọn một đơn phòng từ <strong>danh sách phía trên</strong> để rà soát trước khi xác nhận trả phòng.</span>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- PHAN 2: CHI TIET 1 DON                                         -->
+    <!-- ============================================================ -->
+    <div class="checkout-page" th:if="${dp != null}" id="chi-tiet-checkout">
+        <div class="admin-header">
+            <h1>Rà Soát Trả Phòng (Admin) — Đơn #<span th:text="${dp.id}"></span></h1>
+        </div>
+
+        <div th:if="${success}" class="admin-message success">
+            <i class="ti ti-circle-check"></i>
+            <span th:text="${success}"></span>
+        </div>
+        <div th:if="${error}" class="admin-message error">
+            <i class="ti ti-alert-circle"></i>
+            <span th:text="${error}"></span>
+        </div>
+        <div th:if="${toastWarning}" class="admin-message warning">
+            <i class="ti ti-alert-triangle"></i>
+            <span th:text="${toastWarning}"></span>
+        </div>
+
+        <div class="checkout-layout">
+            <!-- ============== COT TRAI ============== -->
+            <div>
+
+                <!-- THONG TIN KHACH & DON -->
+                <section class="admin-panel">
+                    <h2>
+                        Thông Tin Đặt Phòng
+                        <span th:if="${dp.trangThai == 'Da nhan phong'}" class="status-badge info" style="margin-left:8px;">Đang lưu trú</span>
+                        <span th:if="${dp.trangThai == 'Da tra phong'}" class="status-badge success" style="margin-left:8px;">Đã trả phòng</span>
+                    </h2>
+                    <div class="guest-info-grid">
+                        <div class="guest-info-item">
+                            <div class="label">Khách hàng</div>
+                            <div class="value" th:text="${dp.n != null ? dp.n.hoTen : (dp.hoten != null ? dp.hoten + ' (Vãng lai)' : 'Không có')}"></div>
+                        </div>
+                        <div class="guest-info-item">
+                            <div class="label">CCCD</div>
+                            <div class="value" th:text="${dp.ma_cccd != null ? dp.ma_cccd : '—'}"></div>
+                        </div>
+                        <div class="guest-info-item">
+                            <div class="label">Điện thoại</div>
+                            <div class="value" th:text="${dp.n != null ? dp.n.soDienThoai : (dp.sdt != null ? dp.sdt : '—')}"></div>
+                        </div>
+                        <div class="guest-info-item">
+                            <div class="label">Email</div>
+                            <div class="value" th:text="${dp.n != null ? dp.n.email : (dp.email != null ? dp.email : '—')}"></div>
+                        </div>
+                        <div class="guest-info-item">
+                            <div class="label">Ngày nhận phòng</div>
+                            <div class="value" th:text="${dp.ngaydatPhong != null ? #temporals.format(dp.ngaydatPhong, 'dd/MM/yyyy HH:mm') : '—'}"></div>
+                        </div>
+                        <div class="guest-info-item">
+                            <div class="label">Ngày trả phòng dự kiến</div>
+                            <div class="value" th:text="${dp.ngaytraPhong != null ? #temporals.format(dp.ngaytraPhong, 'dd/MM/yyyy HH:mm') : '—'}"></div>
+                        </div>
+                        <div class="guest-info-item">
+                            <div class="label">Số đêm</div>
+                            <div class="value" th:text="${soDem}"></div>
+                        </div>
+                        <div class="guest-info-item">
+                            <div class="label">Số khách</div>
+                            <div class="value" th:text="${dp.songuoiLon + ' người lớn, ' + dp.sotreEm + ' trẻ em'}"></div>
+                        </div>
+                        <div class="guest-info-item" th:if="${dp.km != null}">
+                            <div class="label">Khuyến mãi áp dụng</div>
+                            <div class="value" th:text="${dp.km.promoCode}"></div>
+                        </div>
+                        <div class="guest-info-item" th:if="${dp.yeuCauThem != null and !dp.yeuCauThem.isBlank()}">
+                            <div class="label">Yêu cầu thêm</div>
+                            <div class="value" th:text="${dp.yeuCauThem}"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- PHONG DA DAT -->
+                <section class="admin-panel">
+                    <h2>Phòng Đã Đặt</h2>
+                    <div style="overflow-x:auto;">
+                        <table class="lich-su-table">
+                            <thead>
+                            <tr>
+                                <th>Số phòng</th>
+                                <th>Tầng</th>
+                                <th>Loại phòng</th>
+                                <th>CCCD khách ở</th>
+                                <th style="text-align:right;">Giá phòng</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="ct : ${phongList}">
+                                <td th:text="${ct.p != null ? ct.p.soPhong : '—'}"></td>
+                                <td th:text="${ct.p != null ? ct.p.soTang : '—'}"></td>
+                                <td th:text="${ct.p != null and ct.p.loaiPhong != null ? ct.p.loaiPhong.tenLoai : '—'}"></td>
+                                <td th:text="${ct.ma_cccd != null ? ct.ma_cccd : '—'}"></td>
+                                <td style="text-align:right;" th:text="${#numbers.formatDecimal(ct.giaKhiDat, 0, 'COMMA', 0, 'POINT') + ' VND'}"></td>
+                            </tr>
+                            <tr th:if="${phongList.isEmpty()}">
+                                <td colspan="5"><div class="empty-state">Đơn này chưa có phòng nào.</div></td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- DICH VU SU DUNG -->
+                <section class="admin-panel">
+                    <h2>Dịch Vụ Sử Dụng</h2>
+                    <div style="overflow-x:auto;">
+                        <table class="lich-su-table">
+                            <thead>
+                            <tr>
+                                <th>Dịch vụ</th>
+                                <th style="text-align:center;">Số lượng</th>
+                                <th style="text-align:right;">Thành tiền</th>
+                                <th>Thời gian dùng</th>
+                                <th>Ghi chú</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="ct : ${dichVuList}">
+                                <td th:text="${ct.dv != null ? ct.dv.ten_dich_vu : '—'}"></td>
+                                <td style="text-align:center;" th:text="${ct.soluong}"></td>
+                                <td style="text-align:right;" th:text="${#numbers.formatDecimal(ct.donGia, 0, 'COMMA', 0, 'POINT') + ' VND'}"></td>
+                                <td th:text="${ct.ngay_su_dung != null ? #temporals.format(ct.ngay_su_dung, 'dd/MM/yyyy HH:mm') : '—'}"></td>
+                                <td th:text="${ct.ghichu != null ? ct.ghichu : '—'}"></td>
+                            </tr>
+                            <tr th:if="${dichVuList.isEmpty()}">
+                                <td colspan="5"><div class="empty-state">Chưa sử dụng dịch vụ nào.</div></td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Them dich vu phat sinh -->
+                    <form th:if="${dp.trangThai == 'Da nhan phong'}"
+                          class="inline-form"
+                          th:action="@{/nhan-su/admin/dat-phong/checkout/{id}/them-dich-vu(id=${dp.id})}" method="post">
+                        <div class="admin-field">
+                            <label>Thêm dịch vụ phát sinh</label>
+                            <select name="maDichVu" required>
+                                <option value="">-- Chọn dịch vụ --</option>
+                                <option th:each="dv : ${dichVuOptions}"
+                                        th:value="${dv.id}"
+                                        th:text="${dv.ten_dich_vu + ' - ' + #numbers.formatDecimal(dv.gia, 0, 'COMMA', 0, 'POINT') + ' VND/' + dv.donVi}">
+                                </option>
+                            </select>
+                        </div>
+                        <div class="admin-field" style="min-width:100px;">
+                            <label>Số lượng</label>
+                            <input type="number" name="soLuong" min="1" value="1">
+                        </div>
+                        <div class="admin-field" style="min-width:auto;">
+                            <button type="submit" class="admin-btn outline">Thêm Dịch Vụ</button>
+                        </div>
+                    </form>
+                </section>
+
+                <!-- LICH SU THANH TOAN -->
+                <section class="admin-panel">
+                    <h2>Lịch Sử Thanh Toán</h2>
+                    <div style="overflow-x:auto;">
+                        <table class="lich-su-table">
+                            <thead>
+                            <tr>
+                                <th>Ngày</th>
+                                <th>Loại</th>
+                                <th>Phương thức</th>
+                                <th style="text-align:right;">Số tiền</th>
+                                <th>Ghi chú</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr th:each="tt : ${lichSuThanhToan}">
+                                <td th:text="${tt.ngaythanhToan != null ? #temporals.format(tt.ngaythanhToan, 'dd/MM/yyyy HH:mm') : '—'}"></td>
+                                <td>
+                                    <span th:if="${tt.loaiGiaoDich == 'Thu tien'}" class="loai-thu">Thu tiền</span>
+                                    <span th:if="${tt.loaiGiaoDich == 'Hoan tien'}" class="loai-hoan">Hoàn tiền</span>
+                                    <span th:unless="${tt.loaiGiaoDich == 'Thu tien' or tt.loaiGiaoDich == 'Hoan tien'}"
+                                          th:text="${tt.loaiGiaoDich}"></span>
+                                </td>
+                                <td th:text="${tt.phuongThuc != null ? tt.phuongThuc : '—'}"></td>
+                                <td style="text-align:right;"
+                                    th:text="${#numbers.formatDecimal(tt.soTien, 0, 'COMMA', 0, 'POINT') + ' VND'}"></td>
+                                <td th:text="${tt.gichu != null ? tt.gichu : '—'}"></td>
+                            </tr>
+                            <tr th:if="${lichSuThanhToan == null or lichSuThanhToan.isEmpty()}">
+                                <td colspan="5"><div class="empty-state">Chưa có giao dịch thanh toán nào.</div></td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- HOA DON TONG QUAN -->
+                <section class="admin-panel">
+                    <h2>Hóa Đơn Tổng Quan</h2>
+                    <div class="invoice-summary">
+                        <div class="invoice-header">
+                            <div class="invoice-logo">
+                                <i class="ti ti-file-invoice"></i>
+                                <div>
+                                    <h3>HÓA ĐƠN THANH TOÁN</h3>
+                                    <p>Đơn #<span th:text="${dp.id}"></span></p>
+                                </div>
+                            </div>
+                            <div class="invoice-meta">
+                                <p><strong>Ngày tạo:</strong> <span th:text="${dp.ngayTao != null ? #temporals.format(dp.ngayTao, 'dd/MM/yyyy') : '—'}"></span></p>
+                                <p><strong>Check-in:</strong> <span th:text="${dp.ngaydatPhong != null ? #temporals.format(dp.ngaydatPhong, 'dd/MM/yyyy HH:mm') : '—'}"></span></p>
+                                <p><strong>Check-out:</strong> <span th:text="${dp.ngaytraPhong != null ? #temporals.format(dp.ngaytraPhong, 'dd/MM/yyyy HH:mm') : '—'}"></span></p>
+                            </div>
+                        </div>
+                        
+                        <div class="invoice-customer">
+                            <p><strong>Khách hàng:</strong> <span th:text="${dp.n != null ? dp.n.hoTen : (dp.hoten != null ? dp.hoten : '—')}"></span></p>
+                            <p th:if="${dp.n != null and dp.n.soDienThoai != null}"><strong>Số điện thoại:</strong> <span th:text="${dp.n.soDienThoai}"></span></p>
+                            <p th:if="${dp.n == null and dp.sdt != null}"><strong>Số điện thoại:</strong> <span th:text="${dp.sdt}"></span></p>
+                            <p th:if="${dp.n != null and dp.n.email != null}"><strong>Email:</strong> <span th:text="${dp.n.email}"></span></p>
+                            <p th:if="${dp.n == null and dp.email != null}"><strong>Email:</strong> <span th:text="${dp.email}"></span></p>
+                        </div>
+                        
+                        <div class="invoice-items">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Mô tả</th>
+                                        <th style="text-align: right;">Số lượng</th>
+                                        <th style="text-align: right;">Đơn giá</th>
+                                        <th style="text-align: right;">Thành tiền</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Tiền phòng (<span th:text="${soDem}"></span> đêm)</td>
+                                        <td style="text-align: right;"><span th:text="${soDem}"></span></td>
+                                        <td style="text-align: right;">—</td>
+                                        <td style="text-align: right;"><span th:text="${#numbers.formatDecimal(tienPhong, 0, 'COMMA', 0, 'POINT')}"></span></td>
+                                    </tr>
+                                    <tr th:if="${tienDichVu.compareTo(T(java.math.BigDecimal).ZERO) > 0}">
+                                        <td>Dịch vụ phát sinh</td>
+                                        <td style="text-align: right;">—</td>
+                                        <td style="text-align: right;">—</td>
+                                        <td style="text-align: right;"><span th:text="${#numbers.formatDecimal(tienDichVu, 0, 'COMMA', 0, 'POINT')}"></span></td>
+                                    </tr>
+                                    <tr th:if="${phuPhiTraMuon != null and phuPhiTraMuon.compareTo(T(java.math.BigDecimal).ZERO) > 0}">
+                                        <td>Phụ phí trả muộn</td>
+                                        <td style="text-align: right;">—</td>
+                                        <td style="text-align: right;">—</td>
+                                        <td style="text-align: right;"><span th:text="${#numbers.formatDecimal(phuPhiTraMuon, 0, 'COMMA', 0, 'POINT')}"></span></td>
+                                    </tr>
+                                    <tr th:if="${tienGiam.compareTo(T(java.math.BigDecimal).ZERO) > 0}" class="discount-row">
+                                        <td>Giảm giá <span th:if="${dp.km != null}">(<span th:text="${dp.km.promoCode}"></span>)</span></td>
+                                        <td style="text-align: right;">—</td>
+                                        <td style="text-align: right;">—</td>
+                                        <td style="text-align: right;">-<span th:text="${#numbers.formatDecimal(tienGiam, 0, 'COMMA', 0, 'POINT')}"></span></td>
+                                    </tr>
+                                    <tr>
+                                        <td>VAT (10%)</td>
+                                        <td style="text-align: right;">—</td>
+                                        <td style="text-align: right;">—</td>
+                                        <td style="text-align: right;"><span th:text="${#numbers.formatDecimal(tienVat, 0, 'COMMA', 0, 'POINT')}"></span></td>
+                                    </tr>
+                                </tbody>
+                                <tfoot>
+                                    <tr class="total-row">
+                                        <td colspan="3"><strong>TỔNG CỘNG</strong></td>
+                                        <td style="text-align: right;"><strong><span th:text="${#numbers.formatDecimal(tongTien, 0, 'COMMA', 0, 'POINT')}"></span> VND</strong></td>
+                                    </tr>
+                                    <tr th:if="${daThu.compareTo(T(java.math.BigDecimal).ZERO) > 0}">
+                                        <td colspan="3">Đã thanh toán</td>
+                                        <td style="text-align: right;">-<span th:text="${#numbers.formatDecimal(daThu, 0, 'COMMA', 0, 'POINT')}"></span> VND</td>
+                                    </tr>
+                                    <tr th:if="${daHoanTra != null and daHoanTra.compareTo(T(java.math.BigDecimal).ZERO) > 0}">
+                                        <td colspan="3">Đã hoàn trả</td>
+                                        <td style="text-align: right;">+<span th:text="${#numbers.formatDecimal(daHoanTra, 0, 'COMMA', 0, 'POINT')}"></span> VND</td>
+                                    </tr>
+                                    <tr class="balance-row" th:classappend="${soDu.compareTo(T(java.math.BigDecimal).ZERO) > 0 ? 'due' : (soDu.compareTo(T(java.math.BigDecimal).ZERO) < 0 ? 'overpaid' : 'paid')}">
+                                        <td colspan="3"><strong>SỐ DƯ</strong></td>
+                                        <td style="text-align: right;">
+                                            <strong>
+                                                <span th:text="${soDu.compareTo(T(java.math.BigDecimal).ZERO) > 0
+                                                      ? (#numbers.formatDecimal(soDu, 0, 'COMMA', 0, 'POINT') + ' VND (còn nợ)')
+                                                      : (soDu.compareTo(T(java.math.BigDecimal).ZERO) < 0
+                                                      ? (#numbers.formatDecimal(soDu.negate(), 0, 'COMMA', 0, 'POINT') + ' VND (thừa)')
+                                                      : '0 VND (đã thanh toán)')}"></span>
+                                            </strong>
+                                        </td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- ============== COT PHAI: TOM TAT + ACTIONS ============== -->
+            <aside class="summary-panel">
+                <h3>Tóm Tắt Hóa Đơn</h3>
+
+                <div class="summary-block">
+                    <div class="summary-row"><span>Số đêm</span><span th:text="${soDem}"></span></div>
+                    <div class="summary-row"><span>Số khách</span><span th:text="${dp.songuoiLon + ' NL, ' + dp.sotreEm + ' TE'}"></span></div>
+                    <div class="summary-row" th:if="${dp.km != null}">
+                        <span>Khuyến mãi</span><span th:text="${dp.km.promoCode}"></span>
+                    </div>
+                </div>
+
+                <div class="summary-block">
+                    <p class="summary-label">Chi tiết folio</p>
+                    <div class="summary-row"><span>Tiền phòng</span><span th:text="${#numbers.formatDecimal(tienPhong, 0, 'COMMA', 0, 'POINT') + ' VND'}"></span></div>
+                    <div class="summary-row"><span>Tiền dịch vụ</span><span th:text="${#numbers.formatDecimal(tienDichVu, 0, 'COMMA', 0, 'POINT') + ' VND'}"></span></div>
+                    <div class="summary-row discount" th:if="${tienGiam.compareTo(T(java.math.BigDecimal).ZERO) > 0}">
+                        <span>Giảm giá</span><span th:text="${tienGiamText}"></span>
+                    </div>
+                    <div class="summary-row" th:if="${phuPhiTraMuon != null and phuPhiTraMuon.compareTo(T(java.math.BigDecimal).ZERO) > 0}">
+                        <span>Phụ phí trả muộn</span><span th:text="${#numbers.formatDecimal(phuPhiTraMuon, 0, 'COMMA', 0, 'POINT') + ' VND'}"></span>
+                    </div>
+                    <div class="summary-row"><span>VAT (10%)</span><span th:text="${#numbers.formatDecimal(tienVat, 0, 'COMMA', 0, 'POINT') + ' VND'}"></span></div>
+                    <div class="summary-row grand">
+                        <span>Tổng cộng</span><span th:text="${#numbers.formatDecimal(tongTien, 0, 'COMMA', 0, 'POINT') + ' VND'}"></span>
+                    </div>
+                </div>
+
+                <div class="summary-block" th:if="${daThu.compareTo(T(java.math.BigDecimal).ZERO) > 0
+                                                or (daHoanTra != null and daHoanTra.compareTo(T(java.math.BigDecimal).ZERO) > 0)}">
+                    <p class="summary-label">Đã thanh toán / hoàn</p>
+                    <div class="summary-row paid" th:if="${daThu.compareTo(T(java.math.BigDecimal).ZERO) > 0}">
+                        <span>Đã thanh toán trước</span><span th:text="${daThuText}"></span>
+                    </div>
+                    <div class="summary-row paid" th:if="${daHoanTra != null and daHoanTra.compareTo(T(java.math.BigDecimal).ZERO) > 0}">
+                        <span>Đã hoàn trả</span><span th:text="${daHoanTraText}"></span>
+                    </div>
+                </div>
+
+                <!-- SO DU (chi khi con dang luu tru) -->
+                <div class="summary-block" th:if="${dp.trangThai == 'Da nhan phong'
+                                                    and soDu.compareTo(T(java.math.BigDecimal).ZERO) != 0}">
+                    <div class="summary-row" th:classappend="${soDu.compareTo(T(java.math.BigDecimal).ZERO) > 0} ? ' due' : ' due thua'">
+                        <span>Số dư</span>
+                        <span th:text="${soDu.compareTo(T(java.math.BigDecimal).ZERO) > 0
+                                          ? (#numbers.formatDecimal(soDu, 0, 'COMMA', 0, 'POINT') + ' VND (còn nợ)')
+                                          : (#numbers.formatDecimal(soDu.negate(), 0, 'COMMA', 0, 'POINT') + ' VND (thừa)')}"></span>
+                    </div>
+                </div>
+
+                <!-- BANNER 3-CASE -->
+                <div th:if="${dp.trangThai == 'Da nhan phong'}" style="margin-bottom:14px;">
+                    <div th:if="${soDu.compareTo(T(java.math.BigDecimal).ZERO) == 0}" class="admin-message success">
+                        <i class="ti ti-circle-check"></i>
+                        <span><strong>Đã thu đủ.</strong> Có thể chốt trả phòng.</span>
+                    </div>
+                    <div th:if="${soDu.compareTo(T(java.math.BigDecimal).ZERO) > 0}" class="admin-message warning">
+                        <i class="ti ti-alert-triangle"></i>
+                        <span><strong>Khách còn nợ
+                            <span th:text="${#numbers.formatDecimal(soDu, 0, 'COMMA', 0, 'POINT') + ' VND'}"></span>.
+                        </strong> Vui lòng thu tiền trước khi chốt.</span>
+                    </div>
+                    <div th:if="${soDu.compareTo(T(java.math.BigDecimal).ZERO) < 0}" class="admin-message warning">
+                        <i class="ti ti-alert-triangle"></i>
+                        <span><strong>Khách đã trả thừa
+                            <span th:text="${#numbers.formatDecimal(soDu.negate(), 0, 'COMMA', 0, 'POINT') + ' VND'}"></span>.
+                        </strong> Vui lòng ghi nhận hoàn tiền trước khi chốt.</span>
+                    </div>
+                </div>
+
+                <!-- FORM THU TIEN (Tiền còn thiếu) -->
+                <form th:if="${dp.trangThai == 'Da nhan phong' and canThu.compareTo(T(java.math.BigDecimal).ZERO) > 0}"
+                      id="form-thu-tien"
+                      class="inline-form"
+                      th:action="@{/nhan-su/admin/dat-phong/checkout/{id}/thu-tien(id=${dp.id})}" method="post">
+                    <div class="admin-field">
+                        <label>Hình thức thanh toán <span style="color:#E24B4A;">*</span></label>
+                        <select name="phuongThuc" id="phuongThuc-thu" onchange="handlePaymentMethodChange(this)">
+                            <option value="Tien mat">Tiền mặt</option>
+                            <option value="Chuyen khoan">Chuyển khoản (VNPay QR)</option>
+                            <option value="The tin dung">Thẻ tín dụng</option>
+                            <option value="Vi dien tu">Ví điện tử</option>
+                        </select>
+                    </div>
+                    <div class="admin-field" style="min-width:160px;">
+                        <label>Số tiền còn thiếu</label>
+                        <input type="text" readonly
+                               th:value="${#numbers.formatDecimal(canThu, 0, 'COMMA', 0, 'POINT') + ' VND'}">
+                    </div>
+                    <div class="admin-field" style="flex:1; min-width:220px;">
+                        <label>Ghi chú thanh toán</label>
+                        <input type="text" name="ghiChu" placeholder="Không bắt buộc">
+                    </div>
+                    <div class="admin-field" style="min-width:auto;">
+                        <button type="button" id="btn-thu-tien" class="admin-btn" onclick="handleThuTien()">
+                            <i class="ti ti-cash"></i> <span id="btn-thu-text">Thu Tiền</span>
+                        </button>
+                    </div>
+                </form>
+                
+                <!-- Modal QR Code VNPay -->
+                <div id="modal-vnpay-qr" class="modal" style="display:none;">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3><i class="ti ti-qrcode"></i> Thanh Toán VNPay QR Code</h3>
+                            <button type="button" class="close-btn" onclick="closeVnpayModal()">
+                                <i class="ti ti-x"></i>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="qr-container">
+                                <div class="qr-placeholder">
+                                    <i class="ti ti-qrcode"></i>
+                                    <p>Mã QR VNPay</p>
+                                    <p class="amount-display">Số tiền: <strong><span id="qr-amount" th:text="${#numbers.formatDecimal(canThu, 0, 'COMMA', 0, 'POINT')}"></span> VND</strong></p>
+                                </div>
+                                <div class="qr-instructions">
+                                    <h4>Hướng dẫn thanh toán:</h4>
+                                    <ol>
+                                        <li>Mở ứng dụng ngân hàng/ví điện tử hỗ trợ VNPay</li>
+                                        <li>Quét mã QR code phía trên</li>
+                                        <li>Xác nhận thanh toán trên ứng dụng</li>
+                                        <li>Sau khi thanh toán thành công, nhấn nút "Xác Nhận Đã Thanh Toán"</li>
+                                    </ol>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="admin-btn outline" onclick="closeVnpayModal()">Hủy</button>
+                            <button type="button" class="admin-btn" onclick="confirmVnpayPayment()">
+                                <i class="ti ti-check"></i> Xác Nhận Đã Thanh Toán
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- FORM HOAN TIEN -->
+                <form th:if="${dp.trangThai == 'Da nhan phong' and canHoan.compareTo(T(java.math.BigDecimal).ZERO) > 0}"
+                      class="inline-form"
+                      th:action="@{/nhan-su/admin/dat-phong/checkout/{id}/hoan-tien(id=${dp.id})}" method="post">
+                    <div class="admin-field">
+                        <label>Hình thức hoàn</label>
+                        <select name="hinhThuc">
+                            <option value="Tien mat">Tiền mặt</option>
+                            <option value="Chuyen khoan">Chuyển khoản</option>
+                        </select>
+                    </div>
+                    <div class="admin-field" style="min-width:160px;">
+                        <label>Số tiền hoàn</label>
+                        <input type="text" readonly
+                               th:value="${#numbers.formatDecimal(canHoan, 0, 'COMMA', 0, 'POINT') + ' VND'}">
+                    </div>
+                    <div class="admin-field" style="flex:1; min-width:220px;">
+                        <label>Ghi chú hoàn tiền</label>
+                        <input type="text" name="ghiChu" placeholder="Không bắt buộc">
+                    </div>
+                    <div class="admin-field" style="min-width:auto;">
+                        <button type="submit" class="admin-btn outline">
+                            <i class="ti ti-arrow-back-up"></i> Ghi Nhận Hoàn
+                        </button>
+                    </div>
+                </form>
+
+                <div th:if="${trangThaiHoanTien == 'Cho xu ly'}" class="admin-message info" style="margin-top:12px;">
+                    <i class="ti ti-info-circle"></i>
+                    <span>Đã ghi nhận hoàn tiền, đang chờ xử lý (chuyển khoản/duyệt).</span>
+                </div>
+
+                <!-- CHOT TRA PHONG -->
+                <form th:if="${dp.trangThai == 'Da nhan phong'}"
+                      class="inline-form"
+                      th:action="@{/nhan-su/admin/dat-phong/checkout/{id}/xac-nhan(id=${dp.id})}" method="post"
+                      onsubmit="return confirm('Xác nhận chốt trả phòng cho đơn #' + [[${dp.id}]] + '?');">
+                    <div class="admin-field" style="min-width:auto; margin-left:auto;">
+                        <button type="submit" class="admin-btn"
+                                th:disabled="${soDu.compareTo(T(java.math.BigDecimal).ZERO) != 0}"
+                                th:title="${soDu.compareTo(T(java.math.BigDecimal).ZERO) > 0 ? 'Vui lòng thu nốt tiền trước khi chốt' : (soDu.compareTo(T(java.math.BigDecimal).ZERO) < 0 ? 'Vui lòng ghi nhận hoàn tiền trước khi chốt' : 'Xác nhận chốt trả phòng')}">
+                            <i class="ti ti-check"></i> Chốt Trả Phòng
+                        </button>
+                    </div>
+                </form>
+
+                <!-- DA TRA PHONG: nut xuat PDF -->
+                <div th:if="${dp.trangThai == 'Da tra phong'}" style="margin-top:14px;">
+                    <a th:if="${hoaDon != null}"
+                       th:href="@{/nhan-su/admin/dat-phong/checkout/{id}/xuat-pdf(id=${dp.id})}"
+                       class="admin-btn" onclick="xuatPdfVaMoTab(this, event)">
+                        <i class="ti ti-file-type-pdf"></i> Xuất Hóa Đơn PDF
+                    </a>
+                </div>
+
+                <div th:if="${dp.trangThai != 'Da nhan phong' and dp.trangThai != 'Da tra phong'}"
+                     class="admin-message error" style="margin-top:12px;">
+                    <i class="ti ti-alert-circle"></i>
+                    <span>Đơn này chưa nhận phòng (trạng thái hiện tại: <span th:text="${dp.trangThai}"></span>), không thể thực hiện trả phòng.</span>
+                </div>
+            </aside>
+        </div>
+    </div>
+</main>
+
+<footer>
+    <p>&copy; 2026 Hotel. All rights reserved.</p>
+</footer>
+<script src="/xuat-pdf-handler.js"></script>
+<script>
+    // Cuon xuong panel chi tiet khi URL co ?id=N
+    document.addEventListener('DOMContentLoaded', function () {
+        var chiTiet = document.getElementById('chi-tiet-checkout');
+        if (chiTiet) chiTiet.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
+    function toggleKhoangNgay() {
+        var el = document.querySelector('.khoang-ngay-form');
+        if (el) el.classList.toggle('mo');
+    }
+
+    // Xử lý thay đổi phương thức thanh toán
+    function handlePaymentMethodChange(selectEl) {
+        var method = selectEl.value;
+        var btnText = document.getElementById('btn-thu-text');
+        
+        if (method === 'Chuyen khoan') {
+            btnText.textContent = 'Hiển Thị QR Code';
+        } else {
+            btnText.textContent = 'Ghi Nhận Trả Tiền';
+        }
+    }
+
+    // Xử lý nút thu tiền
+    function handleThuTien() {
+        var method = document.getElementById('phuongThuc-thu').value;
+        
+        if (method === 'Chuyen khoan') {
+            // Hiển thị modal VNPay QR
+            openVnpayModal();
+        } else {
+            // Submit form trực tiếp cho tiền mặt/thẻ/ví
+            if (confirm('Xác nhận khách đã thanh toán bằng ' + method + '?')) {
+                document.getElementById('form-thu-tien').submit();
+            }
+        }
+    }
+
+    // Mở modal VNPay QR
+    function openVnpayModal() {
+        document.getElementById('modal-vnpay-qr').style.display = 'flex';
+    }
+
+    // Đóng modal VNPay QR
+    function closeVnpayModal() {
+        document.getElementById('modal-vnpay-qr').style.display = 'none';
+    }
+
+    // Xác nhận thanh toán VNPay
+    function confirmVnpayPayment() {
+        if (confirm('Xác nhận khách đã thanh toán qua VNPay QR Code?')) {
+            document.getElementById('form-thu-tien').submit();
+        }
+    }
+
+    // Đóng modal khi click outside
+    document.addEventListener('click', function(event) {
+        var modal = document.getElementById('modal-vnpay-qr');
+        if (modal && event.target === modal) {
+            closeVnpayModal();
+        }
+    });
+</script>
+</body>
+</html>

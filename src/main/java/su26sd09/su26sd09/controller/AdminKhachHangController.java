@@ -1,0 +1,128 @@
+package su26sd09.su26sd09.controller;
+
+import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import su26sd09.su26sd09.entity.KhachHang;
+import su26sd09.su26sd09.repository.KhachHangRepository;
+import su26sd09.su26sd09.repository.VaiTroRepo;
+import su26sd09.su26sd09.service.UserService;
+
+import java.security.Principal;
+import java.time.LocalDateTime;
+
+@Controller
+@RequestMapping("/nhan-su/admin/khach-hang")
+public class AdminKhachHangController {
+    @Autowired
+    private KhachHangRepository ndRepo;
+    @Autowired
+    private VaiTroRepo vtRepo;
+    @Autowired
+    private UserService userService;
+
+    @GetMapping
+    public String get_0(Model model,
+                        @RequestParam(value = "keyword", required = false) String ten)
+    {
+        model.addAttribute("keyword", ten);
+        model.addAttribute("khachHangs", ndRepo.findAllKhach(ten));
+        model.addAttribute("khachHang", new KhachHang());
+        model.addAttribute("vaiTros", vtRepo.findAll());
+
+        return "admin/khach-hang-list";
+    }
+
+    @GetMapping("/edit/{id}")
+    public String get_1(Model model, @PathVariable("id") Integer id)
+    {
+        model.addAttribute("khachHangs", ndRepo.findAllKhach(null));
+        model.addAttribute("khachHang", ndRepo.findById(id));
+        model.addAttribute("vaiTros", vtRepo.findAll());
+
+        return "admin/khach-hang-list";
+    }
+
+    @PostMapping("/save")
+    public String post_0(
+            @Valid KhachHang nguoiDung,
+            BindingResult r,
+            RedirectAttributes redirect,
+            @RequestParam(value = "matKhauMoi", required = false) String matKhauMoi
+    )
+    {
+        PasswordEncoder e = new BCryptPasswordEncoder();
+        boolean errByp = false;
+
+        if(userService.checkSoDienThoai(nguoiDung.getSoDienThoai(), nguoiDung.getMa_khach_hang()) ||
+                userService.checkEmail(nguoiDung.getEmail(), nguoiDung.getMa_khach_hang())
+        )
+        {
+            redirect.addFlashAttribute("error","số điện thoại hoặc email này đã tốn tại");
+            return "redirect:/nhan-su/admin/khach-hang";
+        }
+        if(nguoiDung.getMa_khach_hang() != null)
+        {
+            if(matKhauMoi != null && !matKhauMoi.isBlank())
+            {
+                nguoiDung.setMatKhau_hash(e.encode(matKhauMoi));
+            } else
+            {
+                nguoiDung.setMatKhau_hash(ndRepo.findById(nguoiDung.getMa_khach_hang()).get().getMatKhau_hash());
+            }
+            errByp = true;
+            nguoiDung.setNgayCapNhat(LocalDateTime.now());
+            for(FieldError fe: r.getFieldErrors())
+            {
+                if(!fe.getField().equals("matKhau_hash"))
+                {
+                    errByp = false;
+                }
+            }
+        } else
+        {
+            nguoiDung.setVaiTro(vtRepo.findById(3).get());
+            errByp = false;
+            if(matKhauMoi != null && !matKhauMoi.isBlank())
+            {
+
+                nguoiDung.setMatKhau_hash(e.encode(matKhauMoi));
+                errByp = true;
+            }
+        }
+        if(r.hasErrors())
+        {
+            if(!errByp)
+            {
+                redirect.addFlashAttribute("error", r.getFieldError().getDefaultMessage());
+                return "redirect:/nhan-su/admin/khach-hang";
+            }
+
+        }
+
+        userService.save(nguoiDung);
+        redirect.addFlashAttribute("success", "Luu nguoi dung thanh cong");
+
+        return "redirect:/nhan-su/admin/khach-hang";
+    }
+
+    @PostMapping("/lock/{id}")
+    public String post_1(
+            Principal p,
+            @PathVariable("id") Integer id,
+            RedirectAttributes redirect
+    )
+    {
+        userService.setTrangThai(id, false);
+        redirect.addFlashAttribute("success", "Khoa nguoi dung thanh cong");
+
+        return "redirect:/nhan-su/admin/khach-hang";
+    }
+}

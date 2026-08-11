@@ -1,0 +1,239 @@
+package su26sd09.su26sd09.controller;
+
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import su26sd09.su26sd09.entity.*;
+import su26sd09.su26sd09.service.*;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDateTime;
+import java.util.List;
+
+@Controller
+@RequestMapping("/thanh-toan")
+public class ThanhToanController {
+
+    @Autowired
+    VnpayService vnpayService;
+
+
+
+    @Autowired
+    ChiTietDichVuService ctdvService;
+
+    @Autowired
+    HoaDonService hoaDonService;
+
+    @Autowired
+    ChiTietDatPhongService chiTietDatPhongService;
+
+    @Autowired
+    ThanhToanService thanhToanService;
+
+    @Autowired
+    DatPhongService datPhongService;
+
+    @Autowired
+    BookingEmailService bookingEmailService;
+
+        @GetMapping("/dat-phong/{id}")
+        public String submitTransaction(@PathVariable Integer id,Model model){
+            DatPhong dp = datPhongService.findById(id);
+            if(dp.getTrangThai().equals("Da xac nhan")){
+                return "redirect:/home";
+            }
+            BigDecimal Totalamount = BigDecimal.ZERO;
+            BigDecimal amountDv = BigDecimal.ZERO;
+            BigDecimal amountPhong = BigDecimal.ZERO;
+            BigDecimal ThueVat = new BigDecimal("0.10");
+
+            List<ChiTietDatPhong> chiTietDatPhongs = chiTietDatPhongService.findByDatPhongId(id);
+            List<Chi_tiet_dich_vu> chiTietDichVus = ctdvService.findByDatPhongId(id);
+
+            for(ChiTietDatPhong ctdp : chiTietDatPhongs){
+                Totalamount = Totalamount.add(ctdp.getGiaKhiDat());
+                amountPhong = amountPhong.add(ctdp.getGiaKhiDat());
+            }
+
+            for(Chi_tiet_dich_vu ctdv: chiTietDichVus){
+                amountDv = amountDv.add(ctdv.getDonGia());
+            }
+
+            BigDecimal tienGiam = tinhTienGiam(amountPhong, dp.getKm());
+            BigDecimal tienPhongSauGiam = amountPhong.subtract(tienGiam);
+            Totalamount = tienPhongSauGiam.add(amountDv);
+            BigDecimal tienVat = Totalamount.multiply(ThueVat).setScale(2,RoundingMode.HALF_UP);
+            Totalamount = Totalamount.add(tienVat);
+            model.addAttribute("datPhong",dp);
+            model.addAttribute("TongTien",amountPhong);
+            model.addAttribute("TienDv",amountDv);
+            model.addAttribute("TienGiam",tienGiam);
+            model.addAttribute("TienVat",tienVat);
+            model.addAttribute("TongCong",Totalamount);
+            return "Thanh-Toan";
+        }
+
+    @PostMapping("/vnpay/{id}")
+    public String submitVnpay(@PathVariable Integer id, HttpServletRequest request) {
+        BigDecimal amount = BigDecimal.ZERO;
+        BigDecimal amountDv = BigDecimal.ZERO;
+
+        List<ChiTietDatPhong> chiTietDatPhongs = chiTietDatPhongService.findByDatPhongId(id);
+        for (ChiTietDatPhong ctdp : chiTietDatPhongs) {
+            amount = amount.add(ctdp.getGiaKhiDat());
+        }
+
+        List<Chi_tiet_dich_vu> chiTietDichVus = ctdvService.findByDatPhongId(id);
+        for (Chi_tiet_dich_vu ctdv : chiTietDichVus) {
+            amountDv = amountDv.add(ctdv.getDonGia());
+        }
+
+        DatPhong dp = datPhongService.findById(id);
+        BigDecimal VATCD = new BigDecimal("0.10");
+        BigDecimal tienGiam = tinhTienGiam(amount, dp != null ? dp.getKm() : null);
+        BigDecimal tongTien = amount.subtract(tienGiam).add(amountDv);
+        BigDecimal tienVat = tongTien.multiply(VATCD).setScale(2, RoundingMode.HALF_UP);
+        tongTien = tongTien.add(tienVat);
+
+        String baseUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort();
+        String vnpayUrl = vnpayService.createOrder(tongTien.longValue(), id, "ChuyenKhoan", baseUrl);
+
+        return "redirect:" + vnpayUrl;
+    }
+
+
+    @PostMapping("/dat-phong/{id}")
+    public String submitTienMat(@PathVariable Integer id,
+                                @RequestParam String phuongThucThanhToan,
+                                RedirectAttributes redirectAttributes) {
+
+        DatPhong dp = datPhongService.findById(id);
+        if (dp == null) {
+            redirectAttributes.addFlashAttribute("error", "Khong tim thay don dat phong");
+            return "redirect:/home";
+        }
+
+        BigDecimal amountPhong = BigDecimal.ZERO;
+        List<ChiTietDatPhong> chiTietDatPhongs = chiTietDatPhongService.findByDatPhongId(id);
+        for (ChiTietDatPhong ctdp : chiTietDatPhongs) {
+            amountPhong = amountPhong.add(ctdp.getGiaKhiDat());
+        }
+
+        BigDecimal amountDv = BigDecimal.ZERO;
+        List<Chi_tiet_dich_vu> chiTietDichVus = ctdvService.findByDatPhongId(id);
+        for (Chi_tiet_dich_vu ctdv : chiTietDichVus) {
+            amountDv = amountDv.add(ctdv.getDonGia());
+        }
+
+        BigDecimal VATCD = new BigDecimal("0.10");
+        BigDecimal tienGiam = tinhTienGiam(amountPhong, dp.getKm());
+        BigDecimal amountTongTien = amountPhong.subtract(tienGiam).add(amountDv);
+        BigDecimal tienVat = amountTongTien.multiply(VATCD).setScale(2, RoundingMode.HALF_UP);
+        amountTongTien = amountTongTien.add(tienVat);
+
+        // KHONG doi trangThai DatPhong o day — don nay la "Yeu cau dat phong",
+        // nhan vien se xac nhan + xep phong trong trang /nhan-su/yeu-cau-dat-phong.
+        // Trang thai chi duoc phep thay doi boi NV qua nut "Xac nhan yeu cau".
+        // Luu ngayCapNhat de audit.
+        dp.setNgayCapNhat(LocalDateTime.now());
+        datPhongService.save(dp);
+
+        HoaDon hd = new HoaDon();
+        hd.setNgayXuat(LocalDateTime.now());
+        hd.setD(dp);
+        hd.setK(dp.getKm());
+        hd.setTienPhong(amountPhong);
+        hd.setTienDichVu(amountDv);
+        hd.setTienGiam(tienGiam);
+        hd.setTienVat(tienVat);
+        hd.setTongTien(amountTongTien);
+        hd.setDaThanhToan(BigDecimal.ZERO);
+        hd.setGhiChu("Thanh toan tien mat tai quay, ma don: " + id);
+        hoaDonService.save(hd);
+
+
+
+
+
+        ThanhToan tt = new ThanhToan();
+        tt.setH(hd);
+        tt.setPhuongThuc("Tien Mat");
+        tt.setSoTien(amountTongTien);
+        tt.setTrangThai("Cho thanh toan");
+        tt.setNgaythanhToan(LocalDateTime.now());
+        tt.setGichu("Chua thu tien, khach se thanh toan khi nhan phong");
+        thanhToanService.save(tt);
+
+        // Gui email xac nhan cho khach (async) — bao gom hoa don + thong tin thanh toan
+        try {
+            bookingEmailService.guiEmailThanhToanThanhCong(id);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+
+        redirectAttributes.addFlashAttribute("success", "Da xac nhan dat phong. Vui long thanh toan tien mat khi den nhan phong.");
+        return "redirect:/thanh-toan/thanh-cong/" + id;
+    }
+
+
+    @GetMapping("/thanh-cong/{id}")
+    public String thanhToanThanhCong(@PathVariable Integer id, Model model) {
+        DatPhong dp = datPhongService.findById(id);
+
+        BigDecimal Totalamount = BigDecimal.ZERO;
+        BigDecimal amountDv = BigDecimal.ZERO;
+        BigDecimal amountPhong = BigDecimal.ZERO;
+        BigDecimal ThueVat = new BigDecimal("0.10");
+
+        List<ChiTietDatPhong> chiTietDatPhongs = chiTietDatPhongService.findByDatPhongId(id);
+        List<Chi_tiet_dich_vu> chiTietDichVus = ctdvService.findByDatPhongId(id);
+
+        for (ChiTietDatPhong ctdp : chiTietDatPhongs) {
+            amountPhong = amountPhong.add(ctdp.getGiaKhiDat());
+        }
+        for (Chi_tiet_dich_vu ctdv : chiTietDichVus) {
+            amountDv = amountDv.add(ctdv.getDonGia());
+        }
+
+        BigDecimal tienGiam = tinhTienGiam(amountPhong, dp.getKm());
+        Totalamount = amountPhong.subtract(tienGiam).add(amountDv);
+        BigDecimal tienVat = Totalamount.multiply(ThueVat).setScale(2, RoundingMode.HALF_UP);
+        Totalamount = Totalamount.add(tienVat);
+        HoaDon hd = hoaDonService.findByDatPhongId(id);
+        model.addAttribute("transactionId",thanhToanService.findByHoaDonId(hd.getId()).getMagiaodich());
+        model.addAttribute("datPhong", dp);
+        model.addAttribute("TongTien", amountPhong);
+        model.addAttribute("TienVat",tienVat);
+        model.addAttribute("TienDv", amountDv);
+        model.addAttribute("TienGiam", tienGiam);
+        model.addAttribute("TongCong", Totalamount);
+
+        return "thanh-toan-thanh-cong";
+    }
+
+    private BigDecimal tinhTienGiam(BigDecimal tienPhong, KhuyenMai km) {
+        if (km == null || !km.isHoatDong() || km.getGiatriGiam() == null) {
+            return BigDecimal.ZERO;
+        }
+        BigDecimal dieuKien = km.getGiaToiThieuDuocGiam() == null ? BigDecimal.ZERO : km.getGiaToiThieuDuocGiam();
+        if (tienPhong.compareTo(dieuKien) < 0) {
+            return BigDecimal.ZERO;
+        }
+        if ("PERCENT".equalsIgnoreCase(km.getLoaiGiam())) {
+            return tienPhong.multiply(km.getGiatriGiam())
+                    .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+        }
+        if ("AMOUNT".equalsIgnoreCase(km.getLoaiGiam()) || "FIXED".equalsIgnoreCase(km.getLoaiGiam())) {
+            return km.getGiatriGiam().min(tienPhong);
+        }
+        return BigDecimal.ZERO;
+    }
+
+
+}
