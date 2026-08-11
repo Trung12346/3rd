@@ -21,6 +21,7 @@ import su26sd09.su26sd09.entity.LoaiPhong;
 import su26sd09.su26sd09.entity.Phong;
 import su26sd09.su26sd09.entity.PhongAnh;
 import su26sd09.su26sd09.repository.PhongAnhRepository;
+import su26sd09.su26sd09.service.BookingEmailService;
 import su26sd09.su26sd09.service.DatPhongService;
 import su26sd09.su26sd09.service.NguoiDungService;
 import su26sd09.su26sd09.service.PhongService;
@@ -53,6 +54,9 @@ public class LoaiPhongController {
 
     @Autowired
     private NguoiDungService nguoiDungService;
+
+    @Autowired
+    private BookingEmailService bookingEmailService;
 
     @GetMapping
     public String index(Model model) {
@@ -120,6 +124,9 @@ public class LoaiPhongController {
         model.addAttribute("loaiPhongs", ketQua.getLoaiPhongs());
         model.addAttribute("soPhongTrongTheoLoai", ketQua.getSoPhongKhaDungTheoLoai());
         model.addAttribute("anhLoaiPhong", buildAnhLoaiPhong(ketQua.getLoaiPhongs()));
+        // Ten tien nghi dai dien cho moi loai phong (lay tu phong dau tien cua loai),
+        // dung de hien thi chip tien nghi trong card tren trang ket qua.
+        model.addAttribute("tienNghiTheoLoai", buildTienNghiTheoLoai(ketQua.getLoaiPhongs()));
 
         if (coNgay) {
             long soDem = java.time.temporal.ChronoUnit.DAYS.between(ngayNhanPhong.toLocalDate(), ngayTraPhong.toLocalDate());
@@ -127,6 +134,27 @@ public class LoaiPhongController {
         }
 
         return "loai-phong-ket-qua";
+    }
+
+    /**
+     * Tien nghi cua loai phong = tien nghi cua phong DAI DIEN (phong dau tien
+     * thuoc loai do, hoatDong=true). Vi bang tien_nghi_phong map theo Phong
+     * chu khong theo LoaiPhong, nen lay 1 phong lam dai dien cung du cho
+     * muc dich hien thi chip tien nghi tren trang ket qua.
+     */
+    private Map<Integer, List<String>> buildTienNghiTheoLoai(List<LoaiPhong> loaiPhongs) {
+        Map<Integer, List<String>> result = new HashMap<>();
+        if (loaiPhongs == null) return result;
+        for (LoaiPhong lp : loaiPhongs) {
+            List<Phong> phongs = phongService.findPhongTheoLoai(lp.getId());
+            if (phongs != null && !phongs.isEmpty()) {
+                result.put(lp.getId(),
+                        phongService.findTenTienNghiByPhong(phongs.get(0).getMaPhong()));
+            } else {
+                result.put(lp.getId(), List.of());
+            }
+        }
+        return result;
     }
 
     /**
@@ -148,6 +176,7 @@ public class LoaiPhongController {
     @PostMapping("/dat-nhanh")
     public String datNhanh(
             @RequestParam("loaiPhongId") int loaiPhongId,
+            @RequestParam(name = "soLuong", defaultValue = "1") int soLuong,
             @RequestParam("ngayNhan") String ngayNhanStr,
             @RequestParam("ngayTra") String ngayTraStr,
             @RequestParam(name = "nguoiLon", required = false) String nguoiLonStr,
@@ -165,6 +194,8 @@ public class LoaiPhongController {
                     "So CCCD/CMND khong hop le. Vui long nhap 9 hoac 12 chu so.");
             return redirectTimKiem(ngayNhanStr, ngayTraStr, nguoiLon, treEm, mucGia);
         }
+
+        if (soLuong <= 0) soLuong = 1;
 
         LocalDateTime ngayNhan;
         LocalDateTime ngayTra;
@@ -184,7 +215,26 @@ public class LoaiPhongController {
         }
 
         try {
-            List<Phong> phongDuocChon = phongService.assignRoomsForType(loaiPhongId, 1, ngayNhan, ngayTra);
+            // Booking engine tu chon (soLuong) phong con trong thuc su cua loai
+            // -> assignRoomsForType se nem IllegalStateException neu khong du.
+            List<Phong> phongDuocChon = phongService.assignRoomsForType(loaiPhongId, soLuong, ngayNhan, ngayTra);
+
+            // Validate suc chua: neu tong nguoi (NL + TE) vuot suc chua tong cua cac phong duoc chon,
+            // chi canh bao de nhan vien xep loai phong lon hon luc xac nhan yeu cau.
+            // KHONG chan dat yeu cau vi khach van co quyen gui yeu cau, nhan vien se xu ly.
+            if (phongDuocChon != null && !phongDuocChon.isEmpty()) {
+                int tongSucChua = phongDuocChon.stream()
+                        .filter(p -> p.getLoaiPhong() != null)
+                        .mapToInt(p -> p.getLoaiPhong().getSucChuaToiDa())
+                        .sum();
+                int tongNguoi = (nguoiLon != null ? nguoiLon : 0) + (treEm != null ? treEm : 0);
+                if (tongNguoi > tongSucChua) {
+                    redirectAttributes.addFlashAttribute("canhBaoSucChua",
+                            "Tong nguoi (" + tongNguoi + ") vuot suc chua toi da (" + tongSucChua
+                                    + ") cua " + phongDuocChon.size() + " phong dang chon. "
+                                    + "Yeu cau se duoc nhan vien xu ly.");
+                }
+            }
 
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             KhachHang khachHang = null;
@@ -194,9 +244,22 @@ public class LoaiPhongController {
                 khachHang = nguoiDungService.findByEmail(authentication.getName());
             }
 
+            // createAutoAssignedBooking da vong lap tao 1 ChiTietDatPhong cho MOI
+            // phong trong danh sach, nen dat nhieu phong se tao dong dang N dong.
+            // Dat phong voi trangThai="Yeu cau dat phong" — NV xac nhan + xep phong sau.
+            // Sau do KHACH van di tiep qua flow xac nhan (chọn DV, KM, thanh toan VNPay)
+            // giong het guest checkout. Sau khi thanh toan, trangThai giu nguyen de NV xu ly.
             DatPhong datPhong = datPhongService.createAutoAssignedBooking(
                     phongDuocChon, khachHang, ngayNhan, ngayTra,
                     nguoiLon != null ? nguoiLon : 0, treEm != null ? treEm : 0, maCccd);
+
+            // Gui email xac nhan cho khach (async, khong block redirect)
+            try {
+                bookingEmailService.guiEmailYeuCauDatPhong(datPhong.getId());
+            } catch (Exception ex) {
+                // Khong block luong dat phong neu gui mail loi
+                ex.printStackTrace();
+            }
 
             return "redirect:/phong/dat-phong/xac-nhan/" + datPhong.getId();
         } catch (IllegalStateException | IllegalArgumentException e) {

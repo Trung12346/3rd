@@ -464,7 +464,7 @@
             if (phong == null) {
                 return new RoomBookingGuardDTO(
                         null, null, java.util.Collections.emptyList(),
-                        LocalTime.of(8, 30), LocalTime.of(11, 0), LocalTime.of(18, 30),
+                        LocalTime.of(11, 0), LocalTime.of(14, 0), LocalTime.of(11, 0),
                         new BigDecimal("100000"),
                         false
                 );
@@ -498,22 +498,29 @@
             // coTheDat = true luôn (phòng đã tồn tại). Việc chặn cụ thể theo ngày
             // nào sẽ do validateRoomBookingGuard() ở Controller quyết định dựa vào
             // danhSachKhoaLich, không còn phụ thuộc Phong.trangThai nữa.
+            //
+            // Quy tac gio mac dinh cho DON DAT ONLINE (khach dat qua web):
+            //   - gio nhan toi thieu = 11:00 (khong cho nhan som hon 11:00)
+            //   - gio nhan toi da    = 14:00 (gio nhan phong mac dinh)
+            //   - gio tra toi da     = 11:00 (gio tra phong mac dinh)
+            //   - phu phi ngoai gio  = 100.000 VND / phong / lan
+            // Khach den som hon 11:00 hoac tra sau 11:00 -> +100k/phong.
             return new RoomBookingGuardDTO(
                     phong.getTrangThai(),
                     trangThaiDonGanNhat,
                     khoaLich,
-                    LocalTime.of(8, 30),
                     LocalTime.of(11, 0),
-                    LocalTime.of(18, 30),
+                    LocalTime.of(14, 0),
+                    LocalTime.of(11, 0),
                     new BigDecimal("100000"),
                     true
             );
         }
-    
+
         private RoomBookingGuardDTO blockedGuard(String trangThaiPhong, String trangThaiDon) {
             return new RoomBookingGuardDTO(
                     trangThaiPhong, trangThaiDon, java.util.Collections.emptyList(),
-                    LocalTime.of(8, 30), LocalTime.of(11, 0), LocalTime.of(18, 30),
+                    LocalTime.of(11, 0), LocalTime.of(14, 0), LocalTime.of(11, 0),
                     new BigDecimal("100000"),
                     false
             );

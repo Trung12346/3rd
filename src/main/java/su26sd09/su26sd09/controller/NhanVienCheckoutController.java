@@ -120,13 +120,16 @@ public class NhanVienCheckoutController {
         return ketQua;
     }
 
-    private void napModelChiTiet(DatPhong dp, Model model) {
+    /**
+     * Tinh phu phi tra muon (late checkout): cong don calculateExtraFeeFor() cho
+     * tung phong cua don, theo thoi gian tra thuc te truyen vao (thuong la
+     * LocalDateTime.now()). Dung chung mot cong thuc o moi noi tinh soDu / canThu
+     * (trang xem, thu-tien, chot tra phong) de tranh hien thi "da thu du" nhung
+     * luc thao tac that lai bao con thieu tien (hoac nguoc lai).
+     */
+    private BigDecimal tinhPhuPhiTraMuon(DatPhong dp, LocalDateTime gioTraHienTai) {
         List<ChiTietDatPhong> phongList = chiTietDatPhongService.findByDatPhongId(dp.getId());
-        List<Chi_tiet_dich_vu> dichVuList = ctdvService.findByDatPhongId(dp.getId());
-
-        // Phu phi tra muon: cong don calculateExtraFeeFor cho tung phong (theo thoi gian hien tai)
         BigDecimal phuPhiTraMuon = BigDecimal.ZERO;
-        LocalDateTime gioTraHienTai = LocalDateTime.now();
         for (ChiTietDatPhong ct : phongList) {
             if (ct != null && ct.getP() != null) {
                 BigDecimal fee = phongService.calculateExtraFeeFor(
@@ -136,6 +139,15 @@ public class NhanVienCheckoutController {
                 }
             }
         }
+        return phuPhiTraMuon;
+    }
+
+    private void napModelChiTiet(DatPhong dp, Model model) {
+        List<ChiTietDatPhong> phongList = chiTietDatPhongService.findByDatPhongId(dp.getId());
+        List<Chi_tiet_dich_vu> dichVuList = ctdvService.findByDatPhongId(dp.getId());
+
+        // Phu phi tra muon: cong don calculateExtraFeeFor cho tung phong (theo thoi gian hien tai)
+        BigDecimal phuPhiTraMuon = tinhPhuPhiTraMuon(dp, LocalDateTime.now());
 
         Map<String, BigDecimal> folio = tinhFolio(dp);
 
@@ -144,7 +156,12 @@ public class NhanVienCheckoutController {
                 ? hoaDon.getDaThanhToan() : BigDecimal.ZERO;
         BigDecimal daHoanTra = (hoaDon != null && hoaDon.getDaHoanTra() != null)
                 ? hoaDon.getDaHoanTra() : BigDecimal.ZERO;
-        BigDecimal tongTien = folio.get("tongTien");
+        // QUAN TRONG: phai cong phuPhiTraMuon vao tongTien o day, vi day la cung
+        // mot cong thuc duoc dung khi chot tra phong that su (xem chotTraPhong /
+        // Phase 2 ben duoi: tongTien = tongTienGoc.add(phuPhiTraMuon)). Neu khong
+        // cong vao day, trang nay se hien thi "da thu du, co the chot tra phong"
+        // trong khi luc bam chot thuc su lai bi validate bao con thieu tien phu phi.
+        BigDecimal tongTien = folio.get("tongTien").add(phuPhiTraMuon);
 
         // soDu > 0: con no ; soDu < 0: thua tien can hoan ; soDu == 0: da can bang
         BigDecimal soDu = tongTien.subtract(daThu).add(daHoanTra);
@@ -460,7 +477,11 @@ public class NhanVienCheckoutController {
         }
 
         Map<String, BigDecimal> folio = tinhFolio(dp);
-        BigDecimal tongTien = folio.get("tongTien");
+        // Phai cong phu phi tra muon vao day, cung cong thuc voi trang xem
+        // (napModelChiTiet) va voi luc chot tra phong that su (xacNhanTraPhong),
+        // neu khong "khách còn nợ 100.000" tren man hinh se khong the thu duoc.
+        BigDecimal phuPhiTraMuon = tinhPhuPhiTraMuon(dp, LocalDateTime.now());
+        BigDecimal tongTien = folio.get("tongTien").add(phuPhiTraMuon);
 
         HoaDon hoaDon = hoaDonService.findByDatPhongId(id);
         if (hoaDon == null) {
@@ -549,7 +570,10 @@ public class NhanVienCheckoutController {
         }
 
         Map<String, BigDecimal> folio = tinhFolio(dp);
-        BigDecimal tongTien = folio.get("tongTien");
+        // Cong phu phi tra muon (cung cong thuc voi cac diem tinh soDu khac) de
+        // khong tinh nham la "thua tien" trong khi thuc ra dang bu cho phu phi.
+        BigDecimal phuPhiTraMuon = tinhPhuPhiTraMuon(dp, LocalDateTime.now());
+        BigDecimal tongTien = folio.get("tongTien").add(phuPhiTraMuon);
         BigDecimal daThanhToan = hoaDon.getDaThanhToan() == null ? BigDecimal.ZERO : hoaDon.getDaThanhToan();
         BigDecimal daHoanTra = hoaDon.getDaHoanTra() == null ? BigDecimal.ZERO : hoaDon.getDaHoanTra();
         BigDecimal soDu = tongTien.subtract(daThanhToan).add(daHoanTra);
@@ -614,7 +638,33 @@ public class NhanVienCheckoutController {
         }
 
         Map<String, BigDecimal> folio = tinhFolio(dp);
-        BigDecimal tongTien = folio.get("tongTien");
+        BigDecimal tienPhong = folio.get("tienPhong");
+        BigDecimal tienDichVu = folio.get("tienDichVu");
+        BigDecimal tienVat = folio.get("tienVat");
+        BigDecimal tongTienGoc = folio.get("tongTien");
+
+        // Lay danh sach phong (can cho tinh phu phi tra muon)
+        List<ChiTietDatPhong> phongList = chiTietDatPhongService.findByDatPhongId(id);
+
+        // ===== Phu phi tra muon (late checkout) =====
+        // Tu dong gian: gia tri phu phi tra muon = cong don calculateExtraFeeFor() cho tung phong.
+        // calculateExtraFeeFor dung rule:
+        //   - gio tra thuc te (LocalDateTime.now()) sau gioTraToiDa (11:00) -> +100k/phong
+        // Neu khach tra dung gio hoac som hon -> ZERO.
+        BigDecimal phuPhiTraMuon = BigDecimal.ZERO;
+        LocalDateTime gioTraHienTai = LocalDateTime.now();
+        for (ChiTietDatPhong ct : phongList) {
+            if (ct != null && ct.getP() != null) {
+                BigDecimal fee = phongService.calculateExtraFeeFor(
+                        ct.getP().getMaPhong(), dp.getNgaydatPhong(), gioTraHienTai);
+                if (fee != null && fee.signum() > 0) {
+                    phuPhiTraMuon = phuPhiTraMuon.add(fee);
+                }
+            }
+        }
+
+        // Tong tien cuoi cung = tien phong + dich vu + VAT + phu phi tra muon (neu co)
+        BigDecimal tongTien = tongTienGoc.add(phuPhiTraMuon);
 
         HoaDon hoaDon = hoaDonService.findByDatPhongId(id);
         BigDecimal daThanhToan = (hoaDon != null && hoaDon.getDaThanhToan() != null)
@@ -625,11 +675,35 @@ public class NhanVienCheckoutController {
 
         // Fail-fast: phai can bang so du truoc khi chot
         if (soDu.compareTo(BigDecimal.ZERO) != 0) {
+            String lyDo = phuPhiTraMuon.signum() > 0
+                    ? " (bao gom phu phi tra muon " + phuPhiTraMuon.toPlainString() + " VND)"
+                    : "";
             String message = soDu.compareTo(BigDecimal.ZERO) > 0
-                    ? "Khách còn nợ " + soDu.toPlainString() + " VND. Vui lòng thu tiền trước khi chốt trả phòng."
-                    : "Khách đã trả thừa " + soDu.negate().toPlainString() + " VND. Vui lòng ghi nhận hoàn tiền trước khi chốt trả phòng.";
+                    ? "Khách còn nợ " + soDu.toPlainString() + " VND" + lyDo
+                            + ". Vui lòng thu tiền trước khi chốt trả phòng."
+                    : "Khách đã trả thừa " + soDu.negate().toPlainString() + " VND"
+                            + ". Vui lòng ghi nhận hoàn tiền trước khi chốt trả phòng.";
             redirectAttributes.addFlashAttribute("error", message);
             return "redirect:/nhan-su/checkout/" + id;
+        }
+
+        // ===== Cap nhat hoa don neu co phu phi tra muon =====
+        // Luu phu phi vao HoaDon.ghiChu de audit + cap nhat tongTien (neu chua tinh phu phi truoc do).
+        if (hoaDon != null && phuPhiTraMuon.signum() > 0) {
+            BigDecimal tongTienHienTai = hoaDon.getTongTien() == null ? BigDecimal.ZERO : hoaDon.getTongTien();
+            // Chi cap nhat neu tongTien hien tai KHONG bao gom phu phi tra muon (so sanh)
+            // De don gian, cu add phu phi vao tongTien neu tongTien < tongTienGoc + phuPhi
+            BigDecimal tongTienMongDoi = tongTienGoc.add(phuPhiTraMuon);
+            if (tongTienHienTai.compareTo(tongTienMongDoi) < 0) {
+                hoaDon.setTongTien(tongTienMongDoi.setScale(2, java.math.RoundingMode.HALF_UP));
+                String ghiChuCu = hoaDon.getGhiChu() == null ? "" : hoaDon.getGhiChu();
+                String phuPhiText = "[Phu phi tra muon " + phuPhiTraMuon.toPlainString()
+                        + " VND luc " + gioTraHienTai.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"))
+                        + "]";
+                hoaDon.setGhiChu(ghiChuCu.isEmpty() ? phuPhiText : (ghiChuCu + " | " + phuPhiText));
+                hoaDon.setNgayCapNhat(LocalDateTime.now());
+                hoaDonService.saveWithPaymentStatusCheck(hoaDon);
+            }
         }
 
         // Cap nhat trang thai don + giai phong phong (co the giu "Da dat truoc" neu co don khac)
@@ -637,8 +711,8 @@ public class NhanVienCheckoutController {
         dp.setNgayCapNhat(LocalDateTime.now());
         datPhongService.save(dp);
 
-        List<ChiTietDatPhong> phongList = chiTietDatPhongService.findByDatPhongId(id);
-        for (ChiTietDatPhong ct : phongList) {
+        List<ChiTietDatPhong> phongListForRelease = chiTietDatPhongService.findByDatPhongId(id);
+        for (ChiTietDatPhong ct : phongListForRelease) {
             Phong p = ct.getP();
             if (p == null) continue;
             if (datPhongService.hasBookingNotCheckout(p.getMaPhong(), dp.getId())) {
@@ -652,8 +726,11 @@ public class NhanVienCheckoutController {
         String hoaDonInfo = (hoaDon != null)
                 ? " Hóa đơn #" + hoaDon.getId() + " - Tổng tiền: " + tongTien.toPlainString() + " VND."
                 : "";
+        String phuPhiInfo = phuPhiTraMuon.signum() > 0
+                ? " Đã tính phụ phí trả muộn: " + phuPhiTraMuon.toPlainString() + " VND."
+                : "";
         redirectAttributes.addFlashAttribute("success",
-                "Trả phòng thành công cho đơn #" + id + "." + hoaDonInfo);
+                "Trả phòng thành công cho đơn #" + id + "." + phuPhiInfo + hoaDonInfo);
         return "redirect:/nhan-su/checkout/" + id;
     }
 
@@ -691,8 +768,8 @@ public class NhanVienCheckoutController {
 
         // Tinh tong phu phi ngoai gio tu cac phong trong don
         BigDecimal tongPhuThu = BigDecimal.ZERO;
-        List<ChiTietDatPhong> phongList = chiTietDatPhongService.findByDatPhongId(id);
-        for (ChiTietDatPhong ct : phongList) {
+        List<ChiTietDatPhong> phongListForRelease = chiTietDatPhongService.findByDatPhongId(id);
+        for (ChiTietDatPhong ct : phongListForRelease) {
             if (ct != null && ct.getPhuPhi() != null && ct.getPhuPhi().signum() > 0) {
                 tongPhuThu = tongPhuThu.add(ct.getPhuPhi());
             }

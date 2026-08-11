@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title th:text="${tieuDe}">Xác nhận đặt phòng</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body style="margin: 0; padding: 0; background: #f3f4f6; font-family: 'Montserrat', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif; color: #1f2937; line-height: 1.7; -webkit-font-smoothing: antialiased;">
+<!-- Preheader (hien thi trong inbox preview) -->
+<div style="display: none; max-height: 0; overflow: hidden; opacity: 0; color: transparent; mso-hide: all;">
+    <span th:text="${thongBaoChinh}">Thong bao chinh</span>
+</div>
+
+<!-- Wrapper -->
+<table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background: #f3f4f6; padding: 40px 0;">
+    <tr>
+        <td align="center">
+            <!-- Email container (max 640px) -->
+            <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="640" style="max-width: 640px; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.08);">
+
+                <!-- ===================================================================== -->
+                <!-- HEADER: Brand strip + Hero -->
+                <!-- ===================================================================== -->
+                <tr>
+                    <td style="padding: 0;">
+                        <!-- Top brand strip -->
+                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background: #0f2740;">
+                            <tr>
+                                <td style="padding: 22px 40px; text-align: center;">
+                                    <span style="font-family: 'Playfair Display', Georgia, serif; color: #ffffff; font-size: 22px; font-weight: 700; text-transform: uppercase;"
+                                          th:text="${tenKhachSan}">HOTEL</span>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <!-- Hero section -->
+                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background: linear-gradient(135deg, #f8fafc 0%, #eef5fb 100%);">
+                            <tr>
+                                <td style="padding: 50px 40px 40px; text-align: center;">
+                                    <!-- Status badge (outline, single-color) -->
+                                    <div style="display: inline-block; border: 1.5px solid #2980B9; padding: 6px 18px; border-radius: 24px; margin-bottom: 24px;">
+                                        <span style="color: #2980B9; font-size: 11px; font-weight: 600; text-transform: uppercase;"
+                                              th:text="${trangThaiEmail == 'thanh-toan' ? 'THANH TOAN THANH CONG' : (trangThaiEmail == 'da-xac-nhan' ? 'DA XAC NHAN' : 'YEU CAU DAT PHONG')}">YEU CAU DAT PHONG</span>
+                                    </div>
+
+                                    <!-- Tieu de lon -->
+                                    <h1 style="margin: 0 0 16px; font-family: 'Playfair Display', Georgia, serif; color: #0f2740; font-size: 32px; font-weight: 700; line-height: 1.25;"
+                                        th:text="${trangThaiEmail == 'thanh-toan' ? 'Cảm ơn quý khách' : (trangThaiEmail == 'da-xac-nhan' ? 'Yêu cầu đã được xác nhận' : 'Yêu cầu đã được gửi')}">
+                                        Cam on quy khach
+                                    </h1>
+
+                                    <!-- Divider -->
+                                    <div style="width: 60px; height: 2px; background: #2980B9; margin: 0 auto 16px;"></div>
+
+                                    <p style="margin: 0; color: #4b5563; font-size: 15px; max-width: 480px; margin: 0 auto;"
+                                       th:text="${trangThaiEmail == 'thanh-toan' ? 'Quý khách đã hoàn tất thanh toán. Chúng tôi rất mong được đón tiếp quý khách tại ' + tenKhachSan + '.'
+                                                : (trangThaiEmail == 'da-xac-nhan' ? 'Yêu cầu đặt phòng của quý khách đã được nhân viên xác nhận. Quý khách vui lòng hoàn tất thanh toán để giữ phòng.'
+                                                : 'Yêu cầu đặt phòng của quý khách đã được gửi thành công. Đội ngũ nhân viên sẽ kiểm tra và xác nhận trong thời gian sớm nhất.')}">
+                                        Thong bao chinh
+                                    </p>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+
+                <!-- ===================================================================== -->
+                <!-- XƯỚNG TÊN: Lời chào cá nhân hóa -->
+                <!-- ===================================================================== -->
+                <tr>
+                    <td style="padding: 36px 40px 8px;">
+                        <p style="margin: 0 0 6px; color: #6b7280; font-size: 13px; text-transform: uppercase; font-weight: 500;">Kính gửi</p>
+                        <h2 style="margin: 0; font-family: 'Playfair Display', Georgia, serif; color: #0f2740; font-size: 24px; font-weight: 700;"
+                            th:text="${hoTenKhach}">Quý khách</h2>
+                    </td>
+                </tr>
+
+                <!-- ===================================================================== -->
+                <!-- MÃ ĐƠN + MÃ TRA CỨU (editorial card) -->
+                <!-- ===================================================================== -->
+                <tr>
+                    <td style="padding: 20px 40px 28px;">
+                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden;">
+                            <tr>
+                                <td style="padding: 24px;">
+                                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                                        <tr>
+                                            <td width="50%" style="vertical-align: top; padding-right: 12px;">
+                                                <div style="color: #6b7280; font-size: 11px; text-transform: uppercase; font-weight: 600; margin-bottom: 6px;">Mã đơn</div>
+                                                <div style="font-family: 'Playfair Display', Georgia, serif; color: #0f2740; font-size: 30px; font-weight: 700; line-height: 1;">
+                                                    #<span th:text="${maDatPhong}">000</span>
+                                                </div>
+                                            </td>
+                                            <td width="50%" style="vertical-align: top; padding-left: 12px; border-left: 1px solid #e5e7eb;">
+                                                <div style="color: #6b7280; font-size: 11px; text-transform: uppercase; font-weight: 600; margin-bottom: 6px;">Mã tra cứu</div>
+                                                <div style="font-family: 'Courier New', monospace; color: #2980B9; font-size: 22px; font-weight: 700; line-height: 1;"
+                                                     th:if="${maTraCuu != null}">
+                                                    <span th:text="${maTraCuu}">A3F9C1</span>
+                                                </div>
+                                                <div style="color: #9ca3af; font-size: 13px; font-style: italic;" th:if="${maTraCuu == null}">—</div>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                    <div style="margin-top: 14px; padding-top: 14px; border-top: 1px dashed #e5e7eb; color: #6b7280; font-size: 12px; line-height: 1.6;">
+                                        Sử dụng mã tra cứu để kiểm tra trạng thái đơn trên website mà không cần đăng nhập.
+                                    </div>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+
+                <!-- ===================================================================== -->
+                <!-- THÔNG TIN LƯU TRÚ -->
+                <!-- ===================================================================== -->
+                <tr>
+                    <td style="padding: 8px 40px 28px;">
+                        <!-- Section header -->
+                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom: 16px;">
+                            <tr>
+                                <td style="vertical-align: middle; padding-right: 12px;">
+                                    <!-- Outline calendar icon -->
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2980B9" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; vertical-align:middle;">
+                                        <rect x="3" y="4" width="18" height="18" rx="2"/>
+                                        <line x1="16" y1="2" x2="16" y2="6"/>
+                                        <line x1="8" y1="2" x2="8" y2="6"/>
+                                        <line x1="3" y1="10" x2="21" y2="10"/>
+                                    </svg>
+                                </td>
+                                <td style="vertical-align: middle;">
+                                    <h3 style="margin: 0; font-family: 'Playfair Display', Georgia, serif; color: #0f2740; font-size: 18px; font-weight: 700;">Thông tin lưu trú</h3>
+                                </td>
+                                <td style="vertical-align: middle; text-align: right;">
+                                    <span style="color: #6b7280; font-size: 12px;">Ngày đặt: <span th:text="${ngayDat}">—</span></span>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="border: 1px solid #e5e7eb; border-radius: 10px; overflow: hidden;">
+                            <tr>
+                                <td style="padding: 18px 20px; background: #fafbfc; border-bottom: 1px solid #e5e7eb; width: 40%;">
+                                    <span style="color: #6b7280; font-size: 13px; text-transform: uppercase; font-weight: 600;">Nhận phòng</span>
+                                </td>
+                                <td style="padding: 18px 20px; background: #fafbfc; border-bottom: 1px solid #e5e7eb; text-align: right;">
+                                    <span style="color: #1f2937; font-size: 15px; font-weight: 700;" th:text="${ngayNhanPhong}">—</span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 18px 20px; background: #fafbfc; border-bottom: 1px solid #e5e7eb;">
+                                    <span style="color: #6b7280; font-size: 13px; text-transform: uppercase; font-weight: 600;">Trả phòng</span>
+                                </td>
+                                <td style="padding: 18px 20px; background: #fafbfc; border-bottom: 1px solid #e5e7eb; text-align: right;">
+                                    <span style="color: #1f2937; font-size: 15px; font-weight: 700;" th:text="${ngayTraPhong}">—</span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 12px 20px; border-bottom: 1px solid #f3f4f6;">
+                                    <span style="color: #6b7280; font-size: 13px;">Thời gian lưu trú</span>
+                                </td>
+                                <td style="padding: 12px 20px; border-bottom: 1px solid #f3f4f6; text-align: right;">
+                                    <span style="color: #1f2937; font-size: 14px; font-weight: 600;">
+                                        <span th:text="${soDem}">1</span> đêm
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 12px 20px; border-bottom: 1px solid #f3f4f6;">
+                                    <span style="color: #6b7280; font-size: 13px;">Số khách</span>
+                                </td>
+                                <td style="padding: 12px 20px; border-bottom: 1px solid #f3f4f6; text-align: right;">
+                                    <span style="color: #1f2937; font-size: 14px; font-weight: 600;">
+                                        <span th:text="${soNguoiLon}">0</span> người lớn
+                                        <span th:if="${soTreEm != null and soTreEm > 0}">
+                                            · <span th:text="${soTreEm}">0</span> trẻ em
+                                        </span>
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr th:if="${sdtKhach != null and sdtKhach != ''}">
+                                <td style="padding: 12px 20px;">
+                                    <span style="color: #6b7280; font-size: 13px;">Số điện thoại liên hệ</span>
+                                </td>
+                                <td style="padding: 12px 20px; text-align: right;">
+                                    <span style="color: #1f2937; font-size: 14px; font-weight: 600;" th:text="${sdtKhach}">—</span>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+
+                <!-- ===================================================================== -->
+                <!-- PHÒNG ĐÃ GÁN -->
+                <!-- ===================================================================== -->
+                <tr th:if="${danhSachPhong != null and !danhSachPhong.isEmpty()}">
+                    <td style="padding: 8px 40px 28px;">
+                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom: 16px;">
+                            <tr>
+                                <td style="vertical-align: middle; padding-right: 12px;">
+                                    <!-- Outline bed icon -->
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2980B9" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; vertical-align:middle;">
+                                        <path d="M3 18v-6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6"/>
+                                        <path d="M3 18h18"/>
+                                        <path d="M3 14h18"/>
+                                        <path d="M7 10V8a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2"/>
+                                    </svg>
+                                </td>
+                                <td style="vertical-align: middle;">
+                                    <h3 style="margin: 0; font-family: 'Playfair Display', Georgia, serif; color: #0f2740; font-size: 18px; font-weight: 700;">Phòng đã gán</h3>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="border: 1px solid #e5e7eb; border-radius: 10px; overflow: hidden;">
+                            <tr th:each="p,iter : ${danhSachPhong}" th:classappend="${iter.last} ? '' : 'phong-row'">
+                                <td style="padding: 18px 20px; border-bottom: 1px solid #f3f4f6;">
+                                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                                        <tr>
+                                            <td valign="top" width="50%">
+                                                <div style="font-family: 'Playfair Display', Georgia, serif; color: #0f2740; font-size: 18px; font-weight: 700; margin-bottom: 2px;">
+                                                    Phòng <span th:text="${p.soPhong}">—</span>
+                                                </div>
+                                                <div style="color: #2980B9; font-size: 13px; font-weight: 600; text-transform: uppercase; margin-bottom: 4px;"
+                                                     th:text="${p.tenLoaiPhong}">Standard</div>
+                                                <div style="color: #6b7280; font-size: 12px;">
+                                                    <span th:if="${p.sucChua != null}">Sức chứa <span th:text="${p.sucChua}">2</span> khách</span>
+                                                </div>
+                                                <div style="color: #6b7280; font-size: 12px; margin-top: 4px;" th:if="${p.cccd != null and p.cccd != ''}">
+                                                    CCCD: <span style="font-family: 'Courier New', monospace;" th:text="${p.cccd}">—</span>
+                                                </div>
+                                            </td>
+                                            <td valign="top" width="50%" style="text-align: right;">
+                                                <div style="color: #6b7280; font-size: 12px; margin-bottom: 2px;">
+                                                    <span th:text="${p.giaMoiDem}">0 VND</span> × <span th:text="${soDem}">1</span> đêm
+                                                </div>
+                                                <div style="font-family: 'Playfair Display', Georgia, serif; color: #2980B9; font-size: 20px; font-weight: 700; line-height: 1.2;"
+                                                     th:text="${p.tongPhong}">0 VND</div>
+                                                <div style="color: #b45309; font-size: 12px; font-weight: 600; margin-top: 4px;"
+                                                     th:if="${p.phuPhi != null and p.phuPhi != '0 VND'}">
+                                                    + phụ phí <span th:text="${p.phuPhi}">0 VND</span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+
+                <!-- ===================================================================== -->
+                <!-- DỊCH VỤ -->
+                <!-- ===================================================================== -->
+                <tr th:if="${danhSachDichVu != null and !danhSachDichVu.isEmpty()}">
+                    <td style="padding: 8px 40px 28px;">
+                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom: 16px;">
+                            <tr>
+                                <td style="vertical-align: middle; padding-right: 12px;">
+                                    <!-- Outline bell icon -->
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2980B9" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; vertical-align:middle;">
+                                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                                        <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                                    </svg>
+                                </td>
+                                <td style="vertical-align: middle;">
+                                    <h3 style="margin: 0; font-family: 'Playfair Display', Georgia, serif; color: #0f2740; font-size: 18px; font-weight: 700;">Dịch vụ bổ sung</h3>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="border: 1px solid #e5e7eb; border-radius: 10px; overflow: hidden;">
+                            <tr th:each="d,iter : ${danhSachDichVu}">
+                                <td style="padding: 14px 20px; border-bottom: 1px solid #f3f4f6;">
+                                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                                        <tr>
+                                            <td style="vertical-align: middle;">
+                                                <div style="color: #1f2937; font-size: 14px; font-weight: 600;" th:text="${d.tenDichVu}">Dịch vụ</div>
+                                                <div style="color: #9ca3af; font-size: 12px; margin-top: 2px;" th:text="${d.ngaySuDung}">—</div>
+                                            </td>
+                                            <td style="vertical-align: middle; text-align: right; width: 60px; color: #6b7280; font-size: 13px;">
+                                                × <span th:text="${d.soLuong}">1</span>
+                                            </td>
+                                            <td style="vertical-align: middle; text-align: right; width: 130px; padding-left: 12px;">
+                                                <div style="color: #2980B9; font-size: 15px; font-weight: 700;" th:text="${d.thanhTien}">0 VND</div>
+                                                <div style="color: #9ca3af; font-size: 11px;" th:text="${d.donGia} + ' / đơn vị'">0 VND</div>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+
+                <!-- ===================================================================== -->
+                <!-- KHUYẾN MÃI -->
+                <!-- ===================================================================== -->
+                <tr th:if="${khuyenMai != null}">
+                    <td style="padding: 8px 40px 28px;">
+                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background: #fef9e7; border: 1px solid #fde68a; border-radius: 10px;">
+                            <tr>
+                                <td style="padding: 14px 18px;">
+                                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                                        <tr>
+                                            <td style="vertical-align: middle; padding-right: 12px;">
+                                                <!-- Outline ticket icon -->
+                                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; vertical-align:middle;">
+                                                    <path d="M3 7v2a2 2 0 0 0 0 4v2a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-2a2 2 0 0 0 0-4V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2z"/>
+                                                    <line x1="13" y1="5" x2="13" y2="19"/>
+                                                </svg>
+                                            </td>
+                                            <td style="vertical-align: middle;">
+                                                <div style="color: #92400e; font-size: 11px; text-transform: uppercase; font-weight: 600;">Khuyến mãi áp dụng</div>
+                                                <div style="font-family: 'Courier New', monospace; color: #b45309; font-size: 16px; font-weight: 700; margin-top: 2px;"
+                                                     th:text="${moTaKhuyenMai}">PROMOCODE</div>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+
+                <!-- ===================================================================== -->
+                <!-- TỔNG CHI PHÍ (BREAKDOWN) -->
+                <!-- ===================================================================== -->
+                <tr>
+                    <td style="padding: 8px 40px 28px;">
+                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom: 16px;">
+                            <tr>
+                                <td style="vertical-align: middle; padding-right: 12px;">
+                                    <!-- Outline receipt icon -->
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2980B9" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; vertical-align:middle;">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                        <polyline points="14 2 14 8 20 8"/>
+                                        <line x1="9" y1="13" x2="15" y2="13"/>
+                                        <line x1="9" y1="17" x2="15" y2="17"/>
+                                        <line x1="9" y1="9" x2="11" y2="9"/>
+                                    </svg>
+                                </td>
+                                <td style="vertical-align: middle;">
+                                    <h3 style="margin: 0; font-family: 'Playfair Display', Georgia, serif; color: #0f2740; font-size: 18px; font-weight: 700;">Chi tiết chi phí</h3>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="border: 1px solid #e5e7eb; border-radius: 10px; overflow: hidden;">
+                            <!-- Tien phong -->
+                            <tr>
+                                <td style="padding: 14px 20px; border-bottom: 1px solid #f3f4f6;">
+                                    <span style="color: #4b5563; font-size: 14px;">Tiền phòng</span>
+                                </td>
+                                <td style="padding: 14px 20px; border-bottom: 1px solid #f3f4f6; text-align: right;">
+                                    <span style="color: #1f2937; font-size: 14px; font-weight: 600;" th:text="${tongTienPhong}">0 VND</span>
+                                </td>
+                            </tr>
+                            <!-- Tien dich vu (neu co) -->
+                            <tr th:if="${danhSachDichVu != null and !danhSachDichVu.isEmpty()}">
+                                <td style="padding: 14px 20px; border-bottom: 1px solid #f3f4f6;">
+                                    <span style="color: #4b5563; font-size: 14px;">Tiền dịch vụ</span>
+                                </td>
+                                <td style="padding: 14px 20px; border-bottom: 1px solid #f3f4f6; text-align: right;">
+                                    <span style="color: #1f2937; font-size: 14px; font-weight: 600;" th:text="${tongTienDichVu}">0 VND</span>
+                                </td>
+                            </tr>
+                            <!-- Khuyen mai (neu co) -->
+                            <tr th:if="${khuyenMai != null}">
+                                <td style="padding: 14px 20px; border-bottom: 1px solid #f3f4f6;">
+                                    <span style="color: #4b5563; font-size: 14px;">Khuyến mãi</span>
+                                </td>
+                                <td style="padding: 14px 20px; border-bottom: 1px solid #f3f4f6; text-align: right;">
+                                    <span style="color: #16a34a; font-size: 14px; font-weight: 600;">Đã áp dụng</span>
+                                </td>
+                            </tr>
+                            <!-- Phu phi check-in/out thuc te (neu co - chi hien khi NV da check-in/out) -->
+                            <tr th:if="${coPhuPhiThucTe}">
+                                <td style="padding: 14px 20px; border-bottom: 1px solid #f3f4f6;">
+                                    <span style="color: #4b5563; font-size: 14px;">Phụ phí giờ nhận/trả thực tế</span>
+                                </td>
+                                <td style="padding: 14px 20px; border-bottom: 1px solid #f3f4f6; text-align: right;">
+                                    <span style="color: #b45309; font-size: 14px; font-weight: 600;" th:text="${tongPhuPhi}">0 VND</span>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <!-- Grand total -->
+                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background: #0f2740; border-radius: 10px; margin-top: 12px;">
+                            <tr>
+                                <td style="padding: 20px 24px;">
+                                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                                        <tr>
+                                            <td style="vertical-align: middle;">
+                                                <div style="color: rgba(255,255,255,0.7); font-size: 11px; text-transform: uppercase; font-weight: 600;">Tổng thanh toán</div>
+                                                <div style="color: rgba(255,255,255,0.6); font-size: 11px; margin-top: 2px;">Đã bao gồm VAT 10%</div>
+                                            </td>
+                                            <td style="vertical-align: middle; text-align: right;">
+                                                <div style="font-family: 'Playfair Display', Georgia, serif; color: #ffffff; font-size: 28px; font-weight: 700; line-height: 1;"
+                                                     th:text="${tongCong}">0 VND</div>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+
+                <!-- ===================================================================== -->
+                <!-- HÓA ĐƠN (nếu có) -->
+                <!-- ===================================================================== -->
+                <tr th:if="${hoaDon != null}">
+                    <td style="padding: 8px 40px 28px;">
+                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background: #f0f9ff; border-left: 3px solid #2980B9; border-radius: 8px;">
+                            <tr>
+                                <td style="padding: 18px 20px;">
+                                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                                        <tr>
+                                            <td>
+                                                <div style="color: #6b7280; font-size: 11px; text-transform: uppercase; font-weight: 600;">Mã hóa đơn</div>
+                                                <div style="font-family: 'Courier New', monospace; color: #0f2740; font-size: 18px; font-weight: 700; margin-top: 4px;">
+                                                    #<span th:text="${maHoaDon}">0</span>
+                                                </div>
+                                            </td>
+                                            <td style="text-align: right;">
+                                                <div style="color: #6b7280; font-size: 11px; text-transform: uppercase; font-weight: 600;">Trạng thái</div>
+                                                <div style="color: #16a34a; font-size: 14px; font-weight: 700; margin-top: 4px;">
+                                                    <span th:text="${hoaDon.trangThai}">—</span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+
+                <!-- ===================================================================== -->
+                <!-- TRẠNG THÁI ĐƠN -->
+                <!-- ===================================================================== -->
+                <tr>
+                    <td style="padding: 8px 40px 28px;">
+                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background: #fafbfc; border: 1px solid #e5e7eb; border-radius: 10px;">
+                            <tr>
+                                <td style="padding: 14px 20px;">
+                                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                                        <tr>
+                                            <td style="vertical-align: middle;">
+                                                <div style="color: #6b7280; font-size: 11px; text-transform: uppercase; font-weight: 600;">Trạng thái đơn</div>
+                                                <div style="font-family: 'Playfair Display', Georgia, serif; color: #0f2740; font-size: 16px; font-weight: 700; margin-top: 4px;"
+                                                     th:text="${trangThaiDon}">—</div>
+                                            </td>
+                                            <td style="vertical-align: middle; text-align: right;">
+                                                <span style="display: inline-block; padding: 6px 14px; background: #2980B9; color: #ffffff; border-radius: 14px; font-size: 11px; font-weight: 600; text-transform: uppercase;"
+                                                      th:text="${trangThaiEmail == 'thanh-toan' ? 'HOAN TAT' : (trangThaiEmail == 'da-xac-nhan' ? 'DA XAC NHAN' : 'CHO XAC NHAN')}">
+                                                    CHO XAC NHAN
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+
+                <!-- ===================================================================== -->
+                <!-- YÊU CẦU THÊM -->
+                <!-- ===================================================================== -->
+                <tr th:if="${yeuCauThem != null and yeuCauThem != ''}">
+                    <td style="padding: 8px 40px 28px;">
+                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom: 16px;">
+                            <tr>
+                                <td style="vertical-align: middle; padding-right: 12px;">
+                                    <!-- Outline note icon -->
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2980B9" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; vertical-align:middle;">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                        <polyline points="14 2 14 8 20 8"/>
+                                        <line x1="16" y1="13" x2="8" y2="13"/>
+                                        <line x1="16" y1="17" x2="8" y2="17"/>
+                                        <polyline points="10 9 9 9 8 9"/>
+                                    </svg>
+                                </td>
+                                <td style="vertical-align: middle;">
+                                    <h3 style="margin: 0; font-family: 'Playfair Display', Georgia, serif; color: #0f2740; font-size: 18px; font-weight: 700;">Yêu cầu đặc biệt</h3>
+                                </td>
+                            </tr>
+                        </table>
+                        <div style="background: #fafbfc; border-left: 3px solid #2980B9; padding: 14px 18px; border-radius: 6px; color: #4b5563; font-size: 14px; font-style: italic; line-height: 1.6;"
+                             th:text="${yeuCauThem}">Yeu cau them</div>
+                    </td>
+                </tr>
+
+                <!-- ===================================================================== -->
+                <!-- BƯỚC TIẾP THEO (NEXT STEPS) -->
+                <!-- ===================================================================== -->
+                <tr>
+                    <td style="padding: 8px 40px 28px;">
+                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom: 16px;">
+                            <tr>
+                                <td style="vertical-align: middle; padding-right: 12px;">
+                                    <!-- Outline arrow icon -->
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2980B9" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; vertical-align:middle;">
+                                        <line x1="5" y1="12" x2="19" y2="12"/>
+                                        <polyline points="12 5 19 12 12 19"/>
+                                    </svg>
+                                </td>
+                                <td style="vertical-align: middle;">
+                                    <h3 style="margin: 0; font-family: 'Playfair Display', Georgia, serif; color: #0f2740; font-size: 18px; font-weight: 700;">Bước tiếp theo</h3>
+                                </td>
+                            </tr>
+                        </table>
+
+                        <!-- Step items -->
+                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                            <!-- Step 1: tuy theo trang thai email -->
+                            <!-- Neu da thanh toan: step 1 = Nhan phong (bo qua buoc thanh toan) -->
+                            <tr th:if="${trangThaiEmail == 'thanh-toan'}">
+                                <td style="padding: 12px 0;">
+                                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                                        <tr>
+                                            <td style="vertical-align: top; width: 32px;">
+                                                <div style="width: 24px; height: 24px; border: 1.5px solid #2980B9; border-radius: 50%; color: #2980B9; font-size: 12px; font-weight: 700; line-height: 21px; text-align: center;">1</div>
+                                            </td>
+                                            <td style="vertical-align: top; padding-left: 8px;">
+                                                <div style="color: #1f2937; font-size: 14px; font-weight: 600;">Nhận phòng</div>
+                                                <div style="color: #6b7280; font-size: 13px; margin-top: 2px;">Mang theo CCCD/CMND đã đăng ký để làm thủ tục check-in nhanh chóng.</div>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                            <!-- Neu NV da xac nhan yeu cau: step 1 = Hoan tat thanh toan -->
+                            <tr th:if="${trangThaiEmail == 'da-xac-nhan'}">
+                                <td style="padding: 12px 0;">
+                                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                                        <tr>
+                                            <td style="vertical-align: top; width: 32px;">
+                                                <div style="width: 24px; height: 24px; border: 1.5px solid #2980B9; border-radius: 50%; color: #2980B9; font-size: 12px; font-weight: 700; line-height: 21px; text-align: center;">1</div>
+                                            </td>
+                                            <td style="vertical-align: top; padding-left: 8px;">
+                                                <div style="color: #1f2937; font-size: 14px; font-weight: 600;">Hoàn tất thanh toán</div>
+                                                <div style="color: #6b7280; font-size: 13px; margin-top: 2px;">Đăng nhập tài khoản và thanh toán để giữ phòng.</div>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                            <!-- Neu moi gui yeu cau: step 1 = Cho NV xac nhan -->
+                            <tr th:if="${trangThaiEmail == 'yeu-cau'}">
+                                <td style="padding: 12px 0;">
+                                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                                        <tr>
+                                            <td style="vertical-align: top; width: 32px;">
+                                                <div style="width: 24px; height: 24px; border: 1.5px solid #2980B9; border-radius: 50%; color: #2980B9; font-size: 12px; font-weight: 700; line-height: 21px; text-align: center;">1</div>
+                                            </td>
+                                            <td style="vertical-align: top; padding-left: 8px;">
+                                                <div style="color: #1f2937; font-size: 14px; font-weight: 600;">Chờ nhân viên xác nhận</div>
+                                                <div style="color: #6b7280; font-size: 13px; margin-top: 2px;">Thông thường trong vòng 15-30 phút trong giờ hành chính.</div>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                            <!-- Step 2: Nhan phong - chi hien khi chua thanh toan (yeu-cau hoac da-xac-nhan) -->
+                            <tr th:if="${trangThaiEmail != 'thanh-toan'}">
+                                <td style="padding: 12px 0;">
+                                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                                        <tr>
+                                            <td style="vertical-align: top; width: 32px;">
+                                                <div style="width: 24px; height: 24px; border: 1.5px solid #2980B9; border-radius: 50%; color: #2980B9; font-size: 12px; font-weight: 700; line-height: 21px; text-align: center;">2</div>
+                                            </td>
+                                            <td style="vertical-align: top; padding-left: 8px;">
+                                                <div style="color: #1f2937; font-size: 14px; font-weight: 600;">Nhận phòng</div>
+                                                <div style="color: #6b7280; font-size: 13px; margin-top: 2px;">Mang theo CCCD/CMND đã đăng ký để làm thủ tục check-in nhanh chóng.</div>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                            <!-- Step 3: Tan huong ky nghi - chi hien khi chua thanh toan -->
+                            <tr th:if="${trangThaiEmail != 'thanh-toan'}">
+                                <td style="padding: 12px 0;">
+                                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                                        <tr>
+                                            <td style="vertical-align: top; width: 32px;">
+                                                <div style="width: 24px; height: 24px; border: 1.5px solid #2980B9; border-radius: 50%; color: #2980B9; font-size: 12px; font-weight: 700; line-height: 21px; text-align: center;">3</div>
+                                            </td>
+                                            <td style="vertical-align: top; padding-left: 8px;">
+                                                <div style="color: #1f2937; font-size: 14px; font-weight: 600;">Tận hưởng kỳ nghỉ</div>
+                                                <div style="color: #6b7280; font-size: 13px; margin-top: 2px;">Liên hệ lễ tân 24/7 nếu cần hỗ trợ trong suốt thời gian lưu trú.</div>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                            <!-- Step 2 (khi da thanh toan): Tan huong ky nghi -->
+                            <tr th:if="${trangThaiEmail == 'thanh-toan'}">
+                                <td style="padding: 12px 0;">
+                                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                                        <tr>
+                                            <td style="vertical-align: top; width: 32px;">
+                                                <div style="width: 24px; height: 24px; border: 1.5px solid #2980B9; border-radius: 50%; color: #2980B9; font-size: 12px; font-weight: 700; line-height: 21px; text-align: center;">2</div>
+                                            </td>
+                                            <td style="vertical-align: top; padding-left: 8px;">
+                                                <div style="color: #1f2937; font-size: 14px; font-weight: 600;">Tận hưởng kỳ nghỉ</div>
+                                                <div style="color: #6b7280; font-size: 13px; margin-top: 2px;">Liên hệ lễ tân 24/7 nếu cần hỗ trợ trong suốt thời gian lưu trú.</div>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+
+                <!-- ===================================================================== -->
+                <!-- LỜI CHÚC -->
+                <!-- ===================================================================== -->
+                <tr>
+                    <td style="padding: 8px 40px 32px;">
+                        <div style="text-align: center; padding: 20px 0; border-top: 1px solid #e5e7eb; border-bottom: 1px solid #e5e7eb;">
+                            <p style="margin: 0; font-family: 'Playfair Display', Georgia, serif; color: #0f2740; font-size: 18px; font-style: italic; line-height: 1.5;">
+                                <span th:if="${trangThaiEmail == 'thanh-toan'}">"Chúng tôi rất mong được đón tiếp quý khách."</span>
+                                <span th:if="${trangThaiEmail == 'da-xac-nhan'}">"Cảm ơn quý khách đã tin tưởng dịch vụ của chúng tôi."</span>
+                                <span th:if="${trangThaiEmail == 'yeu-cau'}">"Yêu cầu của quý khách đang được xử lý. Xin cảm ơn!"</span>
+                            </p>
+                        </div>
+                    </td>
+                </tr>
+
+                <!-- ===================================================================== -->
+                <!-- FOOTER: LIÊN HỆ -->
+                <!-- ===================================================================== -->
+                <tr>
+                    <td style="padding: 28px 40px; background: #fafbfc;">
+                        <h3 style="margin: 0 0 16px; font-family: 'Playfair Display', Georgia, serif; color: #0f2740; font-size: 16px; font-weight: 700; text-align: center;">Liên hệ với chúng tôi</h3>
+                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                            <tr>
+                                <td align="center" style="padding: 6px 0; color: #4b5563; font-size: 13px;">
+                                    <!-- Outline phone icon -->
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2980B9" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; vertical-align:middle; margin-right: 6px;">
+                                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+                                    </svg>
+                                    <a th:href="'tel:' + ${sdtKhachSan}" style="color: #2980B9; text-decoration: none; font-weight: 600;" th:text="${sdtKhachSan}">+84 123 456 789</a>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td align="center" style="padding: 6px 0; color: #4b5563; font-size: 13px;">
+                                    <!-- Outline mail icon -->
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2980B9" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; vertical-align:middle; margin-right: 6px;">
+                                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                                        <polyline points="22,6 12,13 2,6"/>
+                                    </svg>
+                                    <a th:href="'mailto:' + ${sdtKhachSan}" style="color: #2980B9; text-decoration: none;">support@<span th:text="${tenKhachSan}">hotel</span>.com</a>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td align="center" style="padding: 6px 0; color: #4b5563; font-size: 13px;">
+                                    <!-- Outline map icon -->
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2980B9" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; vertical-align:middle; margin-right: 6px;">
+                                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                                        <circle cx="12" cy="10" r="3"/>
+                                    </svg>
+                                    <span th:text="${diaChiKhachSan}">123 Duong ABC</span>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+
+                <!-- ===================================================================== -->
+                <!-- COPYRIGHT -->
+                <!-- ===================================================================== -->
+                <tr>
+                    <td style="background: #0f2740; padding: 22px 40px; text-align: center;">
+                        <p style="margin: 0; font-family: 'Playfair Display', Georgia, serif; color: #ffffff; font-size: 14px; font-weight: 700; text-transform: uppercase;"
+                           th:text="${tenKhachSan}">HOTEL</p>
+                        <p style="margin: 8px 0 0; color: rgba(255,255,255,0.55); font-size: 11px;">
+                            © <span th:text="${namHienTai}">2026</span> All rights reserved.
+                        </p>
+                        <p style="margin: 6px 0 0; color: rgba(255,255,255,0.4); font-size: 10px;">
+                            Email này được gửi tự động, vui lòng không reply trực tiếp.
+                        </p>
+                    </td>
+                </tr>
+
+            </table>
+        </td>
+    </tr>
+</table>
+</body>
+</html>

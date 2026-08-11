@@ -9,7 +9,27 @@
     <style>
         *, *::before, *::after { box-sizing: border-box; }
         body { background: #f4f7fa; }
-        .cdp-shell { margin: 0 auto; max-width: 1360px; padding: 32px 5% 80px; }
+        /* Shell chinh - chiem het phan con lai cua viewport sau sidebar (margin-left da duoc sidebar xu ly).
+           max-width: 100% de content gian theo chieu rong viewport con lai, padding ngay duoc tinh theo %.
+           Truoc day dung max-width: 1360px lam content bi gioi han gian cach khi man hinh rong ~1900px. */
+        .cdp-shell { width: 100%; max-width: 100%; margin: 0; padding: 32px 4% 80px; }
+
+        /* Man hinh rat rong (>=1700px): padding 6% */
+        @media (min-width: 1700px) {
+            .cdp-shell { padding: 32px 6% 80px; }
+        }
+        /* Tablet trung binh */
+        @media (max-width: 1199px) and (min-width: 961px) {
+            .cdp-shell { padding: 28px 3% 70px; }
+        }
+        /* Tablet nho */
+        @media (max-width: 960px) and (min-width: 641px) {
+            .cdp-shell { padding: 24px 2.5% 60px; }
+        }
+        /* Phone */
+        @media (max-width: 640px) {
+            .cdp-shell { padding: 20px 16px 60px; }
+        }
 
         .cdp-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 14px; margin-bottom: 22px; }
         .cdp-header h1 { color: var(--sky-dark); font-size: 24px; font-weight: 700; margin-bottom: 4px; }
@@ -607,14 +627,18 @@
         </div>
 
         <div class="thu-tien-info">
-            <span>Tổng hóa đơn: <b th:text="${#numbers.formatDecimal(hoaDon.tongTien, 0, 'COMMA', 0, 'POINT')} + ' VND'">0 VND</b></span>
+            <span>Tổng hóa đơn: <b th:text="${#numbers.formatDecimal(tongTienThucTe, 0, 'COMMA', 0, 'POINT')} + ' VND'">0 VND</b></span>
             <span>Đã thu: <b th:text="${#numbers.formatDecimal(hoaDon.daThanhToan ?: 0, 0, 'COMMA', 0, 'POINT')} + ' VND'">0 VND</b></span>
             <span>Còn nợ:
-                <b th:text="${hoaDon.tongTien.subtract(hoaDon.daThanhToan ?: 0).compareTo(T(java.math.BigDecimal).ZERO) > 0}
-                            ? (${#numbers.formatDecimal(hoaDon.tongTien.subtract(hoaDon.daThanhToan ?: 0), 0, 'COMMA', 0, 'POINT')} + ' VND')
+                <b th:text="${conNoThucTe.compareTo(T(java.math.BigDecimal).ZERO) > 0}
+                            ? (${#numbers.formatDecimal(conNoThucTe, 0, 'COMMA', 0, 'POINT')} + ' VND')
                             : '0 VND (đã thanh toán đủ hoặc dư)'">
                     0 VND
                 </b>
+            </span>
+            <span th:if="${tongPhuThu != null and tongPhuThu.compareTo(T(java.math.BigDecimal).ZERO) > 0}"
+                  style="color:#b45309;">
+                (đã bao gồm phụ thu giờ nhận/trả <b th:text="${#numbers.formatDecimal(tongPhuThu, 0, 'COMMA', 0, 'POINT')} + ' VND'"></b>)
             </span>
         </div>
 
@@ -626,9 +650,7 @@
                 <label>Số tiền thu</label>
                 <input type="number" name="soTien" min="0" step="1000" required
                        th:readonly="${hoaDonDaXuat}"
-                       th:value="${hoaDon != null and hoaDon.tongTien != null and hoaDon.daThanhToan != null
-                                   and hoaDon.tongTien.subtract(hoaDon.daThanhToan).signum() > 0}
-                               ? ${hoaDon.tongTien.subtract(hoaDon.daThanhToan)} : ''">
+                       th:value="${conNoThucTe != null and conNoThucTe.signum() > 0} ? ${conNoThucTe} : ''">
             </div>
 
             <div class="ff">

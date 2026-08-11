@@ -295,7 +295,39 @@
             text-overflow: unset;
         }
 
-        /* ===== Bottom / logout ===== */
+        /* ===== Nav badge count (yeu cau dat phong cho xu ly) ===== */
+    .nav-badge-count {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 20px;
+        height: 20px;
+        padding: 0 7px;
+        margin-left: 6px;
+        background: #d32f2f;
+        color: #fff;
+        font-size: 11px;
+        font-weight: 700;
+        border-radius: 10px;
+        line-height: 1;
+        box-shadow: 0 0 0 2px rgba(211, 47, 47, 0.18);
+        animation: navBadgePulse 2.4s ease-in-out infinite;
+    }
+    .nav-badge-count[hidden] { display: none !important; }
+    @keyframes navBadgePulse {
+        0%, 100% { box-shadow: 0 0 0 2px rgba(211, 47, 47, 0.18); }
+        50% { box-shadow: 0 0 0 6px rgba(211, 47, 47, 0.05); }
+    }
+    /* Khi sidebar collapsed: badge canh badge ben duoi icon */
+    #cms-sidebar.is-collapsed .nav-badge-count {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        margin: 0;
+    }
+    #cms-sidebar.is-collapsed #navYeuCauDatPhong { position: relative; }
+
+    /* ===== Bottom / logout ===== */
         .cms-sidebar-bottom {
             flex: 0 0 auto;
             border-top: 1px solid var(--cms-border);
@@ -482,6 +514,18 @@
                         </span>
                         <span class="cms-nav-text">Đơn đặt phòng</span>
                     </a>
+                    <a th:href="@{/nhan-su/yeu-cau-dat-phong}" class="cms-nav-link" id="navYeuCauDatPhongAdmin">
+                        <span class="cms-nav-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M3 7h18M5 7v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/>
+                                <circle cx="12" cy="13" r="3" stroke-dasharray="2 2"/>
+                            </svg>
+                        </span>
+                        <span class="cms-nav-text">
+                            Yêu cầu đặt phòng
+                            <span class="yeuCauNavBadgeAdmin nav-badge-count" hidden>0</span>
+                        </span>
+                    </a>
                     <a th:href="@{/nhan-su/admin/dat-phong/check-in}" class="cms-nav-link">
                         <span class="cms-nav-icon" aria-hidden="true">
                             <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
@@ -572,6 +616,18 @@
                             <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg>
                         </span>
                         <span class="cms-nav-text">Đơn đặt phòng</span>
+                    </a>
+                    <a th:href="@{/nhan-su/yeu-cau-dat-phong}" class="cms-nav-link" id="navYeuCauDatPhong">
+                        <span class="cms-nav-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M3 7h18M5 7v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/>
+                                <circle cx="12" cy="13" r="3" stroke-dasharray="2 2"/>
+                            </svg>
+                        </span>
+                        <span class="cms-nav-text">
+                            Yêu cầu đặt phòng
+                            <span id="yeuCauNavBadge" class="nav-badge-count" hidden>0</span>
+                        </span>
                     </a>
                     <a th:href="@{/nhan-su/dat-phong/check-in}" class="cms-nav-link">
                         <span class="cms-nav-icon" aria-hidden="true">
@@ -699,6 +755,37 @@
             if (bestMatch) { bestMatch.classList.add('is-active'); }
 
             applyStoredState();
+
+            // ===== Polling so luong yeu cau dat phong (hien thi badge sidebar) =====
+            (function pollYeuCauBadge() {
+                // Co the co nhieu badge (admin + staff sidebar share cung 1 fragment)
+                var badges = document.querySelectorAll('#yeuCauNavBadge, .yeuCauNavBadgeAdmin');
+                if (!badges.length) return;
+                // Chi polling khi user dang o khu vuc /nhan-su/ (STAFF/ADMIN)
+                var path = window.location.pathname;
+                if (path.indexOf('/nhan-su') !== 0) return;
+                var url = '/nhan-su/api/yeu-cau/dat-phong/count';
+                function tick() {
+                    fetch(url, { credentials: 'same-origin' })
+                        .then(function (r) { return r.ok ? r.json() : null; })
+                        .then(function (data) {
+                            if (!data || typeof data.count !== 'number') return;
+                            var n = data.count;
+                            badges.forEach(function (badge) {
+                                if (n === 0) {
+                                    badge.hidden = true;
+                                    badge.textContent = '0';
+                                } else {
+                                    badge.hidden = false;
+                                    badge.textContent = n > 99 ? '99+' : String(n);
+                                }
+                            });
+                        })
+                        .catch(function () { /* silent */ });
+                }
+                tick();
+                setInterval(tick, 5000);
+            })();
 
             // Keep the sidebar coherent when crossing phone/tablet/desktop
             // breakpoints (e.g. rotating a tablet, resizing a window).

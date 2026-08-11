@@ -39,6 +39,9 @@ public class ThanhToanController {
     @Autowired
     DatPhongService datPhongService;
 
+    @Autowired
+    BookingEmailService bookingEmailService;
+
         @GetMapping("/dat-phong/{id}")
         public String submitTransaction(@PathVariable Integer id,Model model){
             DatPhong dp = datPhongService.findById(id);
@@ -134,7 +137,11 @@ public class ThanhToanController {
         BigDecimal tienVat = amountTongTien.multiply(VATCD).setScale(2, RoundingMode.HALF_UP);
         amountTongTien = amountTongTien.add(tienVat);
 
-        dp.setTrangThai("Cho xac nhan");
+        // KHONG doi trangThai DatPhong o day — don nay la "Yeu cau dat phong",
+        // nhan vien se xac nhan + xep phong trong trang /nhan-su/yeu-cau-dat-phong.
+        // Trang thai chi duoc phep thay doi boi NV qua nut "Xac nhan yeu cau".
+        // Luu ngayCapNhat de audit.
+        dp.setNgayCapNhat(LocalDateTime.now());
         datPhongService.save(dp);
 
         HoaDon hd = new HoaDon();
@@ -162,6 +169,13 @@ public class ThanhToanController {
         tt.setNgaythanhToan(LocalDateTime.now());
         tt.setGichu("Chua thu tien, khach se thanh toan khi nhan phong");
         thanhToanService.save(tt);
+
+        // Gui email xac nhan cho khach (async) — bao gom hoa don + thong tin thanh toan
+        try {
+            bookingEmailService.guiEmailThanhToanThanhCong(id);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
 
         redirectAttributes.addFlashAttribute("success", "Da xac nhan dat phong. Vui long thanh toan tien mat khi den nhan phong.");
         return "redirect:/thanh-toan/thanh-cong/" + id;

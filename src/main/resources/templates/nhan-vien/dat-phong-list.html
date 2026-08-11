@@ -204,10 +204,67 @@
     .cccd-room-name { font-weight: 600; color: #1a1a1a; }
     .cccd-room-value { color: #0C447C; font-weight: 600; }
     .cccd-room-empty { color: #999; font-style: italic; font-size: 13px; }
+
+    /* Toast cảnh báo trễ (đơn đã qua giờ nhận > 1 ngày, chưa nhận phòng) */
+    .toast-canh-bao-tre {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        background: #FFF8E1;
+        color: #8B6E00;
+        border-left: 5px solid #FFC107;
+        padding: 14px 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        transition: opacity 0.5s ease;
+        max-width: 480px;
+        font-size: 14px;
+    }
+    .toast-canh-bao-tre i {
+        font-size: 22px;
+        color: #FFC107;
+        flex-shrink: 0;
+    }
+    .toast-canh-bao-tre strong { font-weight: 700; }
+    .toast-close {
+        background: none;
+        border: none;
+        font-size: 22px;
+        cursor: pointer;
+        color: #8B6E00;
+        line-height: 1;
+        padding: 0 4px;
+    }
+    .toast-close:hover { color: #5C4900; }
 </style>
 <div th:replace="~{fragments/cms-sidebar :: cmsSidebar}"></div>
 <div th:replace="~{fragments/headers/cms-header :: cmsHeader}"></div>
 <main class="admin-wrapper">
+    <!-- Toast cảnh báo: đơn đã quá hạn nhận phòng > 1 ngày -->
+    <div th:if="${soDonTreCanhBao != null and soDonTreCanhBao > 0}"
+         class="toast-canh-bao-tre" id="toast-tre-canhtinh">
+        <i class="ti ti-alert-triangle"></i>
+        <span>
+            Có <strong th:text="${soDonTreCanhBao}">0</strong> đơn đặt phòng đã quá hạn nhận phòng hơn 1 ngày — vui lòng kiểm tra và xử lý.
+        </span>
+        <button type="button" class="toast-close" onclick="closeToastTre()" aria-label="Đóng">×</button>
+    </div>
+    <script>
+        function closeToastTre() {
+            var t = document.getElementById('toast-tre-canhtinh');
+            if (t) { t.style.opacity = '0'; setTimeout(function(){ t.remove(); }, 500); }
+        }
+        // Auto-dismiss sau 10 giây
+        (function() {
+            var t = document.getElementById('toast-tre-canhtinh');
+            if (t) { setTimeout(closeToastTre, 10000); }
+        })();
+    </script>
+
     <div class="admin-header">
         <h1>Quản Lý Đơn Đặt Phòng</h1>
         <a th:href="@{/nhan-su/dat-phong}" class="admin-btn outline">Làm mới</a>

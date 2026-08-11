@@ -1,0 +1,400 @@
+package su26sd09.su26sd09.service;
+
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Service;
+import org.thymeleaf.TemplateEngine;
+import org.thymeleaf.context.Context;
+import su26sd09.su26sd09.entity.ChiTietDatPhong;
+import su26sd09.su26sd09.entity.Chi_tiet_dich_vu;
+import su26sd09.su26sd09.entity.DatPhong;
+import su26sd09.su26sd09.entity.HoaDon;
+import su26sd09.su26sd09.entity.KhuyenMai;
+import su26sd09.su26sd09.entity.Phong;
+
+import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Pattern;
+
+/**
+ * Service gui email HTML xac nhan dat phong cho khach hang.
+ *
+ * <p>Tach rieng khoi {@link MailSenderService} (chi gui text thuan cho xac thuc
+ * tai khoan) vi email dat phong can:
+ * <ul>
+ *   <li>HTML (multipart) voi template Thymeleaf chuyen nghiep</li>
+ *   <li>Bang chi tiet phong, dich vu, thanh toan</li>
+ *   <li>Chay async (khong block luong dat phong / thanh toan)</li>
+ * </ul>
+ *
+ * <p>Cac diem hook:
+ * <ol>
+ *   <li>Sau khi khach online tao yeu cau dat phong (gui email "Yeu cau da gui")</li>
+ *   <li>Sau khi NV xac nhan yeu cau (gui email "Da xac nhan, vui long thanh toan")</li>
+ *   <li>Sau khi thanh toan thanh cong (gui email "Thanh toan thanh cong")</li>
+ * </ol>
+ */
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class BookingEmailService {
+
+    private static final DateTimeFormatter FMT_DATETIME = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+    private static final DateTimeFormatter FMT_DATE = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+    private static final Pattern EMAIL_PATTERN = Pattern.compile("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    private static final BigDecimal VAT_RATE = new BigDecimal("0.10");
+
+    private final JavaMailSender mailSender;
+    private final TemplateEngine templateEngine;
+    private final DatPhongService datPhongService;
+    private final ChiTietDatPhongService chiTietDatPhongService;
+    private final ChiTietDichVuService chiTietDichVuService;
+    private final HoaDonService hoaDonService;
+
+    @Value("${spring.mail.username:noreply@hotel.com}")
+    private String fromAddress;
+
+    @Value("${app.hotel-name:Hotel}")
+    private String hotelName;
+
+    @Value("${app.hotel-phone:+84 123 456 789}")
+    private String hotelPhone;
+
+    @Value("${app.hotel-address:123 Đường ABC, Quận 1, TP.HCM}")
+    private String hotelAddress;
+
+    /**
+     * Gui email xac nhan cho khach sau khi tao yeu cau dat phong online.
+     * Trang thai don luc nay la "Yeu cau dat phong", cho NV xac nhan.
+     */
+    @Async
+    public void guiEmailYeuCauDatPhong(Integer maDatPhong) {
+        DatPhong dp = layDatPhong(maDatPhong);
+        if (dp == null) return;
+
+        String emailNhan = layEmailKhach(dp);
+        if (!emailHopLe(emailNhan)) {
+            log.warn("[Email] Bo qua: don #{} khong co email hop le (email={})", maDatPhong, emailNhan);
+            return;
+        }
+
+        try {
+            Map<String, Object> vars = buildCommonVars(dp, "yeu-cau");
+            vars.put("tieuDe", "Yêu cầu đặt phòng đã được gửi");
+            vars.put("loiChao", "Cảm ơn quý khách đã chọn " + hotelName + "!");
+            vars.put("thongBaoChinh",
+                    "Yêu cầu đặt phòng của quý khách đã được gửi thành công. "
+                            + "Đội ngũ nhân viên sẽ kiểm tra và xác nhận trong thời gian sớm nhất.");
+
+            sendEmail(emailNhan,
+                    "[Hotel] Xác nhận yêu cầu đặt phòng #" + dp.getId(),
+                    "email/xac-nhan-dat-phong", vars);
+            log.info("[Email] Da gui email yeu cau dat phong toi {} (don #{})", emailNhan, maDatPhong);
+        } catch (Exception e) {
+            log.error("[Email] Loi gui email yeu cau dat phong don #{}: {}", maDatPhong, e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Gui email khi NV xac nhan yeu cau dat phong (trang thai -> "Cho xac nhan").
+     * Luc nay khach can biet: da xac nhan, vui long thanh toan.
+     */
+    @Async
+    public void guiEmailXacNhanYeuCau(Integer maDatPhong) {
+        DatPhong dp = layDatPhong(maDatPhong);
+        if (dp == null) return;
+
+        String emailNhan = layEmailKhach(dp);
+        if (!emailHopLe(emailNhan)) {
+            log.warn("[Email] Bo qua: don #{} khong co email hop le (email={})", maDatPhong, emailNhan);
+            return;
+        }
+
+        try {
+            Map<String, Object> vars = buildCommonVars(dp, "da-xac-nhan");
+            vars.put("tieuDe", "Yêu cầu đặt phòng đã được xác nhận");
+            vars.put("loiChao", "Yêu cầu của quý khách đã được xác nhận!");
+            vars.put("thongBaoChinh",
+                    "Yêu cầu đặt phòng #" + dp.getId() + " đã được nhân viên xác nhận. "
+                            + "Quý khách vui lòng hoàn tất thanh toán để giữ phòng.");
+
+            sendEmail(emailNhan,
+                    "[Hotel] Yêu cầu đặt phòng #" + dp.getId() + " đã được xác nhận",
+                    "email/xac-nhan-dat-phong", vars);
+            log.info("[Email] Da gui email xac nhan yeu cau toi {} (don #{})", emailNhan, maDatPhong);
+        } catch (Exception e) {
+            log.error("[Email] Loi gui email xac nhan don #{}: {}", maDatPhong, e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Gui email khi khach thanh toan thanh cong (hoa don da thanh toan du).
+     */
+    @Async
+    public void guiEmailThanhToanThanhCong(Integer maDatPhong) {
+        DatPhong dp = layDatPhong(maDatPhong);
+        if (dp == null) return;
+
+        String emailNhan = layEmailKhach(dp);
+        if (!emailHopLe(emailNhan)) {
+            log.warn("[Email] Bo qua: don #{} khong co email hop le (email={})", maDatPhong, emailNhan);
+            return;
+        }
+
+        HoaDon hd = hoaDonService.findByDatPhongId(maDatPhong);
+
+        try {
+            Map<String, Object> vars = buildCommonVars(dp, "thanh-toan");
+            vars.put("tieuDe", "Thanh toán đặt phòng thành công");
+            vars.put("loiChao", "Cảm ơn quý khách đã thanh toán!");
+            vars.put("thongBaoChinh",
+                    "Đơn đặt phòng #" + dp.getId() + " đã được thanh toán thành công. "
+                            + "Chúng tôi rất mong được đón tiếp quý khách tại " + hotelName + ".");
+
+            if (hd != null) {
+                vars.put("hoaDon", hd);
+                vars.put("maHoaDon", hd.getId());
+            }
+
+            sendEmail(emailNhan,
+                    "[Hotel] Thanh toán thành công - Đơn đặt phòng #" + dp.getId(),
+                    "email/xac-nhan-dat-phong", vars);
+            log.info("[Email] Da gui email thanh toan toi {} (don #{})", emailNhan, maDatPhong);
+        } catch (Exception e) {
+            log.error("[Email] Loi gui email thanh toan don #{}: {}", maDatPhong, e.getMessage(), e);
+        }
+    }
+
+    // ============== PRIVATE HELPERS ==============
+
+    private DatPhong layDatPhong(Integer id) {
+        if (id == null) return null;
+        try {
+            return datPhongService.findById(id);
+        } catch (Exception e) {
+            log.warn("[Email] Loi load don dat phong #{}: {}", id, e.getMessage());
+            return null;
+        }
+    }
+
+    private String layEmailKhach(DatPhong dp) {
+        // Uu tien email tu tai khoan, neu khong co thi lay email tren don dat phong
+        if (dp.getN() != null && dp.getN().getEmail() != null && !dp.getN().getEmail().isBlank()) {
+            return dp.getN().getEmail().trim();
+        }
+        return dp.getEmail();
+    }
+
+    private boolean emailHopLe(String email) {
+        return email != null && !email.isBlank() && EMAIL_PATTERN.matcher(email).matches();
+    }
+
+    /**
+     * Build map bien dung chung cho ca 3 loai email:
+     * - Thong tin khach (ho ten, sdt)
+     * - Thong tin don (ma don, ngay nhan/tra, loai phong, ngay tao)
+     * - Bang phong da gan
+     * - Bang dich vu da chon
+     * - Tong tien uoc tinh
+     * - Ma tra cuu (neu co)
+     */
+    private Map<String, Object> buildCommonVars(DatPhong dp, String trangThaiEmail) {
+        Map<String, Object> vars = new HashMap<>();
+
+        // Thong tin khach
+        String hoTen = dp.getN() != null ? dp.getN().getHoTen() : (dp.getHoten() != null ? dp.getHoten() : "Quý khách");
+        vars.put("hoTenKhach", hoTen);
+        vars.put("sdtKhach", dp.getN() != null ? dp.getN().getSoDienThoai() : dp.getSdt());
+
+        // Thong tin dat phong
+        vars.put("maDatPhong", dp.getId());
+        vars.put("ngayNhanPhong", dp.getNgaydatPhong() != null ? dp.getNgaydatPhong().format(FMT_DATETIME) : "—");
+        vars.put("ngayTraPhong", dp.getNgaytraPhong() != null ? dp.getNgaytraPhong().format(FMT_DATETIME) : "—");
+        vars.put("ngayDat", dp.getNgayTao() != null ? dp.getNgayTao().format(FMT_DATETIME) : LocalDateTime.now().format(FMT_DATETIME));
+        vars.put("soNguoiLon", dp.getSonguoiLon());
+        vars.put("soTreEm", dp.getSotreEm());
+        vars.put("soDem", tinhSoDem(dp));
+        vars.put("yeuCauThem", dp.getYeuCauThem());
+        vars.put("maTraCuu", dp.getMaTraCuu());
+
+        // Trang thai don
+        vars.put("trangThaiDon", formatTrangThai(dp.getTrangThai()));
+        vars.put("trangThaiEmail", trangThaiEmail);
+
+        // Bang phong da gan
+        List<Map<String, Object>> dsPhong = new ArrayList<>();
+        BigDecimal tongTienPhong = BigDecimal.ZERO;
+        BigDecimal tongPhuPhi = BigDecimal.ZERO;
+        try {
+            List<ChiTietDatPhong> ctdpList = chiTietDatPhongService.findByDatPhongId(dp.getId());
+            for (ChiTietDatPhong ct : ctdpList) {
+                Map<String, Object> p = new HashMap<>();
+                Phong phong = ct.getP();
+                p.put("soPhong", phong != null ? phong.getSoPhong() : "—");
+                p.put("tenLoaiPhong", phong != null && phong.getLoaiPhong() != null
+                        ? phong.getLoaiPhong().getTenLoai() : "—");
+                p.put("sucChua", phong != null && phong.getLoaiPhong() != null
+                        ? phong.getLoaiPhong().getSucChuaToiDa() : null);
+                p.put("giaMoiDem", formatTien(ct.getGiaMoiDem()));
+                p.put("phuPhi", formatTien(ct.getPhuPhi()));
+                p.put("tongPhong", formatTien(ct.getGiaKhiDat()));
+                p.put("cccd", ct.getMa_cccd());
+                dsPhong.add(p);
+
+                if (ct.getGiaKhiDat() != null) tongTienPhong = tongTienPhong.add(ct.getGiaKhiDat());
+                if (ct.getPhuPhi() != null) tongPhuPhi = tongPhuPhi.add(ct.getPhuPhi());
+            }
+        } catch (Exception e) {
+            log.warn("[Email] Loi lay danh sach phong don #{}: {}", dp.getId(), e.getMessage());
+        }
+        vars.put("danhSachPhong", dsPhong);
+        vars.put("tongTienPhong", formatTien(tongTienPhong));
+        vars.put("tongPhuPhi", formatTien(tongPhuPhi));
+
+        // Bang dich vu
+        List<Map<String, Object>> dsDichVu = new ArrayList<>();
+        BigDecimal tongTienDv = BigDecimal.ZERO;
+        try {
+            List<Chi_tiet_dich_vu> dvList = chiTietDichVuService.findByDatPhongId(dp.getId());
+            for (Chi_tiet_dich_vu dv : dvList) {
+                Map<String, Object> d = new HashMap<>();
+                d.put("tenDichVu", dv.getDv() != null ? dv.getDv().getTen_dich_vu() : "Dịch vụ");
+                d.put("soLuong", dv.getSoluong());
+                d.put("donGia", formatTien(dv.getDonGia()));
+                d.put("thanhTien", formatTien(
+                        dv.getDonGia() != null && dv.getSoluong() != null
+                                ? dv.getDonGia().multiply(BigDecimal.valueOf(dv.getSoluong()))
+                                : BigDecimal.ZERO));
+                d.put("ngaySuDung", dv.getNgay_su_dung() != null ? dv.getNgay_su_dung().format(FMT_DATETIME) : "—");
+                dsDichVu.add(d);
+                if (dv.getDonGia() != null && dv.getSoluong() != null) {
+                    tongTienDv = tongTienDv.add(dv.getDonGia().multiply(BigDecimal.valueOf(dv.getSoluong())));
+                }
+            }
+        } catch (Exception e) {
+            log.warn("[Email] Loi lay danh sach dich vu don #{}: {}", dp.getId(), e.getMessage());
+        }
+        vars.put("danhSachDichVu", dsDichVu);
+        vars.put("tongTienDichVu", formatTien(tongTienDv));
+
+        // Khuyen mai (neu co)
+        KhuyenMai km = dp.getKm();
+        BigDecimal tienGiam = tinhTienGiam(tongTienPhong, km);
+        if (km != null) {
+            vars.put("khuyenMai", km);
+            vars.put("moTaKhuyenMai", km.getPromoCode() != null ? km.getPromoCode() : "—");
+        } else {
+            vars.put("khuyenMai", null);
+            vars.put("moTaKhuyenMai", null);
+        }
+        vars.put("tienGiam", formatTien(tienGiam));
+
+        // Phu phi gio nhan/tra phong: LUC MOI DAT khong tinh (se tinh sau khi check-in/out that su).
+        // Phu phi trong DB (ct.getPhuPhi()) chi la du lieu khi NV check-in/out thuc te.
+        // Hien tai trong BookingEmail chi hien thi "phu phi" neu da co du lieu that.
+        boolean coPhuPhiThucTe = tongPhuPhi != null && tongPhuPhi.compareTo(BigDecimal.ZERO) > 0;
+        vars.put("coPhuPhiThucTe", coPhuPhiThucTe);
+
+        // Tong cong = (tien phong - giam) + dich vu + VAT 10%
+        // KHONG cong phu phi (phu phi chi ap dung khi da check-in/out that su)
+        BigDecimal tienSauGiam = tongTienPhong.subtract(tienGiam).max(BigDecimal.ZERO);
+        BigDecimal truocVat = tienSauGiam.add(tongTienDv);
+        BigDecimal tienVat = truocVat.multiply(VAT_RATE).setScale(0, java.math.RoundingMode.HALF_UP);
+        BigDecimal tongCong = truocVat.add(tienVat);
+
+        vars.put("tienTruocVat", formatTien(truocVat));
+        vars.put("tienVat", formatTien(tienVat));
+        vars.put("tongCong", formatTien(tongCong));
+
+        // Thong tin khach san
+        vars.put("tenKhachSan", hotelName);
+        vars.put("sdtKhachSan", hotelPhone);
+        vars.put("diaChiKhachSan", hotelAddress);
+        vars.put("namHienTai", java.time.LocalDate.now().getYear());
+
+        return vars;
+    }
+
+    private long tinhSoDem(DatPhong dp) {
+        if (dp.getNgaydatPhong() == null || dp.getNgaytraPhong() == null) return 1;
+        long days = ChronoUnit.DAYS.between(
+                dp.getNgaydatPhong().toLocalDate(),
+                dp.getNgaytraPhong().toLocalDate());
+        return Math.max(1, days);
+    }
+
+    private String formatTrangThai(String tt) {
+        if (tt == null) return "—";
+        return switch (tt) {
+            case "Yeu cau dat phong" -> "Chờ nhân viên xác nhận";
+            case "Cho xac nhan" -> "Chờ xác nhận thanh toán";
+            case "Da xac nhan" -> "Đã xác nhận";
+            case "Da nhan phong" -> "Đã nhận phòng";
+            case "Da tra phong" -> "Đã trả phòng";
+            case "Da huy" -> "Đã hủy";
+            default -> tt;
+        };
+    }
+
+    private String formatTien(BigDecimal tien) {
+        if (tien == null) tien = BigDecimal.ZERO;
+        return String.format("%,.0f", tien.doubleValue()) + " VND";
+    }
+
+    /**
+     * Giam gia theo loai cua khuyen mai.
+     * PERCENT: giam tienPhong * (giatriGiam / 100)
+     * AMOUNT/FIXED: giam giatriGiam (toi da tienPhong)
+     * Tra ve 0 neu khong dat gia toi thieu hoac KM khong hoat dong.
+     */
+    private BigDecimal tinhTienGiam(BigDecimal tienPhong, KhuyenMai km) {
+        if (km == null || !km.isHoatDong() || km.getGiatriGiam() == null) {
+            return BigDecimal.ZERO;
+        }
+        BigDecimal dieuKien = km.getGiaToiThieuDuocGiam() == null
+                ? BigDecimal.ZERO : km.getGiaToiThieuDuocGiam();
+        if (tienPhong.compareTo(dieuKien) < 0) {
+            return BigDecimal.ZERO;
+        }
+        if ("PERCENT".equalsIgnoreCase(km.getLoaiGiam())) {
+            return tienPhong.multiply(km.getGiatriGiam())
+                    .divide(BigDecimal.valueOf(100), 2, java.math.RoundingMode.HALF_UP);
+        }
+        if ("AMOUNT".equalsIgnoreCase(km.getLoaiGiam())
+                || "FIXED".equalsIgnoreCase(km.getLoaiGiam())) {
+            return km.getGiatriGiam().min(tienPhong);
+        }
+        return BigDecimal.ZERO;
+    }
+
+    private void sendEmail(String to, String subject, String templateName, Map<String, Object> vars)
+            throws MessagingException {
+        Context context = new Context();
+        context.setVariables(vars);
+
+        String htmlBody = templateEngine.process(templateName, context);
+
+        MimeMessage message = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(message,
+                MimeMessageHelper.MULTIPART_MODE_MIXED_RELATED,
+                StandardCharsets.UTF_8.name());
+        helper.setFrom(fromAddress);
+        helper.setTo(to);
+        helper.setSubject(subject);
+        helper.setText(htmlBody, true); // true = HTML
+        mailSender.send(message);
+    }
+}
