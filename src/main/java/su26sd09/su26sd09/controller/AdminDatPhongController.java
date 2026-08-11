@@ -87,8 +87,8 @@ public class AdminDatPhongController {
 
     @GetMapping("")
     public String GetDatPhong(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size,
             @RequestParam(value = "edit", required = false) Integer editId,
             Model model) {
 
