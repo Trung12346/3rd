@@ -28,6 +28,7 @@
     </scm>
     <properties>
         <java.version>21</java.version>
+        <maven.compiler.parameters>true</maven.compiler.parameters>
     </properties>
     <dependencies>
         <dependency>
@@ -150,6 +151,7 @@
                                     <groupId>org.projectlombok</groupId>
                                     <artifactId>lombok</artifactId>
                                 </path>
+
                             </annotationProcessorPaths>
                         </configuration>
                     </execution>
