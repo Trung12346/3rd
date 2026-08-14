@@ -2090,6 +2090,26 @@ footer {
     margin: 0 2px;
 }
 
+.hero-search-price select {
+    appearance: none;
+    -webkit-appearance: none;
+    border: none;
+    background: transparent;
+    font: inherit;
+    font-size: 15.5px;
+    font-weight: 600;
+    color: var(--text-dark);
+    outline: none;
+    padding: 0;
+    cursor: pointer;
+    max-width: 100%;
+}
+
+.hero-search-price select:invalid,
+.hero-search-price select option[value=""] {
+    color: var(--text-gray);
+}
+
 .hero-search-btn {
     flex: 0 0 auto;
     background: linear-gradient(135deg, var(--sky-primary), var(--sky-dark));
@@ -2349,4 +2369,17 @@ footer {
 
 .hero-guests-done:hover {
     background-color: var(--sky-dark);
+}
+
+/* ===== GLOBAL <option> STYLING =====
+   Ap dung cho moi the <option> trong toan bo site (khong chi rieng 1 trang),
+   dam bao dropdown nao cung co giao dien dong bo voi text/mau brand thay vi
+   giao dien mac dinh cua trinh duyet. ===== */
+option {
+    background-color: #fff;
+    color: var(--text-dark, #1a1a2e);
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 8px 10px;
 }

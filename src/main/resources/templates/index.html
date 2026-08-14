@@ -98,6 +98,19 @@
             </div>
         </div>
 
+        <div class="hero-search-divider"></div>
+
+        <div class="hero-search-field hero-search-price" id="heroPriceField">
+            <label><i class="fa-solid fa-sack-dollar"></i> Khoảng giá</label>
+            <select name="mucGia" id="heroPriceSelect" aria-label="Khoảng giá mỗi đêm">
+                <option value="" th:selected="${mucGia == null or mucGia == ''}">Tất cả mức giá</option>
+                <option value="0-500000" th:selected="${mucGia == '0-500000'}">0 - 500.000đ</option>
+                <option value="500000-1000000" th:selected="${mucGia == '500000-1000000'}">500.000đ - 1.000.000đ</option>
+                <option value="1000000-2000000" th:selected="${mucGia == '1000000-2000000'}">1.000.000đ - 2.000.000đ</option>
+                <option value="2000000-5000000" th:selected="${mucGia == '2000000-5000000'}">2.000.000đ - 5.000.000đ</option>
+            </select>
+        </div>
+
         <button type="submit" class="hero-search-btn"><i class="fa-solid fa-magnifying-glass"></i> Tìm phòng</button>
     </form>
 </section>
