@@ -90,18 +90,38 @@
             return loaiPhongRepository.findAllByOrderByTenLoaiAsc();
         }
     
-        public List<LoaiPhong> searchLoaiPhong(String mucGia, Integer nguoiLon, Integer treEm) {
-            BigDecimal minGia = null;
-            BigDecimal maxGia = null;
-    
-            if ("duoi1tr".equals(mucGia)) {
-                maxGia = new BigDecimal("1000000");
-            } else if ("1tr-2tr".equals(mucGia)) {
-                minGia = new BigDecimal("1000000");
-                maxGia = new BigDecimal("2000000");
-            } else if ("tren2tr".equals(mucGia)) {
-                minGia = new BigDecimal("2000000");
+        /**
+         * Phan tich tham so khoang gia dang "min-max" (vd "500000-1000000",
+         * don vi VND/dem) thanh cap BigDecimal[minGia, maxGia]. Neu khoangGia
+         * null/rong hoac khong dung dinh dang, tra ve {null, null} de bao hieu
+         * "khong loc theo gia" (searchLoaiPhong/searchLoaiPhongKhaDung se bo
+         * qua dieu kien gia hoan toan trong truong hop nay).
+         */
+        private BigDecimal[] parseKhoangGia(String khoangGia) {
+            if (khoangGia == null || khoangGia.isBlank()) {
+                return new BigDecimal[]{null, null};
             }
+            String[] parts = khoangGia.trim().split("-");
+            if (parts.length != 2) {
+                return new BigDecimal[]{null, null};
+            }
+            try {
+                BigDecimal minGia = new BigDecimal(parts[0].trim());
+                BigDecimal maxGia = new BigDecimal(parts[1].trim());
+                return new BigDecimal[]{minGia, maxGia};
+            } catch (NumberFormatException e) {
+                return new BigDecimal[]{null, null};
+            }
+        }
+
+        /**
+         * @param khoangGia khoang gia phong/dem dang "min-max" (vd
+         *                  "500000-1000000"), hoac null/rong de khong loc theo gia.
+         */
+        public List<LoaiPhong> searchLoaiPhong(String khoangGia, Integer nguoiLon, Integer treEm) {
+            BigDecimal[] khoang = parseKhoangGia(khoangGia);
+            BigDecimal minGia = khoang[0];
+            BigDecimal maxGia = khoang[1];
     
             Integer soKhach = null;
             if (nguoiLon != null || treEm != null) {
@@ -123,8 +143,8 @@
          *         trong (thuc su, theo ngay) tuong ung cho tung LoaiPhong.
          */
         public LoaiPhongSearchResult searchLoaiPhongKhaDung(LocalDateTime ngayNhan, LocalDateTime ngayTra,
-                                                              Integer nguoiLon, Integer treEm, String mucGia) {
-            List<LoaiPhong> ungVien = searchLoaiPhong(mucGia, nguoiLon, treEm);
+                                                              Integer nguoiLon, Integer treEm, String khoangGia) {
+            List<LoaiPhong> ungVien = searchLoaiPhong(khoangGia, nguoiLon, treEm);
 
             boolean coLocTheoNgay = ngayNhan != null && ngayTra != null;
             java.util.Set<Integer> maPhongDaKhoaLich = coLocTheoNgay
