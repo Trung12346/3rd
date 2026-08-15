@@ -199,18 +199,26 @@ public class DanhGiaController {
             Authentication authentication,
             RedirectAttributes redirectAttributes
     ) {
+        // Form phan hoi co the duoc gui tu trang /phong/{id} (co maPhong) hoac
+        // tu trang /loai-phong/{id} (co maLoaiPhong) - dung field nao co gia
+        // tri de xac dinh trang can redirect ve sau khi luu.
+        Integer maLoaiPhong = request.getMaLoaiPhong();
         Integer maPhong = request.getMaPhong();
-        if (maPhong == null) {
+        if (maLoaiPhong == null && maPhong == null) {
             maPhong = reviewService.findRoomIdByReviewId(reviewId);
         }
 
+        String fallbackRedirect = maLoaiPhong != null
+                ? redirectToLoaiPhong(maLoaiPhong)
+                : (maPhong != null ? redirectToRoom(maPhong) : "redirect:/phong");
+
         if (!canReply(authentication)) {
             redirectAttributes.addFlashAttribute("roomReviewError", "Bạn không có quyền phản hồi đánh giá.");
-            return maPhong != null ? redirectToRoom(maPhong) : "redirect:/phong";
+            return fallbackRedirect;
         }
         if (bindingResult.hasErrors()) {
             redirectAttributes.addFlashAttribute("roomReviewError", firstError(bindingResult));
-            return maPhong != null ? redirectToRoom(maPhong) : "redirect:/phong";
+            return fallbackRedirect;
         }
         try {
             reviewService.replyToReview(reviewId, request);
@@ -218,7 +226,60 @@ public class DanhGiaController {
         } catch (IllegalArgumentException ex) {
             redirectAttributes.addFlashAttribute("roomReviewError", ex.getMessage());
         }
-        return maPhong != null ? redirectToRoom(maPhong) : "redirect:/phong";
+        return fallbackRedirect;
+    }
+
+    // ===================== Danh gia theo LOAI PHONG (trang /loai-phong/{id}).
+    // Tai su dung ReviewService/RoomReviewRequest/RoomReviewViewDTO, chi khac
+    // endpoint va viec xac dinh pham vi (loai phong thay vi 1 phong cu the). =====
+
+    @GetMapping("/loai-phong/reviews/types/{maLoaiPhong}/fragment")
+    public String roomTypeReviewsFragment(@PathVariable int maLoaiPhong, Model model, Authentication authentication) {
+        model.addAttribute("maLoaiPhong", maLoaiPhong);
+        model.addAttribute("roomReviews", reviewService.findApprovedReviewsByLoaiPhong(maLoaiPhong));
+        model.addAttribute("reviewEligibility",
+                reviewService.getEligibilityForLoaiPhong(maLoaiPhong, isLoggedIn(authentication) ? authentication.getName() : null));
+        return "fragments/room-reviews :: roomReviews";
+    }
+
+    @GetMapping("/loai-phong/reviews/types/{maLoaiPhong}/data")
+    @ResponseBody
+    public List<RoomReviewViewDTO> roomTypeReviewsData(@PathVariable int maLoaiPhong) {
+        return reviewService.findApprovedReviewsByLoaiPhong(maLoaiPhong);
+    }
+
+    @PostMapping({"/loai-phong/reviews/types", "/loai-phong/reviews/types/"})
+    public String submitRoomTypeReviewMissingType(RedirectAttributes redirectAttributes) {
+        redirectAttributes.addFlashAttribute("roomReviewDenied", true);
+        redirectAttributes.addFlashAttribute("roomReviewError",
+                "Không xác định được loại phòng cần đánh giá. Vui lòng mở lại trang chi tiết loại phòng rồi thử lại.");
+        return "redirect:/loai-phong";
+    }
+
+    @PostMapping("/loai-phong/reviews/types/{maLoaiPhong}")
+    public String submitRoomTypeReview(
+            @PathVariable int maLoaiPhong,
+            @Valid @ModelAttribute RoomReviewRequest request,
+            BindingResult bindingResult,
+            Authentication authentication,
+            RedirectAttributes redirectAttributes
+    ) {
+        if (!isLoggedIn(authentication)) {
+            redirectAttributes.addFlashAttribute("roomReviewError", "Vui lòng đăng nhập để gửi đánh giá.");
+            return "redirect:/login";
+        }
+        if (bindingResult.hasErrors()) {
+            redirectAttributes.addFlashAttribute("roomReviewError", firstError(bindingResult));
+            return redirectToLoaiPhong(maLoaiPhong);
+        }
+        try {
+            reviewService.createRoomTypeReview(maLoaiPhong, authentication.getName(), request);
+            redirectAttributes.addFlashAttribute("roomReviewSuccess", "Cảm ơn bạn! Đánh giá đã được gửi thành công.");
+        } catch (IllegalArgumentException ex) {
+            redirectAttributes.addFlashAttribute("roomReviewDenied", true);
+            redirectAttributes.addFlashAttribute("roomReviewError", ex.getMessage());
+        }
+        return redirectToLoaiPhong(maLoaiPhong);
     }
 
     private void addCustomerReviewModel(Model model) {
@@ -268,5 +329,9 @@ public class DanhGiaController {
 
     private String redirectToRoom(int maPhong) {
         return "redirect:/phong/" + maPhong + "#roomReviews";
+    }
+
+    private String redirectToLoaiPhong(int maLoaiPhong) {
+        return "redirect:/loai-phong/" + maLoaiPhong + "#roomReviews";
     }
 }

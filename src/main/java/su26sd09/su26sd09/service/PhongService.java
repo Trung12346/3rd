@@ -301,12 +301,130 @@
         public long countPhongTrongTheoLoai(int loaiPhongId) {
             return phongRepository.countByLoaiPhongIdAndHoatDongTrueAndTrangThai(loaiPhongId, "Trong");
         }
+
+        /**
+         * So phong con trong THUC SU cua 1 loai phong trong khoang [ngayNhan,
+         * ngayTra) - dung chung engine kha dung voi searchLoaiPhongKhaDung()/
+         * assignRoomsForType() (chi dua vao chong lan lich qua
+         * findMaPhongDaKhoaTrongKhoang, khong dua vao trangThai tuc thoi).
+         * Dung cho FE cap nhat max cua o "So luong phong" ngay khi khach chon
+         * ngay nhan/tra, thay vi dung tam so phong "Trong" tinh tai thoi diem
+         * hien tai (khong phan anh dung kha dung theo ngay tuong lai).
+         *
+         * Neu ngayNhan/ngayTra khong hop le (null hoac ngayTra khong sau
+         * ngayNhan) thi tra ve so phong hoat dong cua loai (khong loc theo
+         * ngay), giu hanh vi fallback giong luc chua chon ngay.
+         */
+        public long soPhongKhaDungTheoLoaiVaNgay(int loaiPhongId, LocalDateTime ngayNhan, LocalDateTime ngayTra) {
+            List<Phong> phongTheoLoai = findPhongTheoLoai(loaiPhongId);
+            if (ngayNhan == null || ngayTra == null || !ngayTra.isAfter(ngayNhan)) {
+                return phongTheoLoai.size();
+            }
+            java.util.Set<Integer> maPhongDaKhoaLich = findMaPhongDaKhoaTrongKhoang(ngayNhan, ngayTra);
+            return phongTheoLoai.stream()
+                    .filter(p -> !maPhongDaKhoaLich.contains(p.getMaPhong()))
+                    .count();
+        }
     
         public List<LoaiPhong> findLoaiPhongKhac(int id) {
             return loaiPhongRepository.findAllByOrderByTenLoaiAsc()
                     .stream()
                     .filter(loaiPhong -> loaiPhong.getId() != id)
                     .toList();
+        }
+
+        // ===== Gio nhan/tra phong CHUAN, dung de tinh "ngay het phong theo loai"
+        // (tinhNgayHetPhongTheoLoai). Trung voi gio hardcode o LoaiPhongController
+        // (dat-nhanh: nhan 14:00, tra 11:00), khai bao lai o day de tranh phu
+        // thuoc nguoc (service khong nen phu thuoc controller). KHONG anh huong
+        // gi den bookingGuard / phu phi ngoai gio hien co (do la logic khac).
+        private static final LocalTime GIO_NHAN_CHUAN = LocalTime.of(14, 0);
+        private static final LocalTime GIO_TRA_CHUAN = LocalTime.of(11, 0);
+
+        /**
+         * MOI - khong sua/khong dung lai logic san co theo TUNG PHONG hien co
+         * (findMaPhongDaKhoaTrongKhoang, buildRoomGuardFor...). Tinh danh sach
+         * cac KHOANG NGAY trong 1 THANG ma 1 LOAI PHONG da HET SACH phong hoat
+         * dong (khong con phong nao co the nhan khach vao ngay do), dung cho
+         * calendar cua trang chi tiet loai phong (/loai-phong/{id}) disable
+         * ngay khong the chon.
+         *
+         * Xu ly dung gio nhan/tra chuan (14:00 / 11:00) de KHONG bi false
+         * negative: 1 ngay D van duoc coi la CON PHONG neu co it nhat 1 phong
+         * ma mot dot o toi thieu bat dau tu D 14:00 va ket thuc D+1 11:00
+         * (mot dem) KHONG chong lan voi bat ky dot giu cho nao dang hieu luc
+         * cua phong do - vi vay khach A co the nhan phong dung ngay khach B
+         * tra phong (B tra 11:00 truoc, A nhan 14:00 sau) ma ngay do van
+         * duoc phep chon.
+         *
+         * @param loaiPhongId loai phong can tinh
+         * @param thang       thang duong lich can tinh (vi du 2026-08)
+         */
+        public List<su26sd09.su26sd09.dto.NgayHetPhongDTO> tinhNgayHetPhongTheoLoai(
+                int loaiPhongId, java.time.YearMonth thang) {
+
+            List<Phong> phongs = findPhongTheoLoai(loaiPhongId);
+            java.util.Set<Integer> maPhongHoatDong = new java.util.HashSet<>();
+            for (Phong p : phongs) {
+                maPhongHoatDong.add(p.getMaPhong());
+            }
+            int tongSoPhong = maPhongHoatDong.size();
+
+            java.time.LocalDate ngayDauThang = thang.atDay(1);
+            java.time.LocalDate ngayCuoiThang = thang.atEndOfMonth();
+
+            List<su26sd09.su26sd09.dto.NgayHetPhongDTO> ketQua = new ArrayList<>();
+
+            if (tongSoPhong == 0) {
+                // Loai phong khong co phong hoat dong nao -> ca thang "het phong".
+                ketQua.add(new su26sd09.su26sd09.dto.NgayHetPhongDTO(ngayDauThang, ngayCuoiThang));
+                return ketQua;
+            }
+
+            // Lay truoc TOAN BO dot giu cho cham vao thang nay (mo rong nhe ve 2
+            // phia de khong bo sot booking dang o ngay cuoi thang truoc / dau
+            // thang sau nhung van anh huong ngay dau/cuoi thang dang xet), thay vi
+            // truy van rieng cho tung ngay (tranh N+1 query, N = so ngay trong thang).
+            LocalDateTime tuMoc = ngayDauThang.minusDays(1).atStartOfDay();
+            LocalDateTime denMoc = ngayCuoiThang.plusDays(2).atStartOfDay();
+            List<su26sd09.su26sd09.dto.LichPhongTheoLoaiProjection> datLich =
+                    datPhongRepo.findLichBiKhoaTheoLoaiTrongKhoang(loaiPhongId, tuMoc, denMoc);
+
+            java.time.LocalDate ngayBatDauKhoangHet = null;
+
+            for (java.time.LocalDate ngay = ngayDauThang; !ngay.isAfter(ngayCuoiThang); ngay = ngay.plusDays(1)) {
+                // Dot o toi thieu (1 dem) neu khach chon "ngay" lam ngay nhan phong,
+                // theo gio chuan: [ngay 14:00, ngay+1 11:00).
+                LocalDateTime moGioNhan = ngay.atTime(GIO_NHAN_CHUAN);
+                LocalDateTime moGioTra = ngay.plusDays(1).atTime(GIO_TRA_CHUAN);
+
+                java.util.Set<Integer> maPhongDaKhoaNgayNay = new java.util.HashSet<>();
+                for (su26sd09.su26sd09.dto.LichPhongTheoLoaiProjection dl : datLich) {
+                    if (!maPhongHoatDong.contains(dl.getMaPhong())) {
+                        continue; // Bo qua phong da ngung hoat dong (khong con trong pool).
+                    }
+                    boolean chongLan = dl.getNgayNhan().isBefore(moGioTra) && dl.getNgayTra().isAfter(moGioNhan);
+                    if (chongLan) {
+                        maPhongDaKhoaNgayNay.add(dl.getMaPhong());
+                    }
+                }
+
+                boolean hetPhongNgayNay = maPhongDaKhoaNgayNay.size() >= tongSoPhong;
+
+                if (hetPhongNgayNay) {
+                    if (ngayBatDauKhoangHet == null) {
+                        ngayBatDauKhoangHet = ngay;
+                    }
+                } else if (ngayBatDauKhoangHet != null) {
+                    ketQua.add(new su26sd09.su26sd09.dto.NgayHetPhongDTO(ngayBatDauKhoangHet, ngay.minusDays(1)));
+                    ngayBatDauKhoangHet = null;
+                }
+            }
+            if (ngayBatDauKhoangHet != null) {
+                ketQua.add(new su26sd09.su26sd09.dto.NgayHetPhongDTO(ngayBatDauKhoangHet, ngayCuoiThang));
+            }
+
+            return ketQua;
         }
     
         public List<TienNghi> findAllTienNghi() {

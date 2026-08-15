@@ -1,0 +1,998 @@
+﻿<html lang="vi"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title th:text="'Loại phòng ' + ${loaiPhong != null ? loaiPhong.tenLoai : ''} + ' | Hotel'">Chi Tiết Loại Phòng | Hotel</title>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+  <style>
+    /* Dropdown menu styles (dong bo voi cac trang khac) */
+    .nav-menu { position: relative; }
+    .nav-item { position: relative; display: inline-block; }
+    .dropdown-menu {
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      background: white;
+      min-width: 220px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+      border-radius: 4px;
+      padding: 8px 0;
+      z-index: 1000;
+      margin-top: 5px;
+    }
+    .nav-item:hover .dropdown-menu { display: block; }
+    .dropdown-menu a {
+      display: block;
+      padding: 10px 20px;
+      color: var(--text-dark);
+      text-decoration: none;
+      font-size: 14px;
+      transition: background 0.2s, color 0.2s;
+    }
+    .dropdown-menu a:hover { background: var(--sky-light); color: var(--sky-primary); }
+    .dropdown-menu a i { margin-right: 8px; color: var(--sky-primary); }
+
+    .user-menu { display: flex; align-items: center; gap: 15px; }
+    .btn-logout {
+      background: transparent;
+      border: 1px solid var(--border-color);
+      color: var(--text-gray);
+      padding: 8px 15px;
+      border-radius: 2px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      transition: all 0.3s;
+    }
+    .btn-logout:hover { border-color: #E74C3C; color: #E74C3C; background: #FDEDEC; }
+
+    .field-error-msg { display: none; color: #c0392b; font-size: 12px; margin-top: 4px; }
+    .form-group.has-error .field-error-msg { display: block; }
+    .form-error-banner {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      background: #fdecea;
+      border: 1px solid #f5c2c0;
+      border-left: 4px solid #e74c3c;
+      color: #922b21;
+      border-radius: 4px;
+      padding: 12px 14px;
+      margin-bottom: 14px;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+    .form-error-banner i { color: #e74c3c; margin-top: 1px; }
+
+    .type-badge-row { display: flex; gap: 20px; margin-bottom: 15px; flex-wrap: wrap; }
+    .type-badge-row span { font-size: 14px; color: var(--text-gray); }
+
+    /* ===== "Thong Tin Loai Phong" card - dong bo giao dien voi khoi
+       thong tin phong (room-spec / room-section-title / amenity-list)
+       trong the room-card cua trang loai-phong-ket-qua.html. Cac lop
+       duoc doi ten voi tien to "type-info-" de KHONG dung chung CSS
+       toan cuc .detail-description / .amenities-grid / .amenity-item
+       (cac lop nay dang duoc dung o room-detail.html, sua truc tiep se
+       anh huong sang trang do). ===== */
+    .type-info-card {
+      background: var(--white);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 22px 24px;
+      margin-bottom: 28px;
+    }
+    .type-info-spec {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 6px;
+      font-size: 13px;
+      color: var(--text-gray);
+      margin-bottom: 14px;
+    }
+    .type-info-spec .spec-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .type-info-spec .spec-item i {
+      color: var(--sky-primary);
+      font-size: 14px;
+      width: 16px;
+      text-align: center;
+    }
+    .type-info-spec .spec-item strong { color: var(--text-dark); }
+    .type-info-desc {
+      color: var(--text-gray);
+      line-height: 1.8;
+      font-size: 15px;
+      margin: 0 0 18px;
+    }
+    .type-section-title {
+      font-weight: 700;
+      color: var(--text-dark);
+      font-size: 15px;
+      margin: 0 0 12px;
+      padding-top: 16px;
+      border-top: 1px dashed var(--border-color);
+    }
+    .type-amenity-list {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px 20px;
+    }
+    .type-amenity-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13.5px;
+      color: var(--text-dark);
+      font-weight: 500;
+    }
+    .type-amenity-item i {
+      color: #2F9E4D;
+      font-size: 12.5px;
+      width: 14px;
+      text-align: center;
+      flex: 0 0 auto;
+    }
+    @media (max-width: 560px) {
+      .type-amenity-list { grid-template-columns: 1fr; }
+    }
+
+    .qty-stepper { display: flex; align-items: center; gap: 10px; }
+    .qty-stepper button {
+      width: 36px; height: 36px;
+      border: 1px solid var(--border-color);
+      background: var(--white);
+      color: var(--sky-primary);
+      font-size: 16px;
+      cursor: pointer;
+      border-radius: 2px;
+    }
+    .qty-stepper input {
+      width: 60px;
+      text-align: center;
+      padding: 8px;
+      border: 1px solid var(--border-color);
+      font-family: inherit;
+    }
+
+    /* ===== Danh gia (read-only, gop tu tat ca phong cua loai) ===== */
+    .type-reviews-module {
+      background: var(--white);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 24px;
+      margin: 28px 0;
+    }
+    .type-reviews-head h2 { color: var(--text-dark); font-size: 26px; margin-bottom: 6px; }
+    .type-reviews-head p { color: var(--text-gray); font-size: 14px; margin: 0; }
+    .type-review-card {
+      border: 1px solid var(--border-color);
+      background: #fff;
+      border-radius: 6px;
+      box-shadow: 0 6px 22px rgba(0,0,0,0.04);
+      padding: 18px;
+      margin-top: 16px;
+    }
+    .type-review-meta { display: flex; justify-content: space-between; gap: 14px; margin-bottom: 10px; flex-wrap: wrap; }
+    .type-review-author { display: flex; align-items: center; gap: 12px; }
+    .type-review-avatar {
+      width: 40px; height: 40px; border-radius: 50%;
+      background: var(--sky-light); color: var(--sky-primary);
+      border: 1px solid var(--border-color);
+      display: inline-flex; align-items: center; justify-content: center;
+      font-weight: 700; flex: 0 0 auto;
+    }
+    .type-review-stars { color: #f5b301; font-size: 16px; white-space: nowrap; }
+    .type-review-content { color: var(--text-dark); font-size: 15px; line-height: 1.7; margin: 0; }
+    .type-review-reply {
+      margin-top: 12px; padding: 10px 14px;
+      background: var(--sky-light); border-left: 3px solid var(--sky-primary);
+      color: var(--text-dark); font-size: 13.5px; line-height: 1.6;
+    }
+
+    /* ===== Calendar date picker (copy/adapt tu hero calendar cua index.html,
+       scope rieng ".type-*" de khong dung chung/dung do CSS voi hero-calendar-*
+       cua trang chu) ===== */
+    .type-date-field-row {
+      display: flex;
+      align-items: stretch;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      overflow: hidden;
+      cursor: pointer;
+      user-select: none;
+    }
+    .type-date-field {
+      flex: 1 1 50%;
+      padding: 10px 14px;
+      transition: background 0.2s ease;
+    }
+    .type-date-field:hover, .type-date-field.active {
+      background: var(--sky-light);
+    }
+    .type-date-field-label {
+      display: block;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      color: var(--sky-primary);
+      margin-bottom: 3px;
+    }
+    .type-date-field-value {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-dark);
+    }
+    .type-date-field-value.placeholder {
+      color: var(--text-gray);
+      font-weight: 400;
+    }
+    .type-date-field-divider {
+      width: 1px;
+      background: var(--border-color);
+    }
+
+    .type-calendar-popover {
+      display: none;
+      position: absolute;
+      top: calc(100% + 10px);
+      left: 0;
+      right: 0;
+      background: var(--white);
+      border-radius: 10px;
+      box-shadow: 0 20px 55px rgba(13, 71, 161, 0.22), 0 2px 10px rgba(0,0,0,0.06);
+      border: 1px solid var(--border-color);
+      padding: 16px;
+      z-index: 60;
+    }
+    .type-calendar-popover.open { display: block; }
+
+    .type-calendar-legend {
+      font-size: 12px;
+      color: var(--text-gray);
+      margin-bottom: 10px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border-color);
+      line-height: 1.6;
+    }
+    .type-calendar-legend strong { color: var(--sky-primary); }
+
+    .type-calendar-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border-color);
+    }
+    .type-calendar-actions button {
+      border: none;
+      padding: 8px 18px;
+      font-size: 12.5px;
+      font-weight: 600;
+      border-radius: 4px;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+    .type-calendar-clear { background: transparent; color: var(--text-gray); }
+    .type-calendar-clear:hover { color: var(--sky-primary); }
+    .type-calendar-apply { background-color: var(--sky-primary); color: var(--white); }
+    .type-calendar-apply:hover { background-color: var(--sky-dark); }
+
+    .type-calendar-popover .fc { font-family: 'Montserrat', sans-serif; font-size: 13px; }
+    .type-calendar-popover .fc-daygrid-day-frame { cursor: pointer; }
+    .type-calendar-popover .fc-daygrid-day.fc-day-past { opacity: 0.35; pointer-events: none; }
+
+    .type-calendar-popover .drp-range-start .fc-daygrid-day-frame,
+    .type-calendar-popover .drp-range-end .fc-daygrid-day-frame,
+    .type-calendar-popover .drp-range-only .fc-daygrid-day-frame {
+      background-color: var(--sky-primary);
+      color: var(--white);
+      border-radius: 4px;
+    }
+    .type-calendar-popover .drp-range-mid .fc-daygrid-day-frame {
+      background-color: var(--sky-light);
+    }
+
+    /* Ngay loai phong nay da het phong: gach cheo, khong the bam */
+    .type-calendar-popover .drp-day-fully-booked .fc-daygrid-day-frame {
+      background: repeating-linear-gradient(
+        135deg, #f3f3f3, #f3f3f3 4px, #e6e6e6 4px, #e6e6e6 8px
+      );
+      color: #b5b5b5;
+      cursor: not-allowed;
+      pointer-events: none;
+      border-radius: 4px;
+    }
+    .type-calendar-popover .drp-day-fully-booked.drp-range-start .fc-daygrid-day-frame,
+    .type-calendar-popover .drp-day-fully-booked.drp-range-mid .fc-daygrid-day-frame,
+    .type-calendar-popover .drp-day-fully-booked.drp-range-end .fc-daygrid-day-frame {
+      /* Khong nen xay ra dong thoi (ngay het phong khong the la 1 dau khoang
+         da chon), nhung phong khi co du lieu cu bi ket dinh - uu tien hien
+         thi "het phong" ro rang hon la mau range da chon. */
+      background: repeating-linear-gradient(135deg, #f3f3f3, #f3f3f3 4px, #e6e6e6 4px, #e6e6e6 8px);
+      color: #b5b5b5;
+    }
+
+    .type-calendar-popover .fc-toolbar-title {
+      font-size: 15px;
+      font-family: 'Playfair Display', 'Georgia', serif;
+      color: var(--text-dark);
+    }
+    .type-calendar-popover .fc-button {
+      background: transparent;
+      border: 1px solid var(--border-color);
+      color: var(--text-dark);
+    }
+    .type-calendar-popover .fc-button:hover {
+      background: var(--sky-light);
+      border-color: var(--sky-primary);
+      color: var(--sky-primary);
+    }
+  </style>
+</head>
+<body>
+<div th:replace="~{fragments/headers/app-header :: appHeader}"></div>
+
+<main class="detail-wrapper">
+  <div class="detail-main">
+    <div class="gallery-main">
+      <img id="mainImage" th:src="@{/media/{file}(file=${thumbAnh != null ? thumbAnh.maAnh : 'ed2d10ce-680a-467e-a83c-c0781f53a5fd'})}" alt="Anh loai phong">
+    </div>
+    <div class="gallery-thumbs">
+      <img th:each="i, stat: ${anhs}" th:src="@{/media/{file}(file=${i.maAnh})}" onclick="changeImage(this)" th:classappend="${stat.first ? 'active' : ''}">
+    </div>
+
+    <div class="detail-header">
+      <h1>
+        Loại Phòng <span th:text="${loaiPhong != null ? loaiPhong.tenLoai : ''}">Deluxe</span>
+      </h1>
+      <div class="average-rating-box">
+        <i class="fa-solid fa-star star-icon"></i>
+        <span>Số sao trung bình:</span>
+        <strong th:text="${#numbers.formatDecimal(diemTrungBinh, 1, 'COMMA', 1, 'POINT')}">0.0</strong>
+        <span>/5 sao (<span th:text="${tongDanhGia}">0</span> đánh giá)</span>
+      </div>
+      <div class="price">
+        <span th:text="${loaiPhong != null ? #numbers.formatDecimal(loaiPhong.giaCoBan, 0, 'COMMA', 0, 'POINT') : '0'}">1,200,000</span> VND
+        <span>/ đêm</span>
+      </div>
+    </div>
+
+    <h3 style="margin-bottom: 15px; font-family: 'Montserrat', sans-serif;">Thông Tin Loại Phòng</h3>
+    <div class="type-info-card">
+      <div class="type-info-spec">
+        <span class="spec-item">
+          <i class="fa-solid fa-users"></i>
+          Sức chứa tối đa: <strong th:text="${loaiPhong != null ? loaiPhong.sucChuaToiDa : 0}">2</strong> người / phòng
+        </span>
+        <span class="spec-item">
+          <i class="fa-solid fa-door-open"></i>
+          Còn trống: <strong id="soPhongTrongValue" th:text="${soPhongTrong}">0</strong> phòng
+        </span>
+      </div>
+      <p class="type-info-desc" th:text="${loaiPhong != null and loaiPhong.mota != null ? loaiPhong.mota : 'Loại phòng được thiết kế tỉ mỉ với đầy đủ tiện nghi hiện đại, mang đến kỳ nghỉ tuyệt vời cho quý khách.'}">
+        Mo ta loai phong.
+      </p>
+
+      <div class="type-section-title">Tiện Nghi Nổi Bật</div>
+      <div class="type-amenity-list">
+        <div class="type-amenity-item" th:each="tn : ${tienNghi}">
+          <i class="fa-solid fa-check"></i> <span th:text="${tn}">WiFi tốc độ cao</span>
+        </div>
+        <div class="type-amenity-item" th:if="${tienNghi == null or tienNghi.isEmpty()}">
+          <i class="fa-solid fa-check"></i> <span>Chưa có thông tin tiện nghi</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== He thong danh gia dung chung voi trang /phong/{id}: xem duoc danh
+         gia gop tu tat ca phong thuoc loai nay, va co the gui danh gia moi (se
+         tu dong gan voi lan dat phong gan nhat cua khach cho bat ky phong nao
+         thuoc loai nay). Xem fragments/room-reviews.html. ===== -->
+    <div th:insert="~{fragments/room-reviews :: roomReviews}"></div>
+  </div>
+
+  <div class="detail-sidebar">
+    <div class="booking-widget">
+      <h3>Đặt Nhanh Theo Loại Phòng</h3>
+      <p style="font-size: 13px; color: var(--text-gray); margin-top: -6px; margin-bottom: 16px;">
+        Hệ thống sẽ tự động chọn phòng còn trống phù hợp thuộc loại này, quý khách không cần chọn phòng cụ thể.
+      </p>
+      <form action="/loai-phong/dat-nhanh" method="POST" id="quickTypeBookingForm">
+        <input type="hidden" name="loaiPhongId" th:value="${loaiPhong != null ? loaiPhong.id : 0}">
+        <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+
+        <div th:if="${timKiemError != null}" class="form-error-banner">
+          <i class="fa-solid fa-circle-exclamation"></i>
+          <span th:text="${timKiemError}">Không thể đặt phòng.</span>
+        </div>
+        <div th:if="${canhBaoSucChua != null}" class="form-error-banner" style="background:#fff8e1;border-color:#ffe082;border-left-color:#e67e22;color:#6b4f00;">
+          <i class="fa-solid fa-circle-exclamation" style="color:#e67e22;"></i>
+          <span th:text="${canhBaoSucChua}"></span>
+        </div>
+
+        <!-- ===== Chon ngay bang calendar (copy/adapt tu hero calendar cua index.html),
+             disable san cac ngay loai phong nay da het phong (goi
+             /loai-phong/{id}/ngay-het-phong?thang=yyyy-MM moi khi doi thang) ===== -->
+        <input type="hidden" name="ngayNhan" id="ngayNhanInput">
+        <input type="hidden" name="ngayTra" id="ngayTraInput">
+        <div class="form-group" id="grp-ngay-nhan" style="position: relative;">
+          <label>Ngày nhận phòng &amp; trả phòng</label>
+          <div class="type-date-field-row">
+            <div class="type-date-field" id="typeCheckinField" data-field="checkin">
+              <span class="type-date-field-label">Nhận phòng</span>
+              <span class="type-date-field-value placeholder" id="typeCheckinDisplay">Chọn ngày</span>
+            </div>
+            <div class="type-date-field-divider"></div>
+            <div class="type-date-field" id="typeCheckoutField" data-field="checkout">
+              <span class="type-date-field-label">Trả phòng</span>
+              <span class="type-date-field-value placeholder" id="typeCheckoutDisplay">Chọn ngày</span>
+            </div>
+          </div>
+
+          <div class="type-calendar-popover" id="typeCalendarPopover">
+            <div class="type-calendar-legend">
+              Chọn ngày <strong>nhận phòng</strong>, sau đó chọn ngày <strong>trả phòng</strong>.
+              Ô gạch chéo là ngày loại phòng này đã hết phòng.
+            </div>
+            <div id="typeDateRangeCalendar"></div>
+            <div class="type-calendar-actions">
+              <button type="button" class="type-calendar-clear" id="typeCalendarClear">Xóa</button>
+              <button type="button" class="type-calendar-apply" id="typeCalendarApply">Áp dụng</button>
+            </div>
+          </div>
+          <span class="field-error-msg" id="err-ngay-nhan">Vui lòng chọn ngày nhận phòng.</span>
+        </div>
+        <div class="form-group" id="grp-ngay-tra" style="display:none;">
+          <!-- Giu lai group nay (rong) chi de khong pha vo cac ham JS o duoi
+               dang reference #grp-ngay-tra de hien loi rieng cho ngay tra. -->
+          <span class="field-error-msg" id="err-ngay-tra">Ngày trả phòng phải sau ngày nhận phòng.</span>
+        </div>
+        <div class="form-group">
+          <label>Số lượng phòng</label>
+          <div class="qty-stepper">
+            <button type="button" onclick="doiSoLuong(-1)">-</button>
+            <input type="number" name="soLuong" id="soLuongInput" value="1" min="1"
+                   th:max="${soPhongTrong != null and soPhongTrong > 0 ? soPhongTrong : 1}" readonly>
+            <button type="button" onclick="doiSoLuong(1)">+</button>
+          </div>
+        </div>
+        <div class="form-group" id="grp-nguoi-lon">
+          <label>Người lớn</label>
+          <select name="nguoiLon" id="sl-nguoi-lon" required
+                  th:attr="max=${loaiPhong != null ? loaiPhong.sucChuaToiDa : 0}"
+                  style="width:100%; padding: 12px; border: 1px solid var(--border-color); font-family: inherit;">
+            <option th:each="i : ${#numbers.sequence(1, loaiPhong != null ? loaiPhong.sucChuaToiDa : 2)}"
+                    th:value="${i}" th:text="${i}"
+                    th:selected="${i == 2}">2</option>
+          </select>
+          <span class="field-error-msg" id="err-nguoi">Số lượng người vượt quá sức chứa của phòng.</span>
+        </div>
+        <div class="form-group">
+          <label>Trẻ em</label>
+          <select name="treEm" id="sl-tre-em" required
+                  style="width:100%; padding: 12px; border: 1px solid var(--border-color); font-family: inherit;">
+            <option th:each="i : ${#numbers.sequence(0, loaiPhong != null ? loaiPhong.sucChuaToiDa : 2)}"
+                    th:value="${i}" th:text="${i}"
+                    th:selected="${i == 0}">0</option>
+          </select>
+        </div>
+        <div class="form-group" id="grp-ma-cccd">
+          <label>Số CCCD người đặt</label>
+          <input type="text" name="maCccd" id="input-ma-cccd" maxlength="12" pattern="[0-9]{9,12}" placeholder="9 hoặc 12 số CCCD/CMND" required style="width:100%; padding: 12px; border: 1px solid var(--border-color); font-family: inherit;">
+          <span class="field-error-msg" id="err-ma-cccd">Vui lòng nhập số CCCD/CMND hợp lệ.</span>
+        </div>
+
+        <div class="widget-total" id="soDemRow" style="display:none;">
+          <span>Số đêm:</span>
+          <span id="soDemValue">0</span>
+        </div>
+        <div class="widget-total">
+          <span>Giá / đêm / phòng:</span>
+          <span style="color: var(--sky-primary);" id="giaPhongValue" th:text="${loaiPhong != null ? #numbers.formatDecimal(loaiPhong.giaCoBan, 0, 'COMMA', 0, 'POINT') + ' VND' : '0 VND'}">1,200,000 VND</span>
+        </div>
+        <div class="widget-total" id="tongTienRow" style="display:none;">
+          <span>Tổng tiền (ước tính):</span>
+          <span style="color: var(--sky-primary); font-weight: 700;" id="tongTienValue">0 VND</span>
+        </div>
+
+        <button type="submit"
+                id="btn-confirm-booking"
+                class="btn btn-filled"
+                style="width: 100%; padding: 15px; font-size: 16px;"
+        >
+          <span>Đặt Loại Phòng Này</span>
+        </button>
+        <p style="text-align: center; font-size: 12px; color: var(--text-gray); margin-top: 15px;">* Hệ thống tự động xếp phòng còn trống, quý khách thanh toán khi nhận phòng.</p>
+      </form>
+    </div>
+  </div>
+</main>
+
+<!-- CAROUSEL: DANH SACH LOAI PHONG KHAC -->
+<section class="carousel-section" style="padding: 60px 20% 40px; background: var(--white);">
+  <div class="section-heading" style="text-align: center; margin-bottom: 40px;">
+    <h2 style="font-family: 'Georgia', serif; font-size: 30px; color: var(--text-dark); margin-bottom: 10px;">Các Loại Phòng Khác</h2>
+    <span style="display: inline-block; width: 60px; height: 3px; background: var(--sky-primary); border-radius: 2px;"></span>
+    <p style="color: var(--text-gray); margin-top: 12px; font-size: 15px;">Khám phá thêm các loại phòng khác của chúng tôi</p>
+  </div>
+
+  <div class="carousel-wrapper" style="position: relative; overflow: hidden;">
+    <div class="carousel-track" id="carouselTrack" style="display: flex; gap: 24px; transition: transform 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94); will-change: transform;">
+
+      <div class="loai-phong-card" th:each="lp : ${loaiPhongKhac}" style="min-width: calc(33.333% - 16px); background: var(--white); border-radius: 8px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.08); border: 1px solid var(--border-color); cursor: pointer; transition: transform 0.3s ease, box-shadow 0.3s ease; flex-shrink: 0;">
+        <div class="card-img-wrap" style="position: relative; height: 220px; overflow: hidden;">
+          <img th:src="${anhLoaiPhongKhac != null and anhLoaiPhongKhac[lp.id] != null} ? ${anhLoaiPhongKhac[lp.id]} : 'https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=800&q=80'"
+               th:alt="${lp.tenLoai}" style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s ease;">
+          <div class="card-badge" th:text="${lp.tenLoai}" style="position: absolute; top: 16px; left: 16px; background: var(--sky-primary); color: #fff; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; padding: 5px 12px; border-radius: 2px;">Deluxe</div>
+        </div>
+        <div class="card-body" style="padding: 22px 24px 24px;">
+          <h3 class="card-title" th:text="${lp.tenLoai}" style="font-family: 'Georgia', serif; font-size: 20px; color: var(--text-dark); margin-bottom: 8px;">Phòng Deluxe</h3>
+          <div class="card-meta" style="display: flex; gap: 16px; margin-bottom: 12px; flex-wrap: wrap;">
+            <span style="font-size: 13px; color: var(--text-gray); display: flex; align-items: center; gap: 5px;"><i class="fa-solid fa-users" style="color: var(--sky-primary); font-size: 12px;"></i> Tối đa <span th:text="${lp.sucChuaToiDa}">2</span> người</span>
+          </div>
+          <p class="card-desc" th:text="${lp.mota}" style="font-size: 14px; color: var(--text-gray); line-height: 1.6; margin-bottom: 18px; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+            Không gian sang trọng với đầy đủ tiện nghi hiện đại mang đến kỳ nghỉ tuyệt vời.
+          </p>
+          <div class="card-footer" style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 16px;">
+            <div class="card-price" style="font-size: 13px; color: var(--text-gray);">
+              Từ <strong th:text="${#numbers.formatDecimal(lp.giaCoBan, 0, 'COMMA', 0, 'POINT')}" style="font-size: 20px; color: var(--sky-primary); font-weight: 700;">1.200.000</strong>
+              <span style="font-size: 12px; color: var(--text-gray);"> VND/đêm</span>
+            </div>
+            <a th:href="@{'/loai-phong/' + ${lp.id}}" class="btn-view-detail" style="display: inline-block; padding: 9px 20px; background: var(--sky-primary); color: #fff; border: none; border-radius: 2px; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; text-decoration: none; transition: background 0.2s;">Xem Loại Phòng</a>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /carousel-track -->
+  </div><!-- /carousel-wrapper -->
+
+  <div class="carousel-nav" style="display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 32px;">
+    <button class="carousel-btn" id="prevBtn" onclick="moveCarousel(-1)" disabled style="width: 44px; height: 44px; border: 2px solid var(--sky-primary); background: transparent; color: var(--sky-primary); border-radius: 50%; cursor: pointer; font-size: 16px; transition: all 0.2s; display: flex; align-items: center; justify-content: center;">
+      <i class="fa-solid fa-chevron-left"></i>
+    </button>
+    <div class="carousel-dots" id="carouselDots" style="display: flex; gap: 8px;"></div>
+    <button class="carousel-btn" id="nextBtn" onclick="moveCarousel(1)" style="width: 44px; height: 44px; border: 2px solid var(--sky-primary); background: transparent; color: var(--sky-primary); border-radius: 50%; cursor: pointer; font-size: 16px; transition: all 0.2s; display: flex; align-items: center; justify-content: center;">
+      <i class="fa-solid fa-chevron-right"></i>
+    </button>
+  </div>
+</section>
+
+<footer>
+  <p>&copy; 2026 Hotel. All rights reserved.</p>
+</footer>
+
+<script src="/header-dropdown.js"></script>
+<script src="/js/type-availability-calendar.js"></script>
+<script th:inline="javascript">
+
+  function changeImage(element) {
+    document.getElementById('mainImage').src = element.src;
+    let thumbs = document.querySelectorAll('.gallery-thumbs img');
+    thumbs.forEach(thumb => thumb.classList.remove('active'));
+    element.classList.add('active');
+  }
+
+  // ===== So luong phong (stepper) =====
+  function doiSoLuong(delta) {
+    const input = document.getElementById('soLuongInput');
+    const max = parseInt(input.getAttribute('max'), 10) || 1;
+    let val = parseInt(input.value, 10) || 1;
+    val = Math.min(max, Math.max(1, val + delta));
+    input.value = val;
+    tinhSoDemVaTongTien();
+  }
+
+  // Cap nhat max cua o "So luong phong" theo so phong con trong THUC SU cho
+  // dung khoang ngay nhan/tra khach vua chon, bang cach goi "room
+  // availability checking engine" o backend (GET /loai-phong/{id}/so-phong-kha-dung
+  // - dung chung logic voi assignRoomsForType nen luon khop voi so phong
+  // booking engine thuc su co the gan). Neu chua chon du 2 ngay, giu nguyen
+  // max mac dinh (tong so phong "Trong" hien tai, render san tu server).
+  function capNhatMaxSoLuongTheoNgay(loaiPhongId, ngayNhan, ngayTra) {
+    if (!loaiPhongId || !ngayNhan || !ngayTra) return;
+
+    const params = new URLSearchParams({ ngayNhan: ngayNhan, ngayTra: ngayTra });
+    fetch(`/loai-phong/${loaiPhongId}/so-phong-kha-dung?${params.toString()}`)
+      .then(res => res.ok ? res.json() : Promise.reject(res.status))
+      .then(data => {
+        const soPhongKhaDung = Math.max(0, parseInt(data.soPhongKhaDung, 10) || 0);
+        const input = document.getElementById('soLuongInput');
+        const soLuongMax = document.getElementById('soPhongTrongValue');
+
+        input.setAttribute('max', soPhongKhaDung > 0 ? soPhongKhaDung : 1);
+        // Neu so luong khach dang chon vuot qua so phong con trong that su
+        // cho khoang ngay nay, ha xuong dung so phong con lai (toi thieu 1)
+        // de khong the submit qua tay booking engine phia sau.
+        const val = parseInt(input.value, 10) || 1;
+        if (soPhongKhaDung > 0 && val > soPhongKhaDung) {
+          input.value = soPhongKhaDung;
+        } else if (soPhongKhaDung <= 0) {
+          input.value = 1;
+        }
+
+        if (soLuongMax) soLuongMax.textContent = soPhongKhaDung;
+        tinhSoDemVaTongTien();
+      })
+      .catch(() => {
+        // Giu nguyen max hien tai neu goi API loi (vd mat mang), khong chan
+        // luong dat phong chi vi loi cap nhat UI.
+      });
+  }
+
+  // ===== CAROUSEL LOGIC (loai phong khac) =====
+  const track = document.getElementById('carouselTrack');
+  const dotsContainer = document.getElementById('carouselDots');
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+
+  let currentIndex = 0;
+  let cardsPerView = 3;
+
+  function getCardsPerView() {
+    if (window.innerWidth <= 640) return 1;
+    if (window.innerWidth <= 1024) return 2;
+    return 3;
+  }
+
+  function getCards() {
+    return track.querySelectorAll('.loai-phong-card');
+  }
+
+  function initCarousel() {
+    const cards = getCards();
+    if (cards.length === 0) return;
+
+    cardsPerView = getCardsPerView();
+    const totalSlides = Math.max(1, Math.ceil(cards.length / cardsPerView));
+
+    dotsContainer.innerHTML = '';
+    for (let i = 0; i < totalSlides; i++) {
+      const dot = document.createElement('div');
+      dot.className = 'dot';
+      dot.style.cssText = 'width: 8px; height: 8px; border-radius: 50%; background: var(--border-color); cursor: pointer; transition: background 0.2s, transform 0.2s;';
+      if (i === 0) {
+        dot.style.background = 'var(--sky-primary)';
+        dot.style.transform = 'scale(1.3)';
+      }
+      dot.onclick = () => goToSlide(i);
+      dotsContainer.appendChild(dot);
+    }
+
+    const gap = 24;
+    const containerWidth = track.parentElement.offsetWidth;
+    const cardWidth = (containerWidth - gap * (cardsPerView - 1)) / cardsPerView;
+    cards.forEach(c => {
+      c.style.minWidth = cardWidth + 'px';
+      c.style.width = cardWidth + 'px';
+    });
+
+    goToSlide(0);
+  }
+
+  function goToSlide(index) {
+    const cards = getCards();
+    if (cards.length === 0) return;
+
+    cardsPerView = getCardsPerView();
+    const totalSlides = Math.ceil(cards.length / cardsPerView);
+    currentIndex = Math.max(0, Math.min(index, totalSlides - 1));
+
+    const gap = 24;
+    const containerWidth = track.parentElement.offsetWidth;
+    const cardWidth = (containerWidth - gap * (cardsPerView - 1)) / cardsPerView;
+    const offset = currentIndex * (cardWidth + gap) * cardsPerView;
+    track.style.transform = `translateX(-${offset}px)`;
+
+    document.querySelectorAll('.dot').forEach((d, i) => {
+      if (i === currentIndex) {
+        d.style.background = 'var(--sky-primary)';
+        d.style.transform = 'scale(1.3)';
+      } else {
+        d.style.background = 'var(--border-color)';
+        d.style.transform = 'scale(1)';
+      }
+    });
+
+    prevBtn.disabled = currentIndex === 0;
+    nextBtn.disabled = currentIndex >= totalSlides - 1;
+
+    if (prevBtn.disabled) {
+      prevBtn.style.opacity = '0.35';
+      prevBtn.style.pointerEvents = 'none';
+    } else {
+      prevBtn.style.opacity = '1';
+      prevBtn.style.pointerEvents = 'auto';
+    }
+
+    if (nextBtn.disabled) {
+      nextBtn.style.opacity = '0.35';
+      nextBtn.style.pointerEvents = 'none';
+    } else {
+      nextBtn.style.opacity = '1';
+      nextBtn.style.pointerEvents = 'auto';
+    }
+  }
+
+  function moveCarousel(dir) {
+    goToSlide(currentIndex + dir);
+  }
+
+  if (track) {
+    initCarousel();
+    window.addEventListener('resize', initCarousel);
+
+    let startX = 0;
+    track.addEventListener('touchstart', e => { startX = e.touches[0].clientX; });
+    track.addEventListener('touchend', e => {
+      const diff = startX - e.changedTouches[0].clientX;
+      if (Math.abs(diff) > 50) moveCarousel(diff > 0 ? 1 : -1);
+    });
+  }
+
+  function confirmLogout() {
+    if (confirm('Bạn có chắc chắn muốn đăng xuất không?')) {
+      window.location.href = '/logout';
+    }
+  }
+
+  // ===== TINH SO DEM VA TONG TIEN (uoc tinh, khong gom phu phi ngoai gio
+  // vi trang nay dat theo LOAI, chua biet truoc phong cu the nao se duoc
+  // gan, phu phi thuc te se duoc tinh o server luc dat-nhanh) =====
+  const giaPhongGoc = /*[[${loaiPhong != null ? loaiPhong.giaCoBan : 0}]]*/ 0;
+
+  function formatTienVND(n) {
+    return Math.round(n).toLocaleString('vi-VN') + ' VND';
+  }
+
+  function tinhSoDemVaTongTien() {
+    const ngayNhanStr = document.getElementById('ngayNhanInput').value;
+    const ngayTraStr = document.getElementById('ngayTraInput').value;
+    const soLuong = parseInt(document.getElementById('soLuongInput').value, 10) || 1;
+
+    const soDemRow = document.getElementById('soDemRow');
+    const tongTienRow = document.getElementById('tongTienRow');
+    const soDemValue = document.getElementById('soDemValue');
+    const tongTienValue = document.getElementById('tongTienValue');
+
+    if (!ngayNhanStr || !ngayTraStr) {
+      soDemRow.style.display = 'none';
+      tongTienRow.style.display = 'none';
+      return;
+    }
+
+    const d1 = new Date(ngayNhanStr + 'T00:00:00');
+    const d2 = new Date(ngayTraStr + 'T00:00:00');
+    const soNgay = Math.round((d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24));
+
+    if (soNgay <= 0) {
+      soDemRow.style.display = 'none';
+      tongTienRow.style.display = 'none';
+      return;
+    }
+
+    const tongTien = giaPhongGoc * soNgay * soLuong;
+
+    soDemValue.textContent = soNgay + ' đêm';
+    tongTienValue.textContent = formatTienVND(tongTien);
+
+    soDemRow.style.display = 'flex';
+    tongTienRow.style.display = 'flex';
+  }
+
+  document.getElementById('soLuongInput').addEventListener('change', tinhSoDemVaTongTien);
+
+  // ===== Calendar chon ngay (copy/adapt tu hero calendar cua index.html) =====
+  // Dung TypeAvailabilityCalendar (file rieng /js/type-availability-calendar.js,
+  // KHONG dung chung file date-range-picker.js goc cua trang chu) vi calendar
+  // nay can them 1 kha nang ma calendar goc khong co: tu dong goi
+  // /loai-phong/{id}/ngay-het-phong moi khi doi thang dang xem, va disable
+  // cac ngay loai phong nay da het phong.
+  (function initTypeDateCalendar() {
+    const loaiPhongId = /*[[${loaiPhong != null ? loaiPhong.id : 0}]]*/ 0;
+
+    const checkinDisplay = document.getElementById('typeCheckinDisplay');
+    const checkoutDisplay = document.getElementById('typeCheckoutDisplay');
+    const ngayNhanInput = document.getElementById('ngayNhanInput');
+    const ngayTraInput = document.getElementById('ngayTraInput');
+    const calendarPopover = document.getElementById('typeCalendarPopover');
+    const checkinField = document.getElementById('typeCheckinField');
+    const checkoutField = document.getElementById('typeCheckoutField');
+
+    const VN_MONTHS = ['Th1','Th2','Th3','Th4','Th5','Th6','Th7','Th8','Th9','Th10','Th11','Th12'];
+    function formatDisplay(d) {
+      return `${d.getDate()} ${VN_MONTHS[d.getMonth()]}, ${d.getFullYear()}`;
+    }
+    function toISO(d) {
+      const y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, '0'), day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    }
+
+    if (typeof TypeAvailabilityCalendar === 'undefined') {
+      console.warn('TypeAvailabilityCalendar chua duoc tai (kiem tra /js/type-availability-calendar.js).');
+      return;
+    }
+
+    const calendar = new TypeAvailabilityCalendar({
+      calendarElId: 'typeDateRangeCalendar',
+      loaiPhongId: loaiPhongId,
+      minDate: new Date(),
+      onChange: function (start, end) {
+        if (start) {
+          checkinDisplay.textContent = formatDisplay(start);
+          checkinDisplay.classList.remove('placeholder');
+          ngayNhanInput.value = toISO(start);
+        } else {
+          checkinDisplay.textContent = 'Chọn ngày';
+          checkinDisplay.classList.add('placeholder');
+          ngayNhanInput.value = '';
+        }
+        if (end) {
+          checkoutDisplay.textContent = formatDisplay(end);
+          checkoutDisplay.classList.remove('placeholder');
+          ngayTraInput.value = toISO(end);
+        } else {
+          checkoutDisplay.textContent = 'Chọn ngày';
+          checkoutDisplay.classList.add('placeholder');
+          ngayTraInput.value = '';
+        }
+        tinhSoDemVaTongTien();
+        capNhatMaxSoLuongTheoNgay(loaiPhongId, ngayNhanInput.value, ngayTraInput.value);
+        if (window.__typeCalendarKiemTraHopLe) window.__typeCalendarKiemTraHopLe();
+        if (start && end) calendarPopover.classList.remove('open');
+      }
+    });
+
+    function toggleCalendar() {
+      const willOpen = !calendarPopover.classList.contains('open');
+      calendarPopover.classList.remove('open');
+      checkinField.classList.remove('active');
+      checkoutField.classList.remove('active');
+      if (willOpen) {
+        calendarPopover.classList.add('open');
+        checkinField.classList.add('active');
+        checkoutField.classList.add('active');
+        // The calendar was measured while hidden (display: none) at
+        // construction time, so its cells collapse into the top-left
+        // corner until we re-measure now that it's actually visible.
+        calendar.refresh();
+      }
+    }
+
+    checkinField.addEventListener('click', toggleCalendar);
+    checkoutField.addEventListener('click', toggleCalendar);
+    document.getElementById('typeCalendarClear').addEventListener('click', () => calendar.reset());
+    document.getElementById('typeCalendarApply').addEventListener('click', () => calendarPopover.classList.remove('open'));
+
+    document.addEventListener('click', (e) => {
+      if (!calendarPopover.contains(e.target) && !checkinField.contains(e.target) && !checkoutField.contains(e.target)) {
+        calendarPopover.classList.remove('open');
+        checkinField.classList.remove('active');
+        checkoutField.classList.remove('active');
+      }
+    });
+    calendarPopover.addEventListener('click', (e) => e.stopPropagation());
+  })();
+
+  // ===== Client-side validation don gian cho dat nhanh theo loai =====
+  (function () {
+    const form = document.getElementById('quickTypeBookingForm');
+    if (!form) return;
+
+    const ngayNhanEl = document.getElementById('ngayNhanInput');
+    const ngayTraEl = document.getElementById('ngayTraInput');
+    const slNguoiLonEl = document.getElementById('sl-nguoi-lon');
+    const slTreEmEl = document.getElementById('sl-tre-em');
+    const maCccdEl = document.getElementById('input-ma-cccd');
+
+    const grpNgayNhan = document.getElementById('grp-ngay-nhan');
+    const grpNgayTra = document.getElementById('grp-ngay-tra');
+    const grpNguoiLon = document.getElementById('grp-nguoi-lon');
+    const grpMaCccd = document.getElementById('grp-ma-cccd');
+    const errNgayNhan = document.getElementById('err-ngay-nhan');
+    const errNgayTra = document.getElementById('err-ngay-tra');
+    const errNguoi = document.getElementById('err-nguoi');
+    const errMaCccd = document.getElementById('err-ma-cccd');
+
+    const sucChuaToiDa = parseInt(slNguoiLonEl.getAttribute('max'), 10) || 0;
+
+    function ngayBatDauCuaHomNay() {
+      const now = new Date();
+      return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    }
+    function laNgayQuaKhu(dateObj) {
+      if (!dateObj || isNaN(dateObj.getTime())) return false;
+      const d = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
+      return d < ngayBatDauCuaHomNay();
+    }
+
+    function clearError(grp) { if (grp) grp.classList.remove('has-error'); }
+    function showError(grp) { if (grp) grp.classList.add('has-error'); }
+
+    function kiemTraHopLe() {
+      clearError(grpNgayNhan);
+      clearError(grpNgayTra);
+      clearError(grpNguoiLon);
+      clearError(grpMaCccd);
+
+      const v1 = ngayNhanEl.value;
+      const v2 = ngayTraEl.value;
+      if (!v1) {
+        showError(grpNgayNhan);
+        errNgayNhan.textContent = 'Vui lòng chọn ngày nhận phòng.';
+        return false;
+      }
+      if (!v2) {
+        showError(grpNgayNhan);
+        errNgayNhan.textContent = 'Vui lòng chọn cả ngày nhận và ngày trả phòng.';
+        return false;
+      }
+      const d1 = new Date(v1 + 'T00:00:00');
+      const d2 = new Date(v2 + 'T00:00:00');
+
+      if (laNgayQuaKhu(d1)) {
+        showError(grpNgayNhan);
+        errNgayNhan.textContent = 'Ngày nhận phòng không được là ngày trong quá khứ.';
+        return false;
+      }
+
+      const diffDays = Math.round((d2 - d1) / 86400000);
+      if (diffDays < 1) {
+        showError(grpNgayNhan);
+        errNgayNhan.textContent = 'Ngày trả phòng phải sau ngày nhận phòng ít nhất 1 ngày.';
+        return false;
+      }
+
+      if (sucChuaToiDa > 0) {
+        const nl = parseInt(slNguoiLonEl.value, 10) || 0;
+        const te = parseInt(slTreEmEl.value, 10) || 0;
+        if (nl + te > sucChuaToiDa) {
+          showError(grpNguoiLon);
+          errNguoi.textContent = 'Số lượng người (' + (nl + te) + ') vượt quá sức chứa của 1 phòng (' + sucChuaToiDa + ' người).';
+          return false;
+        }
+      }
+
+      const cccd = (maCccdEl.value || '').trim();
+      if (!/^\d{9}(\d{3})?$/.test(cccd)) {
+        showError(grpMaCccd);
+        errMaCccd.textContent = 'Vui lòng nhập 9 hoặc 12 số CCCD/CMND hợp lệ.';
+        return false;
+      }
+
+      return true;
+    }
+
+    form.addEventListener('submit', function (e) {
+      if (!kiemTraHopLe()) {
+        e.preventDefault();
+      }
+    });
+
+    // ngayNhanEl/ngayTraEl gio la input hidden, duoc TypeAvailabilityCalendar
+    // cap nhat khi nguoi dung chon ngay tren calendar (xem onChange o
+    // initTypeDateCalendar phia tren) - noi do da tu goi kiemTraHopLe() qua
+    // window.__typeCalendarKiemTraHopLe, nen chi con can lang nghe 'change'
+    // cho cac truong con lai (nguoi lon / tre em / CCCD).
+    [slNguoiLonEl, slTreEmEl, maCccdEl].forEach(el => {
+      el.addEventListener('change', kiemTraHopLe);
+    });
+
+    window.__typeCalendarKiemTraHopLe = kiemTraHopLe;
+  })();
+</script>
+</body>
+</html>
