@@ -3,12 +3,26 @@
       xmlns:th="http://www.thymeleaf.org"
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <body>
+<!--
+    Fragment nay dung chung cho 2 pham vi danh gia:
+    - Pham vi PHONG cu the (trang /phong/{id}): model co "maPhong" (hoac "phong").
+    - Pham vi LOAI PHONG gop (trang /loai-phong/{id}): model co "maLoaiPhong".
+    Controller nao truyen "maLoaiPhong" thi fragment tu dong chuyen sang goi cac
+    endpoint /loai-phong/reviews/types/**, nguoc lai dung /phong/reviews/rooms/**.
+-->
 <section th:fragment="roomReviews"
          id="roomReviews"
          class="room-reviews-module"
-         th:with="roomId=${maPhong != null ? maPhong : (phong != null ? phong.maPhong : null)}"
+         th:with="isTypeScope=${maLoaiPhong != null},
+                  roomId=${maLoaiPhong != null ? maLoaiPhong : (maPhong != null ? maPhong : (phong != null ? phong.maPhong : null))}"
          th:attr="data-room-id=${roomId},
-                  data-reviews-url=@{/phong/reviews/rooms/{maPhong}/data(maPhong=${roomId})},
+                  data-scope=${isTypeScope ? 'loai' : 'phong'},
+                  data-reviews-url=${isTypeScope}
+                        ? @{/loai-phong/reviews/types/{id}/data(id=${roomId})}
+                        : @{/phong/reviews/rooms/{id}/data(id=${roomId})},
+                  data-submit-url=${isTypeScope}
+                        ? @{/loai-phong/reviews/types/{id}(id=${roomId})}
+                        : @{/phong/reviews/rooms/{id}(id=${roomId})},
                   data-reply-base=@{/phong/reviews}">
     <style>
         .room-reviews-module {
@@ -331,8 +345,12 @@
 
     <div class="room-reviews-head">
         <div>
-            <h2>Đánh giá phòng</h2>
-            <p>Nhận xét của khách hàng đã từng đặt phòng và phần phản hồi từ nhân viên nếu có.</p>
+            <h2 th:text="${isTypeScope} ? 'Đánh giá loại phòng' : 'Đánh giá phòng'">Đánh giá phòng</h2>
+            <p th:text="${isTypeScope}
+                    ? 'Tổng hợp nhận xét của khách hàng cho tất cả các phòng thuộc loại này và phần phản hồi từ nhân viên nếu có.'
+                    : 'Nhận xét của khách hàng đã từng đặt phòng và phần phản hồi từ nhân viên nếu có.'">
+                Nhận xét của khách hàng đã từng đặt phòng và phần phản hồi từ nhân viên nếu có.
+            </p>
         </div>
     </div>
 
@@ -366,13 +384,15 @@
                       th:action="@{/phong/reviews/{reviewId}/reply(reviewId=${review.id})}"
                       method="post">
                     <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
-                    <input type="hidden" name="maPhong" th:value="${roomId}">
+                    <input type="hidden" th:unless="${isTypeScope}" name="maPhong" th:value="${roomId}">
+                    <input type="hidden" th:if="${isTypeScope}" name="maLoaiPhong" th:value="${roomId}">
                     <textarea name="phanHoi" maxlength="1000" placeholder="Nhập phản hồi cho khách hàng..." required></textarea>
                     <button type="submit" class="room-review-button">Gửi phản hồi</button>
                 </form>
             </article>
 
-            <div class="room-review-empty" th:if="${roomReviews != null && #lists.isEmpty(roomReviews)}" data-room-review-empty>
+            <div class="room-review-empty" th:if="${roomReviews != null && #lists.isEmpty(roomReviews)}" data-room-review-empty
+                 th:text="${isTypeScope} ? 'Loại phòng này chưa có đánh giá.' : 'Phòng này chưa có đánh giá.'">
                 Phòng này chưa có đánh giá.
             </div>
             <div class="room-review-empty" th:if="${roomReviews == null}" data-room-review-empty>
@@ -396,12 +416,16 @@
                 </div>
 
                 <p class="room-review-muted"
-                   th:if="${reviewEligibility == null || reviewEligibility.canReview}">
+                   th:if="${reviewEligibility == null || reviewEligibility.canReview}"
+                   th:text="${isTypeScope}
+                        ? 'Đánh giá này sẽ được gắn với lượt đặt phòng gần nhất của bạn thuộc loại phòng này.'
+                        : 'Đánh giá này sẽ được gắn với lượt đặt phòng gần nhất của bạn cho phòng này.'">
                     Đánh giá này sẽ được gắn với lượt đặt phòng gần nhất của bạn cho phòng này.
                 </p>
 
                 <form th:if="${reviewEligibility != null && reviewEligibility.canReview}"
-                      th:action="@{/phong/reviews/rooms/{maPhong}(maPhong=${roomId})}" method="post" data-review-form>
+                      th:action="${isTypeScope} ? @{/loai-phong/reviews/types/{id}(id=${roomId})} : @{/phong/reviews/rooms/{id}(id=${roomId})}"
+                      method="post" data-review-form>
                     <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
 
                     <div class="room-review-field">
@@ -487,7 +511,9 @@
                     if (!Array.isArray(reviews) || reviews.length === 0) {
                         const emptyState = document.createElement('div');
                         emptyState.className = 'room-review-empty';
-                        emptyState.textContent = 'Phòng này chưa có đánh giá.';
+                        emptyState.textContent = section.dataset.scope === 'loai'
+                            ? 'Loại phòng này chưa có đánh giá.'
+                            : 'Phòng này chưa có đánh giá.';
                         list.appendChild(emptyState);
                         return;
                     }
@@ -540,9 +566,13 @@
                     ? '<input type="hidden" name="' + escapeHtml(csrf.dataset.name) + '" value="' + escapeHtml(csrf.dataset.token) + '">'
                     : '';
 
+                const scopeFieldName = section.dataset.scope === 'loai' ? 'maLoaiPhong' : 'maPhong';
+                const scopeHiddenField = '<input type="hidden" name="' + scopeFieldName + '" value="'
+                    + escapeHtml(section.dataset.roomId || review.maPhong || '') + '">';
+
                 return '<form class="room-review-staff-reply" action="' + escapeHtml(section.dataset.replyBase) + '/' + encodeURIComponent(review.id) + '/reply" method="post">' +
                     csrfInput +
-                    '<input type="hidden" name="maPhong" value="' + escapeHtml(section.dataset.roomId || review.maPhong || '') + '">' +
+                    scopeHiddenField +
                     '<textarea name="phanHoi" maxlength="1000" placeholder="Nhập phản hồi cho khách hàng..." required></textarea>' +
                     '<button type="submit" class="room-review-button">Gửi phản hồi</button>' +
                     '</form>';

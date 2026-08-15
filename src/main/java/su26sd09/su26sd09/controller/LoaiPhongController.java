@@ -13,8 +13,11 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import su26sd09.su26sd09.dto.RoomBookingGuardDTO;
+import su26sd09.su26sd09.entity.Anh;
+import su26sd09.su26sd09.entity.DanhGia;
 import su26sd09.su26sd09.entity.DatPhong;
 import su26sd09.su26sd09.entity.KhachHang;
 import su26sd09.su26sd09.entity.LoaiPhong;
@@ -22,18 +25,24 @@ import su26sd09.su26sd09.entity.Phong;
 import su26sd09.su26sd09.entity.PhongAnh;
 import su26sd09.su26sd09.repository.PhongAnhRepository;
 import su26sd09.su26sd09.service.BookingEmailService;
+import su26sd09.su26sd09.service.DanhGiaService;
 import su26sd09.su26sd09.service.DatPhongService;
 import su26sd09.su26sd09.service.NguoiDungService;
 import su26sd09.su26sd09.service.PhongService;
+import su26sd09.su26sd09.service.ReviewService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 @Controller
@@ -57,6 +66,101 @@ public class LoaiPhongController {
 
     @Autowired
     private BookingEmailService bookingEmailService;
+
+    @Autowired
+    private DanhGiaService danhGiaService;
+
+    @Autowired
+    private ReviewService reviewService;
+
+    /**
+     * Trang chi tiet LOAI PHONG (khong phai 1 phong cu the). Copy cau truc tu
+     * PhongController#detail (trang /phong/{id}) nhung du lieu duoc GOP
+     * (aggregate) tu tat ca cac phong vat ly thuoc loai nay: tien nghi la hop
+     * cua tien nghi cac phong, anh la hop cac anh cac phong, danh gia la gop
+     * danh gia da duyet cua tat ca cac phong thuoc loai. Dat phong o trang nay
+     * di qua booking engine theo loai (POST /loai-phong/dat-nhanh), khong gan
+     * cung 1 phong vat ly cu the nhu trang /phong/{id}.
+     */
+    @GetMapping("/{id}")
+    public String detail(
+            @PathVariable("id") int id,
+            Model model,
+            RedirectAttributes redirectAttributes
+    ) {
+        LoaiPhong loaiPhong = phongService.findLoaiPhongById(id);
+        if (loaiPhong == null) {
+            redirectAttributes.addFlashAttribute("error", "Không tìm thấy loại phòng");
+            return "redirect:/loai-phong";
+        }
+
+        List<Phong> phongs = phongService.findPhongTheoLoai(id);
+
+        // Tien nghi cua loai phong = hop (khong trung) tien nghi cua tat ca
+        // phong vat ly thuoc loai nay, vi bang tien_nghi_phong map theo Phong.
+        LinkedHashSet<String> tienNghiSet = new LinkedHashSet<>();
+        for (Phong p : phongs) {
+            tienNghiSet.addAll(phongService.findTenTienNghiByPhong(p.getMaPhong()));
+        }
+        List<String> tienNghi = new ArrayList<>(tienNghiSet);
+
+        // Danh gia cua loai phong = gop danh gia DA DUYET cua tat ca phong thuoc
+        // loai nay. Tai su dung nguyen he thong danh gia cua trang /phong/{id}
+        // (ReviewService + fragment fragments/room-reviews) nhung o PHAM VI LOAI
+        // PHONG: xem duoc danh gia gop tu moi phong thuoc loai, va gui danh gia
+        // moi se tu dong gan voi lan dat phong gan nhat (thuoc bat ky phong nao
+        // cua loai nay) cua khach dang dang nhap.
+        List<su26sd09.su26sd09.dto.RoomReviewViewDTO> roomReviews =
+                reviewService.findApprovedReviewsByLoaiPhong(id);
+        double diemTrungBinh = roomReviews.stream()
+                .mapToInt(su26sd09.su26sd09.dto.RoomReviewViewDTO::getDiemDanhGia)
+                .average()
+                .orElse(0);
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String currentEmail = (authentication != null
+                && authentication.isAuthenticated()
+                && !(authentication instanceof AnonymousAuthenticationToken))
+                ? authentication.getName()
+                : null;
+        model.addAttribute("maLoaiPhong", id);
+        model.addAttribute("roomReviews", roomReviews);
+        model.addAttribute("reviewEligibility", reviewService.getEligibilityForLoaiPhong(id, currentEmail));
+
+        // Anh cua loai phong = gop (khong trung) anh cua tat ca phong thuoc loai.
+        List<Anh> anhs = new ArrayList<>();
+        Set<UUID> maAnhDaThem = new HashSet<>();
+        for (Phong p : phongs) {
+            for (PhongAnh pa : phongAnhRepository.findByMaPhong_MaPhong(p.getMaPhong())) {
+                if (pa.maAnh != null && maAnhDaThem.add(pa.maAnh.maAnh)) {
+                    anhs.add(pa.maAnh);
+                }
+            }
+        }
+        // Anh dai dien: uu tien anh rieng cua loai phong (loaiPhong.maAnh) neu co,
+        // neu khong thi lay anh dau tien gop duoc tu cac phong.
+        Anh thumbAnh = loaiPhong.getMaAnh() != null
+                ? loaiPhong.getMaAnh()
+                : (!anhs.isEmpty() ? anhs.get(0) : null);
+
+        long soPhongTrong = phongService.countPhongTrongTheoLoai(id);
+
+        // Cac loai phong khac de goi y (carousel cuoi trang), giong trang /phong/{id}.
+        List<LoaiPhong> loaiPhongKhac = phongService.findLoaiPhongKhac(id);
+        Map<Integer, String> anhLoaiPhongKhac = buildAnhLoaiPhong(loaiPhongKhac);
+
+        model.addAttribute("loaiPhong", loaiPhong);
+        model.addAttribute("thumbAnh", thumbAnh);
+        model.addAttribute("anhs", anhs);
+        model.addAttribute("tienNghi", tienNghi);
+        model.addAttribute("tongDanhGia", roomReviews.size());
+        model.addAttribute("diemTrungBinh", diemTrungBinh);
+        model.addAttribute("soPhongTrong", soPhongTrong);
+        model.addAttribute("loaiPhongKhac", loaiPhongKhac);
+        model.addAttribute("anhLoaiPhongKhac", anhLoaiPhongKhac);
+
+        return "loai-phong-detail";
+    }
 
     @GetMapping
     public String index(Model model) {
@@ -276,6 +380,73 @@ public class LoaiPhongController {
         }
     }
 
+    /**
+     * MOI - endpoint chi doc (khong dat phong), tra ve JSON danh sach cac
+     * khoang ngay ma LOAI PHONG (id) da het sach phong hoat dong trong 1
+     * THANG cu the. Dung cho calendar cua trang chi tiet loai phong
+     * (loai-phong-detail.html) de disable cac o ngay tuong ung. FE goi lai
+     * endpoint nay moi khi nguoi dung chuyen sang thang khac tren calendar
+     * (1 request / 1 thang dang xem), khong tai toan bo nam cung luc.
+     *
+     * @param thang dang "yyyy-MM" (vi du "2026-08"). Mac dinh la thang hien
+     *              tai neu khong truyen.
+     */
+    @GetMapping("/{id}/ngay-het-phong")
+    @ResponseBody
+    public List<su26sd09.su26sd09.dto.NgayHetPhongDTO> ngayHetPhong(
+            @PathVariable("id") int id,
+            @RequestParam(name = "thang", required = false) String thang
+    ) {
+        java.time.YearMonth ym;
+        try {
+            ym = (thang == null || thang.isBlank())
+                    ? java.time.YearMonth.now()
+                    : java.time.YearMonth.parse(thang.trim());
+        } catch (java.time.format.DateTimeParseException e) {
+            ym = java.time.YearMonth.now();
+        }
+        return phongService.tinhNgayHetPhongTheoLoai(id, ym);
+    }
+
+    /**
+     * MOI - endpoint chi doc, tra ve so phong con trong THUC SU cua loai
+     * phong (id) trong khoang [ngayNhan, ngayTra) ma khach dang chon tren
+     * calendar cua trang chi tiet loai phong. Dung chung "room availability
+     * checking engine" voi searchLoaiPhongKhaDung()/assignRoomsForType()
+     * (PhongService.soPhongKhaDungTheoLoaiVaNgay) nen ket qua luon khop voi
+     * so phong ma booking engine thuc su co the gan khi khach bam "Dat Loai
+     * Phong Nay". FE goi lai endpoint nay moi khi khach chon xong ngay
+     * nhan/tra de cap nhat max cua o "So luong phong", tranh cho khach chon
+     * so luong vuot qua so phong thuc su con trong ngay do.
+     */
+    @GetMapping("/{id}/so-phong-kha-dung")
+    @ResponseBody
+    public Map<String, Object> soPhongKhaDung(
+            @PathVariable("id") int id,
+            @RequestParam(name = "ngayNhan", required = false) String ngayNhan,
+            @RequestParam(name = "ngayTra", required = false) String ngayTra
+    ) {
+        LocalDateTime ngayNhanPhong = null;
+        LocalDateTime ngayTraPhong = null;
+        try {
+            if (ngayNhan != null && !ngayNhan.isBlank()) {
+                ngayNhanPhong = LocalDate.parse(ngayNhan.trim()).atTime(14, 0);
+            }
+            if (ngayTra != null && !ngayTra.isBlank()) {
+                ngayTraPhong = LocalDate.parse(ngayTra.trim()).atTime(11, 0);
+            }
+        } catch (DateTimeParseException e) {
+            ngayNhanPhong = null;
+            ngayTraPhong = null;
+        }
+
+        long soPhongKhaDung = phongService.soPhongKhaDungTheoLoaiVaNgay(id, ngayNhanPhong, ngayTraPhong);
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("soPhongKhaDung", soPhongKhaDung);
+        return result;
+    }
+
     private Integer parseIntOrNull(String s) {
         if (s == null || s.isBlank()) return null;
         try {
@@ -301,7 +472,7 @@ public class LoaiPhongController {
                         || "ROLE_STAFF".equals(a.getAuthority()));
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/deprecated/{id}")
     public String phongTheoLoai(
             @PathVariable("id") int id,
             Model model,

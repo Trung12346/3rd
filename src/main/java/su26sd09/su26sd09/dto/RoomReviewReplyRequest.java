@@ -7,6 +7,8 @@ public class RoomReviewReplyRequest {
 
     private Integer maPhong;
 
+    private Integer maLoaiPhong;
+
     @NotBlank(message = "Nội dung phản hồi không được để trống")
     @Size(max = 1000, message = "Nội dung phản hồi tối đa 1000 ký tự")
     private String phanHoi;
@@ -17,6 +19,14 @@ public class RoomReviewReplyRequest {
 
     public void setMaPhong(Integer maPhong) {
         this.maPhong = maPhong;
+    }
+
+    public Integer getMaLoaiPhong() {
+        return maLoaiPhong;
+    }
+
+    public void setMaLoaiPhong(Integer maLoaiPhong) {
+        this.maLoaiPhong = maLoaiPhong;
     }
 
     public String getPhanHoi() {

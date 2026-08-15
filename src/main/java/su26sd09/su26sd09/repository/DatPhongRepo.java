@@ -163,4 +163,34 @@ order by d.ngaytraPhong desc
     List<Integer> findMaPhongDaKhoaLichTrongKhoang(@Param("ngayNhan") LocalDateTime ngayNhan,
                                                      @Param("ngayTra") LocalDateTime ngayTra);
 
+    /**
+     * MOI (khong thay the / khong sua truy van nao o tren): danh sach cac
+     * dot giu cho (booking) dang hieu luc, cham vao 1 PHONG BAT KY thuoc 1
+     * LOAI PHONG cu the, chong lan voi khoang [tuNgay, denNgay). Dung cho
+     * tinh nang "ngay het phong theo loai" tren calendar cua trang chi tiet
+     * loai phong (/loai-phong/{id}) - MOI phong duoc tra ve rieng le (khong
+     * gop/dem o day) de PhongService tu tinh so phong con trong theo tung
+     * ngay trong khoang.
+     *
+     * Cung dieu kien khoa lich + cung cong thuc chong lan (A.start < B.end
+     * AND A.end > B.start) nhu findMaPhongDaKhoaLichTrongKhoang o tren, chi
+     * khac o cho loc them theo loaiPhongId va tra ve ca khoang ngay cua tung
+     * dot giu cho (khong chi ma phong) de FE/BE tinh duoc CHINH XAC ngay nao
+     * trong thang bi khoa, thay vi coi ca thang la khoa neu co it nhat 1
+     * booking cham vao.
+     */
+    @Query("""
+        select c.p.maPhong as maPhong, d.ngaydatPhong as ngayNhan, d.ngaytraPhong as ngayTra
+        from DatPhong d
+        join ChiTietDatPhong c on c.d.id = d.id
+        where d.trangThai in ('Cho xac nhan','Da xac nhan','Da nhan phong')
+        and c.p.loaiPhong.id = :loaiPhongId
+        and d.ngaydatPhong < :denNgay
+        and d.ngaytraPhong > :tuNgay
+    """)
+    List<su26sd09.su26sd09.dto.LichPhongTheoLoaiProjection> findLichBiKhoaTheoLoaiTrongKhoang(
+            @Param("loaiPhongId") int loaiPhongId,
+            @Param("tuNgay") LocalDateTime tuNgay,
+            @Param("denNgay") LocalDateTime denNgay);
+
 }
