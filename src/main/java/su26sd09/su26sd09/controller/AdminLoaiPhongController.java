@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -24,8 +25,8 @@ public class AdminLoaiPhongController {
 
     @Autowired
     LoaiPhongService repo;
-     @Autowired
-     AnhRepository anhrepo;
+    @Autowired
+    AnhRepository anhrepo;
 
     @GetMapping
     public String index(Model model,
@@ -59,7 +60,7 @@ public class AdminLoaiPhongController {
 
     @PostMapping("/save")
     public String save(RedirectAttributes redirect,
-                      @Valid @ModelAttribute("loaiPhong") LoaiPhong l,
+                       @Valid @ModelAttribute("loaiPhong") LoaiPhong l,
                        BindingResult b,
                        @RequestParam(value = "anhId", required = false) String anhId) {
 
@@ -83,7 +84,18 @@ public class AdminLoaiPhongController {
         return "redirect:/nhan-su/admin/loai-phong";
     }
 
-
+    @GetMapping("/delete/{id}")
+    public String delete(@PathVariable("id") int id,RedirectAttributes redirect){
+        String check = repo.checkReference(id);
+        LoaiPhong lp = repo.findbyid(id);
+        if (check != null){
+            redirect.addFlashAttribute("error","loại phòng đang được sử dụng ở phòng " + check +  " không thể thực hiện xóa ");
+            return "redirect:/nhan-su/admin/loai-phong";
+        }
+        redirect.addFlashAttribute("success","thực hiện xóa thành công loại phòng: " + lp.id );
+        repo.delete(lp);
+        return "redirect:/nhan-su/admin/loai-phong";
+    }
 
     @GetMapping("/tim-kiem")
     public String timKiem(Model model,

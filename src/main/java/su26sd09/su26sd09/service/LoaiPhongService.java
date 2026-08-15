@@ -5,7 +5,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import su26sd09.su26sd09.entity.LoaiPhong;
+import su26sd09.su26sd09.entity.Phong;
 import su26sd09.su26sd09.repository.LoaiPhongRepository;
+import su26sd09.su26sd09.repository.PhongRepository;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -16,6 +18,8 @@ public class LoaiPhongService {
 
     @Autowired
     LoaiPhongRepository repo;
+    @Autowired
+    PhongRepository repoPhong;
 
 
     public List<LoaiPhong> findAll(){
@@ -60,7 +64,16 @@ public class LoaiPhongService {
 
     public boolean checktrungAnh(String anhId, int id){
         UUID IdanhParse = UUID.fromString(anhId);
-     return repo.existsByMaAnhExceptId(IdanhParse,id);
+        return repo.existsByMaAnhExceptId(IdanhParse,id);
+
+    }
+
+    public String  checkReference(int id){
+        Phong p = repoPhong.findFirstByloaiPhongId(id) == null ? null : repoPhong.findFirstByloaiPhongId(id);
+        if (p == null){
+            return null;
+        }
+        return p.getSoPhong();
 
     }
 }
