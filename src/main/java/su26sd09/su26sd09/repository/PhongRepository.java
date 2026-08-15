@@ -40,4 +40,8 @@ join ChiTietDatPhong c on c.d.id = d.id
 where c.p.maPhong = :id
 """)
     List<DatPhong> findAllByPhong(@Param("id") Integer id);
+
+
+
+    Phong findFirstByloaiPhongId(int id);
 }
