@@ -388,10 +388,10 @@
         </div>
     </div>
 
-    <!-- ══ LỊCH SỬ HOÀN TIỀN (chỉ hiển thị khi đơn đã hủy và có giao dịch hoàn) ══ -->
-    <div th:if="${hoaDon.d != null and hoaDon.d.trangThai == 'Da huy' and hoanTienList != null and !hoanTienList.isEmpty()}"
+    <!-- ══ LỊCH SỬ HOÀN TIỀN (chỉ hiển thị khi đơn đã hủy) ══ -->
+    <div th:if="${hoaDon.d != null and hoaDon.d.trangThai == 'Da huy'}"
          style="margin: 14px 20px 0;">
-        <div class="section-bar">↩ Lịch sử hoàn tiền</div>
+        <div class="section-bar">↩ Thông tin hoàn tiền</div>
         <div class="info-grid">
             <div class="info-col info-col-left">
                 <div class="info-row">
@@ -424,31 +424,35 @@
                 </div>
             </div>
         </div>
-        <div class="items-wrap">
-            <table class="items-table">
-                <thead>
-                <tr>
-                    <th>Ngày hoàn</th>
-                    <th>Phương thức</th>
-                    <th class="right">Số tiền (VNĐ)</th>
-                    <th>Mã giao dịch</th>
-                    <th>STK / Ngân hàng</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr class="row-normal" th:each="ht : ${hoanTienList}">
-                    <td th:text="${ht.ngaythanhToan != null ? #temporals.format(ht.ngaythanhToan, 'dd/MM/yyyy HH:mm') : '-'}">-</td>
-                    <td th:text="${ht.phuongThuc != null ? ht.phuongThuc : '-'}">-</td>
-                    <td class="right" th:text="${ht.soTien != null ? #numbers.formatDecimal(ht.soTien, 0, 'COMMA', 0, 'POINT') : '-'}">-</td>
-                    <td th:text="${ht.magiaodich != null and !ht.magiaodich.isEmpty() ? ht.magiaodich : '-'}">-</td>
-                    <td>
-                        <span th:if="${ht.stkNhanHoan != null and !ht.stkNhanHoan.isEmpty()}"
-                              th:text="${ht.stkNhanHoan + ' (' + (ht.tenNganHangNhanHoan != null ? ht.tenNganHangNhanHoan : '-') + ')'}">-</span>
-                        <span th:if="${ht.stkNhanHoan == null or ht.stkNhanHoan.isEmpty()}">-</span>
-                    </td>
-                </tr>
-                </tbody>
-            </table>
+
+        <!-- Bảng chi tiết giao dịch hoàn (chỉ hiện khi có) -->
+        <div th:if="${hoanTienList != null and !hoanTienList.isEmpty()}">
+            <div class="items-wrap">
+                <table class="items-table">
+                    <thead>
+                    <tr>
+                        <th>Ngày hoàn</th>
+                        <th>Phương thức</th>
+                        <th class="right">Số tiền (VNĐ)</th>
+                        <th>Mã giao dịch</th>
+                        <th>STK / Ngân hàng</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr class="row-normal" th:each="ht : ${hoanTienList}">
+                        <td th:text="${ht.ngaythanhToan != null ? #temporals.format(ht.ngaythanhToan, 'dd/MM/yyyy HH:mm') : '-'}">-</td>
+                        <td th:text="${ht.phuongThuc != null ? ht.phuongThuc : '-'}">-</td>
+                        <td class="right" th:text="${ht.soTien != null ? #numbers.formatDecimal(ht.soTien, 0, 'COMMA', 0, 'POINT') : '-'}">-</td>
+                        <td th:text="${ht.magiaodich != null and !ht.magiaodich.isEmpty() ? ht.magiaodich : '-'}">-</td>
+                        <td>
+                            <span th:if="${ht.stkNhanHoan != null and !ht.stkNhanHoan.isEmpty()}"
+                                  th:text="${ht.stkNhanHoan + ' (' + (ht.tenNganHangNhanHoan != null ? ht.tenNganHangNhanHoan : '-') + ')'}">-</span>
+                            <span th:if="${ht.stkNhanHoan == null or ht.stkNhanHoan.isEmpty()}">-</span>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 

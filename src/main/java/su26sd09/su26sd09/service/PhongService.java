@@ -665,13 +665,16 @@
         }
     
         /**
-         * Tính phụ phí ngoài giờ cho 1 phòng dựa trên guard và khoảng ngày đặt.
-         * Tái sử dụng cùng rule với PhongController.calculateExtraFee() và GioHangController.calculateExtraFee():
-         *   - giờ nhận ngoài [gioNhanToiThieu, gioNhanToiDa] -> cộng phuPhiNgoaiGioVND
-         *   - giờ trả sau gioTraToiDa                       -> cộng phuPhiNgoaiGioVND
-         * Nếu trong khoảng hợp lệ, trả về ZERO.
-         */
-        public BigDecimal calculateExtraFeeFor(int maPhong, LocalDateTime ngayNhan, LocalDateTime ngayTra) {
+     * Tính phụ phí ngoài giờ cho 1 phòng dựa trên guard và khoảng ngày đặt.
+     * Chính sách (đã chốt với KH):
+     *   - KHÔNG tính phụ phí cho check-in muộn (gioNhan > gioNhanToiThieu).
+     *   - KHÔNG tính phụ phí cho check-out sớm (gioTra < gioTraToiDa).
+     *   - CHỈ tính khi check-in QUÁ SỚM (trước giờ nhận tối thiểu)
+     *     HOẶC check-out QUÁ TRỄ (sau giờ trả tối đa).
+     *
+     * Nếu trong khoảng hợp lệ, trả về ZERO.
+     */
+    public BigDecimal calculateExtraFeeFor(int maPhong, LocalDateTime ngayNhan, LocalDateTime ngayTra) {
             if (ngayNhan == null || ngayTra == null) {
                 return BigDecimal.ZERO;
             }
@@ -679,14 +682,47 @@
             if (guard == null) {
                 return BigDecimal.ZERO;
             }
-    
+
             LocalTime gioNhan = ngayNhan.toLocalTime();
             LocalTime gioTra = ngayTra.toLocalTime();
-            boolean ngoaiGioNhan = gioNhan.isBefore(guard.getGioNhanToiThieu())
-                    || gioNhan.isAfter(guard.getGioNhanToiDa());
-            boolean ngoaiGioTra = gioTra.isAfter(guard.getGioTraToiDa());
-            return (ngoaiGioNhan || ngoaiGioTra) ? guard.getPhuPhiNgoaiGioVND() : BigDecimal.ZERO;
+            boolean nhanQuaSom = gioNhan.isBefore(guard.getGioNhanToiThieu());
+            boolean traQuaTre = gioTra.isAfter(guard.getGioTraToiDa());
+            return (nhanQuaSom || traQuaTre) ? guard.getPhuPhiNgoaiGioVND() : BigDecimal.ZERO;
         }
+
+    /**
+     * Tính phụ phí cho LUỒNG CHECKOUT TẠI QUẦY (nhân viên bấm "Chốt trả phòng").
+     *
+     * <p>Ý nghĩa "giờ trả" ở đây là giờ thực tế khách trả = {@code gioTraHienTai}
+     * (thường là {@code LocalDateTime.now()}). Công thức đúng:</p>
+     * <ul>
+     *   <li>Khách trả TRƯỚC hoặc ĐÚNG ngày-giờ đã đặt → 0 phí (kể cả trả trong
+     *       cùng ngày nhận — miễn trước {@code ngaytraPhong} là sớm).</li>
+     *   <li>Khách trả SAU ngày-giờ đã đặt → cộng {@code phuPhiNgoaiGioVND}
+     *       (vì phòng bị giữ thêm — check-out muộn so với hợp đồng).</li>
+     * </ul>
+     *
+     * <p>Không dùng {@link #calculateExtraFeeFor(int, LocalDateTime, LocalDateTime)}
+     * cho luồng này vì hàm đó so sánh với giờ "chuẩn" của phòng (vd 11:00) — sẽ
+     * tính phí SAI cho mọi khách checkout sau 11:00 dù đúng giờ booking.</p>
+     */
+    public BigDecimal calculateLateCheckoutFeeFor(int maPhong,
+                                                  LocalDateTime ngayDatPhongDuKien,
+                                                  LocalDateTime ngayTraDuKien,
+                                                  LocalDateTime gioTraHienTai) {
+        if (gioTraHienTai == null) {
+            return BigDecimal.ZERO;
+        }
+        // Trả trước/sớm hoặc đúng giờ đã đặt -> 0
+        if (!gioTraHienTai.isAfter(ngayTraDuKien)) {
+            return BigDecimal.ZERO;
+        }
+        RoomBookingGuardDTO guard = buildRoomGuardFor(maPhong);
+        if (guard == null || guard.getPhuPhiNgoaiGioVND() == null) {
+            return BigDecimal.ZERO;
+        }
+        return guard.getPhuPhiNgoaiGioVND();
+    }
     
         private Optional<DatPhong> findLatestBooking(int maPhong) {
 

@@ -10,6 +10,7 @@ import su26sd09.su26sd09.entity.DanhGia;
 import su26sd09.su26sd09.entity.DatPhong;
 import su26sd09.su26sd09.entity.KhachHang;
 import su26sd09.su26sd09.service.ChiTietDatPhongService;
+import su26sd09.su26sd09.service.ChiTietDichVuService;
 import su26sd09.su26sd09.service.DanhGiaService;
 import su26sd09.su26sd09.service.DatPhongService;
 import su26sd09.su26sd09.service.UserService;
@@ -32,6 +33,8 @@ public class    UserProfilesController {
     DanhGiaService danhGiaRepo;
     @Autowired
     ChiTietDatPhongService chitietPhongrepo;
+    @Autowired
+    ChiTietDichVuService chiTietDichVuService;
     @Autowired
     PasswordEncoder passwordEncoder;
 
@@ -131,6 +134,59 @@ public class    UserProfilesController {
         }
 
         return "redirect:/thanh-toan/thanh-cong/" + dp.getId();
+    }
+
+    /**
+     * Phục hồi luồng đặt phòng khi khách (đã đăng nhập) đang thanh toán mà bị mất mạng / rớt phiên.
+     *
+     * Quy tắc chuyển trang:
+     *  - Đơn ở trạng thái "Chua thanh toan" + đã gắn với user hiện tại.
+     *  - Nếu đơn chưa có ChiTietDichVu nào (chưa qua bước chọn dịch vụ)  -> quay lại trang chọn dịch vụ bổ sung.
+     *  - Nếu đã có dịch vụ nhưng chưa thanh toán                          -> quay lại trang thanh toán.
+     *  - Nếu không thuộc 2 trường hợp trên (đã thanh toán / bị hủy ...)  -> đưa về trang chi tiết hóa đơn.
+     */
+    @GetMapping("/dat-phong/{id}/tiep-tuc-dat")
+    public String tiepTucDatPhong(@PathVariable Integer id, Principal p,
+                                  RedirectAttributes redirectAttributes) {
+        KhachHang nguoidung = getNguoiDungByPrincipal(p);
+        DatPhong dp = datPhongRepo.findById(id);
+
+        boolean thuocVeToi = dp != null
+                && dp.getN() != null
+                && nguoidung.getMa_khach_hang() != null
+                && nguoidung.getMa_khach_hang().equals(dp.getN().getMa_khach_hang());
+
+        if (!thuocVeToi) {
+            redirectAttributes.addFlashAttribute("errorMsg",
+                    "Không tìm thấy đơn đặt phòng hoặc bạn không có quyền truy cập.");
+            return "redirect:/profiles?tab=bookings";
+        }
+
+        String trangThai = dp.getTrangThai() != null ? dp.getTrangThai() : "";
+
+        // Chỉ phục hồi khi đơn đang dở ở khâu thanh toán.
+        // Chỉ chấp nhận trạng thái "Chua thanh toan" — các trạng thái khác
+        // (Yeu cau dat phong / Da xac nhan / Da huy / Da tra phong...) đều đã qua bước
+        // thanh toán nên không thuộc luồng phục hồi này.
+        if (!"Chua thanh toan".equalsIgnoreCase(trangThai)) {
+            redirectAttributes.addFlashAttribute("errorMsg",
+                    "Đơn đặt phòng này không còn ở trạng thái chờ thanh toán nên không thể tiếp tục.");
+            return "redirect:/profiles?tab=bookings";
+        }
+
+        int soDichVu = chiTietDichVuService.findByDatPhongId(id).size();
+
+        if (soDichVu == 0) {
+            // Khách dở ở bước chọn dịch vụ bổ sung -> quay lại đúng trang đó
+            redirectAttributes.addFlashAttribute("thongBao",
+                    "Tiếp tục đặt phòng: bạn có thể chọn dịch vụ bổ sung hoặc bỏ qua và đi tới bước thanh toán.");
+            return "redirect:/phong/dat-phong/xac-nhan/" + id;
+        }
+
+        // Đã chọn dịch vụ -> đưa thẳng về trang thanh toán
+        redirectAttributes.addFlashAttribute("thongBao",
+                "Tiếp tục đặt phòng: đơn của bạn đã được khôi phục, vui lòng hoàn tất thanh toán.");
+        return "redirect:/thanh-toan/dat-phong/" + id;
     }
 
     @PostMapping("/update")

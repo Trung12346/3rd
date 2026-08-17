@@ -15,6 +15,7 @@ import su26sd09.su26sd09.entity.NhanSu;
 import su26sd09.su26sd09.service.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Controller
 @RequestMapping("/nhan-su/admin/hoan-tien")
@@ -47,11 +48,33 @@ public class AdminHoanTienController {
             return "redirect:/nhan-su/admin/hoan-tien";
         }
         DatPhong dp = hd.getD();
+
+        // Neu hoa don chua co tyLeHoan (mot so ly do: don cu, checkout, NV tao truc tiep...)
+        // -> tinh lai theo rule moi de trang chi tiet LUON hien thi % hoan chinh xac.
+        // Neu trang thai don la Da nhan phong / Da tra phong -> tyLe = 0 (khong hoan),
+        // nhung van set 0 (khong de null) de template khong hien thi "-".
+        if (dp != null) {
+            // Đảm bảo hd.ngayYeuCauHoan đã có (đơn cũ có thể null) trước khi tính lại tỷ lệ
+            if (hd.getNgayYeuCauHoan() == null) {
+                hd.setNgayYeuCauHoan(LocalDateTime.now());
+            }
+            java.math.BigDecimal tyLeTinhLai = huyDonService.tinhTyLeHoan(dp, hd);
+            if (tyLeTinhLai != null) {
+                hd.setTyLeHoan(tyLeTinhLai);
+                java.math.BigDecimal daThu = hd.getDaThanhToan() == null
+                        ? java.math.BigDecimal.ZERO : hd.getDaThanhToan();
+                hd.setSoTienHoan(daThu.multiply(tyLeTinhLai).setScale(0, java.math.RoundingMode.HALF_UP));
+            }
+        }
+
         model.addAttribute("hoaDon", hd);
         model.addAttribute("datPhong", dp);
         model.addAttribute("lichSuGiaoDich", thanhToanService.findAllByHoaDonId(id));
         // Thời gian từ lúc tạo đơn đến hiện tại (hh:mm:ss hoặc "Qua han tao yeu cau huy")
         model.addAttribute("thoiGianXuLyHuy", huyDonService.tinhThoiGianXuLyYeuCauHuy(dp));
+        // Khoảng cách từ "ngày tạo yêu cầu hủy" đến ngày check-in (căn cứ tính % hoàn)
+        model.addAttribute("khoangCachNgayCheckIn", huyDonService.tinhKhoangCachNgayCheckIn(dp, hd));
+        model.addAttribute("moTaKhoangCachNgay", huyDonService.moTaKhoangCachNgayCheckIn(dp, hd));
         return "admin/hoan-tien-chi-tiet";
     }
 
@@ -167,6 +190,36 @@ public class AdminHoanTienController {
 
         huyDonService.tuChoiHoanTien(id, lyDo);
         ra.addFlashAttribute("success", "Da tu choi yeu cau hoan tien");
+        return "redirect:/nhan-su/admin/hoan-tien/chi-tiet/" + id;
+    }
+
+    /**
+     * Bước 2 (luồng hủy đơn không hoàn): NV/Admin xác nhận hủy đơn nhưng không hoàn tiền.
+     * Áp dụng khi tỷ lệ hoàn = 0% (khách hủy muộn theo rule) hoặc NV/Admin chọn không hoàn.
+     * Đơn chuyển "Da huy", hóa đơn cập nhật "Huy khong hoan" + số tiền hoàn = 0,
+     * hóa đơn vẫn được phép xuất PDF cho khách cầm về (minh bạch).
+     */
+    @PostMapping("/{id}/huy-khong-hoan")
+    public String huyKhongHoan(@PathVariable Integer id,
+                               @RequestParam(required = false) String lyDo,
+                               Authentication auth,
+                               RedirectAttributes ra) {
+
+        HoaDon hd = hoaDonService.findById(id);
+        if (hd == null) {
+            ra.addFlashAttribute("error", "Khong tim thay hoa don");
+            return "redirect:/nhan-su/admin/hoan-tien";
+        }
+
+        if (!"Cho xu ly".equals(hd.getTrangThaiHoanTien())) {
+            ra.addFlashAttribute("error", "Yeu cau nay da duoc xu ly truoc do, khong the thuc hien lai");
+            return "redirect:/nhan-su/admin/hoan-tien/chi-tiet/" + id;
+        }
+
+        NhanSu nvXuLy = nhanSuService.FindByemail(auth.getName());
+        huyDonService.xacNhanHuyKhongHoan(id, lyDo, nvXuLy);
+
+        ra.addFlashAttribute("success", "Da huy don khong hoan tien. Hoa don van duoc phep xuat PDF de khach can minh bach.");
         return "redirect:/nhan-su/admin/hoan-tien/chi-tiet/" + id;
     }
 }

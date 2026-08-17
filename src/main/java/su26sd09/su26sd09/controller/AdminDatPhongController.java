@@ -888,6 +888,10 @@ public class AdminDatPhongController {
                                   // Them dich vu (chon tu dropdown trong form check-in)
                                   @RequestParam(required = false) Integer maDichVuThem,
                                   @RequestParam(required = false, defaultValue = "1") Integer soLuongDichVuThem,
+                                  // CCCD per slot — input ten dang "cccd_<ctdpId>" tren trang check-in.
+                                  // Dung HttpServletRequest de doc tat ca param, tranh xung dot
+                                  // voi @RequestParam rieng tu cac field khac.
+                                  jakarta.servlet.http.HttpServletRequest request,
                                   RedirectAttributes redirectAttributes) {
 
         DatPhong dp = datPhongService.findById(id);
@@ -914,6 +918,31 @@ public class AdminDatPhongController {
         List<ChiTietDatPhong> chiTietDatPhongs =
                 chiTietDatPhongService.findByDatPhongId(id);
 
+        // ===== Cap nhat CCCD theo tung ChiTietDatPhong (check-in) =====
+        // Voi moi ChiTietDatPhong trong don, neu form co gui cccd_<ctdpId>=...
+        // thi cap nhat CCCD cua slot do. Khong co trong form = giu nguyen.
+        // Ap dung cho moi trang thai (Cho xac nhan / Da xac nhan / Da nhan phong)
+        // de nhan vien co the bo sung CCCD som khi lam thu tuc.
+        if (request != null && chiTietDatPhongs != null) {
+            Map<String, String[]> paramMap = request.getParameterMap();
+            String prefix = "cccd_";
+            for (ChiTietDatPhong ctdp : chiTietDatPhongs) {
+                if (ctdp == null) continue;
+                String key = prefix + ctdp.getId();
+                String[] vals = paramMap.get(key);
+                if (vals == null || vals.length == 0) continue;
+                String cccdMoi = vals[0];
+                if (cccdMoi == null) continue;
+                String cccdTrim = cccdMoi.trim();
+                // Cho phep rong (giu nguyen) hoac 12 chu so.
+                if (!cccdTrim.isEmpty() && !cccdTrim.matches("^[0-9]{12}$")) {
+                    continue; // validate client da chan, bo qua neu khong hop le
+                }
+                ctdp.setMa_cccd(cccdTrim.isEmpty() ? ctdp.getMa_cccd() : cccdTrim);
+                chiTietDatPhongService.save(ctdp);
+            }
+        }
+
         // Khi khách nhận phòng
         if ("Da nhan phong".equals(trangThai)) {
 
@@ -925,12 +954,12 @@ public class AdminDatPhongController {
                 phongService.save1(p);
             }
 
-            // Cong phu phi check-in tre (neu co) vao DUNG 1 ChiTietDatPhong
+            // Cong phu phi check-in SOM (neu co) vao DUNG 1 ChiTietDatPhong
             // (phong dau tien trong danh sach). Khong cong don / khong chia deu
             // — phu phi chi tinh 1 lan cho ca don, theo yeu cau cua user.
-            // GioKhachTaiQuay duoc submit cung form, nhung hien tai chi dung de
-            // backend validate nguong (se su dung o luong sau). Phu phi da duoc
-            // template tinh san va gui qua hidden input phuPhiTre.
+            // Moi luat moi: KHONG tinh phu phi khi khach den tre;
+            // chi tinh phu phi khi khach den SOM >= 30 phut (template da tinh san
+            // va gui qua hidden input phuPhiTre).
             if (phuPhiTre != null && phuPhiTre.signum() > 0 && !chiTietDatPhongs.isEmpty()) {
                 ChiTietDatPhong first = chiTietDatPhongs.get(0);
                 BigDecimal current = first.getPhuPhi() == null ? BigDecimal.ZERO : first.getPhuPhi();
@@ -1521,13 +1550,17 @@ public class AdminDatPhongController {
         List<ChiTietDatPhong> phongList = chiTietDatPhongService.findByDatPhongId(id);
         List<Chi_tiet_dich_vu> dichVuList = chiTietDichVuService.findByDatPhongId(id);
 
-        // Phu phi tra muon: cong don calculateExtraFeeFor cho tung phong (theo thoi gian hien tai)
+        // Phụ phí trả muộn (chỉ tính khi KH trả SAU giờ đã đặt — trả đúng giờ
+        // hoặc sớm hơn thì 0 phí, kể cả trong khung giờ lớn hơn 11:00).
         BigDecimal phuPhiTraMuon = BigDecimal.ZERO;
         LocalDateTime gioTraHienTai = LocalDateTime.now();
         for (ChiTietDatPhong ct : phongList) {
             if (ct != null && ct.getP() != null) {
-                BigDecimal fee = phongService.calculateExtraFeeFor(
-                        ct.getP().getMaPhong(), dp.getNgaydatPhong(), gioTraHienTai);
+                BigDecimal fee = phongService.calculateLateCheckoutFeeFor(
+                        ct.getP().getMaPhong(),
+                        dp.getNgaydatPhong(),
+                        dp.getNgaytraPhong(),
+                        gioTraHienTai);
                 if (fee != null && fee.signum() > 0) {
                     phuPhiTraMuon = phuPhiTraMuon.add(fee);
                 }

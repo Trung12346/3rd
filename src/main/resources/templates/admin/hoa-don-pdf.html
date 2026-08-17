@@ -419,9 +419,9 @@
         </p>
     </section>
 
-    <!-- ===== LICH SU HOAN TIEN (chi hien thi khi don da huy) ===== -->
-    <section class="admin-panel" th:if="${hoaDon.d != null and hoaDon.d.trangThai == 'Da huy' and hoanTienList != null and !hoanTienList.isEmpty()}">
-        <h2>↩ Lịch Sử Hoàn Tiền</h2>
+    <!-- ===== THONG TIN HOAN TIEN (hien thi khi don da huy) ===== -->
+    <section class="admin-panel" th:if="${hoaDon.d != null and hoaDon.d.trangThai == 'Da huy'}">
+        <h2>↩ Thông Tin Hoàn Tiền</h2>
 
         <div class="info-grid cols-2" style="margin-bottom:14px;">
             <div class="info-grid-row">
@@ -449,7 +449,8 @@
             </div>
         </div>
 
-        <div class="admin-table-wrap">
+        <!-- Bảng chi tiết giao dịch hoàn (chỉ hiển thị nếu có) -->
+        <div class="admin-table-wrap" th:if="${hoanTienList != null and !hoanTienList.isEmpty()}">
             <table class="admin-table">
                 <thead>
                 <tr>

@@ -6,9 +6,13 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+
+import jakarta.servlet.http.HttpServletRequest;
+import su26sd09.su26sd09.entity.DatPhong;
 import su26sd09.su26sd09.entity.LoaiPhong;
 import su26sd09.su26sd09.entity.Phong;
 import su26sd09.su26sd09.repository.KhachHangRepository;
+import su26sd09.su26sd09.service.BookingDraftService;
 import su26sd09.su26sd09.service.CustomerUserDetailsService;
 import su26sd09.su26sd09.service.PhongService;
 
@@ -31,9 +35,13 @@ public class Home {
     @Autowired
     private PhongService phongService;
 
+    @Autowired
+    private BookingDraftService bookingDraftService;
+
     @GetMapping("")
-    public String home(Model model) {
+    public String home(Model model, HttpServletRequest request) {
         loadHomeData(model);
+        attachBookingDraftBanner(model, request);
         return "index";
     }
 
@@ -43,9 +51,11 @@ public class Home {
             @RequestParam(name = "tenLoaiPhong", required = false) String tenLoaiPhong,
             @RequestParam(name = "minGia", required = false) BigDecimal minGia,
             @RequestParam(name = "maxGia", required = false) BigDecimal maxGia,
-            Model model
+            Model model,
+            HttpServletRequest request
     ) {
         loadHomeData(model);
+        attachBookingDraftBanner(model, request);
         model.addAttribute("tenPhong", tenPhong);
         model.addAttribute("tenLoaiPhong", tenLoaiPhong);
         model.addAttribute("minGia", minGia);
@@ -121,6 +131,25 @@ public class Home {
 
     private boolean containsNormalized(String value, String keyword) {
         return value != null && normalize(value).contains(keyword);
+    }
+
+    /**
+     * Truyền thông tin đơn đang dở (khách vãng lai) vào model để hiển thị banner
+     * trên trang chủ / các trang tìm kiếm.
+     * Đọc COOKIE GUEST_BOOKING_DRAFT (sống ở trình duyệt, không mất khi restart
+     * server) — validate bằng cách truy vấn DB bên trong BookingDraftService.peek().
+     */
+    private void attachBookingDraftBanner(Model model, HttpServletRequest request) {
+        if (request == null) {
+            return;
+        }
+        DatPhong draft = bookingDraftService.peek(request);
+        if (draft == null) {
+            return;
+        }
+        String step = bookingDraftService.currentStep(draft);
+        model.addAttribute("bookingDraft", draft);
+        model.addAttribute("bookingDraftStep", step);
     }
 
     private String normalize(String value) {

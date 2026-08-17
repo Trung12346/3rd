@@ -19,6 +19,7 @@
         .refund-badge.cho-xu-ly { background: #FEF3C7; color: #92400E; border: 1px solid #F59E0B; }
         .refund-badge.da-hoan   { background: #DCFCE7; color: #166534; border: 1px solid #22C55E; }
         .refund-badge.tu-choi   { background: #FEE2E2; color: #991B1B; border: 1px solid #EF4444; }
+        .refund-badge.huy-khong-hoan { background: #E0E7FF; color: #3730A3; border: 1px solid #6366F1; }
 
         .refund-summary {
             background: #f5fbfe;
@@ -232,7 +233,20 @@
             </div>
             <div class="refund-row">
                 <span>Tỷ lệ hoàn áp dụng</span>
-                <span th:text="${hoaDon.tyLeHoan != null ? #numbers.formatDecimal(hoaDon.tyLeHoan.multiply(T(java.math.BigDecimal).valueOf(100L)),0,'COMMA',0,'POINT') + '%' : '-'}"></span>
+                <span>
+                    <strong th:text="${hoaDon.tyLeHoan != null
+                        ? #numbers.formatDecimal(hoaDon.tyLeHoan.multiply(T(java.math.BigDecimal).valueOf(100L)),0,'COMMA',0,'POINT') + '%'
+                        : '0%'}">0%</strong>
+                </span>
+            </div>
+            <div class="refund-row">
+                <span>Khoảng cách đến check-in</span>
+                <span>
+                    <span th:text="${moTaKhoangCachNgay != null ? moTaKhoangCachNgay : '-'}">-</span>
+                    <small th:if="${khoangCachNgayCheckIn != null}"
+                           style="color:#85837A; margin-left:6px;"
+                           th:text="'(' + ${khoangCachNgayCheckIn} + ' ngày)'">(0 ngày)</small>
+                </span>
             </div>
             <div class="refund-row">
                 <span>Ngày yêu cầu hủy</span>
@@ -243,9 +257,11 @@
                 <span>
                     <span class="refund-badge"
                           th:classappend="${hoaDon.trangThaiHoanTien == 'Cho xu ly' ? 'cho-xu-ly' :
-                                            (hoaDon.trangThaiHoanTien == 'Da hoan' ? 'da-hoan' : 'tu-choi')}"
+                                            (hoaDon.trangThaiHoanTien == 'Da hoan' ? 'da-hoan' :
+                                            (hoaDon.trangThaiHoanTien == 'Huy khong hoan' ? 'huy-khong-hoan' : 'tu-choi'))}"
                           th:text="${hoaDon.trangThaiHoanTien == 'Cho xu ly' ? 'Chờ xử lý' :
-                                     (hoaDon.trangThaiHoanTien == 'Da hoan' ? 'Đã hoàn' : 'Từ chối')}">
+                                     (hoaDon.trangThaiHoanTien == 'Da hoan' ? 'Đã hoàn' :
+                                     (hoaDon.trangThaiHoanTien == 'Huy khong hoan' ? 'Hủy không hoàn' : 'Từ chối'))}">
                     </span>
                 </span>
             </div>
@@ -393,6 +409,29 @@
                 <button type="submit" class="admin-btn outline"><i class="fa-solid fa-ban"></i> Từ Chối Yêu Cầu</button>
             </div>
         </form>
+
+        <!-- ===== FORM HỦY ĐƠN KHÔNG HOÀN - chỉ hiển thị khi tỷ lệ hoàn = 0% =====
+             Dùng khi khách vẫn muốn hủy đơn dù không được hoàn tiền.
+             Đơn chuyển "Da huy", phòng về "Trong", hóa đơn cập nhật "Huy khong hoan",
+             hóa đơn vẫn được phép xuất PDF (minh bạch, số tiền hoàn = 0). -->
+        <div th:if="${hoaDon.tyLeHoan != null and hoaDon.tyLeHoan.signum() == 0}"
+             style="margin-top: 24px;">
+            <form th:action="@{/nhan-su/hoan-tien/{id}/huy-khong-hoan(id=${hoaDon.id})}" method="post"
+                  onsubmit="return confirm(this.dataset.msg);" th:attr="data-msg=|Xác nhận HỦY ĐƠN và KHÔNG HOÀN TIỀN? \n\n Đơn sẽ chuyển sang Đã hủy, phòng sẽ được nhả về trạng thái trống. Hóa đơn vẫn được xuất PDF cho khách cầm về (số tiền hoàn = 0 VND).|">
+                <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                <div class="admin-grid">
+                    <div class="admin-field full">
+                        <label>Lý do hủy đơn không hoàn</label>
+                        <textarea name="lyDo" placeholder="VD: Khách hủy muộn theo chính sách - tỷ lệ hoàn 0%. Khách đồng ý hủy không hoàn."></textarea>
+                    </div>
+                </div>
+                <div class="admin-actions">
+                    <button type="submit" class="admin-btn" style="background:#dc2626;">
+                        <i class="fa-solid fa-circle-xmark"></i> Xác Nhận Hủy Đơn Không Hoàn
+                    </button>
+                </div>
+            </form>
+        </div>
     </section>
 
     <section class="admin-panel" th:if="${hoaDon.trangThaiHoanTien != 'Cho xu ly'}">
@@ -400,6 +439,12 @@
             <i class="fa-regular fa-circle-check" style="margin-right:6px;"></i>
             Yêu cầu hoàn tiền này đã được xử lý, không thể chỉnh sửa thêm.
         </p>
+        <div style="margin-top:14px;">
+            <a th:href="@{/nhan-su/admin/hoa-don/xuat-pdf/{id}(id=${hoaDon.id})}"
+               class="admin-btn" onclick="xuatPdfVaMoTab(this, event)">
+                <i class="fa-solid fa-file-pdf"></i> Xuất Hóa Đơn PDF (số tiền hoàn = 0 VND)
+            </a>
+        </div>
     </section>
 </main>
 

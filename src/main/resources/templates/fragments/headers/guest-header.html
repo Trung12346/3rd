@@ -32,10 +32,144 @@
         </nav>
 
         <div class="hb-actions" aria-label="Guest account actions">
+            <!-- Chuông + popup "đơn đặt phòng đang dở" cho khách vãng lai -->
+            <div class="hb-bell-wrap" id="hbBellWrap"
+                 th:if="${bookingDraft != null}"
+                 th:attr="data-step=${bookingDraftStep},data-mode=${bookingDraftMode}">
+                <button type="button" class="hb-bell-btn"
+                        id="hbBellBtn"
+                        aria-label="Đơn đặt phòng đang xử lý"
+                        aria-expanded="false"
+                        aria-controls="hbBellPopover">
+                    <i class="fa-solid fa-bell"></i>
+                    <span class="hb-bell-badge">1</span>
+                </button>
+                <div class="hb-bell-popover" id="hbBellPopover" role="dialog" aria-label="Thông tin đơn đang dở">
+                    <!-- ====== Trường hợp A: đơn vừa gửi yêu cầu, NV chưa xét ("Yeu cau dat phong") ====== -->
+                    <div th:if="${bookingDraftMode == 'pending'}">
+                        <div class="hb-bell-popover-title hb-bell-popover-success">
+                            <i class="fa-solid fa-circle-check"></i>
+                            <span>Đã gửi yêu cầu đặt phòng thành công!</span>
+                        </div>
+                        <div class="hb-bell-popover-step">
+                            Yêu cầu đặt phòng của bạn đã được ghi nhận. Nhân viên lễ tân sẽ xét duyệt và phản hồi trong ít phút. Vui lòng theo dõi email hoặc tra cứu đơn bằng mã dưới đây.
+                        </div>
+                        <div class="hb-bell-popover-meta">
+                            <div>Mã đơn: <strong>#<span th:text="${bookingDraft.id}">0</span></strong></div>
+                            <div th:if="${bookingDraft.maTraCuu != null and !bookingDraft.maTraCuu.isBlank()}">
+                                Mã tra cứu: <strong th:text="${bookingDraft.maTraCuu}">XXXXXX</strong>
+                            </div>
+                            <div>
+                                Nhận phòng <strong th:text="${bookingDraft.ngaydatPhong != null ? #temporals.format(bookingDraft.ngaydatPhong, 'dd/MM/yyyy HH:mm') : '-'}">-</strong>
+                                · Trả phòng <strong th:text="${bookingDraft.ngaytraPhong != null ? #temporals.format(bookingDraft.ngaytraPhong, 'dd/MM/yyyy') : '-'}">-</strong>
+                            </div>
+                        </div>
+                        <div class="hb-bell-popover-actions">
+                            <a th:href="@{/tra-cuu-don}" class="hb-bell-dismiss">
+                                <i class="fa-solid fa-magnifying-glass"></i> Tra cứu đơn
+                            </a>
+                            <button type="button" class="hb-bell-go" id="hbBellDismissPending">
+                                <i class="fa-solid fa-check"></i> Đã hiểu
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- ====== Trường hợp B: đơn đang dở ("Chua thanh toan") ====== -->
+                    <div th:if="${bookingDraftMode == 'draft'}">
+                        <div class="hb-bell-popover-title">
+                            <i class="fa-solid fa-clock-rotate-left"></i>
+                            <span>Bạn có đơn đặt phòng đang dở #<span th:text="${bookingDraft.id}">0</span></span>
+                        </div>
+                        <div class="hb-bell-popover-step"
+                             th:if="${bookingDraftStep == 'xac-nhan'}">
+                            Bước hiện tại: <strong>chọn dịch vụ bổ sung</strong>.
+                        </div>
+                        <div class="hb-bell-popover-step"
+                             th:if="${bookingDraftStep == 'thanh-toan'}">
+                            Bước hiện tại: <strong>hoàn tất thông tin khách &amp; thanh toán</strong>.
+                        </div>
+                        <div class="hb-bell-popover-meta">
+                            <div>
+                                Nhận phòng <strong th:text="${bookingDraft.ngaydatPhong != null ? #temporals.format(bookingDraft.ngaydatPhong, 'dd/MM/yyyy HH:mm') : '-'}">-</strong>
+                                · Trả phòng <strong th:text="${bookingDraft.ngaytraPhong != null ? #temporals.format(bookingDraft.ngaytraPhong, 'dd/MM/yyyy') : '-'}">-</strong>
+                            </div>
+                            <div th:if="${bookingDraft.maTraCuu != null and !bookingDraft.maTraCuu.isBlank()}">
+                                Mã tra cứu: <strong th:text="${bookingDraft.maTraCuu}">XXXXXX</strong>
+                            </div>
+                        </div>
+                        <div class="hb-bell-popover-actions">
+                            <button type="button" class="hb-bell-dismiss" id="hbBellDismiss">Để sau</button>
+                            <a th:href="@{/phong/dat-phong/tiep-tuc-dat/{id}(id=${bookingDraft.id})}" class="hb-bell-go">
+                                <i class="fa-solid fa-rotate-right"></i> Tiếp tục đặt
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- ====== Trường hợp C: NV đã xét duyệt ("Cho xac nhan"), KH có thể tiếp tục thanh toán ====== -->
+                    <div th:if="${bookingDraftMode == 'approved'}">
+                        <div class="hb-bell-popover-title hb-bell-popover-success">
+                            <i class="fa-solid fa-thumbs-up"></i>
+                            <span>Nhân viên đã xét duyệt đơn #<span th:text="${bookingDraft.id}">0</span>!</span>
+                        </div>
+                        <div class="hb-bell-popover-step">
+                            Yêu cầu đặt phòng của bạn được nhân viên chấp nhận. Bạn có thể tiếp tục thanh toán để hoàn tất đặt phòng.
+                        </div>
+                        <div class="hb-bell-popover-meta">
+                            <div th:if="${bookingDraft.maTraCuu != null and !bookingDraft.maTraCuu.isBlank()}">
+                                Mã tra cứu: <strong th:text="${bookingDraft.maTraCuu}">XXXXXX</strong>
+                            </div>
+                            <div>
+                                Nhận phòng <strong th:text="${bookingDraft.ngaydatPhong != null ? #temporals.format(bookingDraft.ngaydatPhong, 'dd/MM/yyyy HH:mm') : '-'}">-</strong>
+                                · Trả phòng <strong th:text="${bookingDraft.ngaytraPhong != null ? #temporals.format(bookingDraft.ngaytraPhong, 'dd/MM/yyyy') : '-'}">-</strong>
+                            </div>
+                        </div>
+                        <div class="hb-bell-popover-actions">
+                            <a th:href="@{/tra-cuu-don}" class="hb-bell-dismiss">
+                                <i class="fa-solid fa-magnifying-glass"></i> Tra cứu
+                            </a>
+                            <a th:href="@{/thanh-toan/dat-phong/{id}(id=${bookingDraft.id})}" class="hb-bell-go">
+                                <i class="fa-solid fa-credit-card"></i> Thanh toán ngay
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <a th:href="@{/Login}" class="hb-auth-button outline">Đăng nhập</a>
             <a th:href="@{/Register}" class="hb-auth-button filled">Đăng ký</a>
         </div>
     </header>
+
+    <script>
+        (function () {
+            var wrap = document.getElementById('hbBellWrap');
+            var btn  = document.getElementById('hbBellBtn');
+            if (!wrap || !btn) return;
+
+            function open()  { wrap.classList.add('open');    btn.setAttribute('aria-expanded', 'true');  }
+            function close() { wrap.classList.remove('open'); btn.setAttribute('aria-expanded', 'false'); }
+
+            btn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                if (wrap.classList.contains('open')) close(); else open();
+            });
+
+            // Nút "Để sau" / "Đã hiểu" (chỉ có ở 1 trong 3 nhánh, nhưng cả 2 đều đóng popup)
+            var dismiss1 = document.getElementById('hbBellDismiss');
+            var dismiss2 = document.getElementById('hbBellDismissPending');
+            if (dismiss1) dismiss1.addEventListener('click', function (e) { e.stopPropagation(); close(); });
+            if (dismiss2) dismiss2.addEventListener('click', function (e) { e.stopPropagation(); close(); });
+
+            // Đóng khi click ra ngoài
+            document.addEventListener('click', function (e) {
+                if (!wrap.contains(e.target)) close();
+            });
+            // Đóng bằng phím ESC
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') close();
+            });
+        })();
+    </script>
 </div>
 </body>
 </html>

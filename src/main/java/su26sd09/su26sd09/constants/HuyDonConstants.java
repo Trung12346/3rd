@@ -8,6 +8,11 @@ public class HuyDonConstants {
     public static final String TT_HOAN_CHO_XU_LY = "Cho xu ly";
     public static final String TT_HOAN_DA_HOAN   = "Da hoan";
     public static final String TT_HOAN_TU_CHOI   = "Tu choi";
+    // Trạng thái hóa đơn khi NV/Admin xác nhận hủy đơn nhưng KHÔNG hoàn tiền
+    // (vì tỷ lệ hoàn = 0% theo rule, hoặc NV/Admin chọn hủy không hoàn).
+    // Đơn vẫn chuyển sang "Da huy", hóa đơn vẫn được phép xuất PDF để khách cầm về,
+    // số tiền hoàn = 0 VND, lý do hủy được lưu vào ghiChu hóa đơn.
+    public static final String TT_HOAN_HUY_KHONG_HOAN = "Huy khong hoan";
 
     public static final String LOAI_GD_THU  = "Thu tien";
     public static final String LOAI_GD_HOAN = "Hoan tien";

@@ -10,6 +10,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import su26sd09.su26sd09.dto.KhoangNgayBiKhoaDTO;
 import su26sd09.su26sd09.dto.RoomBookingGuardDTO;
 import su26sd09.su26sd09.entity.ChiTietDatPhong;
@@ -17,6 +20,7 @@ import su26sd09.su26sd09.entity.DatPhong;
 import su26sd09.su26sd09.entity.KhachHang;
 import su26sd09.su26sd09.entity.Phong;
 import su26sd09.su26sd09.repository.PhongRepository;
+import su26sd09.su26sd09.service.BookingDraftService;
 import su26sd09.su26sd09.service.ChiTietDatPhongService;
 import su26sd09.su26sd09.service.DatPhongService;
 import su26sd09.su26sd09.service.NguoiDungService;
@@ -50,6 +54,9 @@ public class GioHangController {
     @Autowired
     NguoiDungService nguoiDungService;
 
+    @Autowired
+    BookingDraftService bookingDraftService;
+
     @GetMapping("")
     public String GetDanhSachPhong(){
         return "gio-hang";
@@ -65,7 +72,9 @@ public class GioHangController {
             @RequestParam(value = "ma_cccd",required = false) String ma_cccd,
             @RequestParam Map<String,String> allParamsCCCD,
             RedirectAttributes redirectAttributes,
-            Authentication authentication
+            Authentication authentication,
+            HttpServletRequest request,
+            HttpServletResponse response
     ) {
         if (roomIds == null || roomIds.isEmpty()) {
             redirectAttributes.addFlashAttribute("bookingError", "Gio hang dang trong. Vui long chon phong truoc khi dat.");
@@ -207,6 +216,14 @@ public class GioHangController {
                 chiTietDatPhongService.save(chiTietDatPhong);
             }
         }
+
+        // ===== Ghi nhớ vào COOKIE để phục hồi luồng khi khách vãng lai mất mạng.
+        // Cookie sống ở trình duyệt nên KHÔNG bị mất khi server restart. =====
+        if (datPhong.getN() == null) {
+            // Chỉ ghi nhớ khi đơn thuộc khách vãng lai (chưa gắn user)
+            bookingDraftService.remember(request, response, datPhong.getId());
+        }
+
         return "redirect:/phong/dat-phong/xac-nhan/" + datPhong.getId();
     }
 
@@ -269,11 +286,14 @@ public class GioHangController {
             return BigDecimal.ZERO;
         }
 
+        // ===== Chính sách mới: KHÔNG tính phụ phí cho check-in muộn hoặc check-out sớm.
+        // Chỉ tính phụ phí khi check-in QUÁ SỚM (trước giờ nhận tối thiểu) hoặc
+        // check-out QUÁ TRỄ (sau giờ trả tối đa).
         LocalTime gioNhan = ngayNhan.toLocalTime();
         LocalTime gioTra = ngayTra.toLocalTime();
-        boolean ngoaiGioNhan = gioNhan.isBefore(guard.getGioNhanToiThieu()) || gioNhan.isAfter(guard.getGioNhanToiDa());
-        boolean ngoaiGioTra = gioTra.isAfter(guard.getGioTraToiDa());
-        return (ngoaiGioNhan || ngoaiGioTra) ? guard.getPhuPhiNgoaiGioVND() : BigDecimal.ZERO;
+        boolean nhanQuaSom = gioNhan.isBefore(guard.getGioNhanToiThieu());
+        boolean traQuaTre = gioTra.isAfter(guard.getGioTraToiDa());
+        return (nhanQuaSom || traQuaTre) ? guard.getPhuPhiNgoaiGioVND() : BigDecimal.ZERO;
     }
 
     private boolean isNhanVienOrAdmin(Authentication authentication) {
