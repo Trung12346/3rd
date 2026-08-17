@@ -24,6 +24,7 @@ import su26sd09.su26sd09.entity.LoaiPhong;
 import su26sd09.su26sd09.entity.Phong;
 import su26sd09.su26sd09.entity.PhongAnh;
 import su26sd09.su26sd09.repository.PhongAnhRepository;
+import su26sd09.su26sd09.service.BookingDraftService;
 import su26sd09.su26sd09.service.BookingEmailService;
 import su26sd09.su26sd09.service.DanhGiaService;
 import su26sd09.su26sd09.service.DatPhongService;
@@ -66,6 +67,9 @@ public class LoaiPhongController {
 
     @Autowired
     private BookingEmailService bookingEmailService;
+
+    @Autowired
+    private BookingDraftService bookingDraftService;
 
     @Autowired
     private DanhGiaService danhGiaService;
@@ -287,7 +291,9 @@ public class LoaiPhongController {
             @RequestParam(name = "treEm", required = false) String treEmStr,
             @RequestParam(name = "mucGia", required = false) String mucGia,
             @RequestParam(name = "maCccd") String maCccdStr,
-            RedirectAttributes redirectAttributes
+            RedirectAttributes redirectAttributes,
+            jakarta.servlet.http.HttpServletRequest request,
+            jakarta.servlet.http.HttpServletResponse response
     ) {
         Integer nguoiLon = parseIntOrNull(nguoiLonStr);
         Integer treEm = parseIntOrNull(treEmStr);
@@ -363,6 +369,12 @@ public class LoaiPhongController {
             } catch (Exception ex) {
                 // Khong block luong dat phong neu gui mail loi
                 ex.printStackTrace();
+            }
+
+            // ===== Ghi nhớ đơn đang dở vào COOKIE cho khách vãng lai (sống 30 ngày
+            // ở trình duyệt, không bị mất khi restart server) =====
+            if (datPhong.getN() == null) {
+                bookingDraftService.remember(request, response, datPhong.getId());
             }
 
             return "redirect:/phong/dat-phong/xac-nhan/" + datPhong.getId();

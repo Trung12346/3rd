@@ -12,6 +12,8 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import su26sd09.su26sd09.dto.RoomBookingGuardDTO;
 import su26sd09.su26sd09.entity.*;
 import su26sd09.su26sd09.repository.PhongAnhRepository;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import su26sd09.su26sd09.service.*;
 
 import java.math.BigDecimal;
@@ -58,6 +60,9 @@ public class PhongController {
 
     @Autowired
     private PhongAnhRepository phongAnhRepository;
+
+    @Autowired
+    private BookingDraftService bookingDraftService;
 
     @GetMapping
     public String index(Model model) {
@@ -229,7 +234,9 @@ public class PhongController {
                             @RequestParam(value = "dichVuIds", required = false) List<Integer> dichvuid,
                             @RequestParam(value = "maKhuyenMai", required = false) Integer maKhuyenMai,
                             @RequestParam Map<String, String> allParams,
-                            RedirectAttributes redirectAttributes) {
+                            RedirectAttributes redirectAttributes,
+                            HttpServletRequest request,
+                            HttpServletResponse response) {
 
         DatPhong dp = datphongservice.findById(id);
         if (dp == null) {
@@ -312,8 +319,49 @@ public class PhongController {
             datphongservice.save(dp);
             return "redirect:/thanh-toan/dat-phong/"+dp.getId();
         }else{
+            // Cập nhật COOKIE: sau khi đã qua bước DV, đơn vãng lai vẫn đang dở.
+            // Cookie sống ở trình duyệt nên không bị mất khi server restart.
+            if (dp.getN() == null) {
+                bookingDraftService.remember(request, response, dp.getId());
+            }
             return "redirect:/phong/dat-phong/thong-tin-khach/"+dp.getId();
         }
+    }
+
+    /**
+     * Phục hồi luồng đặt phòng cho khách VÃNG LAI (không có tài khoản).
+     *
+     * Khác với UserProfilesController.tiepTucDatPhong (cần đăng nhập + quyền sở hữu),
+     * endpoint này dựa vào COOKIE GUEST_BOOKING_DRAFT do GioHangController
+     * và PhongController.ConfirmDV ghi nhớ sau khi tạo đơn / qua bước DV.
+     * Cookie sống ở trình duyệt nên KHÔNG bị mất khi server restart.
+     */
+    @GetMapping("/dat-phong/tiep-tuc-dat/{id}")
+    public String tiepTucDatPhongVangLai(@PathVariable int id,
+                                         HttpServletRequest request,
+                                         HttpServletResponse response,
+                                         RedirectAttributes redirectAttributes) {
+        DatPhong dp = bookingDraftService.peek(request);
+        if (dp == null || dp.getId() != id) {
+            redirectAttributes.addFlashAttribute("bookingError",
+                    "Đơn đặt phòng này không thuộc trình duyệt của bạn hoặc đã hết hạn. Vui lòng đặt lại từ đầu.");
+            bookingDraftService.consume(request, response);
+
+            return "redirect:/phong";
+        }
+
+        // Xác định bước đang dở
+        List<Chi_tiet_dich_vu> dsDv = ctdvService.findByDatPhongId(id);
+        if (dsDv == null || dsDv.isEmpty()) {
+            // Chưa qua bước chọn DV -> quay lại trang xác nhận
+            redirectAttributes.addFlashAttribute("thongBao",
+                    "Tiếp tục đặt phòng: bạn có thể chọn dịch vụ bổ sung hoặc bỏ qua và đi tới bước thanh toán.");
+            return "redirect:/phong/dat-phong/xac-nhan/" + id;
+        }
+        // Đã chọn DV -> đưa thẳng về trang thông tin khách (vãng lai) -> thanh toán
+        redirectAttributes.addFlashAttribute("thongBao",
+                "Tiếp tục đặt phòng: vui lòng hoàn tất thông tin khách và thanh toán.");
+        return "redirect:/phong/dat-phong/thong-tin-khach/" + id;
     }
 
     @GetMapping("/dat-phong/thong-tin-khach/{id}")
@@ -466,7 +514,9 @@ public class PhongController {
                                       @RequestParam("sdt")String sodienthoai,
 
                                       @RequestParam("yeuCauThem") String yeucauthem,
-                                      Authentication authentication) {
+                                      Authentication authentication,
+                                      HttpServletRequest request,
+                                      HttpServletResponse response) {
             BigDecimal amount = BigDecimal.ZERO;
             BigDecimal amountdv = BigDecimal.ZERO;
             DatPhong dp = datphongservice.findById(id);
@@ -518,6 +568,12 @@ public class PhongController {
 
             datphongservice.save(dp);
 
+            // Khách vãng lai đã hoàn tất thông tin -> xóa COOKIE draft
+            // (vì đơn gi� đã được gắn hoten/email/sdt, không còn ở trạng thái "dở")
+            // Khách vãng lai đã hoàn tất thông tin -> xóa COOKIE draft
+            // (vì đơn đã được gắn hoten/email/sdt, không còn ở trạng thái "dở")
+            bookingDraftService.consume(request, response);
+
             return "redirect:/thanh-toan/dat-phong/"+dp.getId();
     }
     @PostMapping("/dat-phong/quick")
@@ -531,7 +587,9 @@ public class PhongController {
                                @RequestParam(required = false) String yeuCauThem,
                                @RequestParam(required = false) String ma_cccd,
                                Authentication authentication,
-                               RedirectAttributes redirectAttributes) {
+                               RedirectAttributes redirectAttributes,
+                               HttpServletRequest request,
+                               HttpServletResponse response) {
         System.out.println("vao Controller");
         Phong phong = phongService.findById(maPhong);
         RoomBookingGuardDTO guard = phong != null ? phongService.buildRoomGuardFor(maPhong) : null;
@@ -601,6 +659,11 @@ public class PhongController {
         ctdp.setPhuPhi(phuPhiNgoaiGio);
         chiTietDatPhongService.save(ctdp);
 
+        // ===== Ghi nhớ vào COOKIE cho khách vãng lai (không bị mất khi restart server) =====
+        if (savedDp.getN() == null) {
+            bookingDraftService.remember(request, response, savedDp.getId());
+        }
+
         return "redirect:/phong/dat-phong/xac-nhan/" + savedDp.getId();
     }
 
@@ -662,11 +725,15 @@ public class PhongController {
             return BigDecimal.ZERO;
         }
 
+        // ===== Chính sách mới: KHÔNG tính phụ phí cho check-in muộn hoặc check-out sớm.
+        // Chỉ tính phụ phí khi check-in QUÁ SỚM (trước giờ nhận tối thiểu) hoặc
+        // check-out QUÁ TRỄ (sau giờ trả tối đa). Hai trường hợp này ảnh hưởng
+        // đến vận hành phòng (phòng chưa sẵn sàng / khách ở lại quá lâu).
         LocalTime gioNhan = ngayNhan.toLocalTime();
         LocalTime gioTra = ngayTra.toLocalTime();
-        boolean ngoaiGioNhan = gioNhan.isBefore(guard.getGioNhanToiThieu()) || gioNhan.isAfter(guard.getGioNhanToiDa());
-        boolean ngoaiGioTra = gioTra.isAfter(guard.getGioTraToiDa());
-        return (ngoaiGioNhan || ngoaiGioTra) ? guard.getPhuPhiNgoaiGioVND() : BigDecimal.ZERO;
+        boolean nhanQuaSom = gioNhan.isBefore(guard.getGioNhanToiThieu());
+        boolean traQuaTre = gioTra.isAfter(guard.getGioTraToiDa());
+        return (nhanQuaSom || traQuaTre) ? guard.getPhuPhiNgoaiGioVND() : BigDecimal.ZERO;
     }
     private String buildLockedRangesJson(RoomBookingGuardDTO guard) {
         List<su26sd09.su26sd09.dto.KhoangNgayBiKhoaDTO> list =

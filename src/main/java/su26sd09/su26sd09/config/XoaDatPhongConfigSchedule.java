@@ -52,7 +52,7 @@ public class XoaDatPhongConfigSchedule {
             chiTietDatPhongService.deleteByDatPhongId(dp.getId());
             datPhongService.delete(dp);
 
-            System.out.println("Da xoa don rac ma dat phong: " + dp.getId());
+            System.out.println  ("Da xoa don rac ma dat phong: " + dp.getId());
 
         }
         if (!DonQuaHan.isEmpty()) {

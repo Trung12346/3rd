@@ -1423,8 +1423,8 @@
                                  laTre=${diff != null and diff.toMillis() > 0},
                                  laSom=${diff != null and diff.toMillis() < 0},
                                  somQuaMuc=${diff != null and diff.toMillis() < 0 and diff.abs().toMinutes() > 60},
-                                 treQua60Phut=${diff != null and diff.toMillis() > 0 and diff.toMinutes() >= 60},
-                                 phuPhiTre=${diff != null and diff.toMillis() > 0 and diff.toMinutes() >= 60 ? 100000 : 0},
+                                 somQua30Phut=${diff != null and diff.toMillis() < 0 and diff.abs().toMinutes() >= 30},
+                                 phuPhiTre=${somQua30Phut ? 100000 : 0},
                                  trangThaiChenhLech=${duKien == null ? 'khong-ro'
                                                    : (diff.isZero() ? 'dung-gio'
                                                    : (laTre ? 'tre'
@@ -1476,14 +1476,16 @@
                             </div>
                         </div>
 
-                        <!-- Cảnh báo check-in trễ & hiển thị phụ phí 100k VND -->
-                        <div th:if="${treQua60Phut}" class="alert alert-warning" style="margin-top: 16px;">
+                        <!-- Cảnh báo check-in sớm ≥ 30 phút & hiển thị phụ phí 100k VND.
+                             Luat moi: KHONG tinh phu phi khi den tre, chi tinh khi den SOM >= 30 phut. -->
+                        <div th:if="${somQua30Phut}" class="alert alert-warning" style="margin-top: 16px;">
                             <i class="ti ti-alert-triangle"></i>
                             <div>
-                                <strong>Khách đến trễ ≥ 1 giờ</strong>
+                                <strong>Khách đến sớm ≥ 30 phút</strong>
                                 (<span th:text="${labelChenhLech}"></span>).
-                                Phụ phí check-in trễ: <strong>100.000 VND</strong>
-                                — sẽ được cộng vào hóa đơn (tính 1 lần cho cả đơn).
+                                Phụ phí check-in sớm: <strong>100.000 VND</strong>
+                                — sẽ được cộng vào hóa đơn (tính 1 lần cho cả đơn).<br>
+                                <em>Lưu ý: khách đến trễ không phát sinh phụ phí.</em>
                             </div>
                         </div>
 
@@ -2290,7 +2292,8 @@
         }
 
         form.querySelectorAll('.room-slot').forEach(function (slot) {
-            var cccdInput = slot.querySelector('.cccd-input');
+            // Chi validate CCCD chinh (cccd_<ctdpId>) - bo qua CCCD trong panel doi phong (newcccd_)
+            var cccdInput = slot.querySelector('.cccd-block .cccd-input');
             if (cccdInput) {
                 if (!laCccdHopLe(cccdInput.value)) {
                     marcarLoi(cccdInput.closest('.room-slot'));

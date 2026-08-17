@@ -236,9 +236,9 @@
         </div>
     </section>
 
-    <!-- ===== THE HOAN TIEN (chi hien thi khi don da huy va co giao dich hoan) ===== -->
-    <section class="admin-panel" th:if="${hoaDon.d != null and hoaDon.d.trangThai == 'Da huy' and hoanTienList != null and !hoanTienList.isEmpty()}">
-        <h2><i class="fa-regular fa-money-bill-1"></i> Lịch Sử Hoàn Tiền</h2>
+    <!-- ===== THE HOAN TIEN (hien thi khi don da huy) ===== -->
+    <section class="admin-panel" th:if="${hoaDon.d != null and hoaDon.d.trangThai == 'Da huy'}">
+        <h2><i class="fa-regular fa-money-bill-1"></i> Thông Tin Hoàn Tiền</h2>
         <div class="info-grid cols-2" style="margin-bottom:18px;">
             <div class="info-item">
                 <div class="info-label">Số Tiền Hoàn Dự Kiến</div>
@@ -261,7 +261,20 @@
             </div>
         </div>
 
-        <div class="admin-table-wrap">
+        <!-- Ghi chú minh bạch khi hóa đơn thuộc trạng thái "Huy khong hoan" -->
+        <div th:if="${hoaDon.trangThaiHoanTien == 'Huy khong hoan'}"
+             style="margin: 10px 0 14px; padding: 12px 16px; background: #fff7e6; border-left:4px solid #c2410c;">
+            <div style="font-size: 11px; font-weight: bold; color: #c2410c; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">
+                ⚠ Thông Báo Hủy Đơn
+            </div>
+            <div style="font-size: 13px; color: #444; line-height: 1.5;">
+                Đơn đặt phòng này đã được hủy theo chính sách của khách sạn.
+                Khách hàng đã đồng ý hủy đơn và <strong>không nhận hoàn tiền</strong>.
+                Số tiền hoàn = 0 VND.
+            </div>
+        </div>
+
+        <div class="admin-table-wrap" th:if="${hoanTienList != null and !hoanTienList.isEmpty()}">
             <table class="admin-table">
                 <thead>
                 <tr>
@@ -500,6 +513,11 @@
             <div class="summary-row remaining" th:classappend="${conLai.signum() <= 0} ? 'settled'">
                 <span class="summary-label">Còn lại</span>
                 <span class="summary-value" th:text="${#numbers.formatDecimal(conLai, 0, 'COMMA', 0, 'POINT')} + ' VND'"></span>
+            </div>
+            <div class="summary-row" th:if="${hoaDon.d != null and hoaDon.d.trangThai == 'Da huy'}">
+                <span class="summary-label" style="color:#c2410c;">Đã hoàn</span>
+                <span class="summary-value" style="color:#c2410c;"
+                      th:text="${#numbers.formatDecimal(tongHoan != null ? tongHoan : T(java.math.BigDecimal).ZERO, 0, 'COMMA', 0, 'POINT')} + ' VND'"></span>
             </div>
             <div class="summary-row" th:if="${tongHoan != null and tongHoan.signum() > 0}" style="background:#fff7e6;">
                 <span class="summary-label" style="color:#c2410c;"> Hoàn trả khách</span>

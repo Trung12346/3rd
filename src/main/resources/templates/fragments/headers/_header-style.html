@@ -318,6 +318,139 @@
                 min-width: 96px;
             }
         }
+
+        /* ===== Chuông "đơn đang dở" cho khách vãng lai =====
+           Đặt cạnh nút Đăng nhập/Đăng ký. Có badge đỏ khi có đơn dở.
+           Bấm chuông hiện popup thông tin đơn + nút Tiếp tục đặt. */
+        .hb-bell-wrap {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+        }
+        .hb-bell-btn {
+            position: relative;
+            background: transparent;
+            border: none;
+            color: var(--hb-text);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.2s ease, color 0.2s ease;
+            font-size: 18px;
+            padding: 0;
+        }
+        .hb-bell-btn:hover { background: #eef7fd; color: var(--hb-blue); }
+        .hb-bell-btn .hb-bell-badge {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            min-width: 18px;
+            height: 18px;
+            padding: 0 5px;
+            background: #e74c3c;
+            color: #fff;
+            border-radius: 999px;
+            font-size: 10.5px;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #fff;
+            box-shadow: 0 0 0 1px rgba(231, 76, 60, 0.35);
+            line-height: 1;
+        }
+        .hb-bell-popover {
+            position: absolute;
+            top: calc(100% + 12px);
+            right: 0;
+            min-width: 300px;
+            max-width: 340px;
+            background: #fff;
+            border: 1px solid var(--hb-border);
+            border-radius: 10px;
+            box-shadow: 0 18px 40px rgba(15, 23, 42, 0.18);
+            padding: 14px 16px 16px;
+            z-index: 1100;
+            display: none;
+            font-family: 'Inter', Arial, sans-serif;
+            color: var(--hb-text);
+        }
+        .hb-bell-wrap.open .hb-bell-popover { display: block; }
+        .hb-bell-popover::before {
+            content: "";
+            position: absolute;
+            top: -7px;
+            right: 14px;
+            width: 12px;
+            height: 12px;
+            background: #fff;
+            border-top: 1px solid var(--hb-border);
+            border-left: 1px solid var(--hb-border);
+            transform: rotate(45deg);
+        }
+        .hb-bell-popover-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 700;
+            color: #b9770e;
+            text-transform: none;
+            margin-bottom: 6px;
+        }
+        .hb-bell-popover-title.hb-bell-popover-success {
+            color: #15803d;
+        }
+        .hb-bell-popover-title.hb-bell-popover-success i {
+            font-size: 18px;
+            color: #22c55e;
+        }
+        .hb-bell-popover-title i { font-size: 16px; }
+        .hb-bell-popover-step {
+            font-size: 13px;
+            color: var(--hb-text);
+            line-height: 1.4;
+            margin-bottom: 10px;
+        }
+        .hb-bell-popover-meta {
+            font-size: 12px;
+            color: var(--hb-muted);
+            line-height: 1.5;
+            margin-bottom: 12px;
+        }
+        .hb-bell-popover-meta strong { color: var(--hb-text); }
+        .hb-bell-popover-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+        .hb-bell-popover-actions a {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 12.5px;
+            font-weight: 600;
+            text-decoration: none;
+            text-transform: none;
+            transition: background 0.2s ease;
+        }
+        .hb-bell-popover-actions .hb-bell-go {
+            background: #f39c12;
+            color: #fff;
+        }
+        .hb-bell-popover-actions .hb-bell-go:hover { background: #b9770e; }
+        .hb-bell-popover-actions .hb-bell-dismiss {
+            background: #f3f4f6;
+            color: var(--hb-text);
+            border: 1px solid var(--hb-border);
+        }
+        .hb-bell-popover-actions .hb-bell-dismiss:hover { background: #e5e7eb; }
     </style>
 </th:block>
 </body>

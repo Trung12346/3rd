@@ -256,6 +256,28 @@
             color: #fff;
         }
 
+        /* ===== NÚT TIẾP TỤC ĐẶT (phục hồi luồng thanh toán khi mất mạng) ===== */
+        .btn-continue-order {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 4px;
+            border: 1px solid #f39c12;
+            background: #fef9e7;
+            color: #b9770e;
+            font-size: 12px;
+            font-weight: 600;
+            text-decoration: none;
+            white-space: nowrap;
+            transition: background 0.2s, color 0.2s;
+            margin-top: 4px;
+        }
+        .btn-continue-order:hover {
+            background: #f39c12;
+            color: #fff;
+        }
+
         /* ===== FORM ===== */
         .form-grid {
             display: grid;
@@ -888,6 +910,17 @@
                             <td>
                                 <a th:href="@{/profiles/dat-phong/{id}(id=${l.id})}" class="btn-detail-order">
                                     <i class="fa-solid fa-circle-info"></i> Chi tiết
+                                </a>
+                                <!-- NÚT TIẾP TỤC ĐẶT: ch� hiện khi đơn đang dở ở khâu thanh toán.
+                                     - "Chua thanh toan": khách mới vào giỏ, chưa thanh toán
+                                     - "Yeu cau dat phong": khách đã bấm xác nhận nhưng rớt mạng trước khi VNPay callback
+                                     Bấm sẽ đưa khách về đúng trang đang thao tác trước khi mất mạng
+                                     (trang chọn dịch vụ bổ sung hoặc trang thanh toán). -->
+                                <a th:if="${l.trangThai == 'Chua thanh toan'}"
+                                   th:href="@{/profiles/dat-phong/{id}/tiep-tuc-dat(id=${l.id})}"
+                                   class="btn-continue-order"
+                                   th:attr="title=|Khôi phục luồng đặt phòng: tiếp tục từ bước bạn đang làm trước khi mất kết nối.|">
+                                    <i class="fa-solid fa-rotate-right"></i> Tiếp tục đặt
                                 </a>
                             </td>
                             <td>

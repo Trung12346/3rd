@@ -38,9 +38,34 @@
         border-radius: 10px; font-size: 13.5px; display: flex; align-items: center;
         gap: 8px; position: relative; z-index: 5;
     }
+
+    /* Banner "đơn đang dở" cho khách vãng lai */
+    .booking-draft-banner {
+        max-width: 760px; margin: -18px auto 18px; padding: 14px 20px;
+        background: linear-gradient(135deg, #fef9e7 0%, #fdebc1 100%);
+        border: 1px solid #f5b301; border-left: 5px solid #f39c12;
+        border-radius: 10px; font-size: 14px; display: flex; align-items: center;
+        gap: 14px; position: relative; z-index: 5;
+        box-shadow: 0 4px 14px rgba(243, 156, 18, 0.12);
+    }
+    .booking-draft-banner .bd-icon {
+        width: 42px; height: 42px; border-radius: 50%;
+        background: #fff; display: flex; align-items: center; justify-content: center;
+        color: #f39c12; font-size: 18px; flex-shrink: 0;
+    }
+    .booking-draft-banner .bd-text { flex: 1; line-height: 1.45; }
+    .booking-draft-banner .bd-text strong { color: #b9770e; display: block; font-size: 15px; margin-bottom: 2px; }
+    .booking-draft-banner .bd-text small { color: #6b7d93; font-size: 12.5px; }
+    .booking-draft-banner .bd-btn {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 9px 16px; background: #f39c12; color: #fff;
+        border-radius: 8px; text-decoration: none; font-weight: 600;
+        font-size: 13.5px; transition: background 0.2s; white-space: nowrap;
+    }
+    .booking-draft-banner .bd-btn:hover { background: #b9770e; }
 </style>
 
-<!-- LARGE SEARCH BAR (booking.com / agoda style) -->
+<!-- (Banner "đơn đang dở" cũ đã được chuyển lên icon chuông trong header. Xem fragment guest-header.) -->
 <section class="hero-search-wrap">
     <form class="hero-search-card" id="heroSearchForm" th:action="@{/loai-phong/tim-kiem}" method="get">
         <input type="hidden" name="ngayNhan" id="ngayNhanPhongInput" th:value="${ngayNhan}">

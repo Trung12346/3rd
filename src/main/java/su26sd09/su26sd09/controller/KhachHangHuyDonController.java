@@ -92,7 +92,9 @@ public class KhachHangHuyDonController {
         }
 
         HoaDon hd = hoaDonService.findByDatPhongId(id);
-        BigDecimal tyLe = huyDonService.tinhTyLeHoan(dp);
+        // Neu hd chua co ngayYeuCauHoan (chua tung huy) -> dung thoi diem hien tai de mo phong
+        // "neu huy bay gio" - day cung chinh la moc se duoc set khi khach xac nhan huy.
+        BigDecimal tyLe = huyDonService.tinhTyLeHoan(dp, hd);
         BigDecimal daThanhToan = (hd == null || hd.getDaThanhToan() == null) ? BigDecimal.ZERO : hd.getDaThanhToan();
         BigDecimal soTienHoanDuKien = daThanhToan.multiply(tyLe).setScale(0, RoundingMode.HALF_UP);
 

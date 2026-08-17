@@ -121,19 +121,25 @@ public class NhanVienCheckoutController {
     }
 
     /**
-     * Tinh phu phi tra muon (late checkout): cong don calculateExtraFeeFor() cho
-     * tung phong cua don, theo thoi gian tra thuc te truyen vao (thuong la
-     * LocalDateTime.now()). Dung chung mot cong thuc o moi noi tinh soDu / canThu
-     * (trang xem, thu-tien, chot tra phong) de tranh hien thi "da thu du" nhung
-     * luc thao tac that lai bao con thieu tien (hoac nguoc lai).
+     * Tính phụ phí TRẢ MUỘN so với giờ đã đặt (late checkout) cho từng phòng của
+     * đơn. So sánh {@code gioTraHienTai} (thường là {@code LocalDateTime.now()})
+     * với {@code dp.getNgaytraPhong()} (giờ đã đặt trên booking) — chỉ tính phí
+     * khi khách thực sự TRẢ SAU giờ đã đặt.
+     *
+     * <p>Quan trọng: KHÔNG dùng {@code calculateExtraFeeFor(...)} ở đây vì hàm
+     * đó so sánh với giờ chuẩn của phòng (vd 11:00) → sẽ tính phí SAI cho mọi
+     * khách checkout trong khung giờ từ sau 11:00 đến đúng giờ đã đặt.</p>
      */
     private BigDecimal tinhPhuPhiTraMuon(DatPhong dp, LocalDateTime gioTraHienTai) {
         List<ChiTietDatPhong> phongList = chiTietDatPhongService.findByDatPhongId(dp.getId());
         BigDecimal phuPhiTraMuon = BigDecimal.ZERO;
         for (ChiTietDatPhong ct : phongList) {
             if (ct != null && ct.getP() != null) {
-                BigDecimal fee = phongService.calculateExtraFeeFor(
-                        ct.getP().getMaPhong(), dp.getNgaydatPhong(), gioTraHienTai);
+                BigDecimal fee = phongService.calculateLateCheckoutFeeFor(
+                        ct.getP().getMaPhong(),
+                        dp.getNgaydatPhong(),
+                        dp.getNgaytraPhong(),
+                        gioTraHienTai);
                 if (fee != null && fee.signum() > 0) {
                     phuPhiTraMuon = phuPhiTraMuon.add(fee);
                 }
@@ -646,17 +652,18 @@ public class NhanVienCheckoutController {
         // Lay danh sach phong (can cho tinh phu phi tra muon)
         List<ChiTietDatPhong> phongList = chiTietDatPhongService.findByDatPhongId(id);
 
-        // ===== Phu phi tra muon (late checkout) =====
-        // Tu dong gian: gia tri phu phi tra muon = cong don calculateExtraFeeFor() cho tung phong.
-        // calculateExtraFeeFor dung rule:
-        //   - gio tra thuc te (LocalDateTime.now()) sau gioTraToiDa (11:00) -> +100k/phong
-        // Neu khach tra dung gio hoac som hon -> ZERO.
+        // ===== Phụ phí trả muộn (late checkout) =====
+        // So sánh giờ trả thực tế (now) với giờ đã đặt trên booking → chỉ tính
+        // khi khách trả SAU giờ đã đặt. Trả trước hoặc đúng giờ → 0.
         BigDecimal phuPhiTraMuon = BigDecimal.ZERO;
         LocalDateTime gioTraHienTai = LocalDateTime.now();
         for (ChiTietDatPhong ct : phongList) {
             if (ct != null && ct.getP() != null) {
-                BigDecimal fee = phongService.calculateExtraFeeFor(
-                        ct.getP().getMaPhong(), dp.getNgaydatPhong(), gioTraHienTai);
+                BigDecimal fee = phongService.calculateLateCheckoutFeeFor(
+                        ct.getP().getMaPhong(),
+                        dp.getNgaydatPhong(),
+                        dp.getNgaytraPhong(),
+                        gioTraHienTai);
                 if (fee != null && fee.signum() > 0) {
                     phuPhiTraMuon = phuPhiTraMuon.add(fee);
                 }

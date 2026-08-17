@@ -9,7 +9,9 @@ import su26sd09.su26sd09.entity.*;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @Service
@@ -21,33 +23,67 @@ public class HuyDonService {
     @Autowired PhongService phongService; // giả định đã có, dùng để nhả phòng
 
     /**
-     * Tính tỷ lệ hoàn tiền dựa trên SỐ PHÚT đã trôi qua kể từ khi đặt phòng đến lúc yêu cầu hủy.
-     * Quy tắc hoàn tiền:
-     *  - Dưới 30 phút             : 70%
-     *  - Từ 30 phút đến 3 tiếng   : 50%
-     *  - Từ 3 tiếng đến 8 tiếng   : 40%
-     *  - Trên 8 tiếng             : 30%
-     * Ngoài ra: nếu khách đã nhận phòng / trả phòng thì tỷ lệ = 0% (chính sách không cho hủy).
+     * Rule hoàn tiền mới (áp dụng từ 2026): dựa vào số NGÀY từ thời điểm tạo yêu cầu hủy
+     * (NgayYeuCauHoan trên HoaDon) đến ngày check-in (ngày nhận phòng dự kiến trên DatPhong).
+     *
+     *  - >= 10 ngày       : 100% (hoàn toàn bộ)
+     *  - 9 ngày           : 90%
+     *  - 8 ngày           : 80%
+     *  - 7 ngày           : 70%
+     *  - 6 ngày           : 60%
+     *  - 5 ngày           : 50%
+     *  - 4 ngày           : 40%
+     *  - 3 ngày           : 30%
+     *  - 2 ngày           : 20%
+     *  - 1 ngày           : 10%
+     *  - 0 ngày (trong ngày check-in) : 0%
+     *  - âm (quá ngày check-in)       : 0%
+     *
+     * Mỗi ngày rút ngắn so với ngày check-in sẽ -10%.
+     * Tỉ lệ thuận nghịch với khoảng cách: khoảng cách từ "ngày tạo yêu cầu hủy" đến
+     * "ngày check-in" càng ngắn thì tỉ lệ hoàn càng thấp; tỉ lệ 100% áp dụng từ ngày thứ 10 trở đi.
+     *
+     * Ngoài ra: nếu khách đã nhận phòng / trả phòng thì tỷ lệ = 0%
+     * (chính sách không cho hủy sau check-in).
      */
     public BigDecimal tinhTyLeHoan(DatPhong dp) {
-        if (dp == null || dp.getNgayTao() == null) return BigDecimal.ZERO;
+        return tinhTyLeHoan(dp, null);
+    }
+
+    /**
+     * Overload có thêm {@code hd} để ưu tiên dùng {@code hd.ngayYeuCauHoan} làm mốc tính.
+     * Nếu {@code hd} = null hoặc chưa có ngayYeuCauHoan sẽ fallback về thời điểm hiện tại.
+     */
+    public BigDecimal tinhTyLeHoan(DatPhong dp, HoaDon hd) {
+        if (dp == null || dp.getNgaydatPhong() == null) return BigDecimal.ZERO;
         boolean chuaCheckIn = !"Da nhan phong".equals(dp.getTrangThai())
                 && !"Da tra phong".equals(dp.getTrangThai());
         if (!chuaCheckIn) return BigDecimal.ZERO;
 
-        long soPhutDaTroi = Duration.between(dp.getNgayTao(), LocalDateTime.now()).toMinutes();
-        if (soPhutDaTroi < 0) soPhutDaTroi = 0; // trường hợp clock lệch
+        // Mốc tính: NGÀY TẠO YÊU CẦU HỦY (NgayYeuCauHoan trên HoaDon).
+        // Nếu chưa có (đơn cũ / tính tay) thì fallback về thời điểm hiện tại
+        // để tránh null, nhưng rule mới luôn ưu tiên dùng ngayYeuCauHoan.
+        LocalDateTime mocTaoYeuCau;
+        if (hd != null && hd.getNgayYeuCauHoan() != null) {
+            mocTaoYeuCau = hd.getNgayYeuCauHoan();
+        } else {
+            mocTaoYeuCau = LocalDateTime.now();
+        }
+        LocalDate ngayTaoYeuCauHuy = mocTaoYeuCau.toLocalDate();
+        LocalDate ngayNhanPhong = dp.getNgaydatPhong().toLocalDate();
+        long soNgayConLai = ChronoUnit.DAYS.between(ngayTaoYeuCauHuy, ngayNhanPhong);
 
-        if (soPhutDaTroi < 30) {
-            return new BigDecimal("0.70");
+        if (soNgayConLai >= 10) {
+            return new BigDecimal("1.00");
         }
-        if (soPhutDaTroi < 180) { // 3 tiếng = 180 phút
-            return new BigDecimal("0.50");
+        if (soNgayConLai < 0) {
+            // Da qua ngay check-in (huỷ muộn sau check-in) -> khong hoan.
+            return BigDecimal.ZERO;
         }
-        if (soPhutDaTroi < 480) { // 8 tiếng = 480 phút
-            return new BigDecimal("0.40");
-        }
-        return new BigDecimal("0.30");
+        // 0..9 ngày: moi ngay giam 10% (ngay 9 = 90%, ngay 8 = 80%, ..., ngay 0 = 0%)
+        // soNgayConLai=9 -> 0.90, soNgayConLai=0 -> 0.00
+        long phanTram = soNgayConLai * 10L;
+        return new BigDecimal(phanTram).divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
     }
 
     /**
@@ -72,7 +108,6 @@ public class HuyDonService {
             return new KetQuaHuyDonDTO("Khach da nhan phong, khong the huy theo chinh sach nay", null, false);
 
         HoaDon hd = hoaDonService.findByDatPhongId(datPhongId);
-        BigDecimal tyLe = tinhTyLeHoan(dp);
 
         // ===== Case đặc biệt: đơn chưa có hóa đơn =====
         // Không có hóa đơn thì không có gì để hoàn, không cần đưa vào trang hoàn tiền.
@@ -85,6 +120,13 @@ public class HuyDonService {
             return new KetQuaHuyDonDTO("Da huy don. Khong phat sinh hoan tien (don chua co hoa don).", null, false);
         }
 
+        // Set ngày tạo yêu cầu hủy TRƯỚC khi tính tỷ lệ - đây là mốc tính khoảng cách
+        // giữa "ngày tạo yêu cầu hủy" và "ngày check-in" theo rule mới.
+        if (hd.getNgayYeuCauHoan() == null) {
+            hd.setNgayYeuCauHoan(LocalDateTime.now());
+        }
+        BigDecimal tyLe = tinhTyLeHoan(dp, hd);
+
         BigDecimal daThu = hd.getDaThanhToan() == null ? BigDecimal.ZERO : hd.getDaThanhToan();
         BigDecimal soTienHoan = daThu.multiply(tyLe).setScale(0, RoundingMode.HALF_UP);
 
@@ -96,7 +138,6 @@ public class HuyDonService {
         // ===== Lưu thông tin hoàn tiền lên hóa đơn (LUÔN set "Cho xu ly" để NV/Admin tự xử lý) =====
         hd.setTyLeHoan(tyLe);
         hd.setSoTienHoan(soTienHoan);
-        hd.setNgayYeuCauHoan(LocalDateTime.now());
         hd.trangThaiHoanTien = HuyDonConstants.TT_HOAN_CHO_XU_LY;
         hoaDonService.save(hd);
 
@@ -245,7 +286,44 @@ public class HuyDonService {
     }
 
     /**
-     * Tính thời gian đã trôi qua từ lúc tạo đơn đến hiện tại (dùng để hiển thị toast cảnh báo).
+     * Bước 2 (luồng "hủy đơn không hoàn"): NV/Admin xác nhận hủy đơn nhưng KHÔNG hoàn tiền.
+     * Dùng khi tỷ lệ hoàn = 0% theo rule (khách hủy muộn) hoặc NV/Admin quyết định không hoàn.
+     *
+     * Hành vi:
+     *  - Set trạng thái hóa đơn = "Huy khong hoan", số tiền hoàn = 0.
+     *  - Ghi lý do hủy vào ghiChu hóa đơn (phân cách bằng " | " nếu đã có ghi chú).
+     *  - Set đơn đặt phòng = "Da huy" (CHÍNH THỨC hủy, không phải "Cho huy" trung gian).
+     *  - Nhả tất cả phòng liên quan về "Trong" (nếu không còn đơn nào khác giữ).
+     *  - KHÔNG tạo giao dịch hoàn tiền, KHÔNG cộng vào daHoanTra.
+     *  - Hóa đơn vẫn được phép xuất PDF cho khách cầm về (minh bạch, số tiền hoàn = 0).
+     */
+    public void xacNhanHuyKhongHoan(Integer hoaDonId, String lyDo, NhanSu nvXuLy) {
+        HoaDon hd = hoaDonService.findById(hoaDonId);
+        if (hd == null) return;
+
+        // Cập nhật hóa đơn: set trạng thái, số tiền hoàn = 0, ghi lý do
+        hd.setTrangThaiHoanTien(HuyDonConstants.TT_HOAN_HUY_KHONG_HOAN);
+        hd.setSoTienHoan(BigDecimal.ZERO);
+        hd.setDaHoanTra(BigDecimal.ZERO);
+        String lyDoFull = "Huy don khong hoan: " + (lyDo == null || lyDo.isBlank() ? "Khong ro ly do" : lyDo);
+        hd.setGhiChu((hd.getGhiChu() == null || hd.getGhiChu().isBlank())
+                ? lyDoFull
+                : hd.getGhiChu() + " | " + lyDoFull);
+        hd.setNgayCapNhat(LocalDateTime.now());
+        hoaDonService.save(hd);
+
+        // Chính thức hủy đơn + nhả phòng
+        DatPhong dp = hd.getD();
+        if (dp != null) {
+            dp.setTrangThai("Da huy");
+            dp.setNgayCapNhat(LocalDateTime.now());
+            datPhongService.save(dp);
+            nhaPhong(dp.getId());
+        }
+    }
+
+    /**
+     * Tính thời gian đã trôi qua t� lúc tạo đơn đến hiện tại (dùng để hiển thị toast cảnh báo).
      * - Nếu < 1 ngày: trả về chuỗi "hh:mm:ss" (ví dụ "02:35:12").
      * - Nếu >= 1 ngày: trả về "Qua han tao yeu cau huy".
      * - Nếu ngayTao = null: trả về null (view sẽ không hiện toast).
@@ -262,5 +340,54 @@ public class HuyDonService {
         long mm = (totalSeconds % 3600) / 60;
         long ss = totalSeconds % 60;
         return String.format("%02d:%02d:%02d", hh, mm, ss);
+    }
+
+    /**
+     * Khoảng cách (số ngày) từ thời điểm TẠO YÊU CẦU HỦY (ngayYeuCauHoan trên HoaDon)
+     * đến ngày check-in (ngaydatPhong trên DatPhong). Đây là căn cứ tính % hoàn tiền theo rule mới.
+     * Trả về:
+     *  - null nếu ngaydatPhong = null
+     *  - số ngày >= 0 nếu chưa đến check-in
+     *  - số ngày âm nếu đã qua ngày check-in
+     * Nếu chưa có ngayYeuCauHoan (đơn cũ / tính tay) thì fallback về thời điểm hiện tại.
+     */
+    public Long tinhKhoangCachNgayCheckIn(DatPhong dp) {
+        return tinhKhoangCachNgayCheckIn(dp, null);
+    }
+
+    public Long tinhKhoangCachNgayCheckIn(DatPhong dp, HoaDon hd) {
+        if (dp == null || dp.getNgaydatPhong() == null) return null;
+        LocalDateTime mocTaoYeuCau;
+        if (hd != null && hd.getNgayYeuCauHoan() != null) {
+            mocTaoYeuCau = hd.getNgayYeuCauHoan();
+        } else {
+            mocTaoYeuCau = LocalDateTime.now();
+        }
+        LocalDate ngayTaoYeuCau = mocTaoYeuCau.toLocalDate();
+        LocalDate ngayNhan = dp.getNgaydatPhong().toLocalDate();
+        return ChronoUnit.DAYS.between(ngayTaoYeuCau, ngayNhan);
+    }
+
+    /**
+     * Sinh chuỗi mô tả khoảng cách để hiển thị trên UI, ví dụ:
+     *  - "Còn 9 ngày đến check-in"
+     *  - "Còn 0 ngày đến check-in (trong ngày)"
+     *  - "Đã qua 2 ngày so với check-in"
+     * Trả về null nếu không tính được.
+     */
+    public String moTaKhoangCachNgayCheckIn(DatPhong dp) {
+        return moTaKhoangCachNgayCheckIn(dp, null);
+    }
+
+    public String moTaKhoangCachNgayCheckIn(DatPhong dp, HoaDon hd) {
+        Long soNgay = tinhKhoangCachNgayCheckIn(dp, hd);
+        if (soNgay == null) return null;
+        if (soNgay > 0) {
+            return "Còn " + soNgay + " ngày đến check-in";
+        }
+        if (soNgay == 0) {
+            return "Còn 0 ngày đến check-in (trong ngày)";
+        }
+        return "Đã qua " + Math.abs(soNgay) + " ngày so với check-in";
     }
 }
