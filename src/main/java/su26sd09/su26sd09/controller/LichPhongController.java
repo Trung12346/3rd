@@ -16,8 +16,12 @@ import su26sd09.su26sd09.entity.Chi_tiet_dich_vu;
 import su26sd09.su26sd09.entity.DatPhong;
 import su26sd09.su26sd09.entity.KhuyenMai;
 import su26sd09.su26sd09.entity.LoaiPhong;
+import su26sd09.su26sd09.entity.LoaiPhongAnh;
+import su26sd09.su26sd09.entity.Phong;
+import su26sd09.su26sd09.entity.PhongAnh;
 import su26sd09.su26sd09.repository.ChiTietDatPhongRepo;
 import su26sd09.su26sd09.repository.ChiTietDichvuRepo;
+import su26sd09.su26sd09.repository.LoaiPhongAnhRepository;
 import su26sd09.su26sd09.repository.LoaiPhongRepository;
 import su26sd09.su26sd09.repository.PhongRepository;
 
@@ -51,6 +55,9 @@ public class LichPhongController {
     private PhongRepository phongRepo;
 
     @Autowired
+    private LoaiPhongAnhRepository loaiPhongAnhRepo;
+
+    @Autowired
     private ChiTietDatPhongRepo chiTietDatPhongRepo;
 
     @Autowired
@@ -59,6 +66,14 @@ public class LichPhongController {
     @GetMapping
     public String index() {
         return "nhan-vien/lich-phong";
+    }
+
+    private String thumbAnhLoaiPhong(LoaiPhong lp) {
+        LoaiPhongAnh anhRieng = loaiPhongAnhRepo.findByMaLoaiPhongFirst(lp.getId());
+        if (!(anhRieng == null) && anhRieng.getMaAnh() != null) {
+            return "/media/" + anhRieng.getMaAnh().getMaAnh();
+        }
+        return ANH_MAC_DINH;
     }
 
     @GetMapping("/api/loai-phong")
@@ -72,8 +87,10 @@ public class LichPhongController {
                         lp.getSucChuaToiDa(),
                         lp.getGiaCoBan(),
                         // Anh duoc phuc vu qua AnhController o /media/{maAnh (UUID)},
-                        // KHONG phai ten file tren dia (getSrc()).
-                        lp.getMaAnh() != null ? "/media/" + lp.getMaAnh().getMaAnh() : ANH_MAC_DINH,
+                        // KHONG phai ten file tren dia (getSrc()). Lay tu gallery
+                        // loai_phong_anh (uploadmulti-anh o trang admin loai phong),
+                        // fallback ve anh phong / anh mac dinh neu chua co.
+                        thumbAnhLoaiPhong(lp),
                         phongRepo.countByLoaiPhongIdAndHoatDongTrue(lp.getId())
                 ))
                 .toList();

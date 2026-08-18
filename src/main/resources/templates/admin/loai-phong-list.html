@@ -45,22 +45,19 @@
                 </div>
 
                 <div class="admin-field full">
-                    <label>Hình Ảnh Phòng</label>
+                    <label>Hình Ảnh Loại Phòng</label>
                     <div class="anh-gallery" id="anhGallery">
-                        <div class="anh-item" th:if="${loaiPhong.maAnh != null}">
-                            <img th:src="@{/media/{id}(id=${loaiPhong.maAnh.maAnh})}" alt="anh phong">
-                            <button type="button" class="anh-remove-btn" onclick="removeAnhItem(this)"></button>
+                        <div class="anh-item" th:each="anh : ${selectedAnhs}">
+                            <img th:src="@{/media/{id}(id=${anh.maAnh})}" alt="anh loai phong">
+                            <button type="button" class="anh-remove-btn" onclick="removeAnhItem(this)">&times;</button>
+                            <input type="hidden" name="anhIds" th:value="${anh.maAnh}">
                         </div>
-                        <label class="anh-upload-box" id="anhUploadBox" for="anhFileInput"
-                               th:style="${loaiPhong.maAnh != null} ? 'display:none' : ''">
+                        <label class="anh-upload-box" id="anhUploadBox">
                             <span class="plus">+</span>
                             <span>Thêm ảnh</span>
                         </label>
                     </div>
-                    <input type="file" id="anhFileInput" accept="image/*" style="display:none">
-                    <input type="hidden" name="anhId" id="anhIdInput"
-                           th:value="${loaiPhong.maAnh != null ? loaiPhong.maAnh.maAnh : ''}">
-                    <div id="anhUploadStatus" class="anh-upload-status"></div>
+                    <input type="file" id="anhFileInput" accept="image/*" multiple style="display:none">
                 </div>
 
 
@@ -166,87 +163,84 @@
     <p>&copy; 2026 Hotel. All rights reserved.</p>
 </footer>
 <script th:inline="javascript">
+    (function () {
+        const uploadBox = document.getElementById('anhUploadBox');
+        const fileInput = document.getElementById('anhFileInput');
+        const gallery = document.getElementById('anhGallery');
+        const csrfToken = /*[[${_csrf != null ? _csrf.token : null}]]*/ null;
+        const csrfHeader = /*[[${_csrf != null ? _csrf.headerName : null}]]*/ null;
 
-    const csrfToken = /*[[${_csrf?.token}]]*/ null;
-    const csrfHeader = /*[[${_csrf?.headerName}]]*/ null;
+        uploadBox.addEventListener('click', function () {
+            fileInput.click();
+        });
 
-    console.log('CSRF Token:', csrfToken);
-    console.log('CSRF Header:', csrfHeader);
+        fileInput.addEventListener('change', function () {
+            const files = Array.from(fileInput.files || []);
+            files.forEach(uploadOneFile);
+            fileInput.value = '';
+        });
 
-    const anhGallery = document.getElementById('anhGallery');
-    const anhUploadBox = document.getElementById('anhUploadBox');
-    const anhFileInput = document.getElementById('anhFileInput');
-    const anhIdInput = document.getElementById('anhIdInput');
-    const anhUploadStatus = document.getElementById('anhUploadStatus');
+        function uploadOneFile(file) {
+            const placeholder = document.createElement('div');
+            placeholder.className = 'anh-item uploading';
+            placeholder.textContent = 'Đang tải...';
+            gallery.insertBefore(placeholder, uploadBox);
 
-    anhFileInput.addEventListener('change', async function () {
-        const file = anhFileInput.files[0];
-        if (!file) return;
+            const formData = new FormData();
+            formData.append('file', file);
 
-        const formData = new FormData();
-        formData.append('file', file);
-
-        anhUploadStatus.textContent = 'Đang tải ảnh lên...';
-
-        try {
             const headers = {};
             if (csrfToken && csrfHeader) {
                 headers[csrfHeader] = csrfToken;
             }
 
-            const res = await fetch('/media', {
+            fetch('/media', {
                 method: 'POST',
                 headers: headers,
                 body: formData
-            });
+            })
+                .then(function (res) {
+                    if (!res.ok) {
+                        throw new Error('Upload thất bại');
+                    }
+                    return res.json();
+                })
+                .then(function (anhId) {
+                    placeholder.classList.remove('uploading');
+                    placeholder.textContent = '';
 
+                    const img = document.createElement('img');
+                    img.src = '/media/' + anhId;
+                    img.alt = 'anh loai phong';
+                    placeholder.appendChild(img);
 
-            if (!res.ok) {
-                anhUploadStatus.textContent = 'Tải ảnh thất bại, vui lòng thử lại.';
-                return;
-            }
+                    const removeBtn = document.createElement('button');
+                    removeBtn.type = 'button';
+                    removeBtn.className = 'anh-remove-btn';
+                    removeBtn.innerHTML = '&times;';
+                    removeBtn.onclick = function () { removeAnhItem(removeBtn); };
+                    placeholder.appendChild(removeBtn);
 
-            const newId = (await res.text()).replaceAll('"', ''); // UUID trả về dạng JSON string
-            anhIdInput.value = newId;
-            anhUploadStatus.textContent = '';
-
-            // Hiển thị preview local (không cần chờ load lại từ /media/{id})
-            const reader = new FileReader();
-            reader.onload = function (e) {
-                const oldItem = anhGallery.querySelector('.anh-item');
-                if (oldItem) oldItem.remove();
-
-                const item = document.createElement('div');
-                item.className = 'anh-item';
-                item.innerHTML = `
-                    <img src="${e.target.result}" alt="anh moi">
-                    <button type="button" class="anh-remove-btn">&times;</button>
-                `;
-                item.querySelector('.anh-remove-btn').addEventListener('click', removeCurrentAnh);
-
-                anhGallery.insertBefore(item, anhUploadBox);
-                anhUploadBox.style.display = 'none';
-            };
-            reader.readAsDataURL(file);
-
-        } catch (err) {
-            anhUploadStatus.textContent = 'Có lỗi xảy ra khi tải ảnh.';
-            console.error(err);
+                    const hidden = document.createElement('input');
+                    hidden.type = 'hidden';
+                    hidden.name = 'anhIds';
+                    hidden.value = anhId;
+                    placeholder.appendChild(hidden);
+                })
+                .catch(function (err) {
+                    console.error(err);
+                    placeholder.remove();
+                    alert('Tải ảnh lên thất bại, vui lòng thử lại.');
+                });
         }
-    });
 
-    function removeAnhItem(button) {
-        removeCurrentAnh();
-    }
-
-    function removeCurrentAnh() {
-        const item = anhGallery.querySelector('.anh-item');
-        if (item) item.remove();
-
-        anhIdInput.value = '';
-        anhFileInput.value = '';
-        anhUploadBox.style.display = '';
-    }
+        window.removeAnhItem = function (btn) {
+            const item = btn.closest('.anh-item');
+            if (item) {
+                item.remove();
+            }
+        };
+    })();
 </script>
 </body>
 </html>

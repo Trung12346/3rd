@@ -17,13 +17,13 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import su26sd09.su26sd09.dto.RoomBookingGuardDTO;
 import su26sd09.su26sd09.entity.Anh;
-import su26sd09.su26sd09.entity.DanhGia;
 import su26sd09.su26sd09.entity.DatPhong;
 import su26sd09.su26sd09.entity.KhachHang;
 import su26sd09.su26sd09.entity.LoaiPhong;
+import su26sd09.su26sd09.entity.LoaiPhongAnh;
 import su26sd09.su26sd09.entity.Phong;
 import su26sd09.su26sd09.entity.PhongAnh;
-import su26sd09.su26sd09.repository.PhongAnhRepository;
+import su26sd09.su26sd09.repository.LoaiPhongAnhRepository;
 import su26sd09.su26sd09.service.BookingDraftService;
 import su26sd09.su26sd09.service.BookingEmailService;
 import su26sd09.su26sd09.service.DanhGiaService;
@@ -51,13 +51,14 @@ import java.util.UUID;
 public class LoaiPhongController {
 
     private static final String ANH_MAC_DINH =
-            "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=800&q=80";
+            "ed2d10ce-680a-467e-a83c-c0781f53a5fd";
 
     @Autowired
     private PhongService phongService;
 
+
     @Autowired
-    private PhongAnhRepository phongAnhRepository;
+    private LoaiPhongAnhRepository loaiPhongAnhRepository;
 
     @Autowired
     private DatPhongService datPhongService;
@@ -131,21 +132,19 @@ public class LoaiPhongController {
         model.addAttribute("roomReviews", roomReviews);
         model.addAttribute("reviewEligibility", reviewService.getEligibilityForLoaiPhong(id, currentEmail));
 
-        // Anh cua loai phong = gop (khong trung) anh cua tat ca phong thuoc loai.
+        // Anh cua loai phong = uu tien anh rieng cua loai phong (bang
+        // loai_phong_anh, upload/quan ly nhieu anh o trang admin loai phong),
+        // gop them (khong trung) anh cua tat ca phong thuoc loai lam du phong.
+        List<LoaiPhongAnh> lpas = loaiPhongAnhRepository.findByMaLoaiPhong_Id(id);
         List<Anh> anhs = new ArrayList<>();
         Set<UUID> maAnhDaThem = new HashSet<>();
-        for (Phong p : phongs) {
-            for (PhongAnh pa : phongAnhRepository.findByMaPhong_MaPhong(p.getMaPhong())) {
-                if (pa.maAnh != null && maAnhDaThem.add(pa.maAnh.maAnh)) {
-                    anhs.add(pa.maAnh);
-                }
+        for (LoaiPhongAnh lpa : lpas) {
+            if (lpa.maAnh != null && maAnhDaThem.add(lpa.maAnh.maAnh)) {
+                anhs.add(lpa.maAnh);
             }
         }
-        // Anh dai dien: uu tien anh rieng cua loai phong (loaiPhong.maAnh) neu co,
-        // neu khong thi lay anh dau tien gop duoc tu cac phong.
-        Anh thumbAnh = loaiPhong.getMaAnh() != null
-                ? loaiPhong.getMaAnh()
-                : (!anhs.isEmpty() ? anhs.get(0) : null);
+        // Anh dai dien: anh dau tien trong danh sach gop duoc o tren.
+        Anh thumbAnh = !anhs.isEmpty() ? anhs.get(0) : null;
 
         long soPhongTrong = phongService.countPhongTrongTheoLoai(id);
 
@@ -169,6 +168,7 @@ public class LoaiPhongController {
     @GetMapping
     public String index(Model model) {
         List<LoaiPhong> loaiPhongs = phongService.findAllLoai();
+
         loadLoaiPhongList(model, loaiPhongs);
         model.addAttribute("anhLoaiPhong", buildAnhLoaiPhong(loaiPhongs));
         return "loai-phong";
@@ -484,70 +484,70 @@ public class LoaiPhongController {
                         || "ROLE_STAFF".equals(a.getAuthority()));
     }
 
-    @GetMapping("/deprecated/{id}")
-    public String phongTheoLoai(
-            @PathVariable("id") int id,
-            Model model,
-            RedirectAttributes redirectAttributes
-    ) {
-        LoaiPhong loaiPhong = phongService.findLoaiPhongById(id);
-        if (loaiPhong == null) {
-            redirectAttributes.addFlashAttribute("error", "Không tìm thấy loại phòng");
-            return "redirect:/loai-phong";
-        }
-
-        List<Phong> phongs = phongService.findPhongTheoLoai(id);
-        Map<Integer, List<String>> tienNghiTheoPhong = new HashMap<>();
-        for (Phong phong : phongs) {
-            tienNghiTheoPhong.put(phong.getMaPhong(), phongService.findTenTienNghiByPhong(phong.getMaPhong()));
-        }
-
-        List<LoaiPhong> loaiPhongs = phongService.findAllLoai();
-
-        HashMap<Integer, UUID> thumbAnhs = new HashMap<>();
-        for (Phong p: phongs
-        ) {
-            Integer pid = p.getMaPhong();
-            PhongAnh pa = phongAnhRepository.findByMaPhongFirst(p.getMaPhong());
-            thumbAnhs.put(
-                    pid,
-                    pa != null ? pa.maAnh.maAnh : null
-            );
-        }
-
-        List<LoaiPhong> tatCaLoaiPhong = phongService.findAllLoai();
-        Map<Integer, String> anhLoaiPhong = buildAnhLoaiPhong(tatCaLoaiPhong);
-
-        Map<Integer, RoomBookingGuardDTO> bookingGuardByPhong = phongService.buildRoomGuards(phongs);
-
-        ObjectMapper mapper = new ObjectMapper()
-                .registerModule(new JavaTimeModule())
-                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-        Map<Integer, String> khoaLichJsonByPhong = new HashMap<>();
-
-        for (Map.Entry<Integer, RoomBookingGuardDTO> entry : bookingGuardByPhong.entrySet()) {
-            try {
-                khoaLichJsonByPhong.put(
-                        entry.getKey(),
-                        mapper.writeValueAsString(entry.getValue().getDanhSachKhoaLich())
-                );
-            } catch (Exception e) {
-                khoaLichJsonByPhong.put(entry.getKey(), "[]");
-            }
-        }
-        model.addAttribute("khoaLichJsonByPhong", khoaLichJsonByPhong);
-
-        model.addAttribute("loaiPhong", loaiPhong);
-        model.addAttribute("thumbAnhs", thumbAnhs);
-        model.addAttribute("phongs", phongs);
-        model.addAttribute("tienNghiTheoPhong", tienNghiTheoPhong);
-        model.addAttribute("loaiPhongs", tatCaLoaiPhong);
-        model.addAttribute("anhLoaiPhong", anhLoaiPhong);
-        model.addAttribute("bookingGuardByPhong", bookingGuardByPhong);
-        model.addAttribute("gioNhanToiDaMacDinh", LocalTime.of(11,0));
-        model.addAttribute("gioTraToiDaMacDinh", LocalTime.of(18,30));
-        return "phong-theo-loai";
-    }
+//    @GetMapping("/deprecated/{id}")
+//    public String phongTheoLoai(
+//            @PathVariable("id") int id,
+//            Model model,
+//            RedirectAttributes redirectAttributes
+//    ) {
+//        LoaiPhong loaiPhong = phongService.findLoaiPhongById(id);
+//        if (loaiPhong == null) {
+//            redirectAttributes.addFlashAttribute("error", "Không tìm thấy loại phòng");
+//            return "redirect:/loai-phong";
+//        }
+//
+//        List<Phong> phongs = phongService.findPhongTheoLoai(id);
+//        Map<Integer, List<String>> tienNghiTheoPhong = new HashMap<>();
+//        for (Phong phong : phongs) {
+//            tienNghiTheoPhong.put(phong.getMaPhong(), phongService.findTenTienNghiByPhong(phong.getMaPhong()));
+//        }
+//
+//        List<LoaiPhong> loaiPhongs = phongService.findAllLoai();
+//
+//        HashMap<Integer, UUID> thumbAnhs = new HashMap<>();
+//        for (Phong p: phongs
+//        ) {
+//            Integer pid = p.getMaPhong();
+//            PhongAnh pa = phongAnhRepository.findByMaPhongFirst(p.getMaPhong());
+//            thumbAnhs.put(
+//                    pid,
+//                    pa != null ? pa.maAnh.maAnh : null
+//            );
+//        }
+//
+//        List<LoaiPhong> tatCaLoaiPhong = phongService.findAllLoai();
+//        Map<Integer, String> anhLoaiPhong = buildAnhLoaiPhong(tatCaLoaiPhong);
+//
+//        Map<Integer, RoomBookingGuardDTO> bookingGuardByPhong = phongService.buildRoomGuards(phongs);
+//
+//        ObjectMapper mapper = new ObjectMapper()
+//                .registerModule(new JavaTimeModule())
+//                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+//        Map<Integer, String> khoaLichJsonByPhong = new HashMap<>();
+//
+//        for (Map.Entry<Integer, RoomBookingGuardDTO> entry : bookingGuardByPhong.entrySet()) {
+//            try {
+//                khoaLichJsonByPhong.put(
+//                        entry.getKey(),
+//                        mapper.writeValueAsString(entry.getValue().getDanhSachKhoaLich())
+//                );
+//            } catch (Exception e) {
+//                khoaLichJsonByPhong.put(entry.getKey(), "[]");
+//            }
+//        }
+//        model.addAttribute("khoaLichJsonByPhong", khoaLichJsonByPhong);
+//
+//        model.addAttribute("loaiPhong", loaiPhong);
+//        model.addAttribute("thumbAnhs", thumbAnhs);
+//        model.addAttribute("phongs", phongs);
+//        model.addAttribute("tienNghiTheoPhong", tienNghiTheoPhong);
+//        model.addAttribute("loaiPhongs", tatCaLoaiPhong);
+//        model.addAttribute("anhLoaiPhong", anhLoaiPhong);
+//        model.addAttribute("bookingGuardByPhong", bookingGuardByPhong);
+//        model.addAttribute("gioNhanToiDaMacDinh", LocalTime.of(11,0));
+//        model.addAttribute("gioTraToiDaMacDinh", LocalTime.of(18,30));
+//        return "phong-theo-loai";
+//    }
 
     private void loadLoaiPhongList(Model model, List<LoaiPhong> loaiPhongs) {
         Map<Integer, Long> soPhongTrongTheoLoai = new HashMap<>();
@@ -562,11 +562,12 @@ public class LoaiPhongController {
     private Map<Integer, String> buildAnhLoaiPhong(List<LoaiPhong> loaiPhongs) {
         Map<Integer, String> anhLoaiPhong = new HashMap<>();
         for (LoaiPhong lp : loaiPhongs) {
-            if (lp.getMaAnh() != null) {
-                anhLoaiPhong.put(lp.getId(), "/media/" + lp.getMaAnh().getMaAnh());
-            } else {
-                anhLoaiPhong.put(lp.getId(), ANH_MAC_DINH);
+            LoaiPhongAnh anhRieng = loaiPhongAnhRepository.findByMaLoaiPhongFirst(lp.getId());
+            UUID maAnh = null;
+            if (!(anhRieng == null) && anhRieng.getMaAnh() != null) {
+                maAnh = anhRieng.getMaAnh().getMaAnh();
             }
+            anhLoaiPhong.put(lp.getId(), maAnh != null ? "/media/" + maAnh : "/media/" + ANH_MAC_DINH);
         }
         return anhLoaiPhong;
     }

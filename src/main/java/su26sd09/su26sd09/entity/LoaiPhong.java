@@ -38,8 +38,4 @@ public class    LoaiPhong {
     @Column(name = "mo_ta")
     @NotBlank(message = "mô tả không được để trống")
     public String mota;
-
-    @OneToOne
-    @JoinColumn(name = "ma_anh",referencedColumnName = "ma_anh")
-    private Anh maAnh;
 }
