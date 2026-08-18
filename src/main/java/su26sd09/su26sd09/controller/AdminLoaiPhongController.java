@@ -11,12 +11,11 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-import su26sd09.su26sd09.entity.Anh;
 import su26sd09.su26sd09.entity.LoaiPhong;
 import su26sd09.su26sd09.service.LoaiPhongService;
-import su26sd09.su26sd09.repository.AnhRepository;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 
 @Controller
@@ -25,8 +24,6 @@ public class AdminLoaiPhongController {
 
     @Autowired
     LoaiPhongService repo;
-    @Autowired
-    AnhRepository anhrepo;
 
     @GetMapping
     public String index(Model model,
@@ -39,6 +36,7 @@ public class AdminLoaiPhongController {
         model.addAttribute("loaiPhong", new LoaiPhong());
         model.addAttribute("loaiPhongs", result.getContent());
         model.addAttribute("page", result);
+        model.addAttribute("selectedAnhs", List.of());
         model.addAttribute("title", "Thêm loại phòng");
         return "admin/loai-phong-list";
     }
@@ -54,6 +52,7 @@ public class AdminLoaiPhongController {
         model.addAttribute("loaiPhong", repo.findbyid(id));
         model.addAttribute("loaiPhongs", result.getContent());
         model.addAttribute("page", result);
+        model.addAttribute("selectedAnhs", repo.findAnhByLoaiPhong(id));
         model.addAttribute("title", "Sửa loại phòng");
         return "admin/loai-phong-list";
     }
@@ -62,7 +61,7 @@ public class AdminLoaiPhongController {
     public String save(RedirectAttributes redirect,
                        @Valid @ModelAttribute("loaiPhong") LoaiPhong l,
                        BindingResult b,
-                       @RequestParam(value = "anhId", required = false) String anhId) {
+                       @RequestParam(value = "anhIds", required = false) List<UUID> anhIds) {
 
         if (b.hasErrors()) {
             redirect.addFlashAttribute("error", b.getFieldError().getDefaultMessage());
@@ -73,13 +72,7 @@ public class AdminLoaiPhongController {
             return "redirect:/nhan-su/admin/loai-phong";
         }
 
-        if (anhId != null && !anhId.isBlank()) {
-            l.setMaAnh(anhrepo.getReferenceById(UUID.fromString(anhId)));
-        } else {
-            l.setMaAnh(null);
-        }
-
-        repo.save(l);
+        repo.save(l, anhIds);
         redirect.addFlashAttribute("success", "lưu loại phòng thành công");
         return "redirect:/nhan-su/admin/loai-phong";
     }
@@ -112,6 +105,7 @@ public class AdminLoaiPhongController {
         model.addAttribute("loaiPhong", new LoaiPhong());
         model.addAttribute("loaiPhongs", result.getContent());
         model.addAttribute("page", result);
+        model.addAttribute("selectedAnhs", List.of());
         model.addAttribute("keyword", keyword);
         model.addAttribute("minGia", minGia);
         model.addAttribute("maxGia", maxGia);

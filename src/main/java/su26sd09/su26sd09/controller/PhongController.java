@@ -1,767 +1,763 @@
-package su26sd09.su26sd09.controller;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.security.authentication.AnonymousAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-import su26sd09.su26sd09.dto.RoomBookingGuardDTO;
-import su26sd09.su26sd09.entity.*;
-import su26sd09.su26sd09.repository.PhongAnhRepository;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import su26sd09.su26sd09.service.*;
-
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.temporal.ChronoUnit;
-import java.util.*;
-import java.util.stream.Stream;
-
-@Controller
-@RequestMapping("/phong")
-public class PhongController {
-
-    @Autowired
-    private PhongService phongService;
-
-    @Autowired
-    private DanhGiaService danhGiaService;
-
-    @Autowired
-    private ChiTietDatPhongService chiTietDatPhongService;
-
-    @Autowired
-    private DatPhongService datphongservice;
-
-    @Autowired
-    private DichVuService dichVuService;
-
-    @Autowired
-    private ChiTietDichVuService ctdvService;
-
-    @Autowired
-    private NguoiDungService nguoiDungService;
-
-    @Autowired
-    private NhanVienService nhanVienService;
-
-    @Autowired
-    private khuyenMaiService khuyenMaiService;
-
-    @Autowired
-    private ReviewService reviewService;
-
-    @Autowired
-    private PhongAnhRepository phongAnhRepository;
-
-    @Autowired
-    private BookingDraftService bookingDraftService;
-
-    @GetMapping
-    public String index(Model model) {
-        // Lấy tất cả phòng
-        List<Phong> phongs = phongService.findAllPhong();
-        
-        // Lấy tiện nghi cho từng phòng
-        Map<Integer, List<String>> tienNghiTheoPhong = new HashMap<>();
-        Map<Integer, String> tenLoaiTheoPhong = new HashMap<>();
-        for (Phong phong : phongs) {
-            tienNghiTheoPhong.put(phong.getMaPhong(), phongService.findTenTienNghiByPhong(phong.getMaPhong()));
-            if (phong.getLoaiPhong() != null) {
-                tenLoaiTheoPhong.put(phong.getMaPhong(), phong.getLoaiPhong().getTenLoai());
-            }
-        }
-
-        List<LoaiPhong> loaiPhongs = phongService.findAllLoai();
-
-        HashMap<Integer, UUID> thumbAnhs = new HashMap<>();
-        for (Phong p: phongs
-             ) {
-            Integer id = p.getMaPhong();
-            PhongAnh pa = phongAnhRepository.findByMaPhongFirst(p.getMaPhong());
-            thumbAnhs.put(
-                    id,
-                    pa != null ? pa.maAnh.maAnh : null
-            );
-        }
-
-        model.addAttribute("thumbAnhs", thumbAnhs);
-        model.addAttribute("phongs", phongs);
-        model.addAttribute("tienNghiTheoPhong", tienNghiTheoPhong);
-        model.addAttribute("tenLoaiTheoPhong", tenLoaiTheoPhong);
-        model.addAttribute("loaiPhongs", loaiPhongs);
-        model.addAttribute("bookingGuardByPhong", phongService.buildRoomGuards(phongs));
-        
-        return "rooms";
-    }
-
-    @GetMapping("/{id}")
-    public String detail(
-            @PathVariable("id") int id,
-            Model model,
-            RedirectAttributes redirectAttributes
-    ) {
-        Phong phong = phongService.findPhongById(id);
-        if (phong == null) {
-            redirectAttributes.addFlashAttribute("error", "Không tìm thấy phòng");
-            return "redirect:/phong";
-        }
-
-        LoaiPhong loaiPhong = phong.getLoaiPhong();
-        List<String> tienNghi = phongService.findTenTienNghiByPhong(phong.getMaPhong());
-        List<DanhGia> danhGias = danhGiaService.findDaDuyetByPhong(phong.getMaPhong());
-        double diemTrungBinh = danhGias.stream()
-                .mapToInt(DanhGia::getDiemDanhGia)
-                .average()
-                .orElse(0);
-
-        // Lấy tất cả loại phòng cho dropdown menu và carousel
-        List<LoaiPhong> loaiPhongs = phongService.findAllLoai();
-        Map<Integer, String> anhLoaiPhong = new HashMap<>();
-        for (LoaiPhong lp : loaiPhongs) {
-            anhLoaiPhong.put(lp.getId(), "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=800&q=80");
-        }
-
-        RoomBookingGuardDTO guard = phongService.buildRoomGuardFor(phong.getMaPhong());
-
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String currentEmail = (authentication != null
-                && authentication.isAuthenticated()
-                && !(authentication instanceof AnonymousAuthenticationToken))
-                ? authentication.getName()
-                : null;
-        model.addAttribute("reviewEligibility", reviewService.getEligibility(phong.getMaPhong(), currentEmail));
-
-        List<Anh> anhs = new ArrayList<>();
-        for (PhongAnh pa: phongAnhRepository.findByMaPhong_MaPhong(id)
-             ) {
-            anhs.add(pa.maAnh);
-        }
-        Anh thumbAnh = anhs.size() != 0 ? anhs.get(0) : null;
-        model.addAttribute("thumbAnh", thumbAnh);
-        model.addAttribute("anhs", anhs);
-        model.addAttribute("phong", phong);
-        model.addAttribute("loaiPhong", loaiPhong);
-        model.addAttribute("tienNghi", tienNghi);
-        model.addAttribute("danhGias", danhGias);
-        model.addAttribute("tongDanhGia", danhGias.size());
-        model.addAttribute("diemTrungBinh", diemTrungBinh);
-        model.addAttribute("loaiPhongs", loaiPhongs);
-        model.addAttribute("anhLoaiPhong", anhLoaiPhong);
-        model.addAttribute("bookingGuard", guard);
-        model.addAttribute("bookingLockedRangesJson", buildLockedRangesJson(guard));
-
-        System.out.println("Render phong = " + phong.getMaPhong());
-        System.out.println("Guard = " + guard);
-        System.out.println("Trang thai don gan nhat = " + guard.getTrangThaiDonGanNhat());
-        System.out.println("So khoang bi khoa = " + guard.getDanhSachKhoaLich().size());
-        for (su26sd09.su26sd09.dto.KhoangNgayBiKhoaDTO k : guard.getDanhSachKhoaLich()) {
-            System.out.println("  - Khoang khoa: " + k.getNgayBatDau() + " -> " + k.getNgayKetThuc()
-                    + " (trangThai=" + k.getTrangThaiDon() + ", maDatPhong=" + k.getMaDatPhong() + ")");
-        }
-
-        return "room-detail";
-    }
-
-    @GetMapping("/dat-phong/xac-nhan/{id}")
-    public String ConfirmOrder(@PathVariable int id,Model model){
-        DatPhong dp =  datphongservice.findById(id);
-        if (dp.getTrangThai().equals("Da xac nhan")){
-            return "redirect:/home";
-        }
-        BigDecimal resthue = BigDecimal.valueOf(soDem(dp.getNgaydatPhong(), dp.getNgaytraPhong()));
-        List<ChiTietDatPhong> listCt = chiTietDatPhongService.findByDatPhongId(id);
-        List<Chi_tiet_dich_vu> listctdv = ctdvService.findByDatPhongId(id);
-        BigDecimal amountDv = BigDecimal.ZERO;
-        BigDecimal amount = BigDecimal.ZERO;
-        BigDecimal amountP = BigDecimal.ZERO;
-        if (listctdv != null) {
-            for (Chi_tiet_dich_vu dv : listctdv) {
-                amountDv = amountDv.add(dv.getDonGia());
-
-            }
-        }
-        Map<Integer, Chi_tiet_dich_vu> dichVuDaChonMap = new HashMap<>();
-        List<Integer> dichVuDaChonIds = new ArrayList<>();
-        if (listctdv != null) {
-            for (Chi_tiet_dich_vu dv : listctdv) {
-                if (dv.getDv() != null) {
-                    dichVuDaChonMap.put(dv.getDv().getId(), dv);
-                    dichVuDaChonIds.add(dv.getDv().getId());
-                }
-            }
-        }
-        for(ChiTietDatPhong ct : listCt){
-            amountP = amountP.add(ct.getGiaKhiDat());
-            System.out.println("Chi tiet phong dang dat: "+ct.getP().getSoPhong());
-            amount = amount.add(ct.getGiaKhiDat());
-
-            System.out.println("Amount: "+amount);
-
-        }
-        System.out.println("AmountDv: "+amountDv);
-        amount = amount.add(amountDv);
-        BigDecimal tienGiam = tinhTienGiam(amountP, dp.getKm());
-        BigDecimal tienPhongSauGiam = amountP.subtract(tienGiam);
-        BigDecimal tongSauGiam = tienPhongSauGiam.add(amountDv);
-        model.addAttribute("TienDv",amountDv);
-
-        model.addAttribute("TongTien",amount);
-        model.addAttribute("TienPhong",amountP);
-        model.addAttribute("TienGiam", tienGiam);
-        model.addAttribute("TongSauGiam", tongSauGiam);
-        model.addAttribute("TongPhuPhi", datphongservice.sumExtraFeeForDatPhong(id));
-        model.addAttribute("datPhong",dp);
-        model.addAttribute("chiTietDatPhongList",listCt);
-        model.addAttribute("nightCount",resthue);
-        model.addAttribute("dichVuList",dichVuService.findAll().stream().filter(n -> n.getLoaiDv().equalsIgnoreCase("THUONG")));
-        model.addAttribute("dichVuDaChonIds", dichVuDaChonIds);
-        model.addAttribute("dichVuDaChonMap", dichVuDaChonMap);
-        model.addAttribute("kmJson", buildKhuyenMaiJson());
-
-        return "dat-phong-xac-nhan";
-    }
-
-    @PostMapping("/dat-phong/xac-nhan/{id}")
-    public String ConfirmDV(@PathVariable int id,
-                            @RequestParam(value = "dichVuIds", required = false) List<Integer> dichvuid,
-                            @RequestParam(value = "maKhuyenMai", required = false) Integer maKhuyenMai,
-                            @RequestParam Map<String, String> allParams,
-                            RedirectAttributes redirectAttributes,
-                            HttpServletRequest request,
-                            HttpServletResponse response) {
-
-        DatPhong dp = datphongservice.findById(id);
-        if (dp == null) {
-            return "redirect:/home";
-        }
-
-        // ===== B1: Validate TOÀN BỘ dịch vụ trước khi đụng vào DB =====
-        if (dichvuid != null) {
-            for (Integer maDichVu : dichvuid) {
-                Dich_vu dv = dichVuService.findById(maDichVu);
-                if (dv == null) continue;
-
-                String ngayStr = allParams.get("ngaySuDung_" + maDichVu);
-                LocalDateTime ngaySuDung = (ngayStr != null && !ngayStr.isBlank())
-                        ? LocalDateTime.parse(ngayStr)
-                        : LocalDateTime.now();
-
-                // Ngày phải nằm trong khoảng lưu trú
-                if (ngaySuDung.isBefore(dp.getNgaydatPhong()) || ngaySuDung.isAfter(dp.getNgaytraPhong())) {
-                    redirectAttributes.addFlashAttribute("bookingError",
-                            dv.getTen_dich_vu() + ": ngày sử dụng phải nằm trong thời gian lưu trú.");
-                    return "redirect:/phong/dat-phong/xac-nhan/" + id;
-                }
-
-                // Giờ phải nằm trong khung giờ phục vụ (nếu dịch vụ có giới hạn giờ)
-                if (dv.getGioBatDau() != null || dv.getGioKetThuc() != null) {
-                    LocalTime gio = ngaySuDung.toLocalTime();
-                    boolean hopLe = (dv.getGioBatDau() == null || !gio.isBefore(dv.getGioBatDau()))
-                            && (dv.getGioKetThuc() == null || !gio.isAfter(dv.getGioKetThuc()));
-                    if (!hopLe) {
-                        redirectAttributes.addFlashAttribute("bookingError",
-                                dv.getTen_dich_vu() + " chỉ phục vụ từ " + dv.getGioBatDau()
-                                        + " đến " + dv.getGioKetThuc() + " mỗi ngày.");
-                        return "redirect:/phong/dat-phong/xac-nhan/" + id;
-                    }
-                }
-            }
-        }
-
-        // ===== B2: Qua được validate rồi mới lưu khuyến mãi + dịch vụ như cũ =====
-        dp.setKm(null);
-        if (maKhuyenMai != null) {
-            KhuyenMai km = khuyenMaiService.findbyId(maKhuyenMai);
-            if (km != null && km.isHoatDong()) {
-                dp.setKm(km);
-            }
-        }
-        datphongservice.save(dp);
-
-        ctdvService.deleteByDatPhongId(id);
-
-        if (dichvuid != null) {
-            for (Integer maDichVu : dichvuid) {
-                Dich_vu dv = dichVuService.findById(maDichVu);
-                if (dv == null) continue;
-
-                String slStr = allParams.get("soLuong_" + maDichVu);
-                int sl = (slStr != null && !slStr.isBlank()) ? Integer.parseInt(slStr) : 1;
-
-                String ngayStr = allParams.get("ngaySuDung_" + maDichVu);
-                LocalDateTime ngaySuDung = (ngayStr != null && !ngayStr.isBlank())
-                        ? LocalDateTime.parse(ngayStr)
-                        : LocalDateTime.now();
-
-                Chi_tiet_dich_vu ct = new Chi_tiet_dich_vu();
-                ct.setSoluong(sl);
-                ct.setDatPhong(dp);
-                ct.setDv(dv);
-                ct.setDonGia(dv.getGia().multiply(BigDecimal.valueOf(sl)));
-                ct.setNgay_su_dung(ngaySuDung);
-                ctdvService.save(ct);
-            }
-        }
-
-        if (dp.getN() != null && dp.getN().getVaiTro() != null && "ROLE_GUEST".equals(dp.getN().getVaiTro().getTenVaiTro())){
-            KhachHang kh = dp.getN();
-            if (dp.getHoten() == null || dp.getHoten().isBlank()) dp.setHoten(kh.getHoTen());
-            if (dp.getEmail() == null || dp.getEmail().isBlank())   dp.setEmail(kh.getEmail());
-            if (dp.getSdt() == null || dp.getSdt().isBlank())       dp.setSdt(kh.getSoDienThoai());
-            datphongservice.save(dp);
-            return "redirect:/thanh-toan/dat-phong/"+dp.getId();
-        }else{
-            // Cập nhật COOKIE: sau khi đã qua bước DV, đơn vãng lai vẫn đang dở.
-            // Cookie sống ở trình duyệt nên không bị mất khi server restart.
-            if (dp.getN() == null) {
-                bookingDraftService.remember(request, response, dp.getId());
-            }
-            return "redirect:/phong/dat-phong/thong-tin-khach/"+dp.getId();
-        }
-    }
-
-    /**
-     * Phục hồi luồng đặt phòng cho khách VÃNG LAI (không có tài khoản).
-     *
-     * Khác với UserProfilesController.tiepTucDatPhong (cần đăng nhập + quyền sở hữu),
-     * endpoint này dựa vào COOKIE GUEST_BOOKING_DRAFT do GioHangController
-     * và PhongController.ConfirmDV ghi nhớ sau khi tạo đơn / qua bước DV.
-     * Cookie sống ở trình duyệt nên KHÔNG bị mất khi server restart.
-     */
-    @GetMapping("/dat-phong/tiep-tuc-dat/{id}")
-    public String tiepTucDatPhongVangLai(@PathVariable int id,
-                                         HttpServletRequest request,
-                                         HttpServletResponse response,
-                                         RedirectAttributes redirectAttributes) {
-        DatPhong dp = bookingDraftService.peek(request);
-        if (dp == null || dp.getId() != id) {
-            redirectAttributes.addFlashAttribute("bookingError",
-                    "Đơn đặt phòng này không thuộc trình duyệt của bạn hoặc đã hết hạn. Vui lòng đặt lại từ đầu.");
-            bookingDraftService.consume(request, response);
-
-            return "redirect:/phong";
-        }
-
-        // Xác định bước đang dở
-        List<Chi_tiet_dich_vu> dsDv = ctdvService.findByDatPhongId(id);
-        if (dsDv == null || dsDv.isEmpty()) {
-            // Chưa qua bước chọn DV -> quay lại trang xác nhận
-            redirectAttributes.addFlashAttribute("thongBao",
-                    "Tiếp tục đặt phòng: bạn có thể chọn dịch vụ bổ sung hoặc bỏ qua và đi tới bước thanh toán.");
-            return "redirect:/phong/dat-phong/xac-nhan/" + id;
-        }
-        // Đã chọn DV -> đưa thẳng về trang thông tin khách (vãng lai) -> thanh toán
-        redirectAttributes.addFlashAttribute("thongBao",
-                "Tiếp tục đặt phòng: vui lòng hoàn tất thông tin khách và thanh toán.");
-        return "redirect:/phong/dat-phong/thong-tin-khach/" + id;
-    }
-
-    @GetMapping("/dat-phong/thong-tin-khach/{id}")
-    public String ConfirmCustomerInfor(@PathVariable int id, Model model, Authentication authentication){
-
-        DatPhong dp = datphongservice.findById(id);
-        if (dp == null) {
-            return "redirect:/home";
-        }
-        if ("Da xac nhan".equals(dp.getTrangThai())){
-            return "redirect:/home";
-        }
-
-        // ===== BỎ QUA BƯỚC NHẬP THÔNG TIN NẾU LÀ KHÁCH CÓ TÀI KHOẢN (ROLE_GUEST) =====
-        // Có 2 cách xác định: đơn đã gắn user (dp.getN() != null) HOẶC user hiện tại đang login là ROLE_GUEST
-        KhachHang currentKhach = null;
-        boolean isRoleGuest = false;
-
-        // Cách 1: đơn đã được gắn với user từ trước
-        if (dp.getN() != null
-                && dp.getN().getVaiTro() != null
-                && "ROLE_GUEST".equals(dp.getN().getVaiTro().getTenVaiTro())) {
-            isRoleGuest = true;
-            currentKhach = dp.getN();
-        }
-
-        // Cách 2: user hiện tại đang đăng nhập với role ROLE_GUEST (kể cả khi đơn chưa gắn user)
-        if (!isRoleGuest && authentication != null
-                && authentication.isAuthenticated()
-                && !(authentication instanceof AnonymousAuthenticationToken)) {
-            KhachHang nd = nguoiDungService.findByEmail(authentication.getName());
-            if (nd != null && nd.getVaiTro() != null
-                    && "ROLE_GUEST".equals(nd.getVaiTro().getTenVaiTro())) {
-                isRoleGuest = true;
-                currentKhach = nd;
-                // Gắn user vào đơn nếu đơn chưa gắn (đơn tạo trước khi login)
-                if (dp.getN() == null) {
-                    dp.setN(nd);
-                }
-            }
-        }
-
-        if (isRoleGuest && currentKhach != null) {
-            // Tự động lấy thông tin từ tài khoản KhachHang để gán vào đơn đặt phòng
-            if (dp.getHoten() == null || dp.getHoten().isBlank()) {
-                dp.setHoten(currentKhach.getHoTen());
-            }
-            if (dp.getEmail() == null || dp.getEmail().isBlank()) {
-                dp.setEmail(currentKhach.getEmail());
-            }
-            if (dp.getSdt() == null || dp.getSdt().isBlank()) {
-                dp.setSdt(currentKhach.getSoDienThoai());
-            }
-            datphongservice.save(dp);
-            // Chuyển thẳng sang bước thanh toán, bỏ qua form nhập thông tin khách
-            return "redirect:/thanh-toan/dat-phong/" + id;
-        }
-
-        List<ChiTietDatPhong> listCt = chiTietDatPhongService.findByDatPhongId(id);
-        List<Chi_tiet_dich_vu> listctdv = ctdvService.findByDatPhongId(id);
-        BigDecimal amountDv = BigDecimal.ZERO;
-       model.addAttribute("datPhong",dp);
-        System.out.println("Debug dat phong Ngay nhan phong: "+dp.getNgaydatPhong());
-       long nightCount = ChronoUnit.DAYS.between(dp.getNgaydatPhong().toLocalDate(), dp.getNgaytraPhong().toLocalDate());
-       model.addAttribute("nightCount", Math.max(1, nightCount));
-       model.addAttribute("chiTietDatPhongList",listCt);
-        BigDecimal amount = BigDecimal.ZERO;
-        BigDecimal ThueVat = new BigDecimal("0.10");
-
-
-        BigDecimal resThue = BigDecimal.valueOf(dp.getNgaytraPhong().getDayOfYear() - dp.getNgaydatPhong().getDayOfYear());
-        for(Chi_tiet_dich_vu dv : listctdv){
-            amountDv = amountDv.add(dv.getDonGia());
-        }
-        model.addAttribute("TienDv",amountDv);
-        for (ChiTietDatPhong chiTietDatPhong : listCt){
-            amount = amount.add(chiTietDatPhong.getGiaKhiDat());
-            System.out.println("So tien: "+chiTietDatPhong.getGiaKhiDat() + "Amount: "+amount );
-
-            System.out.println("In for each loops: "+chiTietDatPhong.getGiaMoiDem());
-
-        }
-        BigDecimal tienGiam = tinhTienGiam(amount, dp.getKm());
-        BigDecimal tienPhongSauGiam = amount.subtract(tienGiam);
-        BigDecimal TotalAmount = tienPhongSauGiam.add(amountDv);
-        BigDecimal TienVat = TotalAmount.multiply(ThueVat).setScale(2, RoundingMode.HALF_UP);
-        TotalAmount = TotalAmount.add(TienVat);
-        System.out.println("Amount: "+ amount);
-        model.addAttribute("TienVat",TienVat);
-        model.addAttribute("TienPhong",amount);
-        model.addAttribute("TienGiam", tienGiam);
-        model.addAttribute("TongTien",TotalAmount);
-        model.addAttribute("TongCong",TotalAmount);
-        model.addAttribute("TongPhuPhi", datphongservice.sumExtraFeeForDatPhong(id));
-        model.addAttribute("chiTietDichVuList", listctdv);
-        return "dat-phong-thong-tin-khach";
-    }
-
-    private BigDecimal tinhTienGiam(BigDecimal tienPhong, KhuyenMai km) {
-        if (km == null || !km.isHoatDong() || km.getGiatriGiam() == null) {
-            return BigDecimal.ZERO;
-        }
-        BigDecimal dieuKien = km.getGiaToiThieuDuocGiam() == null ? BigDecimal.ZERO : km.getGiaToiThieuDuocGiam();
-        if (tienPhong.compareTo(dieuKien) < 0) {
-            return BigDecimal.ZERO;
-        }
-        if ("PERCENT".equalsIgnoreCase(km.getLoaiGiam())) {
-            return tienPhong.multiply(km.getGiatriGiam())
-                    .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
-        }
-        if ("AMOUNT".equalsIgnoreCase(km.getLoaiGiam()) || "FIXED".equalsIgnoreCase(km.getLoaiGiam())) {
-            return km.getGiatriGiam().min(tienPhong);
-        }
-        return BigDecimal.ZERO;
-    }
-
-    private String buildKhuyenMaiJson() {
-        List<KhuyenMai> kmList = khuyenMaiService.findAllActive().toList();
-        StringBuilder sb = new StringBuilder("[");
-        for (int i = 0; i < kmList.size(); i++) {
-            KhuyenMai km = kmList.get(i);
-            if (i > 0) {
-                sb.append(",");
-            }
-            BigDecimal dieuKien = km.getGiaToiThieuDuocGiam() == null ? BigDecimal.ZERO : km.getGiaToiThieuDuocGiam();
-            sb.append("{")
-                    .append("\"id\":").append(km.getId()).append(",")
-                    .append("\"code\":\"").append(escapeJson(km.getPromoCode())).append("\",")
-                    .append("\"loaiGiam\":\"").append(escapeJson(km.getLoaiGiam())).append("\",")
-                    .append("\"giatriGiam\":").append(km.getGiatriGiam() == null ? "0" : km.getGiatriGiam().toPlainString()).append(",")
-                    .append("\"dieuKien\":").append(dieuKien.toPlainString())
-                    .append("}");
-        }
-        sb.append("]");
-        return sb.toString();
-    }
-
-    private static String escapeJson(String s) {
-        if (s == null) {
-            return "";
-        }
-        return s.replace("\\", "\\\\").replace("\"", "\\\"");
-    }
-
-    @PostMapping("/dat-phong/thong-tin-khach/{id}")
-    public String SaveXacThucThongTin(Model model,
-                                      @PathVariable int id,
-                                      @RequestParam("hoTen") String hoten,
-                                      @RequestParam("email") String email,
-                                      @RequestParam("sdt")String sodienthoai,
-
-                                      @RequestParam("yeuCauThem") String yeucauthem,
-                                      Authentication authentication,
-                                      HttpServletRequest request,
-                                      HttpServletResponse response) {
-            BigDecimal amount = BigDecimal.ZERO;
-            BigDecimal amountdv = BigDecimal.ZERO;
-            DatPhong dp = datphongservice.findById(id);
-            if(dp ==null) {
-                return "dat-phong-thong-tin-khach";
-            }
-            List<NhanSu> listNv = nhanVienService.findAll();
-            Stream<NhanSu> ListnvLeTan = listNv.stream().filter(nv -> nv.getBoPhan().equalsIgnoreCase("lễ tân"));
-            
-            List<ChiTietDatPhong> listCtdp = chiTietDatPhongService.findByDatPhongId(id);
-            List<Chi_tiet_dich_vu> listCtdv = ctdvService.findByDatPhongId(id);
-            for(ChiTietDatPhong ctdp : listCtdp){
-                amount = amount.add(ctdp.getGiaKhiDat());
-            }
-            for(Chi_tiet_dich_vu ctdv : listCtdv){
-                amountdv = amountdv.add(ctdv.getDonGia());
-            }
-            amount = amount.add(amountdv);
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        String  emailSearch = null;
-        if (auth != null && auth.isAuthenticated() && !(auth instanceof AnonymousAuthenticationToken)) {
-            emailSearch = auth.getName();
-        } else {
-            for (NhanSu nv : ListnvLeTan.toList()) {
-                emailSearch = nv.getEmail();
-            }
-        }
-
-        NhanSu n = nhanVienService.FindByemail(emailSearch);
-
-        boolean isNvDp = n != null
-                && n.getVaitro() != null
-                && "ROLE_STAFF".equals(n.getVaitro().getTenVaiTro());
-
-        if (isNvDp) {
-            // Nhân viên đang thao tác -> gán nhân viên đó vào nv
-            dp.setNv(n);
-        } else {
-            // Khách vãng lai -> không gán nv, chỉ dùng hoten để hiển thị
-            dp.setNv(null);
-        }
-        System.out.println("Amount Xac nhan thong tin khach hang: "+amount);
-        System.out.println("Amount dich vu xac nhan thong tin khach hang: "+amountdv);
-            dp.setHoten(hoten);
-            dp.setEmail(email);
-            dp.setSdt(sodienthoai);
-            dp.setYeuCauThem(yeucauthem);
-
-
-            datphongservice.save(dp);
-
-            // Khách vãng lai đã hoàn tất thông tin -> xóa COOKIE draft
-            // (vì đơn gi� đã được gắn hoten/email/sdt, không còn ở trạng thái "dở")
-            // Khách vãng lai đã hoàn tất thông tin -> xóa COOKIE draft
-            // (vì đơn đã được gắn hoten/email/sdt, không còn ở trạng thái "dở")
-            bookingDraftService.consume(request, response);
-
-            return "redirect:/thanh-toan/dat-phong/"+dp.getId();
-    }
-    @PostMapping("/dat-phong/quick")
-    public String quickBooking(@RequestParam Integer maLoaiPhong,
-                               @RequestParam Integer maPhong,
-                               @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime ngayNhan,
-                               @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime ngayTra,
-                               @RequestParam Integer nguoiLon,
-                               @RequestParam Integer treEm,
-
-                               @RequestParam(required = false) String yeuCauThem,
-                               @RequestParam(required = false) String ma_cccd,
-                               Authentication authentication,
-                               RedirectAttributes redirectAttributes,
-                               HttpServletRequest request,
-                               HttpServletResponse response) {
-        System.out.println("vao Controller");
-        Phong phong = phongService.findById(maPhong);
-        RoomBookingGuardDTO guard = phong != null ? phongService.buildRoomGuardFor(maPhong) : null;
-        if (phong == null || guard == null || !guard.isCoTheDat()) {
-            redirectAttributes.addFlashAttribute("bookingError", "Phòng không khả dụng, vui lòng chọn phòng khác.");
-            return "redirect:/loai-phong/" + maLoaiPhong;
-        }
-
-        long soDem = ChronoUnit.DAYS.between(ngayNhan.toLocalDate(), ngayTra.toLocalDate());
-        if (soDem < 1) {
-            redirectAttributes.addFlashAttribute("bookingError", "Ngày trả phòng phải sau ngày nhận phòng ít nhất 1 ngày.");
-            return "redirect:/loai-phong/" + maLoaiPhong;
-        }
-
-        if (phong.getLoaiPhong() != null) {
-            int sucChua = phong.getLoaiPhong().getSucChuaToiDa();
-            int tongNguoi = (nguoiLon != null ? nguoiLon : 0) + (treEm != null ? treEm : 0);
-            if (tongNguoi > sucChua) {
-                redirectAttributes.addFlashAttribute("bookingError",
-                        "Số lượng người (" + tongNguoi + ") vượt quá sức chứa của phòng (" + sucChua + " người).");
-                return "redirect:/loai-phong/" + maLoaiPhong;
-            }
-        }
-
-        String guardError = validateRoomBookingGuard(guard, ngayNhan, ngayTra);
-        if (guardError != null) {
-            redirectAttributes.addFlashAttribute("bookingError", guardError);
-            return "redirect:/loai-phong/" + maLoaiPhong;
-        }
-
-        DatPhong dp = new DatPhong();
-        dp.setNgaydatPhong(ngayNhan);
-        dp.setNgaytraPhong(ngayTra);
-        dp.setSonguoiLon(nguoiLon);
-        dp.setSotreEm(treEm);
-
-        dp.setYeuCauThem(appendGuardNote(yeuCauThem, guard, ngayNhan, ngayTra));
-        if (ma_cccd != null && !ma_cccd.isBlank()) {
-            dp.setMa_cccd(ma_cccd.trim());
-        }
-        dp.setNgayTao(LocalDateTime.now());
-        boolean isLoggedIn = authentication != null
-                && authentication.isAuthenticated()
-                && !(authentication instanceof AnonymousAuthenticationToken);
-        if (isLoggedIn && !isNhanVienOrAdmin(authentication)) {
-
-            KhachHang nd = nguoiDungService.findByEmail(authentication.getName());
-            if(nd !=null) {
-                dp.setHoten(nd.getHoTen());
-                dp.setEmail(nd.getEmail());
-                dp.setSdt(nd.getSoDienThoai());
-
-                dp.setN(nd);
-            }
-        }
-
-        dp.setTrangThai("Chua thanh toan");
-        DatPhong savedDp = datphongservice.save(dp);
-        BigDecimal phuPhiNgoaiGio = calculateExtraFee(guard, ngayNhan, ngayTra);
-
-        ChiTietDatPhong ctdp = new ChiTietDatPhong();
-        ctdp.setD(savedDp);
-        ctdp.setP(phong);
-        ctdp.setGiaMoiDem(phong.getGiaMoiDem());
-        ctdp.setGiaKhiDat(phong.getGiaMoiDem().multiply(BigDecimal.valueOf(soDem)).add(phuPhiNgoaiGio));
-        ctdp.setMa_cccd(ma_cccd);
-        ctdp.setPhuPhi(phuPhiNgoaiGio);
-        chiTietDatPhongService.save(ctdp);
-
-        // ===== Ghi nhớ vào COOKIE cho khách vãng lai (không bị mất khi restart server) =====
-        if (savedDp.getN() == null) {
-            bookingDraftService.remember(request, response, savedDp.getId());
-        }
-
-        return "redirect:/phong/dat-phong/xac-nhan/" + savedDp.getId();
-    }
-
-    private boolean isNhanVienOrAdmin(Authentication authentication) {
-        return authentication != null
-                && authentication.getAuthorities().stream()
-                .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority())
-                        || "ROLE_STAFF".equals(a.getAuthority()));
-    }
-
-    private String validateRoomBookingGuard(RoomBookingGuardDTO guard,
-                                            LocalDateTime ngayNhan,
-                                            LocalDateTime ngayTra) {
-
-        if (guard == null || !guard.isCoTheDat()) {
-            return "Phong khong kha dung.";
-        }
-
-        // Duyệt TỪNG đơn đang giữ chỗ, không gộp min-max, tránh chặn nhầm
-        // khoảng trống giữa 2 đơn không liên tục.
-        for (su26sd09.su26sd09.dto.KhoangNgayBiKhoaDTO khoang : guard.getDanhSachKhoaLich()) {
-            LocalDateTime batDau = khoang.getNgayBatDau();
-            LocalDateTime ketThuc = khoang.getNgayKetThuc();
-            if (batDau == null || ketThuc == null) continue;
-
-            boolean overlap = ngayNhan.isBefore(ketThuc) && ngayTra.isAfter(batDau);
-            if (overlap) {
-                return "Phong da co lich dat tu "
-                        + batDau.toLocalDate()
-                        + " den "
-                        + ketThuc.toLocalDate()
-                        + ". Vui long chon khoang ngay khac.";
-            }
-        }
-
-        return null;
-    }
-
-    private String appendGuardNote(String yeuCauThem, RoomBookingGuardDTO guard, LocalDateTime ngayNhan, LocalDateTime ngayTra) {
-        String result = yeuCauThem;
-        if (guard == null) {
-            return result;
-        }
-
-        BigDecimal phuPhi = calculateExtraFee(guard, ngayNhan, ngayTra);
-        if (BigDecimal.ZERO.compareTo(phuPhi) == 0) {
-            return result;
-        }
-
-        String note = "[PHU_PHI_NGOAI_GIO=" + phuPhi.toPlainString() + "]";
-        if (result == null || result.isBlank()) {
-            return note;
-        }
-        return result + " " + note;
-    }
-
-    private BigDecimal calculateExtraFee(RoomBookingGuardDTO guard, LocalDateTime ngayNhan, LocalDateTime ngayTra) {
-        if (guard == null) {
-            return BigDecimal.ZERO;
-        }
-
-        // ===== Chính sách mới: KHÔNG tính phụ phí cho check-in muộn hoặc check-out sớm.
-        // Chỉ tính phụ phí khi check-in QUÁ SỚM (trước giờ nhận tối thiểu) hoặc
-        // check-out QUÁ TRỄ (sau giờ trả tối đa). Hai trường hợp này ảnh hưởng
-        // đến vận hành phòng (phòng chưa sẵn sàng / khách ở lại quá lâu).
-        LocalTime gioNhan = ngayNhan.toLocalTime();
-        LocalTime gioTra = ngayTra.toLocalTime();
-        boolean nhanQuaSom = gioNhan.isBefore(guard.getGioNhanToiThieu());
-        boolean traQuaTre = gioTra.isAfter(guard.getGioTraToiDa());
-        return (nhanQuaSom || traQuaTre) ? guard.getPhuPhiNgoaiGioVND() : BigDecimal.ZERO;
-    }
-    private String buildLockedRangesJson(RoomBookingGuardDTO guard) {
-        List<su26sd09.su26sd09.dto.KhoangNgayBiKhoaDTO> list =
-                guard != null ? guard.getDanhSachKhoaLich() : java.util.Collections.emptyList();
-        StringBuilder sb = new StringBuilder("[");
-        for (int i = 0; i < list.size(); i++) {
-            su26sd09.su26sd09.dto.KhoangNgayBiKhoaDTO k = list.get(i);
-            if (i > 0) sb.append(",");
-            sb.append("{")
-                    .append("\"tu\":\"").append(k.getNgayBatDau() != null ? k.getNgayBatDau().toLocalDate() : "").append("\",")
-                    .append("\"den\":\"").append(k.getNgayKetThuc() != null ? k.getNgayKetThuc().toLocalDate() : "").append("\",")
-                    .append("\"trangThai\":\"").append(escapeJson(k.getTrangThaiDon())).append("\"")
-                    .append("}");
-        }
-        sb.append("]");
-        return sb.toString();
-    }
-
-    /**
-     * Tính số đêm giữa 2 thời điểm: bỏ phần giờ, chỉ so sánh ngày (LocalDate).
-     * Tối thiểu 1 đêm nếu ngày trả > ngày nhận. Xử lý đúng khi qua năm mới
-     * (tránh lỗi âm của getDayOfYear()).
-     */
-    private long soDem(LocalDateTime ngayNhan, LocalDateTime ngayTra) {
-        if (ngayNhan == null || ngayTra == null) return 1;
-        long diff = ChronoUnit.DAYS.between(ngayNhan.toLocalDate(), ngayTra.toLocalDate());
-        return Math.max(1, diff);
-    }
-
-
-}
+//package su26sd09.su26sd09.controller;
+//
+//import org.springframework.beans.factory.annotation.Autowired;
+//import org.springframework.format.annotation.DateTimeFormat;
+//import org.springframework.security.authentication.AnonymousAuthenticationToken;
+//import org.springframework.security.core.Authentication;
+//import org.springframework.security.core.context.SecurityContextHolder;
+//import org.springframework.stereotype.Controller;
+//import org.springframework.ui.Model;
+//import org.springframework.web.bind.annotation.*;
+//import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+//import su26sd09.su26sd09.dto.RoomBookingGuardDTO;
+//import su26sd09.su26sd09.entity.*;
+//import jakarta.servlet.http.HttpServletRequest;
+//import jakarta.servlet.http.HttpServletResponse;
+//import su26sd09.su26sd09.service.*;
+//
+//import java.math.BigDecimal;
+//import java.math.RoundingMode;
+//import java.time.LocalDateTime;
+//import java.time.LocalTime;
+//import java.time.temporal.ChronoUnit;
+//import java.util.*;
+//import java.util.stream.Stream;
+//
+//@Controller
+//@RequestMapping("/phong")
+//public class PhongController {
+//
+//    @Autowired
+//    private PhongService phongService;
+//
+//    @Autowired
+//    private DanhGiaService danhGiaService;
+//
+//    @Autowired
+//    private ChiTietDatPhongService chiTietDatPhongService;
+//
+//    @Autowired
+//    private DatPhongService datphongservice;
+//
+//    @Autowired
+//    private DichVuService dichVuService;
+//
+//    @Autowired
+//    private ChiTietDichVuService ctdvService;
+//
+//    @Autowired
+//    private NguoiDungService nguoiDungService;
+//
+//    @Autowired
+//    private NhanVienService nhanVienService;
+//
+//    @Autowired
+//    private khuyenMaiService khuyenMaiService;
+//
+//    @Autowired
+//    private ReviewService reviewService;
+//
+//    @Autowired
+//    private BookingDraftService bookingDraftService;
+//
+////    @GetMapping
+////    public String index(Model model) {
+////        // Lấy tất cả phòng
+////        List<Phong> phongs = phongService.findAllPhong();
+////
+////        // Lấy tiện nghi cho từng phòng
+////        Map<Integer, List<String>> tienNghiTheoPhong = new HashMap<>();
+////        Map<Integer, String> tenLoaiTheoPhong = new HashMap<>();
+////        for (Phong phong : phongs) {
+////            tienNghiTheoPhong.put(phong.getMaPhong(), phongService.findTenTienNghiByPhong(phong.getMaPhong()));
+////            if (phong.getLoaiPhong() != null) {
+////                tenLoaiTheoPhong.put(phong.getMaPhong(), phong.getLoaiPhong().getTenLoai());
+////            }
+////        }
+////
+////        List<LoaiPhong> loaiPhongs = phongService.findAllLoai();
+////
+////        HashMap<Integer, UUID> thumbAnhs = new HashMap<>();
+////        for (Phong p: phongs
+////             ) {
+////            Integer id = p.getMaPhong();
+////            PhongAnh pa = phongAnhRepository.findByMaPhongFirst(p.getMaPhong());
+////            thumbAnhs.put(
+////                    id,
+////                    pa != null ? pa.maAnh.maAnh : null
+////            );
+////        }
+////
+////        model.addAttribute("thumbAnhs", thumbAnhs);
+////        model.addAttribute("phongs", phongs);
+////        model.addAttribute("tienNghiTheoPhong", tienNghiTheoPhong);
+////        model.addAttribute("tenLoaiTheoPhong", tenLoaiTheoPhong);
+////        model.addAttribute("loaiPhongs", loaiPhongs);
+////        model.addAttribute("bookingGuardByPhong", phongService.buildRoomGuards(phongs));
+////
+////        return "rooms";
+////    }
+//
+//    @GetMapping("/{id}")
+//    public String detail(
+//            @PathVariable("id") int id,
+//            Model model,
+//            RedirectAttributes redirectAttributes
+//    ) {
+//        Phong phong = phongService.findPhongById(id);
+//        if (phong == null) {
+//            redirectAttributes.addFlashAttribute("error", "Không tìm thấy phòng");
+//            return "redirect:/phong";
+//        }
+//
+//        LoaiPhong loaiPhong = phong.getLoaiPhong();
+//        List<String> tienNghi = phongService.findTenTienNghiByPhong(phong.getMaPhong());
+//        List<DanhGia> danhGias = danhGiaService.findDaDuyetByPhong(phong.getMaPhong());
+//        double diemTrungBinh = danhGias.stream()
+//                .mapToInt(DanhGia::getDiemDanhGia)
+//                .average()
+//                .orElse(0);
+//
+//        // Lấy tất cả loại phòng cho dropdown menu và carousel
+//        List<LoaiPhong> loaiPhongs = phongService.findAllLoai();
+//        Map<Integer, String> anhLoaiPhong = new HashMap<>();
+//        for (LoaiPhong lp : loaiPhongs) {
+//            anhLoaiPhong.put(lp.getId(), "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=800&q=80");
+//        }
+//
+//        RoomBookingGuardDTO guard = phongService.buildRoomGuardFor(phong.getMaPhong());
+//
+//        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+//        String currentEmail = (authentication != null
+//                && authentication.isAuthenticated()
+//                && !(authentication instanceof AnonymousAuthenticationToken))
+//                ? authentication.getName()
+//                : null;
+//        model.addAttribute("reviewEligibility", reviewService.getEligibility(phong.getMaPhong(), currentEmail));
+//
+//        List<Anh> anhs = new ArrayList<>();
+//        for (PhongAnh pa: phongAnhRepository.findByMaPhong_MaPhong(id)
+//             ) {
+//            anhs.add(pa.maAnh);
+//        }
+//        Anh thumbAnh = anhs.size() != 0 ? anhs.get(0) : null;
+//        model.addAttribute("thumbAnh", thumbAnh);
+//        model.addAttribute("anhs", anhs);
+//        model.addAttribute("phong", phong);
+//        model.addAttribute("loaiPhong", loaiPhong);
+//        model.addAttribute("tienNghi", tienNghi);
+//        model.addAttribute("danhGias", danhGias);
+//        model.addAttribute("tongDanhGia", danhGias.size());
+//        model.addAttribute("diemTrungBinh", diemTrungBinh);
+//        model.addAttribute("loaiPhongs", loaiPhongs);
+//        model.addAttribute("anhLoaiPhong", anhLoaiPhong);
+//        model.addAttribute("bookingGuard", guard);
+//        model.addAttribute("bookingLockedRangesJson", buildLockedRangesJson(guard));
+//
+//        System.out.println("Render phong = " + phong.getMaPhong());
+//        System.out.println("Guard = " + guard);
+//        System.out.println("Trang thai don gan nhat = " + guard.getTrangThaiDonGanNhat());
+//        System.out.println("So khoang bi khoa = " + guard.getDanhSachKhoaLich().size());
+//        for (su26sd09.su26sd09.dto.KhoangNgayBiKhoaDTO k : guard.getDanhSachKhoaLich()) {
+//            System.out.println("  - Khoang khoa: " + k.getNgayBatDau() + " -> " + k.getNgayKetThuc()
+//                    + " (trangThai=" + k.getTrangThaiDon() + ", maDatPhong=" + k.getMaDatPhong() + ")");
+//        }
+//
+//        return "room-detail";
+//    }
+//
+//    @GetMapping("/dat-phong/xac-nhan/{id}")
+//    public String ConfirmOrder(@PathVariable int id,Model model){
+//        DatPhong dp =  datphongservice.findById(id);
+//        if (dp.getTrangThai().equals("Da xac nhan")){
+//            return "redirect:/home";
+//        }
+//        BigDecimal resthue = BigDecimal.valueOf(soDem(dp.getNgaydatPhong(), dp.getNgaytraPhong()));
+//        List<ChiTietDatPhong> listCt = chiTietDatPhongService.findByDatPhongId(id);
+//        List<Chi_tiet_dich_vu> listctdv = ctdvService.findByDatPhongId(id);
+//        BigDecimal amountDv = BigDecimal.ZERO;
+//        BigDecimal amount = BigDecimal.ZERO;
+//        BigDecimal amountP = BigDecimal.ZERO;
+//        if (listctdv != null) {
+//            for (Chi_tiet_dich_vu dv : listctdv) {
+//                amountDv = amountDv.add(dv.getDonGia());
+//
+//            }
+//        }
+//        Map<Integer, Chi_tiet_dich_vu> dichVuDaChonMap = new HashMap<>();
+//        List<Integer> dichVuDaChonIds = new ArrayList<>();
+//        if (listctdv != null) {
+//            for (Chi_tiet_dich_vu dv : listctdv) {
+//                if (dv.getDv() != null) {
+//                    dichVuDaChonMap.put(dv.getDv().getId(), dv);
+//                    dichVuDaChonIds.add(dv.getDv().getId());
+//                }
+//            }
+//        }
+//        for(ChiTietDatPhong ct : listCt){
+//            amountP = amountP.add(ct.getGiaKhiDat());
+//            System.out.println("Chi tiet phong dang dat: "+ct.getP().getSoPhong());
+//            amount = amount.add(ct.getGiaKhiDat());
+//
+//            System.out.println("Amount: "+amount);
+//
+//        }
+//        System.out.println("AmountDv: "+amountDv);
+//        amount = amount.add(amountDv);
+//        BigDecimal tienGiam = tinhTienGiam(amountP, dp.getKm());
+//        BigDecimal tienPhongSauGiam = amountP.subtract(tienGiam);
+//        BigDecimal tongSauGiam = tienPhongSauGiam.add(amountDv);
+//        model.addAttribute("TienDv",amountDv);
+//
+//        model.addAttribute("TongTien",amount);
+//        model.addAttribute("TienPhong",amountP);
+//        model.addAttribute("TienGiam", tienGiam);
+//        model.addAttribute("TongSauGiam", tongSauGiam);
+//        model.addAttribute("TongPhuPhi", datphongservice.sumExtraFeeForDatPhong(id));
+//        model.addAttribute("datPhong",dp);
+//        model.addAttribute("chiTietDatPhongList",listCt);
+//        model.addAttribute("nightCount",resthue);
+//        model.addAttribute("dichVuList",dichVuService.findAll().stream().filter(n -> n.getLoaiDv().equalsIgnoreCase("THUONG")));
+//        model.addAttribute("dichVuDaChonIds", dichVuDaChonIds);
+//        model.addAttribute("dichVuDaChonMap", dichVuDaChonMap);
+//        model.addAttribute("kmJson", buildKhuyenMaiJson());
+//
+//        return "dat-phong-xac-nhan";
+//    }
+//
+//    @PostMapping("/dat-phong/xac-nhan/{id}")
+//    public String ConfirmDV(@PathVariable int id,
+//                            @RequestParam(value = "dichVuIds", required = false) List<Integer> dichvuid,
+//                            @RequestParam(value = "maKhuyenMai", required = false) Integer maKhuyenMai,
+//                            @RequestParam Map<String, String> allParams,
+//                            RedirectAttributes redirectAttributes,
+//                            HttpServletRequest request,
+//                            HttpServletResponse response) {
+//
+//        DatPhong dp = datphongservice.findById(id);
+//        if (dp == null) {
+//            return "redirect:/home";
+//        }
+//
+//        // ===== B1: Validate TOÀN BỘ dịch vụ trước khi đụng vào DB =====
+//        if (dichvuid != null) {
+//            for (Integer maDichVu : dichvuid) {
+//                Dich_vu dv = dichVuService.findById(maDichVu);
+//                if (dv == null) continue;
+//
+//                String ngayStr = allParams.get("ngaySuDung_" + maDichVu);
+//                LocalDateTime ngaySuDung = (ngayStr != null && !ngayStr.isBlank())
+//                        ? LocalDateTime.parse(ngayStr)
+//                        : LocalDateTime.now();
+//
+//                // Ngày phải nằm trong khoảng lưu trú
+//                if (ngaySuDung.isBefore(dp.getNgaydatPhong()) || ngaySuDung.isAfter(dp.getNgaytraPhong())) {
+//                    redirectAttributes.addFlashAttribute("bookingError",
+//                            dv.getTen_dich_vu() + ": ngày sử dụng phải nằm trong thời gian lưu trú.");
+//                    return "redirect:/phong/dat-phong/xac-nhan/" + id;
+//                }
+//
+//                // Giờ phải nằm trong khung giờ phục vụ (nếu dịch vụ có giới hạn giờ)
+//                if (dv.getGioBatDau() != null || dv.getGioKetThuc() != null) {
+//                    LocalTime gio = ngaySuDung.toLocalTime();
+//                    boolean hopLe = (dv.getGioBatDau() == null || !gio.isBefore(dv.getGioBatDau()))
+//                            && (dv.getGioKetThuc() == null || !gio.isAfter(dv.getGioKetThuc()));
+//                    if (!hopLe) {
+//                        redirectAttributes.addFlashAttribute("bookingError",
+//                                dv.getTen_dich_vu() + " chỉ phục vụ từ " + dv.getGioBatDau()
+//                                        + " đến " + dv.getGioKetThuc() + " mỗi ngày.");
+//                        return "redirect:/phong/dat-phong/xac-nhan/" + id;
+//                    }
+//                }
+//            }
+//        }
+//
+//        // ===== B2: Qua được validate rồi mới lưu khuyến mãi + dịch vụ như cũ =====
+//        dp.setKm(null);
+//        if (maKhuyenMai != null) {
+//            KhuyenMai km = khuyenMaiService.findbyId(maKhuyenMai);
+//            if (km != null && km.isHoatDong()) {
+//                dp.setKm(km);
+//            }
+//        }
+//        datphongservice.save(dp);
+//
+//        ctdvService.deleteByDatPhongId(id);
+//
+//        if (dichvuid != null) {
+//            for (Integer maDichVu : dichvuid) {
+//                Dich_vu dv = dichVuService.findById(maDichVu);
+//                if (dv == null) continue;
+//
+//                String slStr = allParams.get("soLuong_" + maDichVu);
+//                int sl = (slStr != null && !slStr.isBlank()) ? Integer.parseInt(slStr) : 1;
+//
+//                String ngayStr = allParams.get("ngaySuDung_" + maDichVu);
+//                LocalDateTime ngaySuDung = (ngayStr != null && !ngayStr.isBlank())
+//                        ? LocalDateTime.parse(ngayStr)
+//                        : LocalDateTime.now();
+//
+//                Chi_tiet_dich_vu ct = new Chi_tiet_dich_vu();
+//                ct.setSoluong(sl);
+//                ct.setDatPhong(dp);
+//                ct.setDv(dv);
+//                ct.setDonGia(dv.getGia().multiply(BigDecimal.valueOf(sl)));
+//                ct.setNgay_su_dung(ngaySuDung);
+//                ctdvService.save(ct);
+//            }
+//        }
+//
+//        if (dp.getN() != null && dp.getN().getVaiTro() != null && "ROLE_GUEST".equals(dp.getN().getVaiTro().getTenVaiTro())){
+//            KhachHang kh = dp.getN();
+//            if (dp.getHoten() == null || dp.getHoten().isBlank()) dp.setHoten(kh.getHoTen());
+//            if (dp.getEmail() == null || dp.getEmail().isBlank())   dp.setEmail(kh.getEmail());
+//            if (dp.getSdt() == null || dp.getSdt().isBlank())       dp.setSdt(kh.getSoDienThoai());
+//            datphongservice.save(dp);
+//            return "redirect:/thanh-toan/dat-phong/"+dp.getId();
+//        }else{
+//            // Cập nhật COOKIE: sau khi đã qua bước DV, đơn vãng lai vẫn đang dở.
+//            // Cookie sống ở trình duyệt nên không bị mất khi server restart.
+//            if (dp.getN() == null) {
+//                bookingDraftService.remember(request, response, dp.getId());
+//            }
+//            return "redirect:/phong/dat-phong/thong-tin-khach/"+dp.getId();
+//        }
+//    }
+//
+//    /**
+//     * Phục hồi luồng đặt phòng cho khách VÃNG LAI (không có tài khoản).
+//     *
+//     * Khác với UserProfilesController.tiepTucDatPhong (cần đăng nhập + quyền sở hữu),
+//     * endpoint này dựa vào COOKIE GUEST_BOOKING_DRAFT do GioHangController
+//     * và PhongController.ConfirmDV ghi nhớ sau khi tạo đơn / qua bước DV.
+//     * Cookie sống ở trình duyệt nên KHÔNG bị mất khi server restart.
+//     */
+//    @GetMapping("/dat-phong/tiep-tuc-dat/{id}")
+//    public String tiepTucDatPhongVangLai(@PathVariable int id,
+//                                         HttpServletRequest request,
+//                                         HttpServletResponse response,
+//                                         RedirectAttributes redirectAttributes) {
+//        DatPhong dp = bookingDraftService.peek(request);
+//        if (dp == null || dp.getId() != id) {
+//            redirectAttributes.addFlashAttribute("bookingError",
+//                    "Đơn đặt phòng này không thuộc trình duyệt của bạn hoặc đã hết hạn. Vui lòng đặt lại từ đầu.");
+//            bookingDraftService.consume(request, response);
+//
+//            return "redirect:/phong";
+//        }
+//
+//        // Xác định bước đang dở
+//        List<Chi_tiet_dich_vu> dsDv = ctdvService.findByDatPhongId(id);
+//        if (dsDv == null || dsDv.isEmpty()) {
+//            // Chưa qua bước chọn DV -> quay lại trang xác nhận
+//            redirectAttributes.addFlashAttribute("thongBao",
+//                    "Tiếp tục đặt phòng: bạn có thể chọn dịch vụ bổ sung hoặc bỏ qua và đi tới bước thanh toán.");
+//            return "redirect:/phong/dat-phong/xac-nhan/" + id;
+//        }
+//        // Đã chọn DV -> đưa thẳng về trang thông tin khách (vãng lai) -> thanh toán
+//        redirectAttributes.addFlashAttribute("thongBao",
+//                "Tiếp tục đặt phòng: vui lòng hoàn tất thông tin khách và thanh toán.");
+//        return "redirect:/phong/dat-phong/thong-tin-khach/" + id;
+//    }
+//
+//    @GetMapping("/dat-phong/thong-tin-khach/{id}")
+//    public String ConfirmCustomerInfor(@PathVariable int id, Model model, Authentication authentication){
+//
+//        DatPhong dp = datphongservice.findById(id);
+//        if (dp == null) {
+//            return "redirect:/home";
+//        }
+//        if ("Da xac nhan".equals(dp.getTrangThai())){
+//            return "redirect:/home";
+//        }
+//
+//        // ===== BỎ QUA BƯỚC NHẬP THÔNG TIN NẾU LÀ KHÁCH CÓ TÀI KHOẢN (ROLE_GUEST) =====
+//        // Có 2 cách xác định: đơn đã gắn user (dp.getN() != null) HOẶC user hiện tại đang login là ROLE_GUEST
+//        KhachHang currentKhach = null;
+//        boolean isRoleGuest = false;
+//
+//        // Cách 1: đơn đã được gắn với user từ trước
+//        if (dp.getN() != null
+//                && dp.getN().getVaiTro() != null
+//                && "ROLE_GUEST".equals(dp.getN().getVaiTro().getTenVaiTro())) {
+//            isRoleGuest = true;
+//            currentKhach = dp.getN();
+//        }
+//
+//        // Cách 2: user hiện tại đang đăng nhập với role ROLE_GUEST (kể cả khi đơn chưa gắn user)
+//        if (!isRoleGuest && authentication != null
+//                && authentication.isAuthenticated()
+//                && !(authentication instanceof AnonymousAuthenticationToken)) {
+//            KhachHang nd = nguoiDungService.findByEmail(authentication.getName());
+//            if (nd != null && nd.getVaiTro() != null
+//                    && "ROLE_GUEST".equals(nd.getVaiTro().getTenVaiTro())) {
+//                isRoleGuest = true;
+//                currentKhach = nd;
+//                // Gắn user vào đơn nếu đơn chưa gắn (đơn tạo trước khi login)
+//                if (dp.getN() == null) {
+//                    dp.setN(nd);
+//                }
+//            }
+//        }
+//
+//        if (isRoleGuest && currentKhach != null) {
+//            // Tự động lấy thông tin từ tài khoản KhachHang để gán vào đơn đặt phòng
+//            if (dp.getHoten() == null || dp.getHoten().isBlank()) {
+//                dp.setHoten(currentKhach.getHoTen());
+//            }
+//            if (dp.getEmail() == null || dp.getEmail().isBlank()) {
+//                dp.setEmail(currentKhach.getEmail());
+//            }
+//            if (dp.getSdt() == null || dp.getSdt().isBlank()) {
+//                dp.setSdt(currentKhach.getSoDienThoai());
+//            }
+//            datphongservice.save(dp);
+//            // Chuyển thẳng sang bước thanh toán, bỏ qua form nhập thông tin khách
+//            return "redirect:/thanh-toan/dat-phong/" + id;
+//        }
+//
+//        List<ChiTietDatPhong> listCt = chiTietDatPhongService.findByDatPhongId(id);
+//        List<Chi_tiet_dich_vu> listctdv = ctdvService.findByDatPhongId(id);
+//        BigDecimal amountDv = BigDecimal.ZERO;
+//       model.addAttribute("datPhong",dp);
+//        System.out.println("Debug dat phong Ngay nhan phong: "+dp.getNgaydatPhong());
+//       long nightCount = ChronoUnit.DAYS.between(dp.getNgaydatPhong().toLocalDate(), dp.getNgaytraPhong().toLocalDate());
+//       model.addAttribute("nightCount", Math.max(1, nightCount));
+//       model.addAttribute("chiTietDatPhongList",listCt);
+//        BigDecimal amount = BigDecimal.ZERO;
+//        BigDecimal ThueVat = new BigDecimal("0.10");
+//
+//
+//        BigDecimal resThue = BigDecimal.valueOf(dp.getNgaytraPhong().getDayOfYear() - dp.getNgaydatPhong().getDayOfYear());
+//        for(Chi_tiet_dich_vu dv : listctdv){
+//            amountDv = amountDv.add(dv.getDonGia());
+//        }
+//        model.addAttribute("TienDv",amountDv);
+//        for (ChiTietDatPhong chiTietDatPhong : listCt){
+//            amount = amount.add(chiTietDatPhong.getGiaKhiDat());
+//            System.out.println("So tien: "+chiTietDatPhong.getGiaKhiDat() + "Amount: "+amount );
+//
+//            System.out.println("In for each loops: "+chiTietDatPhong.getGiaMoiDem());
+//
+//        }
+//        BigDecimal tienGiam = tinhTienGiam(amount, dp.getKm());
+//        BigDecimal tienPhongSauGiam = amount.subtract(tienGiam);
+//        BigDecimal TotalAmount = tienPhongSauGiam.add(amountDv);
+//        BigDecimal TienVat = TotalAmount.multiply(ThueVat).setScale(2, RoundingMode.HALF_UP);
+//        TotalAmount = TotalAmount.add(TienVat);
+//        System.out.println("Amount: "+ amount);
+//        model.addAttribute("TienVat",TienVat);
+//        model.addAttribute("TienPhong",amount);
+//        model.addAttribute("TienGiam", tienGiam);
+//        model.addAttribute("TongTien",TotalAmount);
+//        model.addAttribute("TongCong",TotalAmount);
+//        model.addAttribute("TongPhuPhi", datphongservice.sumExtraFeeForDatPhong(id));
+//        model.addAttribute("chiTietDichVuList", listctdv);
+//        return "dat-phong-thong-tin-khach";
+//    }
+//
+//    private BigDecimal tinhTienGiam(BigDecimal tienPhong, KhuyenMai km) {
+//        if (km == null || !km.isHoatDong() || km.getGiatriGiam() == null) {
+//            return BigDecimal.ZERO;
+//        }
+//        BigDecimal dieuKien = km.getGiaToiThieuDuocGiam() == null ? BigDecimal.ZERO : km.getGiaToiThieuDuocGiam();
+//        if (tienPhong.compareTo(dieuKien) < 0) {
+//            return BigDecimal.ZERO;
+//        }
+//        if ("PERCENT".equalsIgnoreCase(km.getLoaiGiam())) {
+//            return tienPhong.multiply(km.getGiatriGiam())
+//                    .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+//        }
+//        if ("AMOUNT".equalsIgnoreCase(km.getLoaiGiam()) || "FIXED".equalsIgnoreCase(km.getLoaiGiam())) {
+//            return km.getGiatriGiam().min(tienPhong);
+//        }
+//        return BigDecimal.ZERO;
+//    }
+//
+//    private String buildKhuyenMaiJson() {
+//        List<KhuyenMai> kmList = khuyenMaiService.findAllActive().toList();
+//        StringBuilder sb = new StringBuilder("[");
+//        for (int i = 0; i < kmList.size(); i++) {
+//            KhuyenMai km = kmList.get(i);
+//            if (i > 0) {
+//                sb.append(",");
+//            }
+//            BigDecimal dieuKien = km.getGiaToiThieuDuocGiam() == null ? BigDecimal.ZERO : km.getGiaToiThieuDuocGiam();
+//            sb.append("{")
+//                    .append("\"id\":").append(km.getId()).append(",")
+//                    .append("\"code\":\"").append(escapeJson(km.getPromoCode())).append("\",")
+//                    .append("\"loaiGiam\":\"").append(escapeJson(km.getLoaiGiam())).append("\",")
+//                    .append("\"giatriGiam\":").append(km.getGiatriGiam() == null ? "0" : km.getGiatriGiam().toPlainString()).append(",")
+//                    .append("\"dieuKien\":").append(dieuKien.toPlainString())
+//                    .append("}");
+//        }
+//        sb.append("]");
+//        return sb.toString();
+//    }
+//
+//    private static String escapeJson(String s) {
+//        if (s == null) {
+//            return "";
+//        }
+//        return s.replace("\\", "\\\\").replace("\"", "\\\"");
+//    }
+//
+//    @PostMapping("/dat-phong/thong-tin-khach/{id}")
+//    public String SaveXacThucThongTin(Model model,
+//                                      @PathVariable int id,
+//                                      @RequestParam("hoTen") String hoten,
+//                                      @RequestParam("email") String email,
+//                                      @RequestParam("sdt")String sodienthoai,
+//
+//                                      @RequestParam("yeuCauThem") String yeucauthem,
+//                                      Authentication authentication,
+//                                      HttpServletRequest request,
+//                                      HttpServletResponse response) {
+//            BigDecimal amount = BigDecimal.ZERO;
+//            BigDecimal amountdv = BigDecimal.ZERO;
+//            DatPhong dp = datphongservice.findById(id);
+//            if(dp ==null) {
+//                return "dat-phong-thong-tin-khach";
+//            }
+//            List<NhanSu> listNv = nhanVienService.findAll();
+//            Stream<NhanSu> ListnvLeTan = listNv.stream().filter(nv -> nv.getBoPhan().equalsIgnoreCase("lễ tân"));
+//
+//            List<ChiTietDatPhong> listCtdp = chiTietDatPhongService.findByDatPhongId(id);
+//            List<Chi_tiet_dich_vu> listCtdv = ctdvService.findByDatPhongId(id);
+//            for(ChiTietDatPhong ctdp : listCtdp){
+//                amount = amount.add(ctdp.getGiaKhiDat());
+//            }
+//            for(Chi_tiet_dich_vu ctdv : listCtdv){
+//                amountdv = amountdv.add(ctdv.getDonGia());
+//            }
+//            amount = amount.add(amountdv);
+//        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+//        String  emailSearch = null;
+//        if (auth != null && auth.isAuthenticated() && !(auth instanceof AnonymousAuthenticationToken)) {
+//            emailSearch = auth.getName();
+//        } else {
+//            for (NhanSu nv : ListnvLeTan.toList()) {
+//                emailSearch = nv.getEmail();
+//            }
+//        }
+//
+//        NhanSu n = nhanVienService.FindByemail(emailSearch);
+//
+//        boolean isNvDp = n != null
+//                && n.getVaitro() != null
+//                && "ROLE_STAFF".equals(n.getVaitro().getTenVaiTro());
+//
+//        if (isNvDp) {
+//            // Nhân viên đang thao tác -> gán nhân viên đó vào nv
+//            dp.setNv(n);
+//        } else {
+//            // Khách vãng lai -> không gán nv, chỉ dùng hoten để hiển thị
+//            dp.setNv(null);
+//        }
+//        System.out.println("Amount Xac nhan thong tin khach hang: "+amount);
+//        System.out.println("Amount dich vu xac nhan thong tin khach hang: "+amountdv);
+//            dp.setHoten(hoten);
+//            dp.setEmail(email);
+//            dp.setSdt(sodienthoai);
+//            dp.setYeuCauThem(yeucauthem);
+//
+//
+//            datphongservice.save(dp);
+//
+//            // Khách vãng lai đã hoàn tất thông tin -> xóa COOKIE draft
+//            // (vì đơn gi� đã được gắn hoten/email/sdt, không còn ở trạng thái "dở")
+//            // Khách vãng lai đã hoàn tất thông tin -> xóa COOKIE draft
+//            // (vì đơn đã được gắn hoten/email/sdt, không còn ở trạng thái "dở")
+//            bookingDraftService.consume(request, response);
+//
+//            return "redirect:/thanh-toan/dat-phong/"+dp.getId();
+//    }
+//    @PostMapping("/dat-phong/quick")
+//    public String quickBooking(@RequestParam Integer maLoaiPhong,
+//                               @RequestParam Integer maPhong,
+//                               @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime ngayNhan,
+//                               @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime ngayTra,
+//                               @RequestParam Integer nguoiLon,
+//                               @RequestParam Integer treEm,
+//
+//                               @RequestParam(required = false) String yeuCauThem,
+//                               @RequestParam(required = false) String ma_cccd,
+//                               Authentication authentication,
+//                               RedirectAttributes redirectAttributes,
+//                               HttpServletRequest request,
+//                               HttpServletResponse response) {
+//        System.out.println("vao Controller");
+//        Phong phong = phongService.findById(maPhong);
+//        RoomBookingGuardDTO guard = phong != null ? phongService.buildRoomGuardFor(maPhong) : null;
+//        if (phong == null || guard == null || !guard.isCoTheDat()) {
+//            redirectAttributes.addFlashAttribute("bookingError", "Phòng không khả dụng, vui lòng chọn phòng khác.");
+//            return "redirect:/loai-phong/" + maLoaiPhong;
+//        }
+//
+//        long soDem = ChronoUnit.DAYS.between(ngayNhan.toLocalDate(), ngayTra.toLocalDate());
+//        if (soDem < 1) {
+//            redirectAttributes.addFlashAttribute("bookingError", "Ngày trả phòng phải sau ngày nhận phòng ít nhất 1 ngày.");
+//            return "redirect:/loai-phong/" + maLoaiPhong;
+//        }
+//
+//        if (phong.getLoaiPhong() != null) {
+//            int sucChua = phong.getLoaiPhong().getSucChuaToiDa();
+//            int tongNguoi = (nguoiLon != null ? nguoiLon : 0) + (treEm != null ? treEm : 0);
+//            if (tongNguoi > sucChua) {
+//                redirectAttributes.addFlashAttribute("bookingError",
+//                        "Số lượng người (" + tongNguoi + ") vượt quá sức chứa của phòng (" + sucChua + " người).");
+//                return "redirect:/loai-phong/" + maLoaiPhong;
+//            }
+//        }
+//
+//        String guardError = validateRoomBookingGuard(guard, ngayNhan, ngayTra);
+//        if (guardError != null) {
+//            redirectAttributes.addFlashAttribute("bookingError", guardError);
+//            return "redirect:/loai-phong/" + maLoaiPhong;
+//        }
+//
+//        DatPhong dp = new DatPhong();
+//        dp.setNgaydatPhong(ngayNhan);
+//        dp.setNgaytraPhong(ngayTra);
+//        dp.setSonguoiLon(nguoiLon);
+//        dp.setSotreEm(treEm);
+//
+//        dp.setYeuCauThem(appendGuardNote(yeuCauThem, guard, ngayNhan, ngayTra));
+//        if (ma_cccd != null && !ma_cccd.isBlank()) {
+//            dp.setMa_cccd(ma_cccd.trim());
+//        }
+//        dp.setNgayTao(LocalDateTime.now());
+//        boolean isLoggedIn = authentication != null
+//                && authentication.isAuthenticated()
+//                && !(authentication instanceof AnonymousAuthenticationToken);
+//        if (isLoggedIn && !isNhanVienOrAdmin(authentication)) {
+//
+//            KhachHang nd = nguoiDungService.findByEmail(authentication.getName());
+//            if(nd !=null) {
+//                dp.setHoten(nd.getHoTen());
+//                dp.setEmail(nd.getEmail());
+//                dp.setSdt(nd.getSoDienThoai());
+//
+//                dp.setN(nd);
+//            }
+//        }
+//
+//        dp.setTrangThai("Chua thanh toan");
+//        DatPhong savedDp = datphongservice.save(dp);
+//        BigDecimal phuPhiNgoaiGio = calculateExtraFee(guard, ngayNhan, ngayTra);
+//
+//        ChiTietDatPhong ctdp = new ChiTietDatPhong();
+//        ctdp.setD(savedDp);
+//        ctdp.setP(phong);
+//        ctdp.setGiaMoiDem(phong.getGiaMoiDem());
+//        ctdp.setGiaKhiDat(phong.getGiaMoiDem().multiply(BigDecimal.valueOf(soDem)).add(phuPhiNgoaiGio));
+//        ctdp.setMa_cccd(ma_cccd);
+//        ctdp.setPhuPhi(phuPhiNgoaiGio);
+//        chiTietDatPhongService.save(ctdp);
+//
+//        // ===== Ghi nhớ vào COOKIE cho khách vãng lai (không bị mất khi restart server) =====
+//        if (savedDp.getN() == null) {
+//            bookingDraftService.remember(request, response, savedDp.getId());
+//        }
+//
+//        return "redirect:/phong/dat-phong/xac-nhan/" + savedDp.getId();
+//    }
+//
+//    private boolean isNhanVienOrAdmin(Authentication authentication) {
+//        return authentication != null
+//                && authentication.getAuthorities().stream()
+//                .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority())
+//                        || "ROLE_STAFF".equals(a.getAuthority()));
+//    }
+//
+//    private String validateRoomBookingGuard(RoomBookingGuardDTO guard,
+//                                            LocalDateTime ngayNhan,
+//                                            LocalDateTime ngayTra) {
+//
+//        if (guard == null || !guard.isCoTheDat()) {
+//            return "Phong khong kha dung.";
+//        }
+//
+//        // Duyệt TỪNG đơn đang giữ chỗ, không gộp min-max, tránh chặn nhầm
+//        // khoảng trống giữa 2 đơn không liên tục.
+//        for (su26sd09.su26sd09.dto.KhoangNgayBiKhoaDTO khoang : guard.getDanhSachKhoaLich()) {
+//            LocalDateTime batDau = khoang.getNgayBatDau();
+//            LocalDateTime ketThuc = khoang.getNgayKetThuc();
+//            if (batDau == null || ketThuc == null) continue;
+//
+//            boolean overlap = ngayNhan.isBefore(ketThuc) && ngayTra.isAfter(batDau);
+//            if (overlap) {
+//                return "Phong da co lich dat tu "
+//                        + batDau.toLocalDate()
+//                        + " den "
+//                        + ketThuc.toLocalDate()
+//                        + ". Vui long chon khoang ngay khac.";
+//            }
+//        }
+//
+//        return null;
+//    }
+//
+//    private String appendGuardNote(String yeuCauThem, RoomBookingGuardDTO guard, LocalDateTime ngayNhan, LocalDateTime ngayTra) {
+//        String result = yeuCauThem;
+//        if (guard == null) {
+//            return result;
+//        }
+//
+//        BigDecimal phuPhi = calculateExtraFee(guard, ngayNhan, ngayTra);
+//        if (BigDecimal.ZERO.compareTo(phuPhi) == 0) {
+//            return result;
+//        }
+//
+//        String note = "[PHU_PHI_NGOAI_GIO=" + phuPhi.toPlainString() + "]";
+//        if (result == null || result.isBlank()) {
+//            return note;
+//        }
+//        return result + " " + note;
+//    }
+//
+//    private BigDecimal calculateExtraFee(RoomBookingGuardDTO guard, LocalDateTime ngayNhan, LocalDateTime ngayTra) {
+//        if (guard == null) {
+//            return BigDecimal.ZERO;
+//        }
+//
+//        // ===== Chính sách mới: KHÔNG tính phụ phí cho check-in muộn hoặc check-out sớm.
+//        // Chỉ tính phụ phí khi check-in QUÁ SỚM (trước giờ nhận tối thiểu) hoặc
+//        // check-out QUÁ TRỄ (sau giờ trả tối đa). Hai trường hợp này ảnh hưởng
+//        // đến vận hành phòng (phòng chưa sẵn sàng / khách ở lại quá lâu).
+//        LocalTime gioNhan = ngayNhan.toLocalTime();
+//        LocalTime gioTra = ngayTra.toLocalTime();
+//        boolean nhanQuaSom = gioNhan.isBefore(guard.getGioNhanToiThieu());
+//        boolean traQuaTre = gioTra.isAfter(guard.getGioTraToiDa());
+//        return (nhanQuaSom || traQuaTre) ? guard.getPhuPhiNgoaiGioVND() : BigDecimal.ZERO;
+//    }
+//    private String buildLockedRangesJson(RoomBookingGuardDTO guard) {
+//        List<su26sd09.su26sd09.dto.KhoangNgayBiKhoaDTO> list =
+//                guard != null ? guard.getDanhSachKhoaLich() : java.util.Collections.emptyList();
+//        StringBuilder sb = new StringBuilder("[");
+//        for (int i = 0; i < list.size(); i++) {
+//            su26sd09.su26sd09.dto.KhoangNgayBiKhoaDTO k = list.get(i);
+//            if (i > 0) sb.append(",");
+//            sb.append("{")
+//                    .append("\"tu\":\"").append(k.getNgayBatDau() != null ? k.getNgayBatDau().toLocalDate() : "").append("\",")
+//                    .append("\"den\":\"").append(k.getNgayKetThuc() != null ? k.getNgayKetThuc().toLocalDate() : "").append("\",")
+//                    .append("\"trangThai\":\"").append(escapeJson(k.getTrangThaiDon())).append("\"")
+//                    .append("}");
+//        }
+//        sb.append("]");
+//        return sb.toString();
+//    }
+//
+//    /**
+//     * Tính số đêm giữa 2 thời điểm: bỏ phần giờ, chỉ so sánh ngày (LocalDate).
+//     * Tối thiểu 1 đêm nếu ngày trả > ngày nhận. Xử lý đúng khi qua năm mới
+//     * (tránh lỗi âm của getDayOfYear()).
+//     */
+//    private long soDem(LocalDateTime ngayNhan, LocalDateTime ngayTra) {
+//        if (ngayNhan == null || ngayTra == null) return 1;
+//        long diff = ChronoUnit.DAYS.between(ngayNhan.toLocalDate(), ngayTra.toLocalDate());
+//        return Math.max(1, diff);
+//    }
+//
+//
+//}

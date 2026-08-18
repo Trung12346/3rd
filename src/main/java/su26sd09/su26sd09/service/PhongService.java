@@ -4,17 +4,13 @@
     import org.springframework.stereotype.Service;
     import org.springframework.transaction.annotation.Transactional;
     import su26sd09.su26sd09.dto.RoomBookingGuardDTO;
-    import su26sd09.su26sd09.entity.Anh;
     import su26sd09.su26sd09.entity.DatPhong;
     import su26sd09.su26sd09.entity.LoaiPhong;
     import su26sd09.su26sd09.entity.Phong;
-    import su26sd09.su26sd09.entity.PhongAnh;
     import su26sd09.su26sd09.entity.TienNghi;
     import su26sd09.su26sd09.entity.TienNghiPhong;
-    import su26sd09.su26sd09.repository.AnhRepository;
     import su26sd09.su26sd09.repository.DatPhongRepo;
     import su26sd09.su26sd09.repository.LoaiPhongRepository;
-    import su26sd09.su26sd09.repository.PhongAnhRepository;
     import su26sd09.su26sd09.repository.PhongRepository;
     import su26sd09.su26sd09.repository.TienNghiPhongRepository;
     import su26sd09.su26sd09.repository.TienNghiRepository;
@@ -28,9 +24,7 @@
     import java.util.Locale;
     import java.util.Map;
     import java.util.Optional;
-    import java.util.UUID;
-    import su26sd09.su26sd09.dto.RoomBookingGuardDTO;
-    
+
     import static org.thymeleaf.util.StringUtils.contains;
     
     @Service
@@ -50,13 +44,7 @@
     
         @Autowired
         private DatPhongRepo datPhongRepo;
-    
-        @Autowired
-        private PhongAnhRepository phongAnhRepository;
-    
-        @Autowired
-        private AnhRepository anhRepository;
-    
+
         public List<Phong> search(String keyword) {
             return phongRepository.search(keyword);
         }
@@ -469,13 +457,7 @@
                     .map(tnp -> tnp.getTienNghi().getTenTienNghi())
                     .toList();
         }
-    
-        public List<Anh> findAnhByPhong(int maPhong) {
-            return phongAnhRepository.findByMaPhong_MaPhong(maPhong)
-                    .stream()
-                    .map(PhongAnh::getMaAnh)
-                    .toList();
-        }
+
         public Phong save1(Phong p){
             return phongRepository.save(p);
         }
@@ -485,11 +467,6 @@
     
         @Transactional
         public void save(Phong phong, int loaiPhongId, List<Integer> tienNghiIds) {
-            save(phong, loaiPhongId, tienNghiIds, null);
-        }
-    
-        @Transactional
-        public void save(Phong phong, int loaiPhongId, List<Integer> tienNghiIds, List<UUID> anhIds) {
             LoaiPhong loaiPhong = loaiPhongRepository.findById(loaiPhongId).orElse(null);
             phong.setLoaiPhong(loaiPhong);
             if (loaiPhong == null) throw new RuntimeException("Loại phòng không tồn tại");
@@ -499,7 +476,6 @@
                 phong.setNgayCapNhat(LocalDateTime.now());
                 Phong savedPhong = phongRepository.save(phong);
                 saveTienNghiPhong(savedPhong, tienNghiIds);
-                saveAnhPhong(savedPhong, anhIds);
                 return;
             }
     
@@ -519,33 +495,6 @@
     
             Phong savedPhong = phongRepository.save(oldPhong);
             saveTienNghiPhong(savedPhong, tienNghiIds);
-            saveAnhPhong(savedPhong, anhIds);
-        }
-    
-        /**
-         * Đồng bộ danh sách ảnh của phòng: xóa hết liên kết cũ trong phong_anh
-         * rồi tạo lại theo danh sách maAnh gửi lên từ form (giữ ảnh cũ được tick chọn
-         * + thêm ảnh mới vừa upload qua AnhController, ảnh nào bị bỏ chọn/xóa sẽ mất liên kết).
-         * Bản ghi Anh gốc không bị xóa, chỉ liên kết phong_anh bị xóa.
-         */
-        private void saveAnhPhong(Phong phong, List<UUID> anhIds) {
-            phongAnhRepository.deleteByMaPhong_MaPhong(phong.getMaPhong());
-    
-            if (anhIds == null || anhIds.isEmpty()) {
-                return;
-            }
-    
-            List<Anh> anhs = anhRepository.findAllById(anhIds);
-    
-            List<PhongAnh> phongAnhs = new ArrayList<>();
-            for (Anh anh : anhs) {
-                PhongAnh phongAnh = new PhongAnh();
-                phongAnh.setMaPhong(phong);
-                phongAnh.setMaAnh(anh);
-                phongAnhs.add(phongAnh);
-            }
-    
-            phongAnhRepository.saveAll(phongAnhs);
         }
     
         private void saveTienNghiPhong(Phong phong, List<Integer> tienNghiIds) {

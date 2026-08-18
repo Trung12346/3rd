@@ -9,7 +9,6 @@ import su26sd09.su26sd09.entity.LoaiPhong;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.UUID;
 
 public interface LoaiPhongRepository extends JpaRepository<LoaiPhong, Integer> {
     List<LoaiPhong> findAllByOrderByTenLoaiAsc();
@@ -46,18 +45,6 @@ public interface LoaiPhongRepository extends JpaRepository<LoaiPhong, Integer> {
             @Param("maxGia") BigDecimal maxGia,
             @Param("soKhach") Integer soKhach,
             Pageable pageable
-    );
-
-
-    @Query("""
-    select count(lp) > 0
-    from LoaiPhong lp
-    where lp.maAnh.maAnh = :maAnh
-      and lp.id <> :id
-""")
-    boolean existsByMaAnhExceptId(
-           @Param("maAnh") UUID maAnh,
-            @Param("id") int id
     );
 
 

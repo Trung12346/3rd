@@ -10,8 +10,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import jakarta.servlet.http.HttpServletRequest;
 import su26sd09.su26sd09.entity.DatPhong;
 import su26sd09.su26sd09.entity.LoaiPhong;
+import su26sd09.su26sd09.entity.LoaiPhongAnh;
 import su26sd09.su26sd09.entity.Phong;
+import su26sd09.su26sd09.entity.PhongAnh;
 import su26sd09.su26sd09.repository.KhachHangRepository;
+import su26sd09.su26sd09.repository.LoaiPhongAnhRepository;
 import su26sd09.su26sd09.service.BookingDraftService;
 import su26sd09.su26sd09.service.CustomerUserDetailsService;
 import su26sd09.su26sd09.service.PhongService;
@@ -34,6 +37,9 @@ public class Home {
 
     @Autowired
     private PhongService phongService;
+
+    @Autowired
+    private LoaiPhongAnhRepository loaiPhongAnhRepository;
 
     @Autowired
     private BookingDraftService bookingDraftService;
@@ -98,17 +104,25 @@ public class Home {
 
         for (LoaiPhong loai : loaiPhongs) {
             soPhongTrongTheoLoai.put(loai.getId(), phongService.countPhongTrongTheoLoai(loai.getId()));
-
-            if (loai.getMaAnh() != null) {
-                anhLoaiPhong.put(loai.getId(), "/media/" + loai.getMaAnh().getMaAnh());
-            } else {
-                anhLoaiPhong.put(loai.getId(), ANH_MAC_DINH);
-            }
+            anhLoaiPhong.put(loai.getId(), thumbAnhLoaiPhong(loai));
         }
 
         model.addAttribute("loaiPhongs", loaiPhongs);
         model.addAttribute("soPhongTrongTheoLoai", soPhongTrongTheoLoai);
         model.addAttribute("anhLoaiPhong", anhLoaiPhong);
+    }
+
+    /**
+     * Anh dai dien cua 1 loai phong: uu tien anh rieng cua loai phong (bang
+     * loai_phong_anh, upload/quan ly nhieu anh o trang admin loai phong),
+     * fallback ve anh dau tien cua 1 phong thuoc loai, roi ANH_MAC_DINH.
+     */
+    private String thumbAnhLoaiPhong(LoaiPhong loai) {
+        LoaiPhongAnh anhRieng = loaiPhongAnhRepository.findByMaLoaiPhongFirst(loai.getId());
+        if (!(anhRieng == null) && anhRieng.getMaAnh() != null) {
+            return "/media/" + anhRieng.getMaAnh().getMaAnh();
+        }
+        return ANH_MAC_DINH;
     }
 
     private boolean matchTenPhong(Phong phong, String tenPhong) {

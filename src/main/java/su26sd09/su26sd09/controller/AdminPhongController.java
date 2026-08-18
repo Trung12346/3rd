@@ -10,14 +10,12 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-import su26sd09.su26sd09.entity.Anh;
 import su26sd09.su26sd09.entity.Phong;
 import su26sd09.su26sd09.service.PhongService;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 @Controller
 @RequestMapping("/nhan-su/admin/phong")
@@ -35,7 +33,7 @@ public class AdminPhongController {
         phong.setHoatDong(true);
         phong.setTrangThai("Trong");
 
-        loadFormAndList(model, phong, List.of(), List.of(), keyword, "Thêm phòng");
+        loadFormAndList(model, phong, List.of(), keyword, "Thêm phòng");
         return "admin/phong-list";
     }
 
@@ -58,7 +56,7 @@ public class AdminPhongController {
             return "redirect:/nhan-su/admin/phong";
         }
 
-        loadFormAndList(model, phong, phongService.findTienNghiIdsByPhong(id), phongService.findAnhByPhong(id), keyword, "Cập nhật phòng");
+        loadFormAndList(model, phong, phongService.findTienNghiIdsByPhong(id), keyword, "Cập nhật phòng");
         return "admin/phong-list";
     }
 
@@ -67,7 +65,6 @@ public class AdminPhongController {
             @ModelAttribute Phong phong,
             @RequestParam(name = "loaiPhongId") int loaiPhongId,
             @RequestParam(name = "tienNghiIds", required = false) List<Integer> tienNghiIds,
-            @RequestParam(name = "anhIds", required = false) List<UUID> anhIds,
             RedirectAttributes redirectAttributes
     ) {
         for (Phong p : phongService.findAllPhong()){
@@ -76,7 +73,7 @@ public class AdminPhongController {
                 return "redirect:/nhan-su/admin/phong";
             }
         }
-        phongService.save(phong, loaiPhongId, tienNghiIds, anhIds);
+        phongService.save(phong, loaiPhongId, tienNghiIds);
         redirectAttributes.addFlashAttribute("success", "Lưu phòng thành công");
         return "redirect:/nhan-su/admin/phong";
     }
@@ -92,7 +89,6 @@ public class AdminPhongController {
             Model model,
             Phong phong,
             List<Integer> selectedTienNghiIds,
-            List<Anh> selectedAnhs,
             String keyword,
             String title
     ) {
@@ -108,7 +104,6 @@ public class AdminPhongController {
         model.addAttribute("loaiPhongs", phongService.findAllLoai());
         model.addAttribute("tienNghis", phongService.findAllTienNghi());
         model.addAttribute("selectedTienNghiIds", selectedTienNghiIds);
-        model.addAttribute("selectedAnhs", selectedAnhs);
         model.addAttribute("tienNghiTheoPhong", tienNghiTheoPhong);
         model.addAttribute("keyword", keyword);
         model.addAttribute("title", title);
