@@ -13,6 +13,11 @@
     <div class="auth-card register">
         <h2>Đăng Ký <span>Tài Khoản</span></h2>
 
+        <p th:if="${registerError}" th:text="${registerError}"
+           style="color:#c0392b; font-weight:600; margin-bottom:16px;"></p>
+        <p th:if="${registerSuccess}" th:text="${registerSuccess}"
+           style="color:#27ae60; font-weight:600; margin-bottom:16px;"></p>
+
         <form id="registerForm" th:action="@{/Register}" method="post">
             <div class="form-grid">
                 <div class="form-group">
@@ -45,7 +50,7 @@
         </form>
 
         <div class="auth-footer">
-            <p>Đã là thành viên? <a href="/Login" th:href="@{/Login}">Đăng nhập ngay</a></p>
+            <p>Đã có tài khoản? <a href="/Login" th:href="@{/Login}">Đăng nhập ngay</a></p>
         </div>
     </div>
 </main>

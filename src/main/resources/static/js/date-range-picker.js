@@ -25,6 +25,23 @@
         return a && b && a.toDateString() === b.toDateString();
     }
 
+    // After 7PM local time, same-day booking is no longer allowed (avoids
+    // half-day booking handling). In that case the earliest selectable date
+    // becomes tomorrow instead of today.
+    const SAME_DAY_BOOKING_CUTOFF_HOUR = 19; // 7PM, 24h format
+
+    function applySameDayCutoff(date) {
+        const d = new Date(date);
+        const now = new Date();
+        // Only push the min date forward if the caller's minDate is today
+        // (or earlier) and the cutoff has passed.
+        if (sameDay(d, now) && now.getHours() >= SAME_DAY_BOOKING_CUTOFF_HOUR) {
+            d.setDate(d.getDate() + 1);
+        }
+        d.setHours(0, 0, 0, 0);
+        return d;
+    }
+
     class DateRangePicker {
         /**
          * @param {Object} options
@@ -36,7 +53,7 @@
         constructor(options) {
             this.calendarEl = document.getElementById(options.calendarElId);
             this.onChange = options.onChange || function () {};
-            this.minDate = options.minDate || new Date();
+            this.minDate = applySameDayCutoff(options.minDate || new Date());
             this.locale = options.locale || 'vi';
             this.startDate = options.startDate || null;
             this.endDate = options.endDate || null;
