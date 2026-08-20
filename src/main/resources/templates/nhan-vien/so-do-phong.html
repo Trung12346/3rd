@@ -1,0 +1,222 @@
+﻿<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đơn đặt phòng | Sơ đồ phòng</title>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; }
+        body { background: #f0f4f8; font-family: 'Montserrat', sans-serif; }
+
+        .sdp-shell { margin: 0 auto; max-width: 1400px; padding: 32px; }
+
+        .sdp-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
+        .sdp-header h1 { color: var(--sky-dark, #2196c4); font-size: 24px; font-weight: 700; margin: 0 0 4px; }
+        .sdp-header p { color: #6b7280; font-size: 13px; margin: 0; }
+
+        /* Status legend / summary chips */
+        .sdp-legend { display: flex; gap: 10px; flex-wrap: wrap; }
+        .sdp-chip {
+            display: flex; align-items: center; gap: 7px;
+            background: #fff; border: 1px solid #e2e8f0; border-radius: 999px;
+            padding: 7px 14px; font-size: 12.5px; font-weight: 600; color: #374151;
+        }
+        .sdp-chip .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+        .sdp-chip .count { color: #111827; font-weight: 700; }
+
+        .dot-empty { background: #16a34a; }
+        .dot-inuse { background: #2563eb; }
+        .dot-cleaning { background: #d97706; }
+        .dot-maintenance { background: #dc2626; }
+
+        /* Layout: side floor tabs + room grid */
+        .sdp-layout {
+            display: grid; grid-template-columns: 190px 1fr; gap: 20px; align-items: start;
+        }
+
+        .sdp-floor-tabs {
+            background: #fff; border: 1px solid #e2e8f0; border-radius: 10px;
+            padding: 10px; position: sticky; top: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .sdp-floor-tab {
+            display: flex; align-items: center; justify-content: space-between;
+            width: 100%; border: none; background: transparent; cursor: pointer;
+            padding: 12px 14px; border-radius: 8px; margin-bottom: 4px;
+            font-size: 14px; font-weight: 600; color: #475569;
+            transition: background .15s, color .15s;
+        }
+        .sdp-floor-tab:last-child { margin-bottom: 0; }
+        .sdp-floor-tab:hover { background: #f0f9ff; color: var(--sky-dark, #2196c4); }
+        .sdp-floor-tab.active {
+            background: var(--sky-primary, #2196c4); color: #fff;
+        }
+        .sdp-floor-tab .badge {
+            font-size: 11px; font-weight: 700; padding: 1px 8px; border-radius: 10px;
+            background: rgba(0,0,0,0.06); color: inherit;
+        }
+        .sdp-floor-tab.active .badge { background: rgba(255,255,255,0.25); }
+
+        .sdp-panel {
+            background: #fff; border: 1px solid #e2e8f0; border-radius: 10px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06); padding: 24px; min-height: 420px;
+        }
+        .sdp-panel-title {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px solid #e5e7eb;
+        }
+        .sdp-panel-title h2 { font-size: 16px; font-weight: 700; color: #1f2937; margin: 0; }
+        .sdp-panel-title span { font-size: 12.5px; color: #6b7280; }
+
+        .sdp-room-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 14px;
+        }
+
+        .sdp-room-card {
+            border: 2px solid #e2e8f0; border-radius: 10px; padding: 14px;
+            position: relative; transition: box-shadow .15s, transform .15s;
+        }
+        .sdp-room-card:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.08); transform: translateY(-1px); }
+
+        .sdp-room-card .so-phong { font-size: 17px; font-weight: 700; color: #1f2937; }
+        .sdp-room-card .loai-phong { font-size: 12px; color: #6b7280; margin-top: 2px; }
+        .sdp-room-card .gia { font-size: 12.5px; color: #374151; margin-top: 10px; font-weight: 600; }
+
+        .sdp-status-pill {
+            display: inline-flex; align-items: center; gap: 6px;
+            font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 999px;
+            margin-top: 8px;
+        }
+        .sdp-status-pill .dot { width: 7px; height: 7px; border-radius: 50%; }
+
+        .sdp-status-empty { border-color: #bbf7d0; background: #f0fdf4; }
+        .sdp-status-empty .sdp-status-pill { background: #dcfce7; color: #15803d; }
+
+        .sdp-status-inuse { border-color: #bfdbfe; background: #eff6ff; }
+        .sdp-status-inuse .sdp-status-pill { background: #dbeafe; color: #1d4ed8; }
+
+        .sdp-status-cleaning { border-color: #fde68a; background: #fffbeb; }
+        .sdp-status-cleaning .sdp-status-pill { background: #fef3c7; color: #b45309; }
+
+        .sdp-status-maintenance { border-color: #fecaca; background: #fef2f2; }
+        .sdp-status-maintenance .sdp-status-pill { background: #fee2e2; color: #b91c1c; }
+
+        .sdp-empty-msg { text-align: center; color: #9ca3af; padding: 60px 0; font-size: 14px; }
+
+        @media (max-width: 800px) {
+            .sdp-layout { grid-template-columns: 1fr; }
+            .sdp-floor-tabs { position: static; display: flex; overflow-x: auto; gap: 6px; }
+            .sdp-floor-tab { width: auto; white-space: nowrap; }
+        }
+    </style>
+</head>
+<body>
+
+<div th:replace="~{fragments/cms-sidebar :: cmsSidebar}"></div>
+<div th:replace="~{fragments/headers/cms-header :: cmsHeader}"></div>
+
+<main class="sdp-shell">
+
+    <div class="sdp-header">
+        <div>
+            <h1><i class="fa-solid fa-table-cells" style="margin-right:8px;"></i>Đơn đặt phòng</h1>
+            <p th:text="'Sơ đồ phòng · ' + ${tongSoPhong} + ' phòng'">Sơ đồ phòng</p>
+        </div>
+
+        <div class="sdp-legend">
+            <span class="sdp-chip"><span class="dot dot-empty"></span>Trống
+                <span class="count" th:text="${demTrangThai['Trống']}">0</span></span>
+            <span class="sdp-chip"><span class="dot dot-inuse"></span>Đang sử dụng
+                <span class="count" th:text="${demTrangThai['Đang sử dụng']}">0</span></span>
+            <span class="sdp-chip"><span class="dot dot-cleaning"></span>Đang dọn
+                <span class="count" th:text="${demTrangThai['Đang dọn']}">0</span></span>
+            <span class="sdp-chip"><span class="dot dot-maintenance"></span>Bảo trì
+                <span class="count" th:text="${demTrangThai['Bảo trì']}">0</span></span>
+        </div>
+    </div>
+
+    <div class="sdp-layout">
+
+        <!-- Side tabs: switch between floors -->
+        <div class="sdp-floor-tabs" id="sdpFloorTabs">
+            <button type="button" class="sdp-floor-tab active" data-floor="all">
+                <span>Tất cả tầng</span>
+                <span class="badge" th:text="${tongSoPhong}">0</span>
+            </button>
+            <button th:each="entry : ${theoTang}"
+                    type="button" class="sdp-floor-tab"
+                    th:data-floor="${entry.key}">
+                <span th:text="'Tầng ' + ${entry.key}">Tầng 1</span>
+                <span class="badge" th:text="${entry.value.size()}">0</span>
+            </button>
+        </div>
+
+        <!-- Main section: room grid -->
+        <div class="sdp-panel">
+
+            <div th:each="entry : ${theoTang}" class="sdp-floor-section" th:data-floor-section="${entry.key}">
+                <div class="sdp-panel-title">
+                    <h2 th:text="'Tầng ' + ${entry.key} + ' · ' + ${entry.value.size()} + ' phòng'">Tầng 1</h2>
+                </div>
+
+                <div class="sdp-room-grid">
+                    <div th:each="phong : ${entry.value}"
+                         class="sdp-room-card"
+                         th:classappend="${lopTrangThai[phong.maPhong]}">
+
+                        <div class="so-phong" th:text="'P' + ${phong.soPhong}">P101</div>
+                        <div class="loai-phong"
+                             th:text="${phong.loaiPhong != null ? phong.loaiPhong.tenLoai : 'Chưa phân loại'}">
+                            Standard
+                        </div>
+
+                        <span class="sdp-status-pill">
+                            <span class="dot"></span>
+                            <span th:text="${nhanTrangThai[phong.maPhong]}">Trống</span>
+                        </span>
+
+                        <div class="gia"
+                             th:text="${#numbers.formatDecimal(phong.giaMoiDem, 0, 'COMMA', 0, 'POINT')} + 'đ/đêm'">
+                            1.800.000đ/đêm
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sdp-empty-msg" th:if="${tongSoPhong == 0}">
+                Chưa có phòng nào trong hệ thống.
+            </div>
+        </div>
+    </div>
+</main>
+
+<script>
+    (function () {
+        var tabs = document.querySelectorAll('.sdp-floor-tab');
+        var sections = document.querySelectorAll('.sdp-floor-section');
+
+        function showFloor(floor) {
+            sections.forEach(function (sec) {
+                sec.style.display = (floor === 'all' || sec.getAttribute('data-floor-section') === floor)
+                        ? '' : 'none';
+            });
+            tabs.forEach(function (t) {
+                t.classList.toggle('active', t.getAttribute('data-floor') === floor);
+            });
+        }
+
+        tabs.forEach(function (tab) {
+            tab.addEventListener('click', function () {
+                showFloor(tab.getAttribute('data-floor'));
+            });
+        });
+
+        showFloor('all');
+    })();
+</script>
+
+</body>
+</html>
