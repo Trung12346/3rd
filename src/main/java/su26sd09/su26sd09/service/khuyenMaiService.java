@@ -130,7 +130,7 @@ public class khuyenMaiService {
         String CanChangeDate = TimKhuyenMaiDaSuDung(m);
         DatPhong dp = repodatPhong.findFirstByKmId(m.id);
 
-        if ( dp != null && dp.getKm() != null ){
+        if ( dp != null && dp.getKm() != null && dp.trangThai.equalsIgnoreCase("Chua thanh toan")){
             if (CanChangeDate != null && !CanChangeDate.equalsIgnoreCase("")){
                 return CanChangeDate;
             }
@@ -180,7 +180,7 @@ public class khuyenMaiService {
         if (dp.getTrangThai() != null && "Da tra phong".equals(dp.getTrangThai())) {
             return "Đơn #" + dp.getId() + " đã hoàn tất trả phòng, không thể thay đổi khuyến mãi.";
         }
-        
+
         // Cho phép mọi thao tác khác: thêm KM mới, đổi KM, xóa KM
         return null;
     }
