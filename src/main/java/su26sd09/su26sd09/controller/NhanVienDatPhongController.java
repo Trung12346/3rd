@@ -959,6 +959,77 @@ public class NhanVienDatPhongController {
         return "redirect:/nhan-su/dat-phong?page=" + page + "&size=" + size;
     }
 
+    /**
+     * Trang "Đơn đặt phòng" — sơ đồ phòng dạng lưới, chia theo tab tầng bên cạnh.
+     * Đây là bản dựng lại giao diện (theo tham chiếu sơ đồ phòng), CHỈ tập trung
+     * vào phần hiển thị trạng thái phòng hiện tại, không phụ thuộc vào các trạng
+     * thái cũ trong entity Phong (Trong/Dang su dung/Da dat truoc...).
+     * 4 trạng thái hiển thị: Trống, Đang sử dụng, Đang dọn, Bảo trì.
+     */
+    @GetMapping("/so-do-phong")
+    public String soDoPhong(Model model) {
+        List<Phong> tatCaPhong = phongService.findAllPhong();
+
+        Map<Integer, List<Phong>> theoTang = tatCaPhong.stream()
+                .collect(Collectors.groupingBy(Phong::getSoTang, java.util.TreeMap::new, Collectors.toList()));
+
+        Map<Integer, String> nhanTrangThai = new HashMap<>();
+        Map<Integer, String> lopTrangThai = new HashMap<>();
+        Map<String, Long> demTrangThai = new LinkedHashMap<>();
+        demTrangThai.put("Trống", 0L);
+        demTrangThai.put("Đang sử dụng", 0L);
+        demTrangThai.put("Đang dọn", 0L);
+        demTrangThai.put("Bảo trì", 0L);
+
+        for (Phong p : tatCaPhong) {
+            String hienThi = suyRaTrangThaiHienThi(p);
+            nhanTrangThai.put(p.getMaPhong(), hienThi);
+            lopTrangThai.put(p.getMaPhong(), lopCssTheoTrangThai(hienThi));
+            demTrangThai.merge(hienThi, 1L, Long::sum);
+        }
+
+        model.addAttribute("theoTang", theoTang);
+        model.addAttribute("nhanTrangThai", nhanTrangThai);
+        model.addAttribute("lopTrangThai", lopTrangThai);
+        model.addAttribute("demTrangThai", demTrangThai);
+        model.addAttribute("tongSoPhong", tatCaPhong.size());
+
+        return "nhan-vien/so-do-phong";
+    }
+
+    /**
+     * Quy đổi trạng thái nội bộ của Phong (đang dùng cho nghiệp vụ đặt phòng) sang
+     * 1 trong 4 trạng thái hiển thị của Sơ đồ phòng. Phòng ngưng hoạt động luôn
+     * hiển thị "Bảo trì"; phòng có trạng thái nhắc tới "don"/"dọn" hiển thị
+     * "Đang dọn"; các phòng đang được giữ/sử dụng hiển thị "Đang sử dụng";
+     * còn lại mặc định "Trống".
+     */
+    private String suyRaTrangThaiHienThi(Phong p) {
+        if (!p.isHoatDong()) {
+            return "Bảo trì";
+        }
+        String tt = p.getTrangThai() == null ? "" : p.getTrangThai().toLowerCase();
+        if (tt.contains("bao tri") || tt.contains("bảo trì") || tt.contains("maintenance")) {
+            return "Bảo trì";
+        }
+        if (tt.contains("don") || tt.contains("dọn") || tt.contains("cleaning")) {
+            return "Đang dọn";
+        }
+        if (tt.contains("su dung") || tt.contains("sử dụng") || tt.contains("dat truoc") || tt.contains("đặt trước")) {
+            return "Đang sử dụng";
+        }
+        return "Trống";
+    }
+
+    private String lopCssTheoTrangThai(String trangThaiHienThi) {
+        switch (trangThaiHienThi) {
+            case "Đang sử dụng": return "sdp-status-inuse";
+            case "Đang dọn": return "sdp-status-cleaning";
+            case "Bảo trì": return "sdp-status-maintenance";
+            default: return "sdp-status-empty";
+        }
+    }
+
     @GetMapping("/dat-phong-quay")
     public String NvDatPhongQuay(Model model, Authentication authentication){
         boolean isAdmin = authentication.getAuthorities().stream()
