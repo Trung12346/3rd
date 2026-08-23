@@ -85,6 +85,31 @@ public class AdminDatPhongController {
     @Autowired
     private su26sd09.su26sd09.repository.TienNghiPhongRepository tienNghiPhongRepository;
 
+    @Autowired
+    private su26sd09.su26sd09.repository.GiayToRepo giayToRepo;
+
+    /**
+     * Lay so giay to (CCCD/Ho chieu) cua khach dai dien cho 1 phong cu the
+     * (chi_tiet_dat_phong), thu thap luc check-in tai "So do phong" — KHONG
+     * phai ma_cccd tren DatPhong (chi dung de doi soat chong gian lan, dai
+     * dien cho CA don, khong gan voi tung phong).
+     * Uu tien nguoi co coDaiDien = true; neu chua co giay to nao thi tra null.
+     */
+    private String layCccdDaiDienPhong(int chiTietDatPhongId) {
+        List<GiayTo> ds = giayToRepo.findByChiTietDatPhong_Id(chiTietDatPhongId);
+        if (ds == null || ds.isEmpty()) return null;
+        return ds.stream()
+                .filter(gt -> Boolean.TRUE.equals(gt.getCoDaiDien()))
+                .map(GiayTo::getSoDinhDanh)
+                .filter(s -> s != null && !s.isBlank())
+                .findFirst()
+                .orElseGet(() -> ds.stream()
+                        .map(GiayTo::getSoDinhDanh)
+                        .filter(s -> s != null && !s.isBlank())
+                        .findFirst()
+                        .orElse(null));
+    }
+
     @GetMapping("")
     public String GetDatPhong(
             @RequestParam(value = "page", defaultValue = "0") int page,
@@ -201,7 +226,8 @@ public class AdminDatPhongController {
                 datPhong.getNgaytraPhong().toLocalDate()));
         model.addAttribute("soDem", soDem);
         // Cho phép đổi phòng: trạng thái đơn thuộc nhóm này + hóa đơn chưa xuất PDF
-        boolean choPhepDoiPhong = "Cho xac nhan".equals(datPhong.getTrangThai())
+        boolean choPhepDoiPhong = "Yeu cau dat phong".equals(datPhong.getTrangThai())
+                || "Cho xac nhan".equals(datPhong.getTrangThai())
                 || "Da xac nhan".equals(datPhong.getTrangThai())
                 || "Da nhan phong".equals(datPhong.getTrangThai());
         model.addAttribute("choPhepDoiPhong", choPhepDoiPhong);
@@ -241,7 +267,8 @@ public class AdminDatPhongController {
         }
         // Validate trạng thái đơn
         String trangThai = datPhong.getTrangThai();
-        if (!"Cho xac nhan".equals(trangThai)
+        if (!"Yeu cau dat phong".equals(trangThai)
+                && !"Cho xac nhan".equals(trangThai)
                 && !"Da xac nhan".equals(trangThai)
                 && !"Da nhan phong".equals(trangThai)) {
             redirectAttributes.addFlashAttribute("error",
@@ -317,14 +344,6 @@ public class AdminDatPhongController {
                 loiTheoDong.add(overlapErr.toString());
                 continue;
             }
-            String cccdMoi = (cccdMoiRaw == null || cccdMoiRaw.trim().isEmpty())
-                    ? ct.getMa_cccd()
-                    : cccdMoiRaw.trim();
-            if (cccdMoi != null && !cccdMoi.isEmpty() && !cccdMoi.matches("^[0-9]{12}$")) {
-                loiTheoDong.add("Phong '" + phongMoi.getSoPhong() + "': CCCD moi phai la 12 chu so.");
-                continue;
-            }
-
             // Lưu giá cũ để tính chênh lệch
             BigDecimal giaKhiDatCu = ct.getGiaKhiDat() != null ? ct.getGiaKhiDat() : BigDecimal.ZERO;
             BigDecimal phuPhiCu = ct.getPhuPhi() != null ? ct.getPhuPhi() : BigDecimal.ZERO;
@@ -340,7 +359,6 @@ public class AdminDatPhongController {
 
             // Cập nhật ChiTietDatPhong
             ct.setP(phongMoi);
-            ct.setMa_cccd(cccdMoi);
             ct.setGiaMoiDem(giaMoiDemMoi);
             ct.setGiaKhiDat(giaKhiDatMoi);
             ct.setPhuPhi(phuPhiMoi);
@@ -442,7 +460,7 @@ public class AdminDatPhongController {
             if (dp == null || dp.getId() == maDatPhongHienTai) continue;
             // Chi xet cac trang thai dang giu phong that su (Da tra phong da giai phong)
             String tt = dp.getTrangThai();
-            if (!"Cho xac nhan".equals(tt) && !"Da xac nhan".equals(tt) && !"Da nhan phong".equals(tt)) {
+            if (!"Yeu cau dat phong".equals(tt) && !"Cho xac nhan".equals(tt) && !"Da xac nhan".equals(tt) && !"Da nhan phong".equals(tt)) {
                 continue;
             }
             LocalDateTime tu = dp.getNgaydatPhong();
@@ -918,31 +936,6 @@ public class AdminDatPhongController {
         List<ChiTietDatPhong> chiTietDatPhongs =
                 chiTietDatPhongService.findByDatPhongId(id);
 
-        // ===== Cap nhat CCCD theo tung ChiTietDatPhong (check-in) =====
-        // Voi moi ChiTietDatPhong trong don, neu form co gui cccd_<ctdpId>=...
-        // thi cap nhat CCCD cua slot do. Khong co trong form = giu nguyen.
-        // Ap dung cho moi trang thai (Cho xac nhan / Da xac nhan / Da nhan phong)
-        // de nhan vien co the bo sung CCCD som khi lam thu tuc.
-        if (request != null && chiTietDatPhongs != null) {
-            Map<String, String[]> paramMap = request.getParameterMap();
-            String prefix = "cccd_";
-            for (ChiTietDatPhong ctdp : chiTietDatPhongs) {
-                if (ctdp == null) continue;
-                String key = prefix + ctdp.getId();
-                String[] vals = paramMap.get(key);
-                if (vals == null || vals.length == 0) continue;
-                String cccdMoi = vals[0];
-                if (cccdMoi == null) continue;
-                String cccdTrim = cccdMoi.trim();
-                // Cho phep rong (giu nguyen) hoac 12 chu so.
-                if (!cccdTrim.isEmpty() && !cccdTrim.matches("^[0-9]{12}$")) {
-                    continue; // validate client da chan, bo qua neu khong hop le
-                }
-                ctdp.setMa_cccd(cccdTrim.isEmpty() ? ctdp.getMa_cccd() : cccdTrim);
-                chiTietDatPhongService.save(ctdp);
-            }
-        }
-
         // Khi khách nhận phòng
         if ("Da nhan phong".equals(trangThai)) {
 
@@ -1231,7 +1224,8 @@ public class AdminDatPhongController {
 
         List<DatPhong> dsDon = datPhongService.findAll().stream()
                 .filter(dp -> dp.getNgaydatPhong() != null)
-                .filter(dp -> "Cho xac nhan".equals(dp.getTrangThai())
+                .filter(dp -> "Yeu cau dat phong".equals(dp.getTrangThai())
+                        || "Cho xac nhan".equals(dp.getTrangThai())
                         || "Da xac nhan".equals(dp.getTrangThai())
                         || "Da nhan phong".equals(dp.getTrangThai()))
                 .filter(dp -> !dp.getNgaydatPhong().toLocalDate().isBefore(tuNgay)
@@ -1258,7 +1252,8 @@ public class AdminDatPhongController {
             LocalDate finalD = d;
             long soDon = datPhongService.findAll().stream()
                     .filter(x -> x.getNgaydatPhong() != null)
-                    .filter(x -> "Cho xac nhan".equals(x.getTrangThai())
+                    .filter(x -> "Yeu cau dat phong".equals(x.getTrangThai())
+                            || "Cho xac nhan".equals(x.getTrangThai())
                             || "Da xac nhan".equals(x.getTrangThai())
                             || "Da nhan phong".equals(x.getTrangThai()))
                     .filter(x -> x.getNgaydatPhong().toLocalDate().equals(finalD))
@@ -1350,7 +1345,7 @@ public class AdminDatPhongController {
                 }
 
                 slots.add(new SlotPhongDTO(
-                        ct.getId(), pDaGan, sanSang, ct.getMa_cccd(), loaiPhongOptions, ct.getGiaKhiDat(), tienNghiList));
+                        ct.getId(), pDaGan, sanSang, layCccdDaiDienPhong(ct.getId()), loaiPhongOptions, ct.getGiaKhiDat(), tienNghiList));
             }
             nhomYeuCauPhong.add(new NhomYeuCauPhongDTO(e.getKey(), slots));
         }

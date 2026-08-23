@@ -65,7 +65,4 @@ public class KhachHang {
     @NotNull(message = "vai trò không được để trống")
     private VaiTro vaiTro;
 
-    @OneToOne
-    @JoinColumn(name = "anh_dai_dien", referencedColumnName = "ma_anh")
-    private Anh anhDaiDien;
 }

@@ -361,7 +361,7 @@
                 <td>
                     <span th:text="${ct.p != null and ct.p.loaiPhong != null ? ct.p.loaiPhong.sucChuaToiDa + ' người' : 'N/A'}"></span>
                 </td>
-                <td><code th:text="${ct.ma_cccd != null ? ct.ma_cccd : '—'}"></code></td>
+                <td><code th:text="${datPhong.ma_cccd != null ? datPhong.ma_cccd : '—'}"></code></td>
                 <td style="color: var(--sky-dark); font-weight: 700;">
                     <span th:text="${#numbers.formatDecimal(ct.giaMoiDem, 0, 'COMMA', 0, 'POINT') + ' VND'}"></span>
                 </td>

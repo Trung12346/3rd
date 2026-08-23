@@ -400,13 +400,21 @@ public class VnpayService {
             amountDv = amountDv.add(ctdv.getDonGia());
         }
 
+        HoaDon _hd = hoaDonService.findByDatPhongId(dp.id);
+        System.out.println("ID DP: " + dp.id);
+
+        BigDecimal daThanhToan = _hd != null ? _hd.daThanhToan : BigDecimal.ZERO;
+        System.out.println("DA THANH TOAN: " + daThanhToan);
+
         BigDecimal VATCD = new BigDecimal("0.10");
         BigDecimal tienGiam = tinhTienGiam(amountPhong, dp.getKm());
         BigDecimal amountTongTien = amountPhong.subtract(tienGiam).add(amountDv);
         BigDecimal tienVat = amountTongTien.multiply(VATCD).setScale(2, RoundingMode.HALF_UP);
         amountTongTien = amountTongTien.add(tienVat);
 
-        boolean thanhCong = amountVnpay.compareTo(amountTongTien) == 0 && vnpayBaoThanhCong;
+        BigDecimal tongDaThanhToan = amountVnpay.add(daThanhToan);
+        System.out.println("DA THANH TOAN: " + tongDaThanhToan);
+        boolean thanhCong = tongDaThanhToan.compareTo(amountTongTien) == 0 && vnpayBaoThanhCong;
         if (!thanhCong) {
             System.out.println("thanh toan that bai vnpay=" + amountVnpay + " amountTongTien=" + amountTongTien);
             return 0;

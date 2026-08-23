@@ -27,10 +27,11 @@ import java.util.Map;
  * "Đơn đặt phòng" trong trang Quản lý tài khoản (customer-setting.html).
  *
  * Tái sử dụng đúng cơ chế + chính sách hủy đơn đã có sẵn ở HuyDonService
- * (dùng chung cho admin/nhân viên): tính tỷ lệ hoàn theo thời gian đã trôi
- * qua kể từ lúc đặt, không cho hủy nếu đã nhận/trả phòng, chuyển đơn sang
- * trạng thái trung gian "Cho huy" (hoặc "Da huy" thẳng nếu chưa có hóa đơn)
- * để nhân viên/admin xử lý hoàn tiền thủ công ở bước sau.
+ * (dùng chung cho admin/nhân viên): tính tỷ lệ hoàn theo số ngày còn lại
+ * đến ngày nhận phòng, không cho hủy nếu đã nhận/trả phòng hoặc đơn có
+ * áp dụng khuyến mại, chuyển đơn sang trạng thái trung gian "Cho huy"
+ * (hoặc "Da huy" thẳng nếu chưa có hóa đơn) để nhân viên/admin xử lý
+ * hoàn tiền thủ công ở bước sau.
  *
  * Khác với luồng nhân viên/admin, khách hàng KHÔNG được điều hướng sang
  * trang xử lý hoàn tiền nội bộ (trang đó chỉ dành cho NV/Admin) — sau khi
@@ -90,6 +91,11 @@ public class KhachHangHuyDonController {
             res.put("message", "Khách đã nhận phòng, không thể hủy theo chính sách này.");
             return ResponseEntity.badRequest().body(res);
         }
+        if (huyDonService.coKhuyenMai(dp)) {
+            res.put("ok", false);
+            res.put("message", "Đơn có áp dụng khuyến mại nên không thể hủy theo chính sách này.");
+            return ResponseEntity.badRequest().body(res);
+        }
 
         HoaDon hd = hoaDonService.findByDatPhongId(id);
         // Neu hd chua co ngayYeuCauHoan (chua tung huy) -> dung thoi diem hien tai de mo phong
@@ -104,9 +110,14 @@ public class KhachHangHuyDonController {
             if (soPhutDaTroi < 0) soPhutDaTroi = 0;
         }
 
+        // Số ngày còn lại từ thời điểm "hủy bây giờ" đến ngày nhận phòng (ngay_nhan_phong),
+        // dùng để modal highlight đúng mốc chính sách (>=5 / 3-4 / <3 ngày).
+        Long soNgayConLaiDenCheckIn = huyDonService.tinhKhoangCachNgayCheckIn(dp, hd);
+
         res.put("ok", true);
         res.put("maDatPhong", id);
         res.put("soPhutDaTroi", soPhutDaTroi);
+        res.put("soNgayConLaiDenCheckIn", soNgayConLaiDenCheckIn);
         res.put("tyLePhanTram", tyLe.multiply(new BigDecimal("100")).setScale(0, RoundingMode.HALF_UP));
         res.put("daThanhToan", daThanhToan);
         res.put("soTienHoanDuKien", soTienHoanDuKien);

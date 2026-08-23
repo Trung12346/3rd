@@ -694,6 +694,7 @@
     .lp-event-bar:hover{ filter:brightness(0.96); box-shadow:0 2px 6px rgba(15,23,42,.12); transform:translateY(-1px); }
 
     /* status colors */
+    .lp-status-yeu-cau-dat-phong{ background:#fce8d6; color:#8a4b00; border-left-color:#e37400; }
     .lp-status-cho-xac-nhan{ background:#fef7e0; color:#8a6100; border-left-color:#f9ab00; }
     .lp-status-da-xac-nhan{ background:#e8f0fe; color:#174ea6; border-left-color:#1a73e8; }
     .lp-status-da-nhan-phong{ background:#e6f4ea; color:#137333; border-left-color:#188038; }
@@ -885,6 +886,7 @@
             </div>
             <div class="lp-legend">
                 <div class="lp-legend-title">Chú thích trạng thái</div>
+                <div class="lp-legend-row"><span class="lp-legend-dot" style="background:#e37400"></span>Yêu cầu đặt phòng</div>
                 <div class="lp-legend-row"><span class="lp-legend-dot" style="background:#f9ab00"></span>Chờ xác nhận</div>
                 <div class="lp-legend-row"><span class="lp-legend-dot" style="background:#1a73e8"></span>Đã xác nhận</div>
                 <div class="lp-legend-row"><span class="lp-legend-dot" style="background:#188038"></span>Đã nhận phòng</div>
@@ -961,6 +963,7 @@
     var WEEKDAY_HEADERS = ['T2','T3','T4','T5','T6','T7','CN'];
     var STATUS_LABEL = {
         'Chua thanh toan': 'Chưa thanh toán',
+        'Yeu cau dat phong': 'Yêu cầu đặt phòng',
         'Cho xac nhan': 'Chờ xác nhận',
         'Da xac nhan': 'Đã xác nhận',
         'Da nhan phong': 'Đã nhận phòng',
@@ -970,6 +973,7 @@
     };
     var STATUS_CLASS = {
         'Chua thanh toan': 'lp-status-chua-thanh-toan',
+        'Yeu cau dat phong': 'lp-status-yeu-cau-dat-phong',
         'Cho xac nhan': 'lp-status-cho-xac-nhan',
         'Da xac nhan': 'lp-status-da-xac-nhan',
         'Da nhan phong': 'lp-status-da-nhan-phong',
@@ -978,6 +982,7 @@
     };
     var STATUS_DOT = {
         'Chua thanh toan': '#9334e6',
+        'Yeu cau dat phong': '#e37400',
         'Cho xac nhan': '#f9ab00',
         'Da xac nhan': '#1a73e8',
         'Da nhan phong': '#188038',

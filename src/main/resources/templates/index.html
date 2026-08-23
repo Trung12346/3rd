@@ -72,6 +72,10 @@
         <input type="hidden" name="ngayTra" id="ngayTraPhongInput" th:value="${ngayTra}">
         <input type="hidden" name="nguoiLon" id="soNguoiLonInput" th:value="${nguoiLon != null ? nguoiLon : 2}">
         <input type="hidden" name="treEm" id="soTreEmInput" th:value="${treEm != null ? treEm : 0}">
+        <!-- Gio tra phong chuan: 12:00 (truoc day la 11:00). Duoc forward qua
+             /loai-phong/tim-kiem roi tiep tuc xuong endpoint tao don dat phong
+             (/loai-phong/dat-nhanh) de dam bao dung gio tra duoc ap dung. -->
+        <input type="hidden" name="checkOutTime" id="checkOutTimeInput" value="12:00">
 
         <div class="hero-search-group" id="heroDatesGroup">
             <div class="hero-search-field" data-field="checkin" id="heroCheckinField">

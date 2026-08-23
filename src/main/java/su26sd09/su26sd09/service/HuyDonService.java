@@ -23,25 +23,14 @@ public class HuyDonService {
     @Autowired PhongService phongService; // giả định đã có, dùng để nhả phòng
 
     /**
-     * Rule hoàn tiền mới (áp dụng từ 2026): dựa vào số NGÀY từ thời điểm tạo yêu cầu hủy
-     * (NgayYeuCauHoan trên HoaDon) đến ngày check-in (ngày nhận phòng dự kiến trên DatPhong).
+     * Rule hoàn tiền hiện hành: chỉ áp dụng cho đơn KHÔNG có khuyến mại
+     * (xem {@link #coKhuyenMai(DatPhong)} / {@link #coTheHuy(DatPhong)}).
+     * Dựa vào số NGÀY từ thời điểm tạo yêu cầu hủy (NgayYeuCauHoan trên HoaDon)
+     * đến ngày check-in (ngày nhận phòng dự kiến trên DatPhong, mốc "ngay_nhan_phong").
      *
-     *  - >= 10 ngày       : 100% (hoàn toàn bộ)
-     *  - 9 ngày           : 90%
-     *  - 8 ngày           : 80%
-     *  - 7 ngày           : 70%
-     *  - 6 ngày           : 60%
-     *  - 5 ngày           : 50%
-     *  - 4 ngày           : 40%
-     *  - 3 ngày           : 30%
-     *  - 2 ngày           : 20%
-     *  - 1 ngày           : 10%
-     *  - 0 ngày (trong ngày check-in) : 0%
-     *  - âm (quá ngày check-in)       : 0%
-     *
-     * Mỗi ngày rút ngắn so với ngày check-in sẽ -10%.
-     * Tỉ lệ thuận nghịch với khoảng cách: khoảng cách từ "ngày tạo yêu cầu hủy" đến
-     * "ngày check-in" càng ngắn thì tỉ lệ hoàn càng thấp; tỉ lệ 100% áp dụng từ ngày thứ 10 trở đi.
+     *  - Từ 14 đến trước 5 ngày (>= 5 ngày) : miễn phí, hoàn 100%
+     *  - Từ 5 đến trước 3 ngày (3..4 ngày)  : phạt 50%, hoàn 50%
+     *  - Dưới 3 ngày (0..2 ngày, hoặc âm)   : phạt 100%, hoàn 0%
      *
      * Ngoài ra: nếu khách đã nhận phòng / trả phòng thì tỷ lệ = 0%
      * (chính sách không cho hủy sau check-in).
@@ -60,6 +49,12 @@ public class HuyDonService {
                 && !"Da tra phong".equals(dp.getTrangThai());
         if (!chuaCheckIn) return BigDecimal.ZERO;
 
+        // Đơn có áp dụng khuyến mại -> không được hủy -> không có tỷ lệ hoàn (coi như 0%).
+        // Việc CHẶN hủy hẳn được xử lý ở tầng huyDon()/controller, hàm này chỉ trả tỷ lệ.
+        if (coKhuyenMai(dp)) {
+            return BigDecimal.ZERO;
+        }
+
         // Mốc tính: NGÀY TẠO YÊU CẦU HỦY (NgayYeuCauHoan trên HoaDon).
         // Nếu chưa có (đơn cũ / tính tay) thì fallback về thời điểm hiện tại
         // để tránh null, nhưng rule mới luôn ưu tiên dùng ngayYeuCauHoan.
@@ -70,20 +65,35 @@ public class HuyDonService {
             mocTaoYeuCau = LocalDateTime.now();
         }
         LocalDate ngayTaoYeuCauHuy = mocTaoYeuCau.toLocalDate();
+        // Mốc tham chiếu là ngay_nhan_phong (ngày check-in dự kiến).
         LocalDate ngayNhanPhong = dp.getNgaydatPhong().toLocalDate();
         long soNgayConLai = ChronoUnit.DAYS.between(ngayTaoYeuCauHuy, ngayNhanPhong);
 
-        if (soNgayConLai >= 10) {
+        if (soNgayConLai >= 5) {
+            // Từ 14 đến trước 5 ngày (và xa hơn) -> miễn phí, hoàn 100%.
             return new BigDecimal("1.00");
         }
-        if (soNgayConLai < 0) {
-            // Da qua ngay check-in (huỷ muộn sau check-in) -> khong hoan.
-            return BigDecimal.ZERO;
+        if (soNgayConLai >= 3) {
+            // Từ 5 đến trước 3 ngày -> phạt 50%, hoàn 50%.
+            return new BigDecimal("0.50");
         }
-        // 0..9 ngày: moi ngay giam 10% (ngay 9 = 90%, ngay 8 = 80%, ..., ngay 0 = 0%)
-        // soNgayConLai=9 -> 0.90, soNgayConLai=0 -> 0.00
-        long phanTram = soNgayConLai * 10L;
-        return new BigDecimal(phanTram).divide(new BigDecimal("100"), 2, RoundingMode.HALF_UP);
+        // Dưới 3 ngày (kể cả đã quá ngày check-in) -> phạt 100%, hoàn 0%.
+        return BigDecimal.ZERO;
+    }
+
+    /**
+     * Đơn đặt phòng có áp dụng khuyến mại hay không (dựa vào {@code DatPhong.km}).
+     */
+    public boolean coKhuyenMai(DatPhong dp) {
+        return dp != null && dp.getKm() != null;
+    }
+
+    /**
+     * Đơn có được phép hủy theo chính sách hiện hành hay không.
+     * Khi có khuyến mại được áp dụng, khách KHÔNG thể hủy đơn dưới bất kỳ hình thức nào.
+     */
+    public boolean coTheHuy(DatPhong dp) {
+        return !coKhuyenMai(dp);
     }
 
     /**
@@ -106,6 +116,10 @@ public class HuyDonService {
             return new KetQuaHuyDonDTO("Don da duoc yeu cau huy truoc do", null, false);
         if ("Da nhan phong".equals(dp.getTrangThai()) || "Da tra phong".equals(dp.getTrangThai()))
             return new KetQuaHuyDonDTO("Khach da nhan phong, khong the huy theo chinh sach nay", null, false);
+
+        // Đơn có áp dụng khuyến mại -> khách không thể hủy đơn theo chính sách hiện hành.
+        if (coKhuyenMai(dp))
+            return new KetQuaHuyDonDTO("Don co ap dung khuyen mai, khong the huy theo chinh sach nay", null, false);
 
         HoaDon hd = hoaDonService.findByDatPhongId(datPhongId);
 

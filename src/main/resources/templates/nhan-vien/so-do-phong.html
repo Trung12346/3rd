@@ -6,30 +6,45 @@
     <title>Đơn đặt phòng | Sơ đồ phòng</title>
     <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+    <script src="/js/date-range-picker.js"></script>
     <style>
         *, *::before, *::after { box-sizing: border-box; }
-        body { background: #f0f4f8; font-family: 'Montserrat', sans-serif; }
+        body { background: linear-gradient(180deg, #f3f7fb 0%, #eef2f7 100%); font-family: 'Montserrat', sans-serif; }
 
-        .sdp-shell { margin: 0 auto; max-width: 1400px; padding: 32px; }
+        .sdp-shell { margin: 0 auto; width: 85vw; max-width: 1800px; padding: 32px; }
 
-        .sdp-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
-        .sdp-header h1 { color: var(--sky-dark, #2196c4); font-size: 24px; font-weight: 700; margin: 0 0 4px; }
-        .sdp-header p { color: #6b7280; font-size: 13px; margin: 0; }
+        .sdp-header {
+            display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px; flex-wrap: wrap; gap: 14px;
+            background: linear-gradient(120deg, #0ea5c7 0%, #2196c4 55%, #1d7fae 100%);
+            border-radius: 16px; padding: 22px 26px; box-shadow: 0 10px 26px rgba(33,150,196,0.28);
+        }
+        .sdp-header h1 { color: #fff; font-size: 22px; font-weight: 800; margin: 0 0 4px; letter-spacing: -0.2px; }
+        .sdp-header p { color: rgba(255,255,255,0.85); font-size: 12.5px; margin: 0; }
 
-        /* Status legend / summary chips */
+        /* Status legend / summary mini-cards */
         .sdp-legend { display: flex; gap: 10px; flex-wrap: wrap; }
         .sdp-chip {
-            display: flex; align-items: center; gap: 7px;
-            background: #fff; border: 1px solid #e2e8f0; border-radius: 999px;
-            padding: 7px 14px; font-size: 12.5px; font-weight: 600; color: #374151;
+            display: flex; align-items: center; gap: 10px;
+            background: rgba(255,255,255,0.14); backdrop-filter: blur(4px);
+            border: 1px solid rgba(255,255,255,0.26); border-radius: 12px;
+            padding: 9px 14px 9px 10px; min-width: 118px;
+            transition: background .15s, transform .15s;
         }
-        .sdp-chip .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
-        .sdp-chip .count { color: #111827; font-weight: 700; }
+        .sdp-chip:hover { background: rgba(255,255,255,0.22); transform: translateY(-1px); }
+        .sdp-chip .icon {
+            width: 32px; height: 32px; border-radius: 9px; flex: none;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 13px; color: #fff;
+        }
+        .sdp-chip .text { display: flex; flex-direction: column; line-height: 1.25; }
+        .sdp-chip .label { font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.85); }
+        .sdp-chip .count { color: #fff; font-weight: 800; font-size: 16px; }
 
-        .dot-empty { background: #16a34a; }
-        .dot-inuse { background: #2563eb; }
-        .dot-cleaning { background: #d97706; }
-        .dot-maintenance { background: #dc2626; }
+        .icon-empty { background: linear-gradient(135deg, #34d399, #10b981); }
+        .icon-inuse { background: linear-gradient(135deg, #60a5fa, #2563eb); }
+        .icon-cleaning { background: linear-gradient(135deg, #fbbf24, #d97706); }
+        .icon-maintenance { background: linear-gradient(135deg, #f87171, #dc2626); }
 
         /* Layout: side floor tabs + room grid */
         .sdp-layout {
@@ -37,21 +52,22 @@
         }
 
         .sdp-floor-tabs {
-            background: #fff; border: 1px solid #e2e8f0; border-radius: 10px;
+            background: #fff; border: 1px solid #e2e8f0; border-radius: 14px;
             padding: 10px; position: sticky; top: 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            box-shadow: 0 4px 16px rgba(15,23,42,0.06);
         }
         .sdp-floor-tab {
             display: flex; align-items: center; justify-content: space-between;
             width: 100%; border: none; background: transparent; cursor: pointer;
-            padding: 12px 14px; border-radius: 8px; margin-bottom: 4px;
+            padding: 12px 14px; border-radius: 10px; margin-bottom: 4px;
             font-size: 14px; font-weight: 600; color: #475569;
             transition: background .15s, color .15s;
         }
         .sdp-floor-tab:last-child { margin-bottom: 0; }
         .sdp-floor-tab:hover { background: #f0f9ff; color: var(--sky-dark, #2196c4); }
         .sdp-floor-tab.active {
-            background: var(--sky-primary, #2196c4); color: #fff;
+            background: linear-gradient(120deg, #2196c4, #1d7fae); color: #fff;
+            box-shadow: 0 4px 12px rgba(33,150,196,0.3);
         }
         .sdp-floor-tab .badge {
             font-size: 11px; font-weight: 700; padding: 1px 8px; border-radius: 10px;
@@ -60,8 +76,8 @@
         .sdp-floor-tab.active .badge { background: rgba(255,255,255,0.25); }
 
         .sdp-panel {
-            background: #fff; border: 1px solid #e2e8f0; border-radius: 10px;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.06); padding: 24px; min-height: 420px;
+            background: #fff; border: 1px solid #e2e8f0; border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(15,23,42,0.06); padding: 24px; min-height: 420px;
         }
         .sdp-panel-title {
             display: flex; align-items: center; justify-content: space-between;
@@ -71,45 +87,693 @@
         .sdp-panel-title span { font-size: 12.5px; color: #6b7280; }
 
         .sdp-room-grid {
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            display: flex; flex-wrap: wrap;
             gap: 14px;
         }
+        .sdp-room-card { width: 210px; flex: 0 0 210px; }
 
         .sdp-room-card {
-            border: 2px solid #e2e8f0; border-radius: 10px; padding: 14px;
-            position: relative; transition: box-shadow .15s, transform .15s;
+            border: 1px solid #e5e9f0; border-radius: 14px; padding: 0;
+            position: relative; transition: box-shadow .18s, transform .18s;
+            overflow: hidden; background: #fff;
         }
-        .sdp-room-card:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.08); transform: translateY(-1px); }
+        .sdp-room-card:hover { box-shadow: 0 10px 24px rgba(15,23,42,0.1); transform: translateY(-2px); }
+        .sdp-room-card:active { transform: translateY(0); }
 
-        .sdp-room-card .so-phong { font-size: 17px; font-weight: 700; color: #1f2937; }
-        .sdp-room-card .loai-phong { font-size: 12px; color: #6b7280; margin-top: 2px; }
-        .sdp-room-card .gia { font-size: 12.5px; color: #374151; margin-top: 10px; font-weight: 600; }
+        .sdp-room-card__bar { height: 5px; width: 100%; }
+        .sdp-status-empty .sdp-room-card__bar { background: linear-gradient(90deg, #34d399, #10b981); }
+        .sdp-status-inuse .sdp-room-card__bar { background: linear-gradient(90deg, #60a5fa, #2563eb); }
+        .sdp-status-cleaning .sdp-room-card__bar { background: linear-gradient(90deg, #fbbf24, #d97706); }
+        .sdp-status-maintenance .sdp-room-card__bar { background: linear-gradient(90deg, #f87171, #dc2626); }
+
+        .sdp-room-card__body { padding: 13px 14px 14px; }
+
+        .sdp-room-card__top { display: flex; align-items: flex-start; justify-content: space-between; gap: 6px; }
+        .sdp-room-card .so-phong { font-size: 17px; font-weight: 800; color: #1f2937; letter-spacing: -0.2px; }
+        .sdp-room-card .loai-phong { font-size: 11.5px; color: #6b7280; margin-top: 1px; font-weight: 600; }
+
+        .sdp-room-card__meta { display: flex; align-items: center; gap: 8px; margin-top: 9px; flex-wrap: wrap; }
+        .sdp-capacity { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: #6b7280; font-weight: 600; }
+        .sdp-capacity i { font-size: 10px; }
+
+        .sdp-room-card .gia {
+            font-size: 15px; color: #0f172a; margin-top: 11px; font-weight: 800;
+            display: flex; align-items: baseline; gap: 4px;
+        }
+        .sdp-room-card .gia .unit { font-size: 11px; color: #94a3b8; font-weight: 600; }
 
         .sdp-status-pill {
             display: inline-flex; align-items: center; gap: 6px;
-            font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 999px;
-            margin-top: 8px;
+            font-size: 10.5px; font-weight: 800; padding: 4px 10px; border-radius: 999px;
+            text-transform: uppercase; letter-spacing: .02em; flex: none;
         }
-        .sdp-status-pill .dot { width: 7px; height: 7px; border-radius: 50%; }
+        .sdp-status-pill .dot { width: 6px; height: 6px; border-radius: 50%; }
 
-        .sdp-status-empty { border-color: #bbf7d0; background: #f0fdf4; }
         .sdp-status-empty .sdp-status-pill { background: #dcfce7; color: #15803d; }
-
-        .sdp-status-inuse { border-color: #bfdbfe; background: #eff6ff; }
         .sdp-status-inuse .sdp-status-pill { background: #dbeafe; color: #1d4ed8; }
-
-        .sdp-status-cleaning { border-color: #fde68a; background: #fffbeb; }
         .sdp-status-cleaning .sdp-status-pill { background: #fef3c7; color: #b45309; }
-
-        .sdp-status-maintenance { border-color: #fecaca; background: #fef2f2; }
         .sdp-status-maintenance .sdp-status-pill { background: #fee2e2; color: #b91c1c; }
+
+        /* Check-in countdown / warning badge */
+        .sdp-checkin-badge {
+            display: none; align-items: center; gap: 6px;
+            margin-top: 10px; padding: 6px 9px; border-radius: 8px;
+            font-size: 11.5px; font-weight: 700; line-height: 1.3;
+        }
+        .sdp-checkin-badge.show { display: flex; }
+        .sdp-checkin-badge i { font-size: 11px; flex: none; }
+        .sdp-checkin-badge .sdp-cd-label { color: inherit; opacity: .85; font-weight: 600; }
+        .sdp-checkin-badge .sdp-cd-time { color: inherit; font-weight: 800; }
+
+        .sdp-checkin-badge.cd-soon { background: #eff6ff; color: #1d4ed8; }
+        .sdp-checkin-badge.cd-urgent { background: #fff7ed; color: #c2410c; animation: sdpPulseAmber 1.6s ease-in-out infinite; }
+        .sdp-checkin-badge.cd-overdue { background: #fef2f2; color: #b91c1c; animation: sdpPulseRed 1.2s ease-in-out infinite; }
+
+        @keyframes sdpPulseAmber {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(194,65,12,0.18); }
+            50% { box-shadow: 0 0 0 5px rgba(194,65,12,0.02); }
+        }
+        @keyframes sdpPulseRed {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(185,28,28,0.22); }
+            50% { box-shadow: 0 0 0 5px rgba(185,28,28,0.03); }
+        }
 
         .sdp-empty-msg { text-align: center; color: #9ca3af; padding: 60px 0; font-size: 14px; }
 
+        .sdp-room-card { cursor: pointer; user-select: none; }
+
+        /* Context menu */
+        .sdp-ctx-menu {
+            position: fixed; z-index: 3000; min-width: 220px;
+            background: #fff; border: 1px solid #e2e8f0; border-radius: 10px;
+            box-shadow: 0 10px 32px rgba(15, 23, 42, 0.18);
+            padding: 6px; display: none; font-family: 'Montserrat', sans-serif;
+        }
+        .sdp-ctx-menu.open { display: block; }
+        .sdp-ctx-item {
+            display: flex; align-items: center; gap: 10px;
+            width: 100%; text-align: left; border: none; background: transparent;
+            padding: 9px 12px; border-radius: 7px; font-size: 13.5px; font-weight: 600;
+            color: #374151; cursor: pointer; white-space: nowrap;
+        }
+        .sdp-ctx-item i { width: 16px; text-align: center; color: #6b7280; font-size: 13px; }
+        .sdp-ctx-item:hover { background: #f0f9ff; color: var(--sky-dark, #2196c4); }
+        .sdp-ctx-item:hover i { color: var(--sky-dark, #2196c4); }
+        .sdp-ctx-item.danger:hover { background: #fef2f2; color: #b91c1c; }
+        .sdp-ctx-item.danger:hover i { color: #b91c1c; }
+        .sdp-ctx-sep { height: 1px; background: #eef1f5; margin: 5px 4px; }
+
+        /* Modal phu thu nhan phong som / tra phong muon */
+        .sdp-policy-backdrop {
+            display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.45); z-index: 4000;
+        }
+        .sdp-policy-backdrop.open { display: block; }
+        .sdp-policy-modal {
+            display: none; position: fixed; z-index: 4001; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 420px; max-width: calc(100vw - 32px); background: #fff; border-radius: 16px;
+            box-shadow: 0 20px 50px rgba(15,23,42,0.25); overflow: hidden;
+        }
+        .sdp-policy-modal.open { display: block; }
+        .sdp-policy-head {
+            display: flex; align-items: center; gap: 10px; padding: 18px 20px;
+            background: linear-gradient(120deg, #f97316, #dc2626); color: #fff;
+        }
+        .sdp-policy-head i { font-size: 18px; }
+        .sdp-policy-head h3 { margin: 0; font-size: 15px; font-weight: 800; }
+        .sdp-policy-body { padding: 18px 20px; }
+        .sdp-policy-body p { margin: 0 0 12px; font-size: 13.5px; color: #374151; line-height: 1.5; }
+        .sdp-policy-amount {
+            display: flex; align-items: center; justify-content: space-between;
+            background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px;
+            padding: 10px 14px; margin-bottom: 12px;
+        }
+        .sdp-policy-amount span { font-size: 12.5px; color: #b91c1c; font-weight: 700; }
+        .sdp-policy-amount strong { font-size: 18px; color: #b91c1c; font-weight: 800; }
+        .sdp-policy-note { font-size: 12px; color: #6b7280; margin-bottom: 0 !important; }
+        .sdp-policy-actions { padding: 14px 20px 20px; display: flex; justify-content: flex-end; gap: 10px; }
+
+        /* Modal "Thêm giấy tờ" truoc khi nhan phong */
+        .sdp-giayto-backdrop {
+            display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.45); z-index: 4000;
+        }
+        .sdp-giayto-backdrop.open { display: block; }
+        .sdp-giayto-modal {
+            display: none; position: fixed; z-index: 4001; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 560px; max-width: calc(100vw - 32px); max-height: calc(100vh - 48px);
+            background: #fff; border-radius: 16px; box-shadow: 0 20px 50px rgba(15,23,42,0.25);
+            flex-direction: column; overflow: hidden;
+        }
+        .sdp-giayto-modal.open { display: flex; }
+        .sdp-giayto-head {
+            display: flex; align-items: center; gap: 10px; padding: 18px 20px;
+            background: linear-gradient(120deg, #1B4965, #2c6e8f); color: #fff; flex: none;
+        }
+        .sdp-giayto-head i { font-size: 18px; }
+        .sdp-giayto-head h3 { margin: 0; font-size: 15px; font-weight: 800; }
+        .sdp-giayto-head p { margin: 2px 0 0; font-size: 12px; color: rgba(255,255,255,.85); }
+        .sdp-giayto-body { padding: 16px 20px; overflow-y: auto; flex: 1 1 auto; }
+        .sdp-giayto-actions {
+            padding: 14px 20px 18px; display: flex; justify-content: flex-end; gap: 10px;
+            border-top: 1px solid #eef1f5; flex: none;
+        }
+
+        .sdp-giayto-room {
+            border: 1px solid #e5e7eb; border-radius: 12px; padding: 14px; margin-bottom: 14px;
+        }
+        .sdp-giayto-room:last-child { margin-bottom: 0; }
+        .sdp-giayto-room-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+        .sdp-giayto-room-head h4 { margin: 0; font-size: 13.5px; font-weight: 700; color: #1f2937; }
+        .sdp-giayto-room-head span { font-size: 11.5px; color: #6b7280; }
+
+        .sdp-giayto-boxes { display: flex; flex-wrap: wrap; gap: 10px; }
+        .sdp-giayto-add-box, .sdp-giayto-doc-box {
+            width: 96px; height: 78px; border-radius: 10px; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; gap: 6px; cursor: pointer;
+            font-size: 11px; text-align: center; user-select: none; position: relative;
+        }
+        .sdp-giayto-add-box {
+            border: 1.5px dashed #cbd5e1; color: #64748b; background: #f8fafc;
+        }
+        .sdp-giayto-add-box:hover { border-color: #1B4965; color: #1B4965; background: #eef4f8; }
+        .sdp-giayto-add-box i { font-size: 16px; }
+        .sdp-giayto-doc-box {
+            border: 1.5px solid #bfdbfe; background: #eff6ff; color: #1d4ed8; padding: 6px;
+        }
+        .sdp-giayto-doc-box:hover { border-color: #1d4ed8; box-shadow: 0 2px 8px rgba(29,78,216,.15); }
+        .sdp-giayto-doc-box i.doc-icon { font-size: 18px; }
+        .sdp-giayto-doc-box .doc-name { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 84px; }
+        .sdp-giayto-doc-box .doc-type { color: #3b82f6; font-size: 10px; }
+        .sdp-giayto-doc-box .sdp-giayto-remove {
+            position: absolute; top: -6px; right: -6px; width: 18px; height: 18px; border-radius: 50%;
+            background: #fff; border: 1px solid #fca5a5; color: #dc2626; font-size: 10px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .sdp-giayto-doc-box .sdp-giayto-remove:hover { background: #fef2f2; }
+
+        /* Panel nhap chi tiet 1 document (mo khi bam vao box) */
+        .sdp-giayto-fields-backdrop {
+            display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.5); z-index: 4100;
+        }
+        .sdp-giayto-fields-backdrop.open { display: block; }
+        .sdp-giayto-fields-panel {
+            display: none; position: fixed; z-index: 4101; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 480px; max-width: calc(100vw - 32px); max-height: calc(100vh - 48px);
+            background: #fff; border-radius: 14px; box-shadow: 0 20px 50px rgba(15,23,42,0.3);
+            flex-direction: column; overflow: hidden;
+        }
+        .sdp-giayto-fields-panel.open { display: flex; }
+        .sdp-giayto-fields-head {
+            display: flex; align-items: center; justify-content: space-between; padding: 16px 20px;
+            border-bottom: 1px solid #eef1f5; flex: none;
+        }
+        .sdp-giayto-fields-head h4 { margin: 0; font-size: 14px; font-weight: 700; color: #1f2937; }
+        .sdp-giayto-fields-close { border: none; background: #f3f4f6; color: #6b7280; width: 28px; height: 28px; border-radius: 8px; cursor: pointer; }
+        .sdp-giayto-fields-body { padding: 16px 20px; overflow-y: auto; }
+        .sdp-giayto-fields-actions { padding: 12px 20px 16px; display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid #eef1f5; flex: none; }
+
+        .sdp-gt-field { margin-bottom: 12px; }
+        .sdp-gt-field label { display: block; font-size: 11.5px; font-weight: 700; color: #6b7280; text-transform: uppercase; margin-bottom: 5px; letter-spacing: .02em; }
+        .sdp-gt-field input[type="text"], .sdp-gt-field input[type="date"], .sdp-gt-field select {
+            width: 100%; padding: 9px 11px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 13.5px; color: #1f2937;
+        }
+        .sdp-gt-field input:focus, .sdp-gt-field select:focus { outline: none; border-color: #1B4965; }
+        .sdp-gt-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .sdp-gt-checkbox { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #374151; margin-bottom: 12px; }
+        .sdp-gt-checkbox input { width: 16px; height: 16px; }
+
+        /* ==== Validation tai cho (khong dung alert()) ==== */
+        /* Field don le trong panel nhap chi tiet giay to */
+        .sdp-gt-field.has-error input[type="text"],
+        .sdp-gt-field.has-error input[type="date"],
+        .sdp-gt-field.has-error select {
+            border-color: #dc2626; background: #fef2f2;
+        }
+        .sdp-gt-field-error { color: #dc2626; font-size: 11px; margin-top: 5px; font-weight: 600; }
+
+        /* Box giay to (trong luoi theo phong) thieu thong tin bat buoc */
+        .sdp-giayto-doc-box.has-error {
+            border-color: #dc2626; background: #fef2f2; color: #b91c1c;
+        }
+        .sdp-giayto-doc-box.has-error .doc-type { color: #dc2626; }
+        .sdp-giayto-doc-box.has-error::after {
+            content: '!'; position: absolute; top: -6px; left: -6px; width: 16px; height: 16px;
+            border-radius: 50%; background: #dc2626; color: #fff; font-size: 10px; font-weight: 800;
+            display: flex; align-items: center; justify-content: center; line-height: 1;
+        }
+
+        /* Loi muc phong: sai so luong "nguoi dai dien" */
+        .sdp-giayto-room-error {
+            color: #dc2626; font-size: 11.5px; font-weight: 700; margin: -4px 0 10px;
+        }
+
+        /* Nut "+ Them giay to" bi khoa vi da du tong so giay to theo suc chua */
+        .sdp-giayto-add-box.disabled {
+            opacity: .45; cursor: not-allowed; pointer-events: none;
+        }
+
+        /* Khung sdp-giayto-room duoc nhung vao tung dp-form-row o sidebar "Xem don
+           hien tai" - can them khoang cach voi phan noi dung ben duoi (dp-form-row-body)
+           va 1 hang nut "Luu giay to phong nay" rieng cho tung phong. */
+        .sdp-giayto-row-embed { margin: 12px 0 10px; background: #fbfcfe; }
+        .sdp-giayto-row-footer {
+            display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 12px;
+        }
+        .sdp-giayto-row-status { font-size: 11.5px; font-weight: 600; color: #94a3b8; }
+        .sdp-giayto-row-save {
+            border: none; background: #1B4965; color: #fff; font-size: 12px; font-weight: 700;
+            padding: 8px 14px; border-radius: 8px; cursor: pointer; flex: none;
+        }
+        .sdp-giayto-row-save:hover:not(:disabled) { background: #163d54; }
+        .sdp-giayto-row-save:disabled { opacity: .5; cursor: not-allowed; }
+
+        /* Banner tong so giay to / suc chua o dau modal */
+        .sdp-gt-total-ok { color: rgba(255,255,255,.85); }
+        .sdp-gt-total-error { color: #fecaca; font-weight: 700; }
+
+        /* Nut "Tiep tuc" bi khoa khi con loi chua sua */
+        #sdpGiayToTiepTucBtn:disabled {
+            opacity: .5; cursor: not-allowed; box-shadow: none;
+        }
+
+        .sdp-ctx-backdrop {
+            position: fixed; inset: 0; z-index: 2999; display: none;
+        }
+        .sdp-ctx-backdrop.open { display: block; }
+
+        /* Room info sidebar (for "Xem thông tin phòng") */
+        .sdp-info-sidebar {
+            position: absolute; top: 0; right: -400px; width: 380px; height: 100vh;
+            background: #fff; border-left: 1px solid #e2e8f0; z-index: 3100;
+            box-shadow: -10px 0 30px rgba(15,23,42,0.14);
+            transition: right .25s ease; overflow-y: auto;
+        }
+        .sdp-info-sidebar.open { right: 0; }
+
+        .sdp-info-head {
+            position: sticky; top: 0; background: #fff; z-index: 1;
+            display: flex; align-items: flex-start; justify-content: space-between;
+            padding: 20px 20px 14px; border-bottom: 1px solid #e5e7eb;
+        }
+        .sdp-info-head h3 { margin: 0 0 4px; font-size: 18px; font-weight: 700; color: #1f2937; }
+        .sdp-info-head p { margin: 0; font-size: 12.5px; color: #6b7280; }
+        .sdp-info-close {
+            border: none; background: #f3f4f6; color: #6b7280; width: 30px; height: 30px;
+            border-radius: 8px; cursor: pointer; font-size: 14px; flex: none;
+        }
+        .sdp-info-close:hover { background: #e5e7eb; color: #374151; }
+
+        .sdp-info-body { padding: 4px 20px 24px; }
+        .sdp-info-section { margin-top: 18px; }
+        .sdp-info-section h4 {
+            margin: 0 0 10px; font-size: 12px; font-weight: 700; letter-spacing: .03em;
+            text-transform: uppercase; color: #94a3b8;
+        }
+        .sdp-info-row {
+            display: flex; justify-content: space-between; gap: 12px;
+            padding: 7px 0; border-bottom: 1px dashed #eef1f5; font-size: 13.5px;
+        }
+        .sdp-info-row:last-child { border-bottom: none; }
+        .sdp-info-row span:first-child { color: #6b7280; flex: none; }
+        .sdp-info-row span:last-child { color: #1f2937; font-weight: 600; text-align: right; }
+
+        .sdp-info-desc { font-size: 13px; color: #374151; line-height: 1.6; white-space: pre-line; }
+        .sdp-info-empty { font-size: 12.5px; color: #9ca3af; font-style: italic; }
+
+        .sdp-info-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+        .sdp-info-tag {
+            display: inline-flex; align-items: center; gap: 5px;
+            background: #f0f9ff; color: #2196c4; border: 1px solid #dbeafe;
+            font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 999px;
+        }
+
+        .sdp-info-backdrop {
+            position: fixed; inset: 0; z-index: 3050; display: none; background: rgba(15,23,42,0.18);
+        }
+        .sdp-info-backdrop.open { display: block; }
+
+        /* ============ Sidebar "Lên lịch đặt phòng" ============ */
+        .sdp-lich-sidebar {
+            position: fixed; top: 0; right: -460px; width: 440px; height: 100vh;
+            background: #fff; border-left: 1px solid #e2e8f0; z-index: 3200;
+            box-shadow: -10px 0 30px rgba(15,23,42,0.16);
+            transition: right .25s ease; overflow-y: auto;
+            display: flex; flex-direction: column;
+        }
+        .sdp-lich-sidebar.open { right: 0; }
+
+        .sdp-lich-backdrop {
+            position: fixed; inset: 0; z-index: 3150; display: none; background: rgba(15,23,42,0.22);
+        }
+        .sdp-lich-backdrop.open { display: block; }
+
+        .sdp-lich-head {
+            position: sticky; top: 0; background: #fff; z-index: 1;
+            display: flex; align-items: flex-start; justify-content: space-between;
+            padding: 20px 22px 14px; border-bottom: 1px solid #e5e7eb;
+        }
+        .sdp-lich-head h3 { margin: 0 0 4px; font-size: 17px; font-weight: 700; color: #1f2937; }
+        .sdp-lich-head p { margin: 0; font-size: 12.5px; color: #6b7280; }
+        .sdp-lich-close {
+            border: none; background: #f3f4f6; color: #6b7280; width: 30px; height: 30px;
+            border-radius: 8px; cursor: pointer; font-size: 14px; flex: none;
+        }
+        .sdp-lich-close:hover { background: #e5e7eb; color: #374151; }
+
+        .sdp-lich-body { padding: 18px 22px 26px; flex: 1; }
+
+        .sdp-lich-section { margin-bottom: 20px; }
+        .sdp-lich-section h4 {
+            margin: 0 0 10px; font-size: 11.5px; font-weight: 700; letter-spacing: .03em;
+            text-transform: uppercase; color: #94a3b8;
+        }
+
+        /* Date range field, opens the calendar below it */
+        .sdp-lich-dates {
+            display: flex; border: 1px solid #dbe3ee; border-radius: 10px; overflow: hidden;
+            background: #f8fafc;
+        }
+        .sdp-lich-date-field {
+            flex: 1; padding: 10px 12px; cursor: pointer; transition: background .15s;
+        }
+        .sdp-lich-date-field:first-child { border-right: 1px solid #dbe3ee; }
+        .sdp-lich-date-field:hover, .sdp-lich-date-field.active { background: #eef6fc; }
+        .sdp-lich-date-field label {
+            display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700;
+            color: #64748b; text-transform: uppercase; letter-spacing: .02em; margin-bottom: 3px;
+        }
+        .sdp-lich-date-value { font-size: 14px; font-weight: 700; color: #1f2937; }
+        .sdp-lich-date-value.placeholder { color: #9ca3af; font-weight: 600; }
+
+        .sdp-lich-cal-wrap {
+            display: none; margin-top: 10px; border: 1px solid #e5e9f0; border-radius: 12px;
+            padding: 14px; background: #fff; box-shadow: 0 4px 16px rgba(15,23,42,0.06);
+        }
+        .sdp-lich-cal-wrap.open { display: block; }
+        .sdp-lich-cal-legend {
+            font-size: 11.5px; color: #6b7280; margin-bottom: 10px; padding-bottom: 10px;
+            border-bottom: 1px solid #eef1f5;
+        }
+        .sdp-lich-cal-legend strong { color: #2196c4; }
+        .sdp-lich-cal-actions {
+            display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px;
+            padding-top: 10px; border-top: 1px solid #eef1f5;
+        }
+        .sdp-lich-cal-actions button {
+            border: none; padding: 8px 16px; font-size: 12px; font-weight: 700;
+            border-radius: 6px; cursor: pointer; text-transform: uppercase; letter-spacing: .3px;
+        }
+        .sdp-lich-cal-clear { background: transparent; color: #6b7280; }
+        .sdp-lich-cal-clear:hover { color: #2196c4; }
+        .sdp-lich-cal-apply { background: #2196c4; color: #fff; }
+        .sdp-lich-cal-apply:hover { background: #1d7fae; }
+
+        .sdp-lich-cal-wrap .fc { font-family: 'Montserrat', sans-serif; font-size: 12.5px; }
+        .sdp-lich-cal-wrap .fc-daygrid-day-frame { cursor: pointer; }
+        .sdp-lich-cal-wrap .fc-daygrid-day.fc-day-past { opacity: .35; pointer-events: none; }
+        .sdp-lich-cal-wrap .drp-range-start .fc-daygrid-day-frame,
+        .sdp-lich-cal-wrap .drp-range-end .fc-daygrid-day-frame,
+        .sdp-lich-cal-wrap .drp-range-only .fc-daygrid-day-frame {
+            background-color: #2196c4; color: #fff; border-radius: 4px;
+        }
+        .sdp-lich-cal-wrap .drp-range-mid .fc-daygrid-day-frame { background-color: #eaf6fb; }
+        .sdp-lich-cal-wrap .fc-toolbar-title { font-size: 14.5px; color: #1f2937; font-weight: 700; }
+        .sdp-lich-cal-wrap .fc-button {
+            background: transparent; border: 1px solid #e2e8f0; color: #374151;
+            padding: 4px 8px; font-size: 12px;
+        }
+        .sdp-lich-cal-wrap .fc-button:hover { background: #f0f9ff; border-color: #2196c4; color: #2196c4; }
+
+        /* Ngay phong nay da co lich dat (chi phong nay, khong phai ca loai phong):
+           gach cheo, khong the bam, giong het kieu the hien o trang khach (loai-phong-detail). */
+        .sdp-lich-cal-wrap .drp-day-fully-booked .fc-daygrid-day-frame {
+            background: repeating-linear-gradient(135deg, #f3f3f3, #f3f3f3 4px, #e6e6e6 4px, #e6e6e6 8px);
+            color: #b5b5b5; cursor: not-allowed; pointer-events: none; border-radius: 4px;
+        }
+        .sdp-lich-cal-wrap .drp-day-fully-booked.drp-range-start .fc-daygrid-day-frame,
+        .sdp-lich-cal-wrap .drp-day-fully-booked.drp-range-mid .fc-daygrid-day-frame,
+        .sdp-lich-cal-wrap .drp-day-fully-booked.drp-range-end .fc-daygrid-day-frame {
+            background: repeating-linear-gradient(135deg, #f3f3f3, #f3f3f3 4px, #e6e6e6 4px, #e6e6e6 8px);
+            color: #b5b5b5;
+        }
+        .sdp-lich-cal-legend .sdp-lich-cal-legend-booked {
+            display: inline-flex; align-items: center; gap: 5px; margin-left: 10px;
+        }
+        .sdp-lich-cal-legend .sdp-lich-cal-legend-swatch {
+            display: inline-block; width: 12px; height: 12px; border-radius: 3px;
+            background: repeating-linear-gradient(135deg, #f3f3f3, #f3f3f3 4px, #e6e6e6 4px, #e6e6e6 8px);
+            border: 1px solid #ddd;
+        }
+
+        /* Thong bao loi validate (dong bo voi trang khach hang) */
+        .sdp-lich-field-error {
+            display: none; color: #c0392b; font-size: 11.5px; margin-top: 7px; font-weight: 600;
+            line-height: 1.4;
+        }
+        .sdp-lich-field-error.show { display: block; }
+        .sdp-lich-dates.has-error { border-color: #e74c3c; background: #fdf3f2; }
+        .sdp-lich-field.has-error input,
+        .sdp-lich-field.has-error textarea { border-color: #e74c3c; background: #fdf3f2; }
+
+        /* Text inputs grid */
+        .sdp-lich-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .sdp-lich-grid.full { grid-template-columns: 1fr; }
+        .sdp-lich-field label {
+            display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 6px;
+        }
+        .sdp-lich-field input[type="text"],
+        .sdp-lich-field input[type="email"],
+        .sdp-lich-field input[type="tel"],
+        .sdp-lich-field input[type="number"],
+        .sdp-lich-field textarea {
+            width: 100%; border: 1px solid #dbe3ee; border-radius: 9px; padding: 10px 12px;
+            font-size: 13.5px; font-family: inherit; color: #1f2937; background: #f8fafc;
+            transition: border-color .15s, background .15s;
+        }
+        .sdp-lich-field input:focus,
+        .sdp-lich-field textarea:focus {
+            outline: none; border-color: #2196c4; background: #fff;
+        }
+        .sdp-lich-field textarea { resize: vertical; min-height: 64px; }
+
+        /* Dịch vụ thêm - chip checkboxes */
+        .sdp-lich-services { display: flex; flex-wrap: wrap; gap: 8px; }
+        .sdp-lich-service-chip { position: relative; }
+        .sdp-lich-service-chip input { position: absolute; opacity: 0; width: 0; height: 0; }
+        .sdp-lich-service-chip span {
+            display: inline-flex; align-items: center; gap: 6px;
+            border: 1px solid #dbe3ee; border-radius: 999px; padding: 7px 13px;
+            font-size: 12.5px; font-weight: 600; color: #475569; cursor: pointer;
+            transition: background .15s, border-color .15s, color .15s;
+        }
+        .sdp-lich-service-chip span i { font-size: 11px; color: #94a3b8; }
+        .sdp-lich-service-chip input:checked + span {
+            background: #eaf6fb; border-color: #2196c4; color: #1d7fae;
+        }
+        .sdp-lich-service-chip input:checked + span i { color: #2196c4; }
+
+        /* Tiền khách trả + phương thức */
+        .sdp-lich-pay-row { display: flex; gap: 10px; }
+        .sdp-lich-pay-amount { flex: 1; }
+        .sdp-lich-pay-methods { display: flex; gap: 8px; flex: none; }
+        .sdp-lich-pay-method input { position: absolute; opacity: 0; width: 0; height: 0; }
+        .sdp-lich-pay-method label {
+            display: flex; align-items: center; gap: 7px; cursor: pointer;
+            border: 1px solid #dbe3ee; border-radius: 9px; padding: 10px 14px;
+            font-size: 13px; font-weight: 700; color: #64748b; background: #f8fafc;
+            transition: background .15s, border-color .15s, color .15s;
+        }
+        .sdp-lich-pay-method label i { font-size: 13px; }
+        .sdp-lich-pay-method input:checked + label {
+            background: #2196c4; border-color: #2196c4; color: #fff;
+        }
+
+        .sdp-lich-footer {
+            position: sticky; bottom: 0; background: #fff; border-top: 1px solid #e5e7eb;
+            padding: 14px 22px; display: flex; gap: 10px;
+        }
+        .sdp-lich-btn {
+            flex: 1; border: none; border-radius: 10px; padding: 12px 16px;
+            font-size: 13.5px; font-weight: 700; cursor: pointer; transition: background .15s;
+        }
+        .sdp-lich-btn-huy { background: #f3f4f6; color: #475569; }
+        .sdp-lich-btn-huy:hover { background: #e5e7eb; }
+        .sdp-lich-btn-luu {
+            background: linear-gradient(120deg, #2196c4, #1d7fae); color: #fff;
+        }
+        .sdp-lich-btn-luu:hover { background: linear-gradient(120deg, #1d8fbb, #176a92); }
+
+        /* ============ Sidebar "Xem đơn hiện tại" (nhung /nhan-su/dat-phong/chi-tiet/{id}) ============ */
+        .sdp-don-sidebar {
+            position: fixed; top: 0; right: -900px; width: 860px; max-width: 92vw; height: 100vh;
+            background: #fff; border-left: 1px solid #e2e8f0; z-index: 3200;
+            box-shadow: -10px 0 30px rgba(15,23,42,0.16);
+            transition: right .25s ease;
+            display: flex; flex-direction: column;
+        }
+        .sdp-don-sidebar.open { right: 0; }
+
+        .sdp-don-backdrop {
+            position: fixed; inset: 0; z-index: 3150; display: none; background: rgba(15,23,42,0.22);
+        }
+        .sdp-don-backdrop.open { display: block; }
+
+        .sdp-don-head {
+            display: flex; align-items: flex-start; justify-content: space-between;
+            padding: 18px 22px; border-bottom: 1px solid #e5e7eb; flex: none;
+        }
+        .sdp-don-head h3 { margin: 0 0 4px; font-size: 17px; font-weight: 700; color: #1f2937; }
+        .sdp-don-head p { margin: 0; font-size: 12.5px; color: #6b7280; }
+        .sdp-don-head-actions { display: flex; align-items: center; gap: 8px; flex: none; }
+        .sdp-don-open-tab {
+            border: 1px solid #dbe3ee; background: #f8fafc; color: #475569; width: 30px; height: 30px;
+            border-radius: 8px; cursor: pointer; font-size: 13px; flex: none; text-decoration: none;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .sdp-don-open-tab:hover { background: #eef6fc; border-color: #2196c4; color: #1d7fae; }
+        .sdp-don-close {
+            border: none; background: #f3f4f6; color: #6b7280; width: 30px; height: 30px;
+            border-radius: 8px; cursor: pointer; font-size: 14px; flex: none;
+        }
+        .sdp-don-close:hover { background: #e5e7eb; color: #374151; }
+
+        .sdp-don-body { flex: 1; position: relative; min-height: 0; }
+        .sdp-don-content {
+            width: 100%; height: 100%; overflow-y: auto; display: block;
+        }
+        .sdp-don-loading {
+            position: absolute; inset: 0; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; gap: 10px;
+            background: #fff; color: #94a3b8; font-size: 13px; transition: opacity .2s;
+        }
+        .sdp-don-loading.hide { opacity: 0; pointer-events: none; }
+        .sdp-don-loading i { font-size: 22px; color: #2196c4; animation: sdpDonSpin 1s linear infinite; }
+        @keyframes sdpDonSpin { to { transform: rotate(360deg); } }
+
+        /* ===== Override giao dien cua trang "chi-tiet-dat-phong" khi duoc nhung
+           vao sidebar nay: bo het khung/vien/box cua trang goc, chi giu lai text,
+           cac o nhap lieu va nut bam quan trong, style lai theo dung tinh than
+           cua sidebar "Lên lịch đặt phòng" (nen nhat, bo vien tron, khong doi). ===== */
+        #sdpDonContent { padding: 18px 22px 26px; font-size: 13.5px; color: #1f2937; }
+        #sdpDonContent .cdp-shell { width: 100%; max-width: 100%; margin: 0; padding: 0 !important; }
+
+        /* Bo toan bo khung/vien/nen/bong cua cac khoi "panel/card/box/section" cua trang goc */
+        #sdpDonContent .cdp-panel,
+        #sdpDonContent .cdp-header,
+        #sdpDonContent [class*="panel"],
+        #sdpDonContent [class*="-card"],
+        #sdpDonContent [class$="card"],
+        #sdpDonContent [class*="-box"],
+        #sdpDonContent [class$="box"] {
+            border: none !important; box-shadow: none !important; background: transparent !important;
+            border-radius: 0 !important;
+        }
+        #sdpDonContent .cdp-panel { margin-bottom: 20px !important; padding: 0 !important; }
+        #sdpDonContent .cdp-panel-title {
+            border: none !important; box-shadow: none !important; background: transparent !important;
+            padding: 0 0 8px !important; margin: 0 0 12px !important;
+            font-size: 12px !important; font-weight: 700 !important; color: #475569 !important;
+            text-transform: uppercase; letter-spacing: .03em;
+        }
+        #sdpDonContent .cdp-panel-sub { font-size: 11.5px; font-weight: 600; color: #94a3b8; text-transform: none; letter-spacing: 0; }
+        #sdpDonContent hr { border: none !important; border-top: 1px solid #e5e7eb !important; margin: 16px 0 !important; }
+        #sdpDonContent table, #sdpDonContent tr, #sdpDonContent td, #sdpDonContent th {
+            border: none !important; box-shadow: none !important; background: transparent !important;
+        }
+
+        /* Text field & cac o nhap lieu quan trong: dua ve dung style sdp-lich-field */
+        #sdpDonContent label {
+            display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 6px;
+            text-transform: none !important; letter-spacing: 0 !important;
+        }
+        #sdpDonContent input[type="text"],
+        #sdpDonContent input[type="email"],
+        #sdpDonContent input[type="tel"],
+        #sdpDonContent input[type="number"],
+        #sdpDonContent input[type="date"],
+        #sdpDonContent input[type="datetime-local"],
+        #sdpDonContent select,
+        #sdpDonContent textarea {
+            width: 100%; border: 1px solid #dbe3ee !important; border-radius: 9px !important;
+            padding: 10px 12px !important; font-size: 13.5px; font-family: inherit; color: #1f2937;
+            background: #f8fafc !important; box-shadow: none !important; outline: none;
+            transition: border-color .15s, background .15s;
+        }
+        #sdpDonContent input:focus,
+        #sdpDonContent select:focus,
+        #sdpDonContent textarea:focus {
+            outline: none; border-color: #2196c4 !important; background: #fff !important;
+        }
+        #sdpDonContent textarea { resize: vertical; min-height: 64px; }
+        #sdpDonContent input[type="checkbox"],
+        #sdpDonContent input[type="radio"] { accent-color: #2196c4; }
+
+        /* Nut bam quan trong (submit / luu / thu tien / them dich vu...): style flat, dong bo mau */
+        #sdpDonContent button,
+        #sdpDonContent input[type="submit"] {
+            border: none !important; border-radius: 10px !important; padding: 10px 16px !important;
+            font-size: 13px; font-weight: 700; cursor: pointer; box-shadow: none !important;
+            background: #f3f4f6; color: #475569; transition: background .15s;
+            text-transform: none !important; letter-spacing: 0 !important;
+        }
+        #sdpDonContent button:hover { background: #e5e7eb; }
+        #sdpDonContent button[type="submit"],
+        #sdpDonContent button.btn-thu-tien,
+        #sdpDonContent button.btn-luu-thay-doi,
+        #sdpDonContent button.btn-dp-primary,
+        #sdpDonContent button.btn-them-dv {
+            background: linear-gradient(120deg, #2196c4, #1d7fae) !important; color: #fff !important;
+        }
+        #sdpDonContent button[type="submit"]:hover,
+        #sdpDonContent button.btn-thu-tien:hover,
+        #sdpDonContent button.btn-luu-thay-doi:hover,
+        #sdpDonContent button.btn-dp-primary:hover,
+        #sdpDonContent button.btn-them-dv:hover {
+            background: linear-gradient(120deg, #1d8fbb, #176a92) !important;
+        }
+        #sdpDonContent button:disabled { opacity: .5; cursor: not-allowed; background: #f3f4f6 !important; color: #94a3b8 !important; }
+
+        /* Bo cms-topbar neu con sot lai, va dua summary-panel thanh 1 khoi full-width
+           o cuoi trang (thay vi sidebar sticky ben canh) sau khi da doi vi tri bang JS. */
+        #sdpDonContent .cms-topbar-shell,
+        #sdpDonContent .cms-topbar,
+        #sdpDonContent #cms-sidebar-shell {
+            display: none !important;
+        }
+        #sdpDonContent .cdp-layout {
+            display: block !important;
+        }
+        #sdpDonContent .summary-panel {
+            position: static !important; width: 100% !important; max-width: none !important;
+            margin-top: 20px !important;
+        }
+
+        /* Dong bo them voi cac chi tiet vua chinh trong chi-tiet-dat-phong.html */
+        #sdpDonContent .cdp-panel-title i { display: none; }
+        #sdpDonContent .dp-form-row { border-bottom: 1px solid #eef2f6 !important; padding: 14px 0 !important; }
+        #sdpDonContent .dp-form-row.is-selected { background: #f8fafc !important; }
+        #sdpDonContent .dp-form-row-body { border-top: 1px dashed #e5e7eb !important; }
+        #sdpDonContent .dp-room-card { border: 1px solid #dbe3ee !important; border-radius: 9px !important; }
+        #sdpDonContent .dp-room-card.selected { border-color: #2196c4 !important; background: #eaf6fb !important; box-shadow: none !important; }
+        #sdpDonContent .dp-room-card.selected::after { background: #2196c4; }
+        #sdpDonContent .dp-form-reason { padding: 0 !important; }
+        #sdpDonContent .dp-form-reason-title { color: #475569 !important; }
+        #sdpDonContent .dp-form-reason-title i { display: inline-block; color: #94a3b8 !important; }
+        #sdpDonContent .dp-form-submit-row { border-top: 1px solid #eef2f6 !important; }
+        #sdpDonContent .thu-tien-info { border-bottom: none !important; }
+        #sdpDonContent .dv-tab { border-radius: 9px 9px 0 0 !important; }
+        #sdpDonContent .sum-total { background: #2196c4 !important; border-radius: 9px !important; }
+
         @media (max-width: 800px) {
+            .sdp-shell { width: 94vw; padding: 20px 16px; }
             .sdp-layout { grid-template-columns: 1fr; }
             .sdp-floor-tabs { position: static; display: flex; overflow-x: auto; gap: 6px; }
             .sdp-floor-tab { width: auto; white-space: nowrap; }
+            .sdp-info-sidebar { width: 86vw; right: -90vw; }
+            .sdp-lich-sidebar { width: 92vw; right: -95vw; }
+            .sdp-lich-grid { grid-template-columns: 1fr; }
+            .sdp-don-sidebar { width: 96vw; max-width: 96vw; right: -98vw; }
+            .sdp-room-grid { justify-content: center; }
+            .sdp-room-card { width: 150px; flex-basis: 150px; }
         }
     </style>
 </head>
@@ -127,14 +791,34 @@
         </div>
 
         <div class="sdp-legend">
-            <span class="sdp-chip"><span class="dot dot-empty"></span>Trống
-                <span class="count" th:text="${demTrangThai['Trống']}">0</span></span>
-            <span class="sdp-chip"><span class="dot dot-inuse"></span>Đang sử dụng
-                <span class="count" th:text="${demTrangThai['Đang sử dụng']}">0</span></span>
-            <span class="sdp-chip"><span class="dot dot-cleaning"></span>Đang dọn
-                <span class="count" th:text="${demTrangThai['Đang dọn']}">0</span></span>
-            <span class="sdp-chip"><span class="dot dot-maintenance"></span>Bảo trì
-                <span class="count" th:text="${demTrangThai['Bảo trì']}">0</span></span>
+            <span class="sdp-chip">
+                <span class="icon icon-empty"><i class="fa-solid fa-bed"></i></span>
+                <span class="text">
+                    <span class="label">Trống</span>
+                    <span class="count" th:text="${demTrangThai['Trống']}">0</span>
+                </span>
+            </span>
+            <span class="sdp-chip">
+                <span class="icon icon-inuse"><i class="fa-solid fa-person-shelter"></i></span>
+                <span class="text">
+                    <span class="label">Đang sử dụng</span>
+                    <span class="count" th:text="${demTrangThai['Đang sử dụng']}">0</span>
+                </span>
+            </span>
+            <span class="sdp-chip">
+                <span class="icon icon-cleaning"><i class="fa-solid fa-broom"></i></span>
+                <span class="text">
+                    <span class="label">Đang dọn</span>
+                    <span class="count" th:text="${demTrangThai['Đang dọn']}">0</span>
+                </span>
+            </span>
+            <span class="sdp-chip">
+                <span class="icon icon-maintenance"><i class="fa-solid fa-screwdriver-wrench"></i></span>
+                <span class="text">
+                    <span class="label">Bảo trì</span>
+                    <span class="count" th:text="${demTrangThai['Bảo trì']}">0</span>
+                </span>
+            </span>
         </div>
     </div>
 
@@ -164,23 +848,51 @@
 
                 <div class="sdp-room-grid">
                     <div th:each="phong : ${entry.value}"
-                         class="sdp-room-card"
-                         th:classappend="${lopTrangThai[phong.maPhong]}">
+                         class="sdp-room-card sdp-room-cell"
+                         th:classappend="${lopTrangThai[phong.maPhong]}"
+                         th:data-ma-phong="${phong.maPhong}"
+                         th:data-so-phong="'P' + ${phong.soPhong}"
+                         th:data-tang="${phong.soTang}"
+                         th:data-loai-phong="${phong.loaiPhong != null ? phong.loaiPhong.tenLoai : 'Chưa phân loại'}"
+                         th:data-trang-thai="${nhanTrangThai[phong.maPhong]}"
+                         th:data-gia="${#numbers.formatDecimal(phong.giaMoiDem, 0, 'COMMA', 0, 'POINT')} + 'đ/đêm'"
+                         th:data-gia-raw="${phong.giaMoiDem}">
 
-                        <div class="so-phong" th:text="'P' + ${phong.soPhong}">P101</div>
-                        <div class="loai-phong"
-                             th:text="${phong.loaiPhong != null ? phong.loaiPhong.tenLoai : 'Chưa phân loại'}">
-                            Standard
-                        </div>
+                        <div class="sdp-room-card__bar"></div>
+                        <div class="sdp-room-card__body">
+                            <div class="sdp-room-card__top">
+                                <div>
+                                    <div class="so-phong" th:text="'P' + ${phong.soPhong}">P101</div>
+                                    <div class="loai-phong"
+                                         th:text="${phong.loaiPhong != null ? phong.loaiPhong.tenLoai : 'Chưa phân loại'}">
+                                        Standard
+                                    </div>
+                                </div>
+                                <span class="sdp-status-pill">
+                                    <span class="dot"></span>
+                                    <span th:text="${nhanTrangThai[phong.maPhong]}">Trống</span>
+                                </span>
+                            </div>
 
-                        <span class="sdp-status-pill">
-                            <span class="dot"></span>
-                            <span th:text="${nhanTrangThai[phong.maPhong]}">Trống</span>
-                        </span>
+                            <div class="sdp-room-card__meta">
+                                <span class="sdp-capacity" th:if="${phong.loaiPhong != null}">
+                                    <i class="fa-solid fa-user-group"></i>
+                                    <span th:text="${phong.loaiPhong.sucChuaToiDa} + ' khách'">2 khách</span>
+                                </span>
+                            </div>
 
-                        <div class="gia"
-                             th:text="${#numbers.formatDecimal(phong.giaMoiDem, 0, 'COMMA', 0, 'POINT')} + 'đ/đêm'">
-                            1.800.000đ/đêm
+                            <div class="gia">
+                                <span th:text="${#numbers.formatDecimal(phong.giaMoiDem, 0, 'COMMA', 0, 'POINT')} + 'đ'">1.800.000đ</span>
+                                <span class="unit">/ đêm</span>
+                            </div>
+
+                            <div class="sdp-checkin-badge" data-checkin-badge>
+                                <i class="fa-solid fa-clock"></i>
+                                <span>
+                                    <span class="sdp-cd-label" data-cd-label></span>
+                                    <span class="sdp-cd-time" data-cd-time></span>
+                                </span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -192,6 +904,252 @@
         </div>
     </div>
 </main>
+
+<!-- Context menu cho ô phòng -->
+<div class="sdp-ctx-backdrop" id="sdpCtxBackdrop"></div>
+<div class="sdp-ctx-menu" id="sdpCtxMenu" role="menu"></div>
+
+<!-- Modal thông báo phụ thu nhận phòng sớm / trả phòng muộn -->
+<div class="sdp-policy-backdrop" id="sdpPolicyBackdrop"></div>
+<div class="sdp-policy-modal" id="sdpPolicyModal" role="dialog" aria-modal="true">
+    <div class="sdp-policy-head">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <h3 id="sdpPolicyTitle">Áp dụng chính sách phụ thu</h3>
+    </div>
+    <div class="sdp-policy-body">
+        <p id="sdpPolicyRule"></p>
+        <div class="sdp-policy-amount">
+            <span>Phụ thu</span>
+            <strong id="sdpPolicyAmount">0đ</strong>
+        </div>
+        <p class="sdp-policy-note" id="sdpPolicyNote"></p>
+    </div>
+    <div class="sdp-policy-actions">
+        <button type="button" class="admin-btn outline" id="sdpPolicyQuayLaiBtn">Quay lại</button>
+        <button type="button" class="admin-btn" id="sdpPolicyOkBtn">Đã hiểu</button>
+    </div>
+</div>
+
+<!-- Modal "Thêm giấy tờ" cho khách trước khi thực sự nhận phòng -->
+<div class="sdp-giayto-backdrop" id="sdpGiayToBackdrop"></div>
+<div class="sdp-giayto-modal" id="sdpGiayToModal" role="dialog" aria-modal="true">
+    <div class="sdp-giayto-head">
+        <i class="fa-solid fa-id-card"></i>
+        <div>
+            <h3>Giấy tờ tùy thân của khách</h3>
+            <p id="sdpGiayToSubtitle">&nbsp;</p>
+        </div>
+    </div>
+    <div class="sdp-giayto-body" id="sdpGiayToBody"></div>
+    <div class="sdp-giayto-actions">
+        <button type="button" class="admin-btn outline" id="sdpGiayToHuyBtn">Hủy</button>
+        <button type="button" class="admin-btn" id="sdpGiayToTiepTucBtn">Tiếp tục nhận phòng</button>
+    </div>
+</div>
+
+<!-- Panel nhap chi tiet 1 giay to (mo khi bam vao 1 Document box) -->
+<div class="sdp-giayto-fields-backdrop" id="sdpGiayToFieldsBackdrop"></div>
+<div class="sdp-giayto-fields-panel" id="sdpGiayToFieldsPanel" role="dialog" aria-modal="true">
+    <div class="sdp-giayto-fields-head">
+        <h4>Thông tin giấy tờ</h4>
+        <button type="button" class="sdp-giayto-fields-close" id="sdpGiayToFieldsCloseBtn"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="sdp-giayto-fields-body" id="sdpGiayToFieldsBody"></div>
+    <div class="sdp-giayto-fields-actions">
+        <button type="button" class="admin-btn outline" id="sdpGiayToFieldsXoaBtn">Xóa giấy tờ này</button>
+        <button type="button" class="admin-btn" id="sdpGiayToFieldsXongBtn">Xong</button>
+    </div>
+</div>
+
+<!-- Sidebar "Xem thông tin phòng" -->
+<div class="sdp-info-backdrop" id="sdpInfoBackdrop"></div>
+<aside class="sdp-info-sidebar" id="sdpInfoSidebar">
+    <div class="sdp-info-head">
+        <div>
+            <h3 id="sdpInfoTitle">Thông tin phòng</h3>
+            <p id="sdpInfoSubtitle">&nbsp;</p>
+        </div>
+        <button type="button" class="sdp-info-close" id="sdpInfoCloseBtn"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="sdp-info-body" id="sdpInfoBody"></div>
+</aside>
+
+<!-- Sidebar "Lên lịch đặt phòng" -->
+<div class="sdp-lich-backdrop" id="sdpLichBackdrop"></div>
+<aside class="sdp-lich-sidebar" id="sdpLichSidebar">
+    <div class="sdp-lich-head">
+        <div>
+            <h3 id="sdpLichTitle">Lên lịch đặt phòng</h3>
+            <p id="sdpLichSubtitle">&nbsp;</p>
+        </div>
+        <button type="button" class="sdp-lich-close" id="sdpLichCloseBtn"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+
+    <form id="sdpLichForm" class="sdp-lich-body" onsubmit="return false;">
+
+        <div class="sdp-lich-section">
+            <h4>Ngày nhận / trả phòng</h4>
+            <div class="sdp-lich-dates" id="sdpLichDatesRow">
+                <div class="sdp-lich-date-field" data-field="checkin" id="sdpLichCheckinField">
+                    <label><i class="fa-regular fa-calendar"></i> Nhận phòng</label>
+                    <span class="sdp-lich-date-value placeholder" id="sdpLichCheckinDisplay">Chọn ngày</span>
+                </div>
+                <div class="sdp-lich-date-field" data-field="checkout" id="sdpLichCheckoutField">
+                    <label><i class="fa-regular fa-calendar"></i> Trả phòng</label>
+                    <span class="sdp-lich-date-value placeholder" id="sdpLichCheckoutDisplay">Chọn ngày</span>
+                </div>
+            </div>
+            <input type="hidden" id="sdpLichCheckinInput">
+            <input type="hidden" id="sdpLichCheckoutInput">
+            <div class="sdp-lich-field-error" id="sdpLichNgayError"></div>
+
+            <div class="sdp-lich-cal-wrap" id="sdpLichCalWrap">
+                <div class="sdp-lich-cal-legend">
+                    Chọn ngày <strong>nhận phòng</strong>, sau đó chọn ngày <strong>trả phòng</strong>
+                    <span class="sdp-lich-cal-legend-booked">
+                        <span class="sdp-lich-cal-legend-swatch"></span> Phòng đã có lịch
+                    </span>
+                </div>
+                <div id="sdpLichCalendar"></div>
+                <div class="sdp-lich-cal-actions">
+                    <button type="button" class="sdp-lich-cal-clear" id="sdpLichCalClear">Xóa</button>
+                    <button type="button" class="sdp-lich-cal-apply" id="sdpLichCalApply">Áp dụng</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="sdp-lich-section">
+            <h4>Thông tin khách</h4>
+            <div class="sdp-lich-grid">
+                <div class="sdp-lich-field">
+                    <label for="sdpLichTen">Tên khách</label>
+                    <input type="text" id="sdpLichTen" placeholder="Nguyễn Văn A" autocomplete="off">
+                </div>
+                <div class="sdp-lich-field">
+                    <label for="sdpLichEmail">Email</label>
+                    <input type="email" id="sdpLichEmail" placeholder="email@vidu.com" autocomplete="off">
+                </div>
+                <div class="sdp-lich-field" id="sdpLichCccdGroup">
+                    <label for="sdpLichCccd">CCCD</label>
+                    <input type="text" id="sdpLichCccd" placeholder="9 hoặc 12 số CCCD/CMND" autocomplete="off" maxlength="12">
+                    <div class="sdp-lich-field-error" id="sdpLichCccdError"></div>
+                </div>
+                <div class="sdp-lich-field">
+                    <label for="sdpLichSdt">Số điện thoại</label>
+                    <input type="tel" id="sdpLichSdt" placeholder="09xxxxxxxx" autocomplete="off">
+                </div>
+                <div class="sdp-lich-field">
+                    <label for="sdpLichSoNguoiLon">Số người lớn</label>
+                    <input type="number" id="sdpLichSoNguoiLon" min="1" step="1" value="1">
+                </div>
+                <div class="sdp-lich-field">
+                    <label for="sdpLichSoTreEm">Số trẻ em</label>
+                    <input type="number" id="sdpLichSoTreEm" min="0" step="1" value="0">
+                </div>
+                <div class="sdp-lich-field-error" id="sdpLichSoNguoiError" style="grid-column:1/-1;"></div>
+            </div>
+        </div>
+
+        <div class="sdp-lich-section">
+            <h4>Khuyến mại &amp; ghi chú</h4>
+            <div class="sdp-lich-grid full">
+                <div class="sdp-lich-field">
+                    <label for="sdpLichKhuyenMai">Mã khuyến mại</label>
+                    <input type="text" id="sdpLichKhuyenMai" placeholder="Nhập mã khuyến mại (nếu có)" autocomplete="off">
+                </div>
+                <div class="sdp-lich-field">
+                    <label for="sdpLichGhiChu">Ghi chú</label>
+                    <textarea id="sdpLichGhiChu" placeholder="Yêu cầu thêm của khách..."></textarea>
+                </div>
+            </div>
+        </div>
+
+        <div class="sdp-lich-section">
+            <h4>Dịch vụ thêm</h4>
+            <!-- Danh sach dich vu dang hoat dong, lay tu CSDL (dichVuOptions) - khong
+                 con dung gia tri chip cung nhu truoc, de dam bao dich vu chon o day
+                 khop dung voi ma_dich_vu that su khi luu xuong chi_tiet_dich_vu. -->
+            <div class="sdp-lich-services" id="sdpLichServicesWrap">
+                <label class="sdp-lich-service-chip" th:each="dv : ${dichVuOptions}">
+                    <input type="checkbox" th:value="${dv.id}">
+                    <span><i class="fa-solid fa-concierge-bell"></i>
+                        <span th:text="${dv.ten_dich_vu}">Dịch vụ</span>
+                    </span>
+                </label>
+                <p th:if="${dichVuOptions == null or #lists.isEmpty(dichVuOptions)}"
+                   style="grid-column:1/-1; font-size:12.5px; color:#94a3b8; margin:0;">
+                    Chưa có dịch vụ nào đang hoạt động.
+                </p>
+            </div>
+        </div>
+
+        <div class="sdp-lich-section">
+            <h4>Thanh toán</h4>
+            <div class="sdp-lich-pay-row">
+                <div class="sdp-lich-field sdp-lich-pay-amount">
+                    <label for="sdpLichTienTra">Tiền khách trả</label>
+                    <input type="number" id="sdpLichTienTra" placeholder="0" min="0" step="1000">
+                </div>
+                <div class="sdp-lich-pay-methods">
+                    <div class="sdp-lich-pay-method">
+                        <input type="radio" name="sdpLichPhuongThuc" id="sdpLichPtThe" value="chuyen-khoan" checked>
+                        <label for="sdpLichPtThe"><i class="fa-solid fa-credit-card"></i>Chuyển khoản</label>
+                    </div>
+                    <div class="sdp-lich-pay-method">
+                        <input type="radio" name="sdpLichPhuongThuc" id="sdpLichPtTienMat" value="tien-mat">
+                        <label for="sdpLichPtTienMat"><i class="fa-solid fa-money-bill-wave"></i>Tiền mặt</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <div class="sdp-lich-field-error" id="sdpLichSubmitError" style="margin:0 20px 8px;"></div>
+    <div class="sdp-lich-footer">
+        <button type="button" class="sdp-lich-btn sdp-lich-btn-huy" id="sdpLichHuyBtn">Hủy</button>
+        <button type="button" class="sdp-lich-btn sdp-lich-btn-luu" id="sdpLichLuuBtn">Lưu lịch đặt phòng</button>
+    </div>
+</aside>
+
+<!-- Sidebar "Xem đơn hiện tại" - nhung nguyen trang chi tiet dat phong -->
+<div class="sdp-don-backdrop" id="sdpDonBackdrop"></div>
+<aside class="sdp-don-sidebar" id="sdpDonSidebar">
+    <div class="sdp-don-head">
+        <div>
+            <h3 id="sdpDonTitle">Đơn đặt phòng</h3>
+            <p id="sdpDonSubtitle">&nbsp;</p>
+        </div>
+        <div class="sdp-don-head-actions">
+            <a href="#" target="_blank" rel="noopener" class="sdp-don-open-tab" id="sdpDonOpenTab" title="Mở ở tab mới">
+                <i class="fa-solid fa-up-right-from-square"></i>
+            </a>
+            <button type="button" class="sdp-don-close" id="sdpDonCloseBtn"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+    </div>
+    <div class="sdp-don-body">
+        <div class="sdp-don-loading" id="sdpDonLoading">
+            <i class="fa-solid fa-circle-notch"></i>
+            <span>Đang tải thông tin đơn...</span>
+        </div>
+        <div id="sdpDonContent" class="sdp-don-content"></div>
+    </div>
+</aside>
+
+<!-- Form ẩn dùng để gửi các hành động POST (bảo trì / kết thúc bảo trì) -->
+<form id="sdpBaoTriForm" method="post" style="display:none;" th:action="@{/nhan-su/so-do-phong/bao-tri/0}">
+    <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+</form>
+<form id="sdpKetThucBaoTriForm" method="post" style="display:none;" th:action="@{/nhan-su/so-do-phong/ket-thuc-bao-tri/0}">
+    <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+</form>
+<input type="hidden" id="sdpCsrfParam" th:if="${_csrf != null}" th:value="${_csrf.parameterName}">
+<input type="hidden" id="sdpCsrfToken" th:if="${_csrf != null}" th:value="${_csrf.token}">
+
+<script th:inline="javascript">
+    var SDP_BOOKINGS = [(${bookingsByRoomJson})];
+    var SDP_ROOM_INFO = [(${roomInfoJson})];
+    var SDP_NOW = /*[[${svrNowIso}]]*/ null;
+</script>
 
 <script>
     (function () {
@@ -215,6 +1173,2037 @@
         });
 
         showFloor('all');
+    })();
+</script>
+
+<script th:inline="javascript">
+    (function () {
+        var CTX_URL_LICH_PHONG = /*[[@{/nhan-su/lich-phong}]]*/ '/nhan-su/lich-phong';
+        var CTX_URL_DON_CHI_TIET = /*[[@{/nhan-su/dat-phong/chi-tiet/}]]*/ '/nhan-su/dat-phong/chi-tiet/';
+        var CTX_URL_CHECK_IN = /*[[@{/nhan-su/dat-phong/}]]*/ '/nhan-su/dat-phong/';
+        var CTX_URL_CHECKOUT = /*[[@{/nhan-su/checkout/}]]*/ '/nhan-su/checkout/';
+
+        var now = SDP_NOW ? new Date(SDP_NOW) : new Date();
+        var todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+        // Han hien nut "Khach nhan phong": khong con dung o 24:00 (het hom nay) nua ma
+        // keo dai den 12:00 trua ngay hom sau, de nhan vien van nhan phong duoc cho
+        // khach den checkin muon qua nua dem.
+        var todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 12, 0, 0);
+
+        function parseDt(s) {
+            if (!s) return null;
+            var d = new Date(s);
+            return isNaN(d.getTime()) ? null : d;
+        }
+
+        function getBookings(maPhong) {
+            return (SDP_BOOKINGS && SDP_BOOKINGS[maPhong]) ? SDP_BOOKINGS[maPhong] : [];
+        }
+
+        // ---- Đếm ngược cảnh báo nhận phòng (check-in) trên từng ô phòng ----
+        var serverOffsetMs = SDP_NOW ? (new Date(SDP_NOW).getTime() - Date.now()) : 0;
+        function nowTick() { return new Date(Date.now() + serverOffsetMs); }
+
+        function fmtCountdown(ms) {
+            var totalMin = Math.floor(ms / 60000);
+            if (totalMin < 1) return 'dưới 1 phút';
+            if (totalMin >= 60) {
+                var h = Math.floor(totalMin / 60), m = totalMin % 60;
+                return h + ' giờ' + (m > 0 ? ' ' + m + ' phút' : '');
+            }
+            return totalMin + ' phút';
+        }
+
+        // Đơn chưa nhận phòng (còn hiệu lực) gần nhất theo thời điểm check-in
+        function tinChoNhanPhongGanNhat(maPhong, t) {
+            var list = getBookings(maPhong).filter(function (b) {
+                return b.trangThai === 'Yeu cau dat phong' || b.trangThai === 'Cho xac nhan' || b.trangThai === 'Da xac nhan';
+            });
+            var target = null;
+            list.forEach(function (b) {
+                var co = parseDt(b.checkout);
+                if (!co || co <= t) return;
+                var ci = parseDt(b.checkin);
+                if (!ci) return;
+                if (!target || ci < parseDt(target.checkin)) target = b;
+            });
+            return target;
+        }
+
+        function capNhatBadgeCheckIn(card) {
+            var maPhong = card.getAttribute('data-ma-phong');
+            var badge = card.querySelector('[data-checkin-badge]');
+            if (!badge) return;
+            var t = nowTick();
+            var target = tinChoNhanPhongGanNhat(maPhong, t);
+
+            if (!target) {
+                badge.classList.remove('show', 'cd-soon', 'cd-urgent', 'cd-overdue');
+                return;
+            }
+
+            var ci = parseDt(target.checkin);
+            var diffMs = ci - t;
+            var labelEl = badge.querySelector('[data-cd-label]');
+            var timeEl = badge.querySelector('[data-cd-time]');
+
+            badge.classList.add('show');
+            badge.classList.remove('cd-soon', 'cd-urgent', 'cd-overdue');
+
+            if (diffMs <= 0) {
+                labelEl.textContent = 'Trễ nhận phòng ';
+                timeEl.textContent = fmtCountdown(-diffMs);
+                badge.classList.add('cd-overdue');
+            } else {
+                labelEl.textContent = 'Nhận phòng sau ';
+                timeEl.textContent = fmtCountdown(diffMs);
+                badge.classList.add(diffMs < 3600000 ? 'cd-urgent' : 'cd-soon');
+            }
+        }
+
+        function capNhatTatCaBadgeCheckIn() {
+            document.querySelectorAll('.sdp-room-cell').forEach(capNhatBadgeCheckIn);
+        }
+
+        // Đơn đang trong khoảng lưu trú tại đúng thời điểm hiện tại
+        //  - Đã nhận phòng thực tế (checkinThuc có giá trị): coi la don hien tai
+        //    ngay ca khi thoi diem hien tai con truoc gio nhan phong du kien (checkin).
+        //  - Chua nhan phong thuc te: giu quy tac cu, chi xet theo gio nhan phong du kien.
+        //  - Bo qua moc gio tra phong du kien (checkout): don van duoc coi la "hien tai"
+        //    cho toi khi co checkoutThuc (da tra phong thuc te).
+        function tinDonHienTai(maPhong) {
+            var list = getBookings(maPhong);
+            for (var i = 0; i < list.length; i++) {
+                var b = list[i];
+                if (parseDt(b.checkoutThuc)) continue; // da tra phong thuc te -> khong con la don hien tai
+
+                if (parseDt(b.checkinThuc)) return b; // da nhan phong thuc te -> luon hien thi
+
+                var ci = parseDt(b.checkin);
+                if (ci && now >= ci) return b; // chua nhan phong thuc te -> theo quy tac cu (chi con dieu kien duoi)
+            }
+            return null;
+        }
+
+        // Đơn có thời điểm check-in rơi vào hôm nay (đến 12:00 trưa ngày hôm sau)
+        function tinCheckInHomNay(maPhong) {
+            var list = getBookings(maPhong);
+            for (var i = 0; i < list.length; i++) {
+                var ci = parseDt(list[i].checkin);
+                if (ci && ci >= todayStart && ci < todayEnd) return list[i];
+            }
+            return null;
+        }
+
+        // Đơn "Da nhan phong" (khách đang ở) để dẫn tới màn hình trả phòng
+        function tinDangSuDung(maPhong) {
+            var list = getBookings(maPhong);
+            for (var i = 0; i < list.length; i++) {
+                if (list[i].trangThai === 'Da nhan phong') return list[i];
+            }
+            return null;
+        }
+
+        // ================== CHINH SACH NHAN PHONG SOM / TRA PHONG MUON ==================
+        // Viec tinh phu thu va cap nhat trang thai phong duoc thuc hien o BACKEND
+        // (xem NhanVienDatPhongController#checkInTuSoDoPhong / #checkOutTuSoDoPhong).
+        // JS o day chi goi API, hien thi modal thong bao va cap nhat lai giao dien
+        // theo ket qua tra ve tu server.
+
+        var CTX_URL_CHECK_IN_API = /*[[@{/nhan-su/so-do-phong/check-in/}]]*/ '/nhan-su/so-do-phong/check-in/';
+        var CTX_URL_CHECK_IN_NHOM_API = /*[[@{/nhan-su/so-do-phong/check-in-nhom/}]]*/ '/nhan-su/so-do-phong/check-in-nhom/';
+        var CTX_URL_CHECK_OUT_API = /*[[@{/nhan-su/so-do-phong/check-out/}]]*/ '/nhan-su/so-do-phong/check-out/';
+        var CTX_URL_GIAYTO_INFO_SUFFIX = '/giay-to-info';
+        var CTX_URL_GIAYTO_SAVE_SUFFIX = '/giay-to';
+
+        var sdpCsrfParamEl = document.getElementById('sdpCsrfParam');
+        var sdpCsrfTokenEl = document.getElementById('sdpCsrfToken');
+
+        function goiApi(url) {
+            var body = null, headers = { 'Accept': 'application/json' };
+            if (sdpCsrfParamEl && sdpCsrfTokenEl) {
+                body = new URLSearchParams();
+                body.append(sdpCsrfParamEl.value, sdpCsrfTokenEl.value);
+                headers['Content-Type'] = 'application/x-www-form-urlencoded';
+            }
+            return fetch(url, { method: 'POST', headers: headers, body: body })
+                    .then(function (res) { return res.json(); });
+        }
+
+        var policyBackdrop = document.getElementById('sdpPolicyBackdrop');
+        var policyModal = document.getElementById('sdpPolicyModal');
+        var policyOnXacNhan = null; // callback chi chay khi bam "Da hieu"
+
+        document.getElementById('sdpPolicyOkBtn').addEventListener('click', function () {
+            var cb = policyOnXacNhan;
+            dongModalPhuThu();
+            if (cb) cb(); // chi luc nay moi tien hanh goi API cap nhat that su
+        });
+        document.getElementById('sdpPolicyQuayLaiBtn').addEventListener('click', dongModalPhuThu);
+        policyBackdrop.addEventListener('click', dongModalPhuThu);
+
+        function dongModalPhuThu() {
+            policyBackdrop.classList.remove('open');
+            policyModal.classList.remove('open');
+            policyOnXacNhan = null; // "Quay lai" / dong ngoai modal = huy, khong lam gi them
+        }
+
+        function moModalPhuThu(tieuDe, moTaChinhSach, soTien, ghiChu, onXacNhan) {
+            document.getElementById('sdpPolicyTitle').textContent = tieuDe;
+            document.getElementById('sdpPolicyRule').textContent = moTaChinhSach;
+            document.getElementById('sdpPolicyAmount').textContent = fmtTien(soTien);
+            document.getElementById('sdpPolicyNote').textContent = ghiChu;
+            policyOnXacNhan = typeof onXacNhan === 'function' ? onXacNhan : null;
+            policyBackdrop.classList.add('open');
+            policyModal.classList.add('open');
+        }
+
+        function capNhatTrangThaiThePhong(card, trangThaiMoi) {
+            card.setAttribute('data-trang-thai', trangThaiMoi);
+            card.classList.remove('sdp-status-empty', 'sdp-status-inuse', 'sdp-status-cleaning', 'sdp-status-maintenance');
+            var lopMoi = trangThaiMoi === 'Trống' ? 'sdp-status-empty'
+                    : trangThaiMoi === 'Đang sử dụng' ? 'sdp-status-inuse'
+                    : trangThaiMoi === 'Đang dọn' ? 'sdp-status-cleaning'
+                    : 'sdp-status-maintenance';
+            card.classList.add(lopMoi);
+            var pill = card.querySelector('.sdp-status-pill span:last-child');
+            if (pill) pill.textContent = trangThaiMoi;
+        }
+
+        function xuLyKhachNhanPhong(card, don) {
+            moModalGiayTo(card, don, false);
+        }
+
+        function xuLyCaDoanKhachNhanPhong(card, don) {
+            moModalGiayTo(card, don, true);
+        }
+
+        // ================== MODAL "THEM GIAY TO" TRUOC KHI NHAN PHONG ==================
+        // Hien 1 section cho moi phong cua don. Moi section co the them nhieu
+        // "Document box" (giay to tuy than), bam vao box de nhap chi tiet.
+        var giayToBackdrop = document.getElementById('sdpGiayToBackdrop');
+        var giayToModal = document.getElementById('sdpGiayToModal');
+        var giayToBody = document.getElementById('sdpGiayToBody');
+        var giayToState = null; // { maDatPhong, card, don, phongs: [{chiTietId, soPhong, tenLoai, docs: [...]}] }
+        var giayToDocSeq = 0;
+
+        // "Boi canh dang thao tac" dung chung cho CA modal "Them giay to truoc khi
+        // nhan phong" LAN khung sdp-giayto-room duoc nhung vao tung dp-form-row o
+        // sidebar "Xem don hien tai" (xem THEM_GIAY_TO_VAO_DON_HIEN_TAI ben duoi).
+        // Nho vay panel nhap chi tiet 1 giay to (sdpGiayToFieldsPanel) va cac ham
+        // tim/xoa giay to dung chung 1 bo quy tac validate cho ca 2 noi.
+        var giayToActive = null;       // { phongs: [...] } - phongs cua boi canh dang mo
+        var giayToActiveOnChange = null; // callback ve lai giao dien tuong ung sau khi CRUD
+
+        function moModalGiayTo(card, don, laNhom) {
+            fetch(CTX_URL_CHECK_IN_API + don.id + CTX_URL_GIAYTO_INFO_SUFFIX, { headers: { 'Accept': 'application/json' } })
+                    .then(function (res) { return res.json(); })
+                    .then(function (kq) {
+                        if (!kq.ok) {
+                            alert(kq.loi || 'Không tải được thông tin phòng của đơn.');
+                            return;
+                        }
+                        giayToState = {
+                            maDatPhong: don.id,
+                            card: card,
+                            don: don,
+                            laNhom: !!laNhom,
+                            soNguoiLon: kq.soNguoiLon || 0,
+                            phongs: (kq.phongs || []).map(function (p) {
+                                return {
+                                    chiTietId: p.chiTietId,
+                                    soPhong: p.soPhong,
+                                    tenLoai: p.tenLoai,
+                                    sucChua: p.sucChua || 0,
+                                    docs: (p.giayTo || []).map(function (g) {
+                                        g.localId = 'd' + (giayToDocSeq++);
+                                        return g;
+                                    })
+                                };
+                            })
+                        };
+                        document.getElementById('sdpGiayToSubtitle').textContent =
+                                (laNhom ? 'Cả đoàn — Đơn #' : 'Đơn #') + don.id + ' — ' + giayToState.phongs.length + ' phòng — cần ' +
+                                giayToState.soNguoiLon + ' người lớn';
+                        document.getElementById('sdpGiayToTiepTucBtn').textContent =
+                                laNhom ? 'Tiếp tục — Cả đoàn nhận phòng' : 'Tiếp tục nhận phòng';
+                        renderGiayToBody();
+                        giayToBackdrop.classList.add('open');
+                        giayToModal.classList.add('open');
+                    })
+                    .catch(function () {
+                        alert('Có lỗi xảy ra khi tải thông tin giấy tờ, vui lòng thử lại.');
+                    });
+        }
+
+        function dongModalGiayTo() {
+            giayToBackdrop.classList.remove('open');
+            giayToModal.classList.remove('open');
+        }
+
+        document.getElementById('sdpGiayToHuyBtn').addEventListener('click', dongModalGiayTo);
+        giayToBackdrop.addEventListener('click', dongModalGiayTo);
+
+        function tenHienThiDoc(doc) {
+            return doc.hoTen && doc.hoTen.trim() ? doc.hoTen.trim() : 'Chưa nhập tên';
+        }
+
+        function renderGiayToBody() {
+            if (!giayToState) return;
+            giayToActive = giayToState;
+            giayToActiveOnChange = renderGiayToBody;
+            var html = '';
+            giayToState.phongs.forEach(function (phong, idx) {
+                html += '<div class="sdp-giayto-room" data-chi-tiet-id="' + phong.chiTietId + '">';
+                html += '  <div class="sdp-giayto-room-head">';
+                html += '    <h4>Phòng ' + (idx + 1) + (phong.soPhong ? (' — ' + phong.soPhong) : '') + '</h4>';
+                // Khong con gioi han so giay to THEO TUNG PHONG (chi con gioi han
+                // TONG toan don, hien o banner dau modal) — o day chi hien so
+                // luong hien tai de tham khao, khong phai 1 muc bi chan.
+                html += '    <span>' + (phong.tenLoai || '') + ' · ' + phong.docs.length + ' giấy tờ (sức chứa ' + phong.sucChua + ')</span>';
+                html += '  </div>';
+                html += '  <div class="sdp-giayto-boxes">';
+                phong.docs.forEach(function (doc) {
+                    html += '    <div class="sdp-giayto-doc-box" data-local-id="' + doc.localId + '">';
+                    html += '      <span class="sdp-giayto-remove" title="Xóa"><i class="fa-solid fa-xmark"></i></span>';
+                    html += '      <i class="fa-solid fa-id-card doc-icon"></i>';
+                    html += '      <span class="doc-name">' + tenHienThiDoc(doc) + '</span>';
+                    html += '      <span class="doc-type">' + (doc.loaiGiayTo || 'CCCD') + (doc.coDaiDien ? ' · ĐD' : '') + '</span>';
+                    html += '    </div>';
+                });
+                html += '    <div class="sdp-giayto-add-box" data-add-for="' + phong.chiTietId + '">';
+                html += '      <i class="fa-solid fa-plus"></i><span>Thêm giấy tờ</span>';
+                html += '    </div>';
+                html += '  </div>';
+                html += '</div>';
+            });
+            giayToBody.innerHTML = html;
+
+            giayToBody.querySelectorAll('.sdp-giayto-add-box').forEach(function (el) {
+                el.addEventListener('click', function () {
+                    if (el.classList.contains('disabled')) return;
+                    themGiayToMoi(parseInt(el.getAttribute('data-add-for'), 10));
+                });
+            });
+            giayToBody.querySelectorAll('.sdp-giayto-doc-box').forEach(function (el) {
+                el.addEventListener('click', function (ev) {
+                    if (ev.target.closest('.sdp-giayto-remove')) return; // xu ly rieng ben duoi
+                    moPanelGiayToFields(el.getAttribute('data-local-id'));
+                });
+            });
+            giayToBody.querySelectorAll('.sdp-giayto-remove').forEach(function (el) {
+                el.addEventListener('click', function (ev) {
+                    ev.stopPropagation();
+                    var box = el.closest('.sdp-giayto-doc-box');
+                    xoaGiayTo(box.getAttribute('data-local-id'));
+                });
+            });
+
+            // Cap nhat cac canh bao tai cho (banner tong so, loi "1 nguoi dai dien"
+            // tung phong, box thieu thong tin, khoa nut them/tiep tuc...) ngay sau
+            // moi lan ve lai giao dien — thay cho alert().
+            capNhatTrangThaiLoiGiayTo();
+        }
+
+        function timPhongTheoChiTiet(chiTietId) {
+            return giayToState.phongs.find(function (p) { return p.chiTietId === chiTietId; });
+        }
+
+        function timDocTheoLocalId(localId) {
+            if (!giayToActive) return null;
+            for (var i = 0; i < giayToActive.phongs.length; i++) {
+                var doc = giayToActive.phongs[i].docs.find(function (d) { return d.localId === localId; });
+                if (doc) return { phong: giayToActive.phongs[i], doc: doc };
+            }
+            return null;
+        }
+
+        // Tong suc chua cua TAT CA phong trong don — day la gioi han DUY NHAT
+        // cho so luong giay to co the tao (khong con gioi han rieng tung phong).
+        function tongSucChuaCuaDon() {
+            if (!giayToState) return 0;
+            return giayToState.phongs.reduce(function (sum, p) { return sum + (p.sucChua || 0); }, 0);
+        }
+
+        function tongSoGiayToDaNhap() {
+            if (!giayToState) return 0;
+            return giayToState.phongs.reduce(function (sum, p) { return sum + p.docs.length; }, 0);
+        }
+
+        function themGiayToMoi(chiTietId) {
+            var phong = timPhongTheoChiTiet(chiTietId);
+            if (!phong) return;
+            // Chan theo TUNG phong (moi phong toi da bang suc chua cua chinh no) —
+            // truoc day chi chan khi TONG toan don da du nen 1 phong co the nhan
+            // qua nhieu giay to mien tong don chua vuot, day la loi UX can sua.
+            if (phong.sucChua && phong.docs.length >= phong.sucChua) {
+                capNhatTrangThaiLoiGiayTo();
+                return;
+            }
+            // Ngoai ra van con chan khi TONG toan don da du theo tong suc chua cac
+            // phong (truong hop cac phong khac da vuot buc chua thi khong the biet
+            // chan phong nao, nen chan chung o day, dong thoi "+ Thêm giấy tờ" tu
+            // bi khoa - xem capNhatTrangThaiLoiGiayTo).
+            var tongSucChua = tongSucChuaCuaDon();
+            if (tongSucChua && tongSoGiayToDaNhap() >= tongSucChua) {
+                capNhatTrangThaiLoiGiayTo();
+                return;
+            }
+            var doc = {
+                localId: 'd' + (giayToDocSeq++),
+                coDaiDien: phong.docs.length === 0, // giay to dau tien mac dinh la nguoi dai dien
+                loaiGiayTo: 'CCCD',
+                hoTen: '', soDinhDanh: '', ngaySinh: '', gioiTinh: '', quocTich: 'Việt Nam',
+                queQuan: '', noiThuongTru: '', noiCuTru: '', noiTamTru: '', noiLuuTru: '',
+                giaTriDen: '', ngayCap: '', quocGiaCapPhat: ''
+            };
+            phong.docs.push(doc);
+            renderGiayToBody();
+            moPanelGiayToFields(doc.localId); // mo ngay panel nhap chi tiet cho box vua tao
+        }
+
+        function xoaGiayTo(localId) {
+            if (!giayToActive) return;
+            giayToActive.phongs.forEach(function (phong) {
+                phong.docs = phong.docs.filter(function (d) { return d.localId !== localId; });
+            });
+            if (giayToActiveOnChange) giayToActiveOnChange();
+        }
+
+        // Cac truong bat buoc cua 1 giay to, tra ve set cac ten truong con thieu.
+        //  - Bat buoc voi TAT CA giay to: Ho ten, So dinh danh, Ngay sinh.
+        //  - Rieng "Nguoi dai dien": bat buoc them Loai giay to, Gioi tinh, Quoc
+        //    tich, Que quan, Ngay cap, Gia tri den, Quoc gia cap phat — va phai
+        //    co it nhat 1 trong 4 truong "noi ..." (danh dau chung bang khoa "noi").
+        function truongThieuCuaGiayTo(doc) {
+            var thieu = {};
+            if (!doc.hoTen) thieu.hoTen = true;
+            if (!doc.soDinhDanh) thieu.soDinhDanh = true;
+            if (!doc.ngaySinh) thieu.ngaySinh = true;
+            if (doc.coDaiDien) {
+                if (!doc.loaiGiayTo) thieu.loaiGiayTo = true;
+                if (!doc.gioiTinh) thieu.gioiTinh = true;
+                if (!doc.quocTich) thieu.quocTich = true;
+                if (!doc.queQuan) thieu.queQuan = true;
+                if (!doc.ngayCap) thieu.ngayCap = true;
+                if (!doc.giaTriDen) thieu.giaTriDen = true;
+                if (!doc.quocGiaCapPhat) thieu.quocGiaCapPhat = true;
+                if (!doc.noiThuongTru && !doc.noiCuTru && !doc.noiTamTru && !doc.noiLuuTru) thieu.noi = true;
+            }
+            return thieu;
+        }
+
+        // Tinh toan TOAN BO trang thai loi hien tai cua modal — dung chung cho:
+        //  - ve lai cac canh bao tai cho (banner tong so, dong chu do o tung
+        //    phong, box do vien...) sau moi thay doi
+        //  - quyet dinh co cho bam "Tiep tuc nhan phong" hay khong
+        // Quy tac hien hanh (thay cho alert() cu):
+        //  - Moi phong: dung 1 "Nguoi dai dien" — KHONG nhieu hon, KHONG it hon
+        //    (kho khac ban cu: du phong chua co giay to nao van tinh la thieu).
+        //  - KHONG con gioi han so giay to THEO TUNG phong — chi con 1 gioi han
+        //    DUY NHAT cho TONG so giay to toan don, va gioi han do = tong suc
+        //    chua cua cac phong trong don (khong phai so nguoi lon).
+        function tinhTrangThaiLoiGiayTo() {
+            var tongSucChua = tongSucChuaCuaDon();
+            var tongSoGiayTo = 0;
+            var loiTheoPhong = {};   // chiTietId -> thong bao
+            var docThieuTruong = {}; // localId -> true
+
+            giayToState.phongs.forEach(function (phong) {
+                tongSoGiayTo += phong.docs.length;
+
+                var soDaiDien = phong.docs.filter(function (d) { return d.coDaiDien; }).length;
+                if (soDaiDien !== 1) {
+                    loiTheoPhong[phong.chiTietId] = 'Cần đúng 1 "Người đại diện" cho phòng này (hiện có ' + soDaiDien + ').';
+                } else if (phong.sucChua && phong.docs.length > phong.sucChua) {
+                    // Rieng phong nay da vuot suc chua cua chinh no (du tong don
+                    // chua chac da vuot) — van phai bao loi tai day de khoa Luu/Tiep tuc.
+                    loiTheoPhong[phong.chiTietId] = 'Số giấy tờ (' + phong.docs.length + ') vượt quá sức chứa phòng (' + phong.sucChua + ').';
+                }
+
+                phong.docs.forEach(function (doc) {
+                    if (Object.keys(truongThieuCuaGiayTo(doc)).length > 0) {
+                        docThieuTruong[doc.localId] = true;
+                    }
+                });
+            });
+
+            var loiTong = null;
+            if (tongSucChua && tongSoGiayTo !== tongSucChua) {
+                loiTong = 'Tổng số giấy tờ đã nhập (' + tongSoGiayTo + ') phải bằng tổng sức chứa các phòng đã đặt (' + tongSucChua + ').';
+            }
+
+            var hopLe = !loiTong && Object.keys(loiTheoPhong).length === 0 && Object.keys(docThieuTruong).length === 0;
+            return {
+                tongSoGiayTo: tongSoGiayTo, tongSucChua: tongSucChua,
+                loiTheoPhong: loiTheoPhong, docThieuTruong: docThieuTruong,
+                loiTong: loiTong, hopLe: hopLe
+            };
+        }
+
+        // Ve lai cac canh bao TAI CHO (khong dung alert()): banner tong so o dau
+        // modal, dong chu do o tung phong thieu/du nguoi dai dien, khung do
+        // quanh cac box giay to con thieu thong tin, khoa nut "+ Them giay to"
+        // khi da du tong so, va bat/tat nut "Tiep tuc nhan phong".
+        function capNhatTrangThaiLoiGiayTo() {
+            if (!giayToState) return null;
+            var tt = tinhTrangThaiLoiGiayTo();
+
+            var subtitleGoc = (giayToState.laNhom ? 'Cả đoàn — Đơn #' : 'Đơn #') + giayToState.maDatPhong +
+                    ' — ' + giayToState.phongs.length + ' phòng — cần ' + giayToState.soNguoiLon + ' người lớn';
+            var tongLabel = tt.tongSucChua
+                    ? ('Đã nhập ' + tt.tongSoGiayTo + '/' + tt.tongSucChua + ' giấy tờ (theo tổng sức chứa các phòng đã đặt)')
+                    : ('Đã nhập ' + tt.tongSoGiayTo + ' giấy tờ');
+            var subtitleEl = document.getElementById('sdpGiayToSubtitle');
+            if (subtitleEl) {
+                subtitleEl.innerHTML = subtitleGoc + '<br><span class="' +
+                        (tt.loiTong ? 'sdp-gt-total-error' : 'sdp-gt-total-ok') + '">' + tongLabel + '</span>';
+            }
+
+            giayToBody.querySelectorAll('.sdp-giayto-room').forEach(function (roomEl) {
+                var chiTietId = parseInt(roomEl.getAttribute('data-chi-tiet-id'), 10);
+                var loiPhong = tt.loiTheoPhong[chiTietId];
+                var errEl = roomEl.querySelector('.sdp-giayto-room-error');
+                if (loiPhong) {
+                    if (!errEl) {
+                        errEl = document.createElement('div');
+                        errEl.className = 'sdp-giayto-room-error';
+                        var head = roomEl.querySelector('.sdp-giayto-room-head');
+                        head.insertAdjacentElement('afterend', errEl);
+                    }
+                    errEl.textContent = loiPhong;
+                } else if (errEl) {
+                    errEl.remove();
+                }
+
+                var addBox = roomEl.querySelector('.sdp-giayto-add-box');
+                if (addBox) {
+                    var phongNay = timPhongTheoChiTiet(chiTietId);
+                    var daDuPhong = !!(phongNay && phongNay.sucChua && phongNay.docs.length >= phongNay.sucChua);
+                    var daDuTong = !!(tt.tongSucChua && tt.tongSoGiayTo >= tt.tongSucChua);
+                    addBox.classList.toggle('disabled', daDuPhong || daDuTong);
+                    addBox.title = daDuPhong
+                            ? 'Phòng này đã đủ giấy tờ theo sức chứa (' + phongNay.sucChua + ').'
+                            : (daDuTong ? 'Đã đủ tổng số giấy tờ theo sức chứa các phòng của đơn.' : '');
+                }
+            });
+
+            giayToBody.querySelectorAll('.sdp-giayto-doc-box').forEach(function (box) {
+                var localId = box.getAttribute('data-local-id');
+                box.classList.toggle('has-error', !!tt.docThieuTruong[localId]);
+            });
+
+            var btnTiepTuc = document.getElementById('sdpGiayToTiepTucBtn');
+            if (btnTiepTuc) {
+                btnTiepTuc.disabled = !tt.hopLe;
+                btnTiepTuc.title = tt.hopLe ? '' : 'Vui lòng hoàn tất các mục đang tô đỏ trước khi tiếp tục.';
+            }
+
+            return tt;
+        }
+
+        document.getElementById('sdpGiayToTiepTucBtn').addEventListener('click', function () {
+            if (!giayToState) return;
+
+            // Nut da bi khoa (disabled) khi con loi nen thao tac nay chi con
+            // duong xay ra khi da hop le; van kiem tra lai cho chac chan.
+            var tt = capNhatTrangThaiLoiGiayTo();
+            if (!tt || !tt.hopLe) return;
+
+            var payload = [];
+            giayToState.phongs.forEach(function (phong) {
+                phong.docs.forEach(function (doc) {
+                    payload.push({
+                        chiTietId: phong.chiTietId,
+                        coDaiDien: !!doc.coDaiDien,
+                        loaiGiayTo: doc.loaiGiayTo,
+                        hoTen: doc.hoTen,
+                        soDinhDanh: doc.soDinhDanh,
+                        ngaySinh: doc.ngaySinh || null,
+                        gioiTinh: doc.gioiTinh,
+                        quocTich: doc.quocTich,
+                        queQuan: doc.queQuan,
+                        noiThuongTru: doc.noiThuongTru,
+                        noiCuTru: doc.noiCuTru,
+                        noiTamTru: doc.noiTamTru,
+                        noiLuuTru: doc.noiLuuTru,
+                        giaTriDen: doc.giaTriDen || null,
+                        ngayCap: doc.ngayCap || null,
+                        quocGiaCapPhat: doc.quocGiaCapPhat
+                    });
+                });
+            });
+
+            var card = giayToState.card, don = giayToState.don, maDatPhong = giayToState.maDatPhong;
+            var body = new URLSearchParams();
+            if (sdpCsrfParamEl && sdpCsrfTokenEl) body.append(sdpCsrfParamEl.value, sdpCsrfTokenEl.value);
+            body.append('data', JSON.stringify(payload));
+
+            fetch(CTX_URL_CHECK_IN_API + maDatPhong + CTX_URL_GIAYTO_SAVE_SUFFIX, {
+                method: 'POST',
+                headers: { 'Accept': 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: body
+            }).then(function (res) { return res.json(); })
+                    .then(function (kq) {
+                        if (!kq.ok) {
+                            alert(kq.loi || 'Không thể lưu giấy tờ.');
+                            return;
+                        }
+                        var laNhom = giayToState.laNhom;
+                        dongModalGiayTo();
+                        if (laNhom) {
+                            thucHienNhanPhongNhom(card, don, false);
+                        } else {
+                            thucHienNhanPhong(card, don, false); // tiep tuc flow nhan phong nhu cu
+                        }
+                    })
+                    .catch(function () {
+                        alert('Có lỗi xảy ra khi lưu giấy tờ, vui lòng thử lại.');
+                    });
+        });
+
+        // ---- Panel nhap chi tiet 1 giay to ----
+        var giayToFieldsBackdrop = document.getElementById('sdpGiayToFieldsBackdrop');
+        var giayToFieldsPanel = document.getElementById('sdpGiayToFieldsPanel');
+        var giayToFieldsBody = document.getElementById('sdpGiayToFieldsBody');
+        var giayToFieldsCurLocalId = null;
+
+        function moPanelGiayToFields(localId) {
+            var found = timDocTheoLocalId(localId);
+            if (!found) return;
+            giayToFieldsCurLocalId = localId;
+            var doc = found.doc;
+
+            function f(id, label, type, value) {
+                type = type || 'text';
+                return '<div class="sdp-gt-field"><label>' + label + '</label>' +
+                        '<input type="' + type + '" id="' + id + '" value="' + (value ? String(value).replace(/"/g, '&quot;') : '') + '"></div>';
+            }
+
+            var html = '';
+            html += '<div class="sdp-gt-checkbox"><input type="checkbox" id="gtCoDaiDien" ' + (doc.coDaiDien ? 'checked' : '') + '>' +
+                    '<label for="gtCoDaiDien" style="margin:0;text-transform:none;font-weight:600;color:#374151;">Là người đại diện nhận phòng</label></div>';
+            html += '<div class="sdp-gt-field"><label>Loại giấy tờ</label><select id="gtLoaiGiayTo">' +
+                    '<option value="CCCD"' + (doc.loaiGiayTo === 'CCCD' ? ' selected' : '') + '>CCCD</option>' +
+                    '<option value="Hộ chiếu"' + (doc.loaiGiayTo === 'Hộ chiếu' ? ' selected' : '') + '>Hộ chiếu</option>' +
+                    '</select></div>';
+            html += '<div class="sdp-gt-row2">' + f('gtHoTen', 'Họ tên', 'text', doc.hoTen) + f('gtSoDinhDanh', 'Số định danh', 'text', doc.soDinhDanh) + '</div>';
+            html += '<div class="sdp-gt-row2">' + f('gtNgaySinh', 'Ngày sinh', 'date', doc.ngaySinh) + f('gtGioiTinh', 'Giới tính', 'text', doc.gioiTinh) + '</div>';
+            html += '<div class="sdp-gt-row2">' + f('gtQuocTich', 'Quốc tịch', 'text', doc.quocTich) + f('gtQueQuan', 'Quê quán', 'text', doc.queQuan) + '</div>';
+            html += '<div class="sdp-gt-row2">' + f('gtNoiThuongTru', 'Nơi thường trú', 'text', doc.noiThuongTru) + f('gtNoiCuTru', 'Nơi cư trú', 'text', doc.noiCuTru) + '</div>';
+            html += '<div class="sdp-gt-row2">' + f('gtNoiTamTru', 'Nơi tạm trú', 'text', doc.noiTamTru) + f('gtNoiLuuTru', 'Nơi lưu trú', 'text', doc.noiLuuTru) + '</div>';
+            html += '<div class="sdp-gt-row2">' + f('gtNgayCap', 'Ngày cấp', 'date', doc.ngayCap) + f('gtGiaTriDen', 'Giá trị đến', 'date', doc.giaTriDen) + '</div>';
+            html += f('gtQuocGiaCapPhat', 'Quốc gia cấp phát', 'text', doc.quocGiaCapPhat);
+
+            giayToFieldsBody.innerHTML = html;
+            giayToFieldsBackdrop.classList.add('open');
+            giayToFieldsPanel.classList.add('open');
+
+            // Validate tai cho ngay khi go/doi gia tri — khong doi den luc bam
+            // "Xong" moi bao loi bang alert() nhu truoc.
+            giayToFieldsBody.querySelectorAll('input, select').forEach(function (el) {
+                el.addEventListener('input', xacThucPanelGiayToHienTai);
+                el.addEventListener('change', xacThucPanelGiayToHienTai);
+            });
+        }
+
+        // Nhan hien thi + thu tu cac truong bat buoc trong panel nhap chi tiet.
+        var GT_NHAN_TRUONG = {
+            gtHoTen: 'họ tên', gtSoDinhDanh: 'số định danh', gtNgaySinh: 'ngày sinh',
+            gtLoaiGiayTo: 'loại giấy tờ', gtGioiTinh: 'giới tính', gtQuocTich: 'quốc tịch',
+            gtQueQuan: 'quê quán', gtNgayCap: 'ngày cấp', gtGiaTriDen: 'giá trị đến',
+            gtQuocGiaCapPhat: 'quốc gia cấp phát'
+        };
+        var GT_BAT_BUOC_LUON = ['gtHoTen', 'gtSoDinhDanh', 'gtNgaySinh'];
+        var GT_BAT_BUOC_DAI_DIEN = ['gtLoaiGiayTo', 'gtGioiTinh', 'gtQuocTich', 'gtQueQuan', 'gtNgayCap', 'gtGiaTriDen', 'gtQuocGiaCapPhat'];
+        var GT_TRUONG_NOI = ['gtNoiThuongTru', 'gtNoiCuTru', 'gtNoiTamTru', 'gtNoiLuuTru'];
+
+        // toDoVienThoi = true: chi to do vien o (dung cho nhom "noi ...", vi
+        // thong bao chung chi can hien 1 lan o o cuoi nhom, tranh lap chu).
+        function gtHienLoiTruong(id, thongBao, toDoVienThoi) {
+            var input = document.getElementById(id);
+            if (!input) return;
+            var wrap = input.closest('.sdp-gt-field');
+            if (!wrap) return;
+            wrap.classList.toggle('has-error', !!thongBao);
+            var msgEl = wrap.querySelector('.sdp-gt-field-error');
+            if (thongBao && !toDoVienThoi) {
+                if (!msgEl) {
+                    msgEl = document.createElement('div');
+                    msgEl.className = 'sdp-gt-field-error';
+                    wrap.appendChild(msgEl);
+                }
+                msgEl.textContent = thongBao;
+            } else if (msgEl) {
+                msgEl.remove();
+            }
+        }
+
+        // Kiem tra toan bo panel dang mo dua tren gia tri hien tai cua cac o nhap
+        // (chua can bam "Xong"), to do vien + hien chu do ngay tai tung o sai.
+        // Tra ve true neu HOP LE (khong loi nao).
+        function xacThucPanelGiayToHienTai() {
+            var elDaiDien = document.getElementById('gtCoDaiDien');
+            var isDaiDien = !!(elDaiDien && elDaiDien.checked);
+            var hopLe = true;
+
+            GT_BAT_BUOC_LUON.forEach(function (id) {
+                var v = (document.getElementById(id).value || '').trim();
+                var loi = v ? '' : ('Bắt buộc nhập ' + GT_NHAN_TRUONG[id] + '.');
+                gtHienLoiTruong(id, loi);
+                if (loi) hopLe = false;
+            });
+
+            GT_BAT_BUOC_DAI_DIEN.forEach(function (id) {
+                if (!isDaiDien) { gtHienLoiTruong(id, ''); return; }
+                var v = (document.getElementById(id).value || '').trim();
+                var loi = v ? '' : ('Người đại diện bắt buộc nhập ' + GT_NHAN_TRUONG[id] + '.');
+                gtHienLoiTruong(id, loi);
+                if (loi) hopLe = false;
+            });
+
+            if (isDaiDien) {
+                var coNoi = GT_TRUONG_NOI.some(function (id) { return (document.getElementById(id).value || '').trim(); });
+                var loiNoi = coNoi ? '' : 'Người đại diện cần điền ít nhất 1 trong 4 ô nơi cư trú bên dưới.';
+                // To do vien ca 4 o "noi ..." de nguoi dung biet ho co the dien o
+                // bat ky o nao trong 4, nhung chi hien 1 dong chu duoi o cuoi cung
+                // (tranh lap lai cung 1 thong bao 4 lan).
+                GT_TRUONG_NOI.forEach(function (id, i) {
+                    var laOCuoi = i === GT_TRUONG_NOI.length - 1;
+                    gtHienLoiTruong(id, loiNoi, !laOCuoi);
+                });
+                if (loiNoi) hopLe = false;
+            } else {
+                GT_TRUONG_NOI.forEach(function (id) { gtHienLoiTruong(id, ''); });
+            }
+
+            return hopLe;
+        }
+
+        function dongPanelGiayToFields() {
+            giayToFieldsBackdrop.classList.remove('open');
+            giayToFieldsPanel.classList.remove('open');
+            giayToFieldsCurLocalId = null;
+        }
+
+        document.getElementById('sdpGiayToFieldsCloseBtn').addEventListener('click', dongPanelGiayToFields);
+        giayToFieldsBackdrop.addEventListener('click', dongPanelGiayToFields);
+
+        document.getElementById('sdpGiayToFieldsXoaBtn').addEventListener('click', function () {
+            if (giayToFieldsCurLocalId) xoaGiayTo(giayToFieldsCurLocalId);
+            dongPanelGiayToFields();
+        });
+
+        document.getElementById('sdpGiayToFieldsXongBtn').addEventListener('click', function () {
+            var found = timDocTheoLocalId(giayToFieldsCurLocalId);
+            if (!found) { dongPanelGiayToFields(); return; }
+
+            // Chan lai tai cho (khong dong panel) neu con o nao chua hop le —
+            // cac o sai da duoc to do vien + hien chu do ngay khi go (xem
+            // xacThucPanelGiayToHienTai), o day chi chay lai 1 lan nua de chac
+            // chan bat duoc truong hop nguoi dung chua dong/blur vao o nao ca.
+            if (!xacThucPanelGiayToHienTai()) return;
+
+            var doc = found.doc, phong = found.phong;
+            var byId = function (id) { var el = document.getElementById(id); return el ? el.value : ''; };
+            doc.coDaiDien = document.getElementById('gtCoDaiDien').checked;
+            doc.loaiGiayTo = byId('gtLoaiGiayTo');
+            doc.hoTen = byId('gtHoTen');
+            doc.soDinhDanh = byId('gtSoDinhDanh');
+            doc.ngaySinh = byId('gtNgaySinh');
+            doc.gioiTinh = byId('gtGioiTinh');
+            doc.quocTich = byId('gtQuocTich');
+            doc.queQuan = byId('gtQueQuan');
+            doc.noiThuongTru = byId('gtNoiThuongTru');
+            doc.noiCuTru = byId('gtNoiCuTru');
+            doc.noiTamTru = byId('gtNoiTamTru');
+            doc.noiLuuTru = byId('gtNoiLuuTru');
+            doc.ngayCap = byId('gtNgayCap');
+            doc.giaTriDen = byId('gtGiaTriDen');
+            doc.quocGiaCapPhat = byId('gtQuocGiaCapPhat');
+
+            // Chi cho phep 1 nguoi dai dien / phong: tick giay to nay thi
+            // tu dong bo tick nguoi dai dien cu (neu co) trong cung phong.
+            if (doc.coDaiDien) {
+                phong.docs.forEach(function (d) {
+                    if (d.localId !== doc.localId) d.coDaiDien = false;
+                });
+            }
+
+            dongPanelGiayToFields();
+            // Goi lai callback ve giao dien cua dung boi canh dang mo (modal
+            // "them giay to" hoac 1 hang trong sidebar "Xem don hien tai") -
+            // callback nay tu goi ham cap nhat trang thai loi tuong ung o cuoi.
+            if (giayToActiveOnChange) giayToActiveOnChange();
+        });
+
+        // ============ KHUNG "sdp-giayto-room" NHUNG VAO TUNG dp-form-row ============
+        // O sidebar "Xem don hien tai" (nhung nguyen trang /nhan-su/dat-phong/chi-tiet/{id}),
+        // form "Doi phong" ve tung phong da dat thanh 1 ".dp-form-row" (data-ct-id = ma
+        // chi tiet dat phong). Ta gan them 1 khung "sdp-giayto-room" ngay duoi phan dau
+        // cua moi hang de nhan vien co the XEM/THEM/SUA/XOA (CRUD) giay to cua khach o
+        // phong do NGAY TAI DAY, khong can mo modal check-in.
+        //
+        // Dung LAI toan bo panel nhap chi tiet 1 giay to (sdpGiayToFieldsPanel) va cac
+        // quy tac validate cua modal check-in (truongThieuCuaGiayTo, dung 1 "nguoi dai
+        // dien" / phong...) thong qua bien "giayToActive" o tren, nen quy tac giong het
+        // nhau: NEU CHUA HOP LE THI KHONG CHO LUU.
+        var sdpRowGiayToPhongs = {}; // chiTietId -> { chiTietId, sucChua, docs: [...] }
+        var sdpRowGiayToDonId = null;
+
+        function taiGiayToChoCacHangCuaDon(donId) {
+            var rows = donContent.querySelectorAll('.dp-form-row[data-ct-id]');
+            if (!rows.length) return; // don khong bat "Doi phong" -> khong co dp-form-row nao de gan vao
+
+            sdpRowGiayToDonId = donId;
+            sdpRowGiayToPhongs = {};
+
+            fetch(CTX_URL_CHECK_IN_API + donId + CTX_URL_GIAYTO_INFO_SUFFIX, { headers: { 'Accept': 'application/json' } })
+                    .then(function (res) { return res.json(); })
+                    .then(function (kq) {
+                        if (!kq.ok) return;
+                        var theoChiTiet = {};
+                        (kq.phongs || []).forEach(function (p) { theoChiTiet[p.chiTietId] = p; });
+
+                        rows.forEach(function (row) {
+                            var chiTietId = parseInt(row.getAttribute('data-ct-id'), 10);
+                            var p = theoChiTiet[chiTietId];
+                            var phong = {
+                                chiTietId: chiTietId,
+                                sucChua: p ? (p.sucChua || 0) : 0,
+                                docs: (p && p.giayTo ? p.giayTo : []).map(function (g) {
+                                    g.localId = 'd' + (giayToDocSeq++);
+                                    return g;
+                                })
+                            };
+                            sdpRowGiayToPhongs[chiTietId] = phong;
+
+                            var head = row.querySelector('.dp-form-row-head');
+                            if (!head || row.querySelector('[data-sdp-giayto-row]')) return;
+                            var box = document.createElement('div');
+                            box.className = 'sdp-giayto-room sdp-giayto-row-embed';
+                            box.setAttribute('data-sdp-giayto-row', String(chiTietId));
+                            head.insertAdjacentElement('afterend', box);
+
+                            renderRowGiayToBox(chiTietId);
+                        });
+                    })
+                    .catch(function () {
+                        // Loi tai giay to thi bo qua khung nay, khong chan phan con lai cua sidebar.
+                    });
+        }
+
+        function themGiayToMoiChoRow(chiTietId) {
+            var phong = sdpRowGiayToPhongs[chiTietId];
+            if (!phong) return;
+            if (phong.sucChua && phong.docs.length >= phong.sucChua) {
+                capNhatTrangThaiLoiGiayToRow(chiTietId);
+                return;
+            }
+            var doc = {
+                localId: 'd' + (giayToDocSeq++),
+                coDaiDien: phong.docs.length === 0, // giay to dau tien mac dinh la nguoi dai dien
+                loaiGiayTo: 'CCCD',
+                hoTen: '', soDinhDanh: '', ngaySinh: '', gioiTinh: '', quocTich: 'Việt Nam',
+                queQuan: '', noiThuongTru: '', noiCuTru: '', noiTamTru: '', noiLuuTru: '',
+                giaTriDen: '', ngayCap: '', quocGiaCapPhat: ''
+            };
+            phong.docs.push(doc);
+            renderRowGiayToBox(chiTietId);
+            giayToActive = { phongs: [phong] };
+            giayToActiveOnChange = function () { renderRowGiayToBox(chiTietId); };
+            moPanelGiayToFields(doc.localId); // mo ngay panel nhap chi tiet cho box vua tao
+        }
+
+        function renderRowGiayToBox(chiTietId) {
+            var phong = sdpRowGiayToPhongs[chiTietId];
+            var container = donContent.querySelector('[data-sdp-giayto-row="' + chiTietId + '"]');
+            if (!phong || !container) return;
+
+            giayToActive = { phongs: [phong] };
+            giayToActiveOnChange = function () { renderRowGiayToBox(chiTietId); };
+
+            var html = '';
+            html += '<div class="sdp-giayto-room-head">';
+            html += '  <h4><i class="fa-solid fa-id-card"></i> Giấy tờ khách trong phòng</h4>';
+            html += '  <span>' + phong.docs.length + ' giấy tờ (sức chứa ' + phong.sucChua + ')</span>';
+            html += '</div>';
+            html += '<div class="sdp-giayto-boxes">';
+            phong.docs.forEach(function (doc) {
+                html += '  <div class="sdp-giayto-doc-box" data-local-id="' + doc.localId + '">';
+                html += '    <span class="sdp-giayto-remove" title="Xóa"><i class="fa-solid fa-xmark"></i></span>';
+                html += '    <i class="fa-solid fa-id-card doc-icon"></i>';
+                html += '    <span class="doc-name">' + tenHienThiDoc(doc) + '</span>';
+                html += '    <span class="doc-type">' + (doc.loaiGiayTo || 'CCCD') + (doc.coDaiDien ? ' · ĐD' : '') + '</span>';
+                html += '  </div>';
+            });
+            html += '  <div class="sdp-giayto-add-box" data-add-for="' + chiTietId + '">';
+            html += '    <i class="fa-solid fa-plus"></i><span>Thêm giấy tờ</span>';
+            html += '  </div>';
+            html += '</div>';
+            html += '<div class="sdp-giayto-row-footer">';
+            html += '  <span class="sdp-giayto-row-status" data-role="status"></span>';
+            html += '  <button type="button" class="sdp-giayto-row-save" data-save-for="' + chiTietId + '">Lưu giấy tờ phòng này</button>';
+            html += '</div>';
+            container.innerHTML = html;
+
+            container.querySelectorAll('.sdp-giayto-add-box').forEach(function (el) {
+                el.addEventListener('click', function () {
+                    if (el.classList.contains('disabled')) return;
+                    themGiayToMoiChoRow(chiTietId);
+                });
+            });
+            container.querySelectorAll('.sdp-giayto-doc-box').forEach(function (el) {
+                el.addEventListener('click', function (ev) {
+                    if (ev.target.closest('.sdp-giayto-remove')) return;
+                    giayToActive = { phongs: [phong] };
+                    giayToActiveOnChange = function () { renderRowGiayToBox(chiTietId); };
+                    moPanelGiayToFields(el.getAttribute('data-local-id'));
+                });
+            });
+            container.querySelectorAll('.sdp-giayto-remove').forEach(function (el) {
+                el.addEventListener('click', function (ev) {
+                    ev.stopPropagation();
+                    giayToActive = { phongs: [phong] };
+                    giayToActiveOnChange = function () { renderRowGiayToBox(chiTietId); };
+                    xoaGiayTo(el.closest('.sdp-giayto-doc-box').getAttribute('data-local-id'));
+                });
+            });
+            var saveBtn = container.querySelector('.sdp-giayto-row-save');
+            if (saveBtn) saveBtn.addEventListener('click', function () { luuGiayToChoRow(chiTietId); });
+
+            capNhatTrangThaiLoiGiayToRow(chiTietId);
+        }
+
+        // Tinh + ve lai trang thai loi CHO RIENG 1 PHONG (khac modal check-in - noi
+        // gioi han TONG so giay to theo TONG suc chua CA DON). O day, vi luu tung
+        // phong mot doc lap, quy tac ap dung:
+        //  - Dung 1 "Nguoi dai dien" khi phong da co it nhat 1 giay to.
+        //  - So giay to khong duoc vuot qua suc chua cua phong.
+        //  - Tung giay to phai du cac truong bat buoc (dung chung ham truongThieuCuaGiayTo).
+        // Neu con loi: khoa nut "Lưu giấy tờ phòng này" - dung y "neu chua hop le thi
+        // khong cho luu", giong het quy tac gan giay to luc check-in.
+        function capNhatTrangThaiLoiGiayToRow(chiTietId) {
+            var phong = sdpRowGiayToPhongs[chiTietId];
+            var container = donContent.querySelector('[data-sdp-giayto-row="' + chiTietId + '"]');
+            if (!phong || !container) return null;
+
+            var soDaiDien = phong.docs.filter(function (d) { return d.coDaiDien; }).length;
+            var docThieuTruong = {};
+            phong.docs.forEach(function (doc) {
+                if (Object.keys(truongThieuCuaGiayTo(doc)).length > 0) docThieuTruong[doc.localId] = true;
+            });
+
+            var loiDaiDien = (phong.docs.length > 0 && soDaiDien !== 1)
+                    ? ('Cần đúng 1 "Người đại diện" cho phòng này (hiện có ' + soDaiDien + ').')
+                    : null;
+            var loiVuotSucChua = (phong.sucChua && phong.docs.length > phong.sucChua)
+                    ? ('Số giấy tờ (' + phong.docs.length + ') vượt quá sức chứa phòng (' + phong.sucChua + ').')
+                    : null;
+            var coLoiTruong = Object.keys(docThieuTruong).length > 0;
+            var hopLe = !loiDaiDien && !loiVuotSucChua && !coLoiTruong;
+
+            var errEl = container.querySelector('.sdp-giayto-room-error');
+            var thongBao = loiDaiDien || loiVuotSucChua;
+            if (thongBao) {
+                if (!errEl) {
+                    errEl = document.createElement('div');
+                    errEl.className = 'sdp-giayto-room-error';
+                    var head = container.querySelector('.sdp-giayto-room-head');
+                    head.insertAdjacentElement('afterend', errEl);
+                }
+                errEl.textContent = thongBao;
+            } else if (errEl) {
+                errEl.remove();
+            }
+
+            container.querySelectorAll('.sdp-giayto-doc-box').forEach(function (box) {
+                box.classList.toggle('has-error', !!docThieuTruong[box.getAttribute('data-local-id')]);
+            });
+
+            var addBox = container.querySelector('.sdp-giayto-add-box');
+            if (addBox) {
+                var daDu = !!(phong.sucChua && phong.docs.length >= phong.sucChua);
+                addBox.classList.toggle('disabled', daDu);
+                addBox.title = daDu ? 'Đã đủ số giấy tờ theo sức chứa phòng.' : '';
+            }
+
+            var saveBtn = container.querySelector('.sdp-giayto-row-save');
+            if (saveBtn) {
+                saveBtn.disabled = !hopLe;
+                saveBtn.title = hopLe ? '' : 'Vui lòng hoàn tất các mục đang tô đỏ trước khi lưu.';
+            }
+            var statusEl = container.querySelector('[data-role="status"]');
+            if (statusEl && !statusEl.getAttribute('data-locked')) {
+                statusEl.textContent = hopLe ? '' : 'Chưa thể lưu — còn thiếu thông tin.';
+                statusEl.style.color = '#dc2626';
+            }
+
+            return hopLe;
+        }
+
+        function luuGiayToChoRow(chiTietId) {
+            var phong = sdpRowGiayToPhongs[chiTietId];
+            var container = donContent.querySelector('[data-sdp-giayto-row="' + chiTietId + '"]');
+            if (!phong || !container || !sdpRowGiayToDonId) return;
+
+            // Khoa lai (khong dung alert()) neu con loi - dung nhu quy tac luc
+            // check-in: KHONG THOA MAN THI KHONG CHO LUU.
+            var hopLe = capNhatTrangThaiLoiGiayToRow(chiTietId);
+            if (!hopLe) return;
+
+            var payload = phong.docs.map(function (doc) {
+                return {
+                    chiTietId: chiTietId,
+                    coDaiDien: !!doc.coDaiDien,
+                    loaiGiayTo: doc.loaiGiayTo,
+                    hoTen: doc.hoTen,
+                    soDinhDanh: doc.soDinhDanh,
+                    ngaySinh: doc.ngaySinh || null,
+                    gioiTinh: doc.gioiTinh,
+                    quocTich: doc.quocTich,
+                    queQuan: doc.queQuan,
+                    noiThuongTru: doc.noiThuongTru,
+                    noiCuTru: doc.noiCuTru,
+                    noiTamTru: doc.noiTamTru,
+                    noiLuuTru: doc.noiLuuTru,
+                    giaTriDen: doc.giaTriDen || null,
+                    ngayCap: doc.ngayCap || null,
+                    quocGiaCapPhat: doc.quocGiaCapPhat
+                };
+            });
+
+            var body = new URLSearchParams();
+            if (sdpCsrfParamEl && sdpCsrfTokenEl) body.append(sdpCsrfParamEl.value, sdpCsrfTokenEl.value);
+            body.append('data', JSON.stringify(payload));
+
+            var saveBtn = container.querySelector('.sdp-giayto-row-save');
+            var statusEl = container.querySelector('[data-role="status"]');
+            if (saveBtn) saveBtn.disabled = true;
+            if (statusEl) {
+                statusEl.setAttribute('data-locked', '1');
+                statusEl.style.color = '#64748b';
+                statusEl.textContent = 'Đang lưu...';
+            }
+
+            fetch(CTX_URL_CHECK_IN_API + sdpRowGiayToDonId + CTX_URL_GIAYTO_SAVE_SUFFIX, {
+                method: 'POST',
+                headers: { 'Accept': 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: body
+            }).then(function (res) { return res.json(); })
+                    .then(function (kq) {
+                        if (statusEl) statusEl.removeAttribute('data-locked');
+                        if (!kq.ok) {
+                            if (statusEl) { statusEl.style.color = '#dc2626'; statusEl.textContent = kq.loi || 'Không thể lưu giấy tờ.'; }
+                            capNhatTrangThaiLoiGiayToRow(chiTietId);
+                            return;
+                        }
+                        if (statusEl) {
+                            statusEl.style.color = '#16a34a';
+                            statusEl.textContent = 'Đã lưu lúc ' + new Date().toLocaleTimeString('vi-VN');
+                        }
+                        capNhatTrangThaiLoiGiayToRow(chiTietId);
+                    })
+                    .catch(function () {
+                        if (statusEl) {
+                            statusEl.removeAttribute('data-locked');
+                            statusEl.style.color = '#dc2626';
+                            statusEl.textContent = 'Có lỗi khi lưu, vui lòng thử lại.';
+                        }
+                        capNhatTrangThaiLoiGiayToRow(chiTietId);
+                    });
+        }
+
+        // xacNhan = false: chi kiem tra/xem truoc (chua dung phia server).
+        // xacNhan = true: nguoi dung da bam "Da hieu" o modal phu thu -> tien hanh
+        // cap nhat that su (luu phu thu + doi trang thai phong) o phia server.
+        function thucHienNhanPhong(card, don, xacNhan) {
+            var url = CTX_URL_CHECK_IN_API + don.id + (xacNhan ? '?xacNhan=true' : '');
+            goiApi(url).then(function (kq) {
+                if (!kq.ok) {
+                    alert(kq.loi || 'Không thể nhận phòng.');
+                    return;
+                }
+                if (kq.viPham && !kq.daApDung) {
+                    // Vi pham chinh sach: CHUA goi cap nhat trang thai phong/don o day.
+                    // Chi thuc su cap nhat sau khi nguoi dung bam "Da hieu" trong modal.
+                    moModalPhuThu(
+                            'Vi phạm chính sách nhận phòng sớm',
+                            kq.moTaChinhSach,
+                            kq.soTien,
+                            'Nhấn "Đã hiểu" để xác nhận nhận phòng và ghi khoản phụ thu vào chi tiết dịch vụ của đơn #' + don.id + '.',
+                            function () { thucHienNhanPhong(card, don, true); }
+                    );
+                    return;
+                }
+                don.trangThai = 'Da nhan phong'; // dong bo lai du lieu client-side (SDP_BOOKINGS)
+                capNhatTrangThaiThePhong(card, kq.trangThaiMoi);
+            }).catch(function () {
+                alert('Có lỗi xảy ra khi nhận phòng, vui lòng thử lại.');
+            });
+        }
+
+        // Nhu thucHienNhanPhong nhung ap dung cho CA DOAN (nhieu phong cung 1 don):
+        // sau khi nhan phong thanh cong, phai cap nhat trang thai TAT CA the phong
+        // duoc gan cho don nay, khong chi rieng the phong vua bam chuot phai vao.
+        function thucHienNhanPhongNhom(card, don, xacNhan) {
+            var url = CTX_URL_CHECK_IN_NHOM_API + don.id + (xacNhan ? '?xacNhan=true' : '');
+            goiApi(url).then(function (kq) {
+                if (!kq.ok) {
+                    alert(kq.loi || 'Không thể nhận phòng cả đoàn.');
+                    return;
+                }
+                if (kq.viPham && !kq.daApDung) {
+                    moModalPhuThu(
+                            'Vi phạm chính sách nhận phòng sớm (cả đoàn)',
+                            kq.moTaChinhSach,
+                            kq.soTien,
+                            'Nhấn "Đã hiểu" để xác nhận nhận phòng cho cả đoàn và ghi khoản phụ thu vào chi tiết dịch vụ của đơn #' + don.id + '.',
+                            function () { thucHienNhanPhongNhom(card, don, true); }
+                    );
+                    return;
+                }
+                don.trangThai = 'Da nhan phong';
+                (kq.maPhongDaNhan || []).forEach(function (maPhong) {
+                    var thePhong = document.querySelector('.sdp-room-cell[data-ma-phong="' + maPhong + '"]');
+                    if (thePhong) capNhatTrangThaiThePhong(thePhong, kq.trangThaiMoi);
+                });
+            }).catch(function () {
+                alert('Có lỗi xảy ra khi nhận phòng cả đoàn, vui lòng thử lại.');
+            });
+        }
+
+        function xuLyKhachTraPhong(card, don) {
+            if (!don) {
+                alert('Không tìm thấy đơn đang lưu trú tại phòng này.');
+                return;
+            }
+            thucHienTraPhong(card, don, false);
+        }
+
+        // Tuong tu thucHienNhanPhong: xacNhan=false chi de xem truoc phu thu (neu co),
+        // xacNhan=true (sau khi bam "Da hieu") moi thuc su luu phu thu + doi trang thai phong.
+        function thucHienTraPhong(card, don, xacNhan) {
+            var url = CTX_URL_CHECK_OUT_API + don.id + (xacNhan ? '?xacNhan=true' : '');
+            goiApi(url).then(function (kq) {
+                if (!kq.ok) {
+                    alert(kq.loi || 'Không thể trả phòng.');
+                    return;
+                }
+                if (kq.viPham && !kq.daApDung) {
+                    moModalPhuThu(
+                            'Vi phạm chính sách trả phòng muộn',
+                            kq.moTaChinhSach,
+                            kq.soTien,
+                            'Nhấn "Đã hiểu" để xác nhận trả phòng và ghi khoản phụ thu vào chi tiết dịch vụ của đơn #' + don.id + '.',
+                            function () { thucHienTraPhong(card, don, true); }
+                    );
+                    return;
+                }
+                don.trangThai = 'Da tra phong'; // dong bo lai du lieu client-side (SDP_BOOKINGS)
+                don.checkoutThuc = new Date().toISOString(); // danh dau da tra phong thuc te (khop voi ngay_tra_phong_thuc)
+                capNhatTrangThaiThePhong(card, kq.trangThaiMoi);
+            }).catch(function () {
+                alert('Có lỗi xảy ra khi trả phòng, vui lòng thử lại.');
+            });
+        }
+
+        function buildMenuItems(card) {
+            var maPhong = card.getAttribute('data-ma-phong');
+            var trangThai = card.getAttribute('data-trang-thai');
+            var items = [];
+
+            items.push({ label: 'Xem thông tin phòng', icon: 'fa-solid fa-circle-info', action: function () { moXemThongTinPhong(card); } });
+            items.push({ label: 'Lên lịch đặt phòng', icon: 'fa-solid fa-calendar-plus', action: function () { moLenLichDatPhong(card); } });
+
+            var donHienTai = tinDonHienTai(maPhong);
+            if (donHienTai) {
+                items.push({ label: 'Xem đơn hiện tại', icon: 'fa-solid fa-file-lines', action: function () { moDonHienTai(donHienTai.id, card); } });
+            }
+
+            var donCheckIn = tinCheckInHomNay(maPhong);
+            if (donCheckIn && trangThai === 'Trống' && donCheckIn.daThanhToanDu) {
+                if (donCheckIn.soPhong > 1) {
+                    items.push({ label: 'Cả đoàn khách nhận phòng', icon: 'fa-solid fa-people-group', action: function () { xuLyCaDoanKhachNhanPhong(card, donCheckIn); } });
+                } else {
+                    items.push({ label: 'Khách nhận phòng', icon: 'fa-solid fa-right-to-bracket', action: function () { xuLyKhachNhanPhong(card, donCheckIn); } });
+                }
+            }
+
+            var donDangO = tinDangSuDung(maPhong);
+            if (donDangO && trangThai === 'Đang sử dụng') {
+                items.push({ label: 'Khách trả phòng', icon: 'fa-solid fa-right-from-bracket', action: function () { xuLyKhachTraPhong(card, donDangO); } });
+            }
+
+            if (trangThai === 'Trống' || trangThai === 'Đang dọn') {
+                items.push({ label: 'Bảo trì', icon: 'fa-solid fa-screwdriver-wrench', danger: true, action: function () { guiFormHanhDong('sdpBaoTriForm', maPhong); } });
+            }
+
+            if (trangThai === 'Bảo trì') {
+                items.push({ label: 'Kết thúc bảo trì', icon: 'fa-solid fa-check', action: function () { guiFormHanhDong('sdpKetThucBaoTriForm', maPhong); } });
+            }
+
+            return items;
+        }
+
+        function guiFormHanhDong(formId, maPhong) {
+            var form = document.getElementById(formId);
+            if (!form) return;
+            form.action = form.action.replace(/\/0$/, '/' + maPhong);
+            form.submit();
+        }
+
+        function fmtTien(v) {
+            v = Number(v || 0);
+            return v.toLocaleString('vi-VN') + 'đ';
+        }
+
+        function moXemThongTinPhong(card) {
+            var maPhong = card.getAttribute('data-ma-phong');
+            var info = (SDP_ROOM_INFO && SDP_ROOM_INFO[maPhong]) || null;
+
+            document.getElementById('sdpInfoTitle').textContent = info ? ('Phòng P' + info.soPhong) : card.getAttribute('data-so-phong');
+            document.getElementById('sdpInfoSubtitle').textContent = info && info.loaiPhong
+                    ? info.loaiPhong.tenLoai + ' · Tầng ' + info.tang
+                    : ('Tầng ' + card.getAttribute('data-tang'));
+
+            var body = document.getElementById('sdpInfoBody');
+            body.innerHTML = '';
+
+            if (!info) {
+                body.innerHTML = '<div class="sdp-info-empty">Không có dữ liệu chi tiết cho phòng này.</div>';
+                document.getElementById('sdpInfoBackdrop').classList.add('open');
+                document.getElementById('sdpInfoSidebar').classList.add('open');
+                return;
+            }
+
+            function section(title, rowsHtml) {
+                var sec = document.createElement('div');
+                sec.className = 'sdp-info-section';
+                sec.innerHTML = '<h4>' + title + '</h4>' + rowsHtml;
+                body.appendChild(sec);
+            }
+
+            function row(label, value) {
+                return '<div class="sdp-info-row"><span>' + label + '</span><span>' + value + '</span></div>';
+            }
+
+            // Thông tin chung
+            section('Thông tin chung',
+                    row('Số phòng', 'P' + info.soPhong) +
+                    row('Tầng', info.tang) +
+                    row('Trạng thái', info.trangThai) +
+                    row('Hoạt động', info.hoatDong ? 'Đang hoạt động' : 'Ngừng hoạt động') +
+                    row('Giá / đêm', fmtTien(info.gia))
+            );
+
+            // Loại phòng
+            if (info.loaiPhong) {
+                section('Loại phòng',
+                        row('Tên loại', info.loaiPhong.tenLoai) +
+                        row('Sức chứa tối đa', info.loaiPhong.sucChuaToiDa + ' khách') +
+                        row('Giá cơ bản', fmtTien(info.loaiPhong.giaCoBan))
+                );
+                if (info.loaiPhong.moTa) {
+                    var descLp = document.createElement('div');
+                    descLp.className = 'sdp-info-section';
+                    descLp.innerHTML = '<h4>Mô tả loại phòng</h4><div class="sdp-info-desc"></div>';
+                    descLp.querySelector('.sdp-info-desc').textContent = info.loaiPhong.moTa;
+                    body.appendChild(descLp);
+                }
+            }
+
+            // Mô tả phòng
+            var descSec = document.createElement('div');
+            descSec.className = 'sdp-info-section';
+            if (info.moTa) {
+                descSec.innerHTML = '<h4>Mô tả phòng</h4><div class="sdp-info-desc"></div>';
+                descSec.querySelector('.sdp-info-desc').textContent = info.moTa;
+            } else {
+                descSec.innerHTML = '<h4>Mô tả phòng</h4><div class="sdp-info-empty">Chưa có mô tả.</div>';
+            }
+            body.appendChild(descSec);
+
+            // Tiện nghi
+            var tnSec = document.createElement('div');
+            tnSec.className = 'sdp-info-section';
+            if (info.tienNghi && info.tienNghi.length > 0) {
+                var tagsHtml = '<div class="sdp-info-tags">' + info.tienNghi.map(function (t) {
+                    return '<span class="sdp-info-tag"><i class="fa-solid fa-check"></i>' + escapeHtml(t) + '</span>';
+                }).join('') + '</div>';
+                tnSec.innerHTML = '<h4>Tiện nghi</h4>' + tagsHtml;
+            } else {
+                tnSec.innerHTML = '<h4>Tiện nghi</h4><div class="sdp-info-empty">Chưa có tiện nghi được gán.</div>';
+            }
+            body.appendChild(tnSec);
+
+            // Lịch sử tạo / cập nhật
+            section('Hệ thống',
+                    row('Ngày tạo', info.ngayTao || '—') +
+                    row('Cập nhật gần nhất', info.ngayCapNhat || '—')
+            );
+
+            // Các đơn liên quan (gần nhất) của phòng
+            var dsDon = getBookings(maPhong);
+            var donSec = document.createElement('div');
+            donSec.className = 'sdp-info-section';
+            if (dsDon && dsDon.length > 0) {
+                var rowsHtml = dsDon.slice(0, 6).map(function (d) {
+                    var ci = parseDt(d.checkin), co = parseDt(d.checkout);
+                    var range = (ci ? fmtNgayGio(ci) : '?') + ' → ' + (co ? fmtNgayGio(co) : '?');
+                    return row('#' + d.id + ' · ' + d.trangThai, range);
+                }).join('');
+                donSec.innerHTML = '<h4>Đơn đặt phòng gần đây</h4>' + rowsHtml;
+            } else {
+                donSec.innerHTML = '<h4>Đơn đặt phòng gần đây</h4><div class="sdp-info-empty">Chưa có đơn nào.</div>';
+            }
+            body.appendChild(donSec);
+
+            document.getElementById('sdpInfoBackdrop').classList.add('open');
+            document.getElementById('sdpInfoSidebar').classList.add('open');
+        }
+
+        function fmtNgayGio(d) {
+            function pad(n) { return n < 10 ? '0' + n : n; }
+            return pad(d.getDate()) + '/' + pad(d.getMonth() + 1) + '/' + d.getFullYear() + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+        }
+
+        function escapeHtml(s) {
+            var div = document.createElement('div');
+            div.textContent = s;
+            return div.innerHTML;
+        }
+
+        function dongInfoSidebar() {
+            document.getElementById('sdpInfoBackdrop').classList.remove('open');
+            document.getElementById('sdpInfoSidebar').classList.remove('open');
+        }
+
+        var ctxMenu = document.getElementById('sdpCtxMenu');
+        var ctxBackdrop = document.getElementById('sdpCtxBackdrop');
+
+        function dongContextMenu() {
+            ctxMenu.classList.remove('open');
+            ctxBackdrop.classList.remove('open');
+        }
+
+        function moContextMenu(card, x, y) {
+            var items = buildMenuItems(card);
+            ctxMenu.innerHTML = '';
+            items.forEach(function (it) {
+                var btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'sdp-ctx-item' + (it.danger ? ' danger' : '');
+                btn.innerHTML = '<i class="' + it.icon + '"></i>' + it.label;
+                btn.addEventListener('click', function () {
+                    dongContextMenu();
+                    it.action();
+                });
+                ctxMenu.appendChild(btn);
+            });
+
+            ctxMenu.style.left = '0px';
+            ctxMenu.style.top = '0px';
+            ctxMenu.classList.add('open');
+            ctxBackdrop.classList.add('open');
+
+            var mw = ctxMenu.offsetWidth, mh = ctxMenu.offsetHeight;
+            var vw = window.innerWidth, vh = window.innerHeight;
+            var left = Math.min(x, vw - mw - 8);
+            var top = Math.min(y, vh - mh - 8);
+            ctxMenu.style.left = Math.max(8, left) + 'px';
+            ctxMenu.style.top = Math.max(8, top) + 'px';
+        }
+
+        document.querySelectorAll('.sdp-room-cell').forEach(function (card) {
+            card.addEventListener('contextmenu', function (e) {
+                e.preventDefault();
+                moContextMenu(card, e.clientX, e.clientY);
+            });
+            card.addEventListener('click', function (e) {
+                var rect = card.getBoundingClientRect();
+                moContextMenu(card, rect.left + 12, rect.bottom + 6);
+            });
+        });
+
+        ctxBackdrop.addEventListener('click', dongContextMenu);
+        ctxBackdrop.addEventListener('contextmenu', function (e) { e.preventDefault(); dongContextMenu(); });
+        document.addEventListener('keydown', function (e) { if (e.key === 'Escape') dongContextMenu(); });
+
+        var infoBackdrop = document.getElementById('sdpInfoBackdrop');
+        document.getElementById('sdpInfoCloseBtn').addEventListener('click', dongInfoSidebar);
+        infoBackdrop.addEventListener('click', dongInfoSidebar);
+        document.addEventListener('keydown', function (e) { if (e.key === 'Escape') dongInfoSidebar(); });
+
+        // ===== Sidebar "Xem đơn hiện tại" (nhúng nguyên /nhan-su/dat-phong/chi-tiet/{id}) =====
+        var donSidebar = document.getElementById('sdpDonSidebar');
+        var donBackdrop = document.getElementById('sdpDonBackdrop');
+        var donContent = document.getElementById('sdpDonContent');
+        var donLoading = document.getElementById('sdpDonLoading');
+        var donTitle = document.getElementById('sdpDonTitle');
+        var donSubtitle = document.getElementById('sdpDonSubtitle');
+        var donOpenTab = document.getElementById('sdpDonOpenTab');
+
+        var donFetchToken = 0; // huy ket qua cua request cu neu nguoi dung mo don khac truoc khi request truoc xong
+        var donStylesInjected = false;
+
+        function moDonHienTai(donId, card) {
+            if (donId === undefined || donId === null || donId === '') {
+                alert('Không xác định được đơn đặt phòng để mở.');
+                return;
+            }
+
+            var soPhong = card ? (card.getAttribute('data-so-phong') || '') : '';
+            donTitle.textContent = 'Đơn đặt phòng #' + donId;
+            donSubtitle.textContent = soPhong ? ('Phòng ' + soPhong) : '\u00A0';
+
+            var fullUrl = new URL(CTX_URL_DON_CHI_TIET + donId, window.location.origin).toString();
+            donOpenTab.href = fullUrl;
+
+            donContent.innerHTML = '';
+            donLoading.classList.remove('hide');
+            hideDonLoadError();
+            donSidebar.classList.add('open');
+            donBackdrop.classList.add('open');
+
+            var myToken = ++donFetchToken;
+
+            // Khong dung iframe nua: fetch thang noi dung trang chi tiet va nhung
+            // (copy) truc tiep vao DOM cua so-do-phong.html. Nho vay tranh duoc
+            // loi "refused to connect" / X-Frame-Options cua trinh duyet khi frame,
+            // va noi dung thuc su la mot phan cua trang nay chu khong phai document rieng.
+            fetch(fullUrl + '?embed=true', { credentials: 'same-origin' })
+                .then(function (res) {
+                    if (!res.ok) throw new Error('HTTP ' + res.status);
+                    return res.text();
+                })
+                .then(function (html) {
+                    if (myToken !== donFetchToken) return; // da mo don khac, bo ket qua nay
+                    nhungNoiDungDon(html);
+                    taiGiayToChoCacHangCuaDon(donId); // gan khung sdp-giayto-room vao tung dp-form-row (neu co)
+                    donLoading.classList.add('hide');
+                })
+                .catch(function (err) {
+                    if (myToken !== donFetchToken) return;
+                    donLoading.classList.add('hide');
+                    showDonLoadError(fullUrl);
+                });
+        }
+
+        // Bien 1 doan CSS thanh ban da "scope" (moi selector duoc gan them tien to
+        // vd: #sdpDonContent) de style cua trang duoc nhung khong lam anh huong ra
+        // ngoai phan con lai cua so-do-phong.html.
+        function scopeCss(cssText, scopeSelector) {
+            var tmp = document.createElement('style');
+            tmp.textContent = cssText;
+            document.head.appendChild(tmp);
+            var out = [];
+
+            function scopeSelectorText(selectorText) {
+                return selectorText.split(',').map(function (s) {
+                    s = s.trim();
+                    if (/^(html|body)\b/.test(s)) return s.replace(/^(html|body)/, scopeSelector);
+                    if (s.indexOf(scopeSelector) === 0) return s;
+                    return scopeSelector + ' ' + s;
+                }).join(', ');
+            }
+
+            function walk(rules) {
+                for (var i = 0; i < rules.length; i++) {
+                    var rule = rules[i];
+                    if (rule.type === CSSRule.STYLE_RULE) {
+                        out.push(scopeSelectorText(rule.selectorText) + ' { ' + rule.style.cssText + ' }');
+                    } else if (rule.type === CSSRule.MEDIA_RULE) {
+                        out.push('@media ' + rule.conditionText + ' {');
+                        walk(rule.cssRules);
+                        out.push('}');
+                    } else if (rule.cssText) {
+                        // @keyframes, @font-face... khong can scope, giu nguyen.
+                        out.push(rule.cssText);
+                    }
+                }
+            }
+
+            try { walk(tmp.sheet.cssRules); } catch (e) { /* bo qua rule loi */ }
+            document.head.removeChild(tmp);
+            return out.join('\n');
+        }
+
+        // Bo het cms-topbar (neu con sot), dua panel "Thông Tin Lưu Trú" len dau,
+        // va dua cac panel "Khuyến Mãi", "Phòng Đã Đặt", "Quản Lý Dịch Vụ", tom tat
+        // (summary-panel) xuong ngay duoi panel "Thông Tin Khách Hàng", theo dung thu tu do.
+        function sapXepLaiNoiDungDon(root) {
+            root.querySelectorAll('.cms-topbar-shell, .cms-topbar, #cms-sidebar-shell').forEach(function (el) {
+                el.remove();
+            });
+
+            var shell = root.querySelector('.cdp-shell') || root;
+
+            function timPanelTheoTieuDe(tieuDe) {
+                var found = null;
+                root.querySelectorAll('.cdp-panel-title').forEach(function (t) {
+                    if (!found && t.textContent.indexOf(tieuDe) !== -1) {
+                        found = t.closest('.cdp-panel, .thu-tien-panel');
+                    }
+                });
+                return found;
+            }
+
+            var luuTruPanel = timPanelTheoTieuDe('Thông Tin Lưu Trú');
+            if (luuTruPanel && shell.firstElementChild !== luuTruPanel) {
+                shell.insertBefore(luuTruPanel, shell.firstElementChild);
+            }
+
+            var khachHangPanel = timPanelTheoTieuDe('Thông Tin Khách Hàng');
+            var khuyenMaiPanel = timPanelTheoTieuDe('Khuyến Mãi');
+            var phongDaDatPanel = timPanelTheoTieuDe('Phòng Đã Đặt');
+            var dichVuPanel = timPanelTheoTieuDe('Quản Lý Dịch Vụ');
+            var summaryPanel = root.querySelector('.summary-panel');
+
+            if (khachHangPanel) {
+                var anchor = khachHangPanel.nextSibling;
+                [khuyenMaiPanel, phongDaDatPanel, dichVuPanel, summaryPanel].forEach(function (el) {
+                    if (el) shell.insertBefore(el, anchor);
+                });
+            } else if (summaryPanel) {
+                // Fallback: khong tim thay panel khach hang thi giu hanh vi cu.
+                shell.appendChild(summaryPanel);
+            }
+        }
+
+        // Parse HTML tra ve tu server, gan style (1 lan) + noi dung body, roi
+        // chay lai cac the <script> (innerHTML khong tu chay script).
+        function nhungNoiDungDon(html) {
+            var doc = new DOMParser().parseFromString(html, 'text/html');
+
+            if (!donStylesInjected) {
+                doc.querySelectorAll('head style').forEach(function (styleTag) {
+                    var s = document.createElement('style');
+                    s.setAttribute('data-sdp-don-style', '');
+                    s.textContent = scopeCss(styleTag.textContent, '#sdpDonContent');
+                    document.head.appendChild(s);
+                });
+                donStylesInjected = true;
+            }
+
+            donContent.innerHTML = doc.body ? doc.body.innerHTML : html;
+
+            sapXepLaiNoiDungDon(donContent);
+
+            // Chay lai cac script (inline hoac co src) theo dung thu tu.
+            var scripts = donContent.querySelectorAll('script');
+            scripts.forEach(function (oldScript) {
+                var newScript = document.createElement('script');
+                for (var i = 0; i < oldScript.attributes.length; i++) {
+                    var attr = oldScript.attributes[i];
+                    newScript.setAttribute(attr.name, attr.value);
+                }
+                newScript.textContent = oldScript.textContent;
+                oldScript.parentNode.replaceChild(newScript, oldScript);
+            });
+        }
+
+        function showDonLoadError(url) {
+            var el = document.getElementById('sdpDonLoadError');
+            if (!el) {
+                el = document.createElement('div');
+                el.id = 'sdpDonLoadError';
+                el.style.cssText = 'padding:16px;text-align:center;color:#b91c1c;';
+                el.innerHTML = 'Không tải được nội dung đơn. Vui lòng kiểm tra server đang chạy, ' +
+                    'hoặc <a target="_blank" rel="noopener" href="' + url + '">mở trong tab mới</a>.';
+                donContent.parentNode.appendChild(el);
+            } else {
+                el.querySelector('a').href = url;
+                el.style.display = '';
+            }
+        }
+
+        function hideDonLoadError() {
+            var el = document.getElementById('sdpDonLoadError');
+            if (el) el.style.display = 'none';
+        }
+
+        function dongDonSidebar() {
+            donFetchToken++; // huy moi request dang bay
+            donSidebar.classList.remove('open');
+            donBackdrop.classList.remove('open');
+            donContent.innerHTML = '';
+            donLoading.classList.remove('hide');
+            hideDonLoadError();
+            sdpRowGiayToPhongs = {};
+            sdpRowGiayToDonId = null;
+        }
+
+        document.getElementById('sdpDonCloseBtn').addEventListener('click', dongDonSidebar);
+        donBackdrop.addEventListener('click', dongDonSidebar);
+        document.addEventListener('keydown', function (e) { if (e.key === 'Escape') dongDonSidebar(); });
+
+        capNhatTatCaBadgeCheckIn();
+        setInterval(capNhatTatCaBadgeCheckIn, 15000);
+    })();
+</script>
+
+<!-- Logic cho sidebar "Lên lịch đặt phòng" -->
+<script>
+    (function () {
+        var VN_MONTHS = ['Th1', 'Th2', 'Th3', 'Th4', 'Th5', 'Th6', 'Th7', 'Th8', 'Th9', 'Th10', 'Th11', 'Th12'];
+
+        function formatDisplay(d) {
+            return d.getDate() + ' ' + VN_MONTHS[d.getMonth()] + ', ' + d.getFullYear();
+        }
+
+        function toISO(d) {
+            var y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, '0'), day = String(d.getDate()).padStart(2, '0');
+            return y + '-' + m + '-' + day;
+        }
+
+        function startOfDay(d) {
+            return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+        }
+
+        function sameDay(a, b) {
+            return !!a && !!b && a.toDateString() === b.toDateString();
+        }
+
+        function parseDt(s) {
+            if (!s) return null;
+            var d = new Date(s);
+            return isNaN(d.getTime()) ? null : d;
+        }
+
+        // Trang thai don duoc coi la "giu cho" phong nay (giong dung chinh sach
+        // dat phong ben khach hang trong room-detail.html / loai-phong-detail.html).
+        var TRANG_THAI_DON_BI_KHOA = ['Yeu cau dat phong', 'Da nhan phong', 'Cho xac nhan', 'Da xac nhan'];
+        function laTrangThaiBiKhoa(t) { return TRANG_THAI_DON_BI_KHOA.indexOf(t) !== -1; }
+
+        function getRoomBookings(maPhong) {
+            return (window.SDP_BOOKINGS && window.SDP_BOOKINGS[maPhong]) ? window.SDP_BOOKINGS[maPhong] : [];
+        }
+
+        // Khac voi calendar cua khach hang tren trang loai-phong-detail (kiem tra
+        // TOAN BO cac phong CUNG LOAI qua API /loai-phong/{id}/ngay-het-phong),
+        // o day CHI kiem tra overlap voi cac don CUA DUNG PHONG dang thao tac
+        // (du lieu da co san tu SDP_BOOKINGS[maPhong], khong can goi API).
+        function buildLockedRanges(maPhong) {
+            var list = getRoomBookings(maPhong);
+            var ranges = [];
+            list.forEach(function (b) {
+                if (!laTrangThaiBiKhoa(b.trangThai)) return;
+                var ci = parseDt(b.checkin), co = parseDt(b.checkout);
+                if (!ci || !co) return;
+                // Ca ngay tra phong cua don cu cung bi khoa (khong cho khach moi
+                // nhan phong ngay trong ngay do) - dung chinh sach voi
+                // timKhoaLichOverlap() ben trang chi tiet phong cua khach hang.
+                ranges.push({ start: startOfDay(ci), end: startOfDay(co) });
+            });
+            return ranges;
+        }
+
+        /**
+         * RoomAvailabilityCalendar - ban rut gon cua TypeAvailabilityCalendar
+         * (static/js/type-availability-calendar.js) danh cho man hinh nhan vien:
+         * cung logic disable/khoa ngay, nhung danh sach khoang bi khoa duoc
+         * truyen truc tiep (khong fetch API theo thang) vi chi lien quan toi
+         * 1 phong duy nhat va du lieu da co san phia client.
+         */
+        function RoomAvailabilityCalendar(options) {
+            this.calendarEl = document.getElementById(options.calendarElId);
+            this.onChange = typeof options.onChange === 'function' ? options.onChange : function () {};
+            this.minDate = startOfDay(options.minDate || new Date());
+            this.lockedRanges = options.lockedRanges || [];
+            this.startDate = null;
+            this.endDate = null;
+            this.calendar = null;
+            this._init();
+        }
+
+        RoomAvailabilityCalendar.prototype._init = function () {
+            if (!this.calendarEl || typeof FullCalendar === 'undefined') return;
+            var self = this;
+            this.calendar = new FullCalendar.Calendar(this.calendarEl, {
+                initialView: 'dayGridMonth',
+                locale: 'vi',
+                duration: { months: 2 },
+                headerToolbar: { left: 'prev', center: 'title', right: 'next' },
+                height: 'auto',
+                fixedWeekCount: false,
+                validRange: { start: toISO(this.minDate) },
+                dateClick: function (info) { self._handleDateClick(info.date); },
+                dayCellClassNames: function (arg) { return self._dayCellClassNames(arg.date); }
+            });
+            this.calendar.render();
+        };
+
+        RoomAvailabilityCalendar.prototype._isDisabled = function (date) {
+            // Nua-mo [start, end): ngay TRA phong (r.end) khong bi khoa - khach
+            // moi co the NHAN phong dung ngay do (turnover cung ngay), miem la
+            // khong giao thuc su ve gio. Truoc day dung <= nen khoa nham ca
+            // ngay tra, chan oan nhung ngay van con trong.
+            return this.lockedRanges.some(function (r) { return date >= r.start && date < r.end; });
+        };
+
+        RoomAvailabilityCalendar.prototype._coKhoangBiKhoaGiua = function (start, end) {
+            var cursor = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+            var cuoi = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+            while (cursor < cuoi) {
+                cursor.setDate(cursor.getDate() + 1);
+                if (this._isDisabled(cursor)) return true;
+            }
+            return false;
+        };
+
+        RoomAvailabilityCalendar.prototype._handleDateClick = function (clickedRaw) {
+            var clicked = startOfDay(clickedRaw);
+            if (clicked < this.minDate) return;
+            if (this._isDisabled(clicked)) return; // phong da co lich ngay nay
+
+            if (!this.startDate || (this.startDate && this.endDate)) {
+                this.startDate = clicked;
+                this.endDate = null;
+            } else if (clicked <= this.startDate) {
+                this.startDate = clicked;
+                this.endDate = null;
+            } else {
+                // Khong cho chon ngay tra phong neu giua duong co it nhat 1 ngay
+                // phong da co lich (giong het chinh sach _coKhoangBiKhoaGiua ben
+                // TypeAvailabilityCalendar).
+                if (this._coKhoangBiKhoaGiua(this.startDate, clicked)) return;
+                this.endDate = clicked;
+            }
+
+            if (this.calendar) this.calendar.render();
+            this.onChange(this.startDate, this.endDate);
+        };
+
+        RoomAvailabilityCalendar.prototype._dayCellClassNames = function (dateRaw) {
+            var date = startOfDay(dateRaw);
+            var classes = [];
+            var isStart = this.startDate && sameDay(date, this.startDate);
+            var isEnd = this.endDate && sameDay(date, this.endDate);
+            var isMid = this.startDate && this.endDate && date > this.startDate && date < this.endDate;
+            var isOnly = this.startDate && !this.endDate && sameDay(date, this.startDate);
+            if (isStart) classes.push('drp-range-start');
+            if (isEnd) classes.push('drp-range-end');
+            if (isMid) classes.push('drp-range-mid');
+            if (isOnly) classes.push('drp-range-only');
+            if (this._isDisabled(date)) classes.push('drp-day-fully-booked');
+            return classes;
+        };
+
+        RoomAvailabilityCalendar.prototype.setLockedRanges = function (ranges) {
+            this.lockedRanges = ranges || [];
+            if (this.calendar) this.calendar.render();
+        };
+
+        RoomAvailabilityCalendar.prototype.reset = function () {
+            this.startDate = null;
+            this.endDate = null;
+            if (this.calendar) this.calendar.render();
+            this.onChange(null, null);
+        };
+
+        RoomAvailabilityCalendar.prototype.refresh = function () {
+            var cal = this.calendar;
+            if (cal) requestAnimationFrame(function () { cal.updateSize(); });
+        };
+
+        // ============ Wiring cho sidebar ============
+
+        var sidebar = document.getElementById('sdpLichSidebar');
+        var backdrop = document.getElementById('sdpLichBackdrop');
+        var title = document.getElementById('sdpLichTitle');
+        var subtitle = document.getElementById('sdpLichSubtitle');
+        var form = document.getElementById('sdpLichForm');
+
+        var datesRow = document.getElementById('sdpLichDatesRow');
+        var calWrap = document.getElementById('sdpLichCalWrap');
+        var checkinField = document.getElementById('sdpLichCheckinField');
+        var checkoutField = document.getElementById('sdpLichCheckoutField');
+        var checkinDisplay = document.getElementById('sdpLichCheckinDisplay');
+        var checkoutDisplay = document.getElementById('sdpLichCheckoutDisplay');
+        var checkinInput = document.getElementById('sdpLichCheckinInput');
+        var checkoutInput = document.getElementById('sdpLichCheckoutInput');
+        var ngayError = document.getElementById('sdpLichNgayError');
+
+        var cccdGroup = document.getElementById('sdpLichCccdGroup');
+        var cccdInput = document.getElementById('sdpLichCccd');
+        var cccdError = document.getElementById('sdpLichCccdError');
+
+        var luuBtn = document.getElementById('sdpLichLuuBtn');
+
+        var currentMaPhong = null;
+        var picker = null;
+
+        function ensurePicker() {
+            if (picker) return picker;
+            picker = new RoomAvailabilityCalendar({
+                calendarElId: 'sdpLichCalendar',
+                minDate: new Date(),
+                lockedRanges: [],
+                onChange: function (start, end) {
+                    if (start) {
+                        checkinDisplay.textContent = formatDisplay(start);
+                        checkinDisplay.classList.remove('placeholder');
+                        checkinInput.value = toISO(start);
+                    } else {
+                        checkinDisplay.textContent = 'Chọn ngày';
+                        checkinDisplay.classList.add('placeholder');
+                        checkinInput.value = '';
+                    }
+                    if (end) {
+                        checkoutDisplay.textContent = formatDisplay(end);
+                        checkoutDisplay.classList.remove('placeholder');
+                        checkoutInput.value = toISO(end);
+                    } else {
+                        checkoutDisplay.textContent = 'Chọn ngày';
+                        checkoutDisplay.classList.add('placeholder');
+                        checkoutInput.value = '';
+                    }
+                    kiemTraNgay();
+                    if (start && end) calWrap.classList.remove('open');
+                }
+            });
+            return picker;
+        }
+
+        function toggleCalendar() {
+            var willOpen = !calWrap.classList.contains('open');
+            calWrap.classList.toggle('open', willOpen);
+            checkinField.classList.toggle('active', willOpen);
+            checkoutField.classList.toggle('active', willOpen);
+            if (willOpen) {
+                ensurePicker();
+                requestAnimationFrame(function () { picker.refresh(); });
+            }
+        }
+
+        checkinField.addEventListener('click', toggleCalendar);
+        checkoutField.addEventListener('click', toggleCalendar);
+        document.getElementById('sdpLichCalClear').addEventListener('click', function () {
+            if (picker) picker.reset();
+            clearError(datesRow, ngayError);
+        });
+        document.getElementById('sdpLichCalApply').addEventListener('click', function () { calWrap.classList.remove('open'); });
+
+        function clearError(groupEl, errEl) {
+            if (groupEl) groupEl.classList.remove('has-error');
+            if (errEl) { errEl.classList.remove('show'); errEl.textContent = ''; }
+        }
+
+        function showError(groupEl, errEl, msg) {
+            if (groupEl) groupEl.classList.add('has-error');
+            if (errEl) { errEl.textContent = msg; errEl.classList.add('show'); }
+        }
+
+        function ngayBatDauCuaHomNay() {
+            var now = new Date();
+            return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        }
+        function laNgayQuaKhu(dateObj) {
+            if (!dateObj || isNaN(dateObj.getTime())) return false;
+            return startOfDay(dateObj) < ngayBatDauCuaHomNay();
+        }
+
+        // Overlap voi CHINH PHONG dang thao tac (khac calendar khach hang o trang
+        // loai-phong-detail: calendar do so sanh voi TOAN BO phong cung loai).
+        function timOverlapVoiPhong(d1, d2, ranges) {
+            for (var i = 0; i < ranges.length; i++) {
+                var r = ranges[i];
+                // Nua-mo [r.start, r.end): d1 (nhan phong moi) == r.end (tra
+                // phong cu) la hop le (turnover cung ngay). KHONG cong them
+                // 23:59:59 nhu truoc - do la nguyen nhan khoa nham toan bo
+                // ngay tra phong cua don cu du gio thuc te khong con giao nhau.
+                if (d1 < r.end && d2 > r.start) return r;
+            }
+            return null;
+        }
+
+        // Kiem tra rieng phan ngay (giong kiemTraHopLe ben trang chi tiet phong
+        // cua khach hang, chi khac o cho lay ranges tu 1 phong thay vi ca loai).
+        function kiemTraNgay() {
+            clearError(datesRow, ngayError);
+
+            var v1 = checkinInput.value, v2 = checkoutInput.value;
+            if (!v1 || !v2) {
+                if (v1 || v2) showError(datesRow, ngayError, 'Vui lòng chọn cả ngày nhận và ngày trả phòng.');
+                return { ok: false };
+            }
+
+            var d1 = new Date(v1 + 'T00:00:00');
+            var d2 = new Date(v2 + 'T00:00:00');
+
+            if (laNgayQuaKhu(d1)) {
+                showError(datesRow, ngayError, 'Ngày nhận phòng không được là ngày trong quá khứ.');
+                return { ok: false };
+            }
+
+            var diffDays = Math.round((d2 - d1) / 86400000);
+            if (diffDays < 1) {
+                showError(datesRow, ngayError, 'Ngày trả phòng phải cách ngày nhận phòng ít nhất 1 ngày.');
+                return { ok: false };
+            }
+
+            var ranges = currentMaPhong != null ? buildLockedRanges(currentMaPhong) : [];
+            var trung = timOverlapVoiPhong(d1, d2, ranges);
+            if (trung) {
+                showError(datesRow, ngayError,
+                        'Phòng này đã có lịch đặt từ ' + formatDisplay(trung.start) + ' đến ' + formatDisplay(trung.end) +
+                        '. Vui lòng chọn khoảng ngày khác cho phòng này.');
+                return { ok: false };
+            }
+
+            return { ok: true };
+        }
+
+        function kiemTraCccd() {
+            clearError(cccdGroup, cccdError);
+            var cccd = (cccdInput.value || '').trim();
+            if (!cccd) {
+                showError(cccdGroup, cccdError, 'Vui lòng nhập số CCCD/CMND.');
+                return { ok: false };
+            }
+            if (!/^\d{9}(\d{3})?$/.test(cccd)) {
+                showError(cccdGroup, cccdError, 'Vui lòng nhập 9 hoặc 12 số CCCD/CMND hợp lệ.');
+                return { ok: false };
+            }
+            return { ok: true };
+        }
+
+        function kiemTraHopLe() {
+            var ngay = kiemTraNgay();
+            var cccd = kiemTraCccd();
+            return ngay.ok && cccd.ok;
+        }
+
+        cccdInput.addEventListener('change', kiemTraCccd);
+
+        function resetForm() {
+            form.reset();
+            calWrap.classList.remove('open');
+            checkinField.classList.remove('active');
+            checkoutField.classList.remove('active');
+            checkinDisplay.textContent = 'Chọn ngày';
+            checkinDisplay.classList.add('placeholder');
+            checkoutDisplay.textContent = 'Chọn ngày';
+            checkoutDisplay.classList.add('placeholder');
+            checkinInput.value = '';
+            checkoutInput.value = '';
+            clearError(datesRow, ngayError);
+            clearError(cccdGroup, cccdError);
+            clearError(null, document.getElementById('sdpLichSoNguoiError'));
+            dienLoiSubmit('');
+            if (picker) picker.reset();
+        }
+
+        window.moLenLichDatPhong = function (card) {
+            resetForm();
+            currentMaPhong = card.getAttribute('data-ma-phong');
+            var soPhong = card.getAttribute('data-so-phong') || '';
+            var tang = card.getAttribute('data-tang') || '';
+            var loaiPhong = card.getAttribute('data-loai-phong') || '';
+            title.textContent = 'Lên lịch đặt phòng · ' + soPhong;
+            subtitle.textContent = (loaiPhong ? loaiPhong + ' · ' : '') + 'Tầng ' + tang;
+
+            ensurePicker().setLockedRanges(buildLockedRanges(currentMaPhong));
+
+            sidebar.classList.add('open');
+            backdrop.classList.add('open');
+        };
+
+        function dongLichSidebar() {
+            sidebar.classList.remove('open');
+            backdrop.classList.remove('open');
+            calWrap.classList.remove('open');
+        }
+
+        document.getElementById('sdpLichCloseBtn').addEventListener('click', dongLichSidebar);
+        document.getElementById('sdpLichHuyBtn').addEventListener('click', dongLichSidebar);
+        backdrop.addEventListener('click', dongLichSidebar);
+        document.addEventListener('keydown', function (e) { if (e.key === 'Escape') dongLichSidebar(); });
+
+        var CTX_URL_LEN_LICH_API = /*[[@{/nhan-su/so-do-phong/len-lich}]]*/ '/nhan-su/so-do-phong/len-lich';
+        var submitErrorEl = document.getElementById('sdpLichSubmitError');
+        // Khai bao rieng trong scope nay (khong dung chung voi bien cung ten o IIFE
+        // khac phia tren - moi IIFE co scope var doc lap).
+        var sdpCsrfParamEl = document.getElementById('sdpCsrfParam');
+        var sdpCsrfTokenEl = document.getElementById('sdpCsrfToken');
+
+        function dienLoiSubmit(msg) {
+            submitErrorEl.textContent = msg || '';
+            submitErrorEl.classList.toggle('show', !!msg);
+        }
+
+        luuBtn.addEventListener('click', function () {
+            dienLoiSubmit('');
+            var soNguoiGroup = document.getElementById('sdpLichSoNguoiError');
+            clearError(null, soNguoiGroup);
+            if (!kiemTraHopLe()) return; // chan luu neu vi pham chinh sach dat phong
+            if (!currentMaPhong) {
+                dienLoiSubmit('Không xác định được phòng đang thao tác.');
+                return;
+            }
+
+            var soNguoiLon = parseInt(document.getElementById('sdpLichSoNguoiLon').value, 10) || 0;
+            var soTreEm = parseInt(document.getElementById('sdpLichSoTreEm').value, 10) || 0;
+            if (soNguoiLon < 1) {
+                showError(null, soNguoiGroup, 'Cần ít nhất 1 người lớn.');
+                return;
+            }
+            var infoPhong = (window.SDP_ROOM_INFO && window.SDP_ROOM_INFO[currentMaPhong]) || null;
+            var sucChua = infoPhong && infoPhong.loaiPhong ? infoPhong.loaiPhong.sucChuaToiDa : null;
+            if (sucChua != null && (soNguoiLon + soTreEm) > sucChua) {
+                showError(null, soNguoiGroup, 'Số khách (' + (soNguoiLon + soTreEm) + ') vượt quá sức chứa tối đa của phòng (' + sucChua + ').');
+                return;
+            }
+
+            var dichVuIds = Array.prototype.slice.call(form.querySelectorAll('.sdp-lich-service-chip input:checked'))
+                    .map(function (el) { return el.value; });
+            var phuongThuc = form.querySelector('input[name="sdpLichPhuongThuc"]:checked');
+
+            var body = new URLSearchParams();
+            body.append('maPhong', currentMaPhong);
+            body.append('checkin', checkinInput.value);
+            body.append('checkout', checkoutInput.value);
+            body.append('hoTen', document.getElementById('sdpLichTen').value || '');
+            body.append('email', document.getElementById('sdpLichEmail').value || '');
+            body.append('cccd', cccdInput.value || '');
+            body.append('sdt', document.getElementById('sdpLichSdt').value || '');
+            body.append('songuoiLon', soNguoiLon);
+            body.append('sotreEm', soTreEm);
+            body.append('khuyenMaiCode', document.getElementById('sdpLichKhuyenMai').value || '');
+            body.append('ghiChu', document.getElementById('sdpLichGhiChu').value || '');
+            dichVuIds.forEach(function (id) { body.append('dichVuIds', id); });
+            body.append('tienKhachTra', document.getElementById('sdpLichTienTra').value || '0');
+            body.append('phuongThucThanhToan', phuongThuc ? phuongThuc.value : 'tien-mat');
+            if (sdpCsrfParamEl && sdpCsrfTokenEl) body.append(sdpCsrfParamEl.value, sdpCsrfTokenEl.value);
+
+            luuBtn.disabled = true;
+            luuBtn.textContent = 'Đang lưu...';
+
+            fetch(CTX_URL_LEN_LICH_API, {
+                method: 'POST',
+                headers: { 'Accept': 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: body
+            })
+                .then(function (res) { return res.json(); })
+                .then(function (kq) {
+                    if (!kq.ok) {
+                        dienLoiSubmit(kq.loi || 'Không thể lên lịch đặt phòng.');
+                        return;
+                    }
+                    dongLichSidebar();
+                    // Tai lai trang de cap nhat trang thai/mau phong va lich vua tao
+                    // (giong cach cac hanh dong khac tren So Do Phong dang lam).
+                    window.location.reload();
+                })
+                .catch(function () {
+                    dienLoiSubmit('Có lỗi xảy ra khi lên lịch đặt phòng, vui lòng thử lại.');
+                })
+                .finally(function () {
+                    luuBtn.disabled = false;
+                    luuBtn.textContent = 'Lưu lịch đặt phòng';
+                });
+        });
     })();
 </script>
 

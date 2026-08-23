@@ -493,7 +493,7 @@
                  th:attr="data-ct-id=${ct.id},
                           data-old-room-id=${ct.p != null ? ct.p.maPhong : 0},
                           data-old-room-price=${ct.p != null ? ct.p.giaMoiDem : 0},
-                          data-old-cccd=${ct.ma_cccd != null ? ct.ma_cccd : ''}">
+                          data-old-cccd=${datPhong.ma_cccd != null ? datPhong.ma_cccd : ''}">
                 <div class="dp-form-row-head">
                     <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
                         <input type="checkbox" class="dp-toggle dp-ctdp-cb" name="ctdpIds" th:value="${ct.id}">
@@ -503,7 +503,7 @@
                         Hiện tại: <strong th:text="'Phòng ' + (${ct.p != null ? ct.p.soPhong : ''})">Phòng 101</strong>
                         (<span th:text="${ct.p != null and ct.p.loaiPhong != null ? ct.p.loaiPhong.tenLoai : 'Standard'}">Standard</span>)
                         · <span th:text="${#numbers.formatDecimal(ct.giaMoiDem, 0, 'COMMA', 0, 'POINT')} + ' VND/đêm'">0 VND/đêm</span>
-                        · CCCD: <strong th:text="${ct.ma_cccd != null ? ct.ma_cccd : '(chưa có)'}">--</strong>
+                        · CCCD: <strong th:text="${datPhong.ma_cccd != null ? datPhong.ma_cccd : '(chưa có)'}">--</strong>
                     </div>
                     <div class="dp-row-price">
                         <span th:text="${#numbers.formatDecimal(ct.giaKhiDat, 0, 'COMMA', 0, 'POINT')} + ' VND'">0 VND</span>

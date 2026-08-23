@@ -31,8 +31,8 @@ public class ChiTietDatPhong {
     @Column(name = "gia_khi_dat")
     private BigDecimal giaKhiDat;
 
-    @Column(name = "ma_cccd")
-    private String ma_cccd;
+//    @Column(name = "ma_cccd")
+//    private String ma_cccd;
 
     @Column(name = "phu_phi_ngoai_gio")
     private BigDecimal phuPhi;

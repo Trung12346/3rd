@@ -10,8 +10,9 @@ import java.util.List;
  *
  * Logic mới (Cách 1 - validate theo từng đơn):
  * - danhSachKhoaLich chứa TOÀN BỘ khoảng ngày đang bị giữ chỗ bởi các đơn
- *   "Cho xac nhan" / "Da xac nhan" / "Da nhan phong" (không gộp lại thành 1
- *   khoảng min-max, tránh chặn nhầm khoảng trống giữa 2 đơn).
+ *   "Yeu cau dat phong" / "Cho xac nhan" / "Da xac nhan" / "Da nhan phong"
+ *   (không gộp lại thành 1 khoảng min-max, tránh chặn nhầm khoảng trống
+ *   giữa 2 đơn).
  * - coTheDat chỉ = false khi phòng không tồn tại; KHÔNG còn phụ thuộc vào
  *   Phong.trangThai nữa — việc có đặt được hay không hoàn toàn dựa vào
  *   overlap ngày với danhSachKhoaLich.
@@ -52,7 +53,7 @@ public class RoomBookingGuardDTO {
         return new RoomBookingGuardDTO(
                 trangThaiPhong, null, Collections.emptyList(),
                 LocalTime.of(8, 30), LocalTime.of(11, 0), LocalTime.of(18, 30),
-                new BigDecimal("100000"),
+                BigDecimal.ZERO /* phu phi ngoai gio da bo */,
                 true
         );
     }

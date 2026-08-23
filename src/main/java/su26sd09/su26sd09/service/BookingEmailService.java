@@ -218,6 +218,10 @@ public class BookingEmailService {
         String hoTen = dp.getN() != null ? dp.getN().getHoTen() : (dp.getHoten() != null ? dp.getHoten() : "Quý khách");
         vars.put("hoTenKhach", hoTen);
         vars.put("sdtKhach", dp.getN() != null ? dp.getN().getSoDienThoai() : dp.getSdt());
+        // CCCD dung de doi soat chong gian lan (vd: nguoi khac claim don da thanh
+        // toan la cua minh) — lay tu DatPhong (nhap luc dat/xac nhan don), KHONG
+        // phai giay_to (chi thu thap luc check-in thuc te tai quay).
+        vars.put("maCccdKhach", dp.getMa_cccd());
 
         // Thong tin dat phong
         vars.put("maDatPhong", dp.getId());
@@ -251,7 +255,6 @@ public class BookingEmailService {
                 p.put("giaMoiDem", formatTien(ct.getGiaMoiDem()));
                 p.put("phuPhi", formatTien(ct.getPhuPhi()));
                 p.put("tongPhong", formatTien(ct.getGiaKhiDat()));
-                p.put("cccd", ct.getMa_cccd());
                 dsPhong.add(p);
 
                 if (ct.getGiaKhiDat() != null) tongTienPhong = tongTienPhong.add(ct.getGiaKhiDat());

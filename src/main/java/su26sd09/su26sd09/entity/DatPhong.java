@@ -44,6 +44,14 @@ public class DatPhong {
     @DateTimeFormat(pattern = "yyyy-MM-dd hh:MM:ss")
     public LocalDateTime ngaytraPhong;
 
+    @Column(name = "ngay_nhan_phong_thuc")
+    @DateTimeFormat(pattern = "yyyy-MM-dd hh:MM:ss")
+    public LocalDateTime ngaydatPhongThuc;
+
+    @Column(name = "ngay_tra_phong_thuc")
+    @DateTimeFormat(pattern = "yyyy-MM-dd hh:MM:ss")
+    public LocalDateTime ngaytraPhongThuc;
+
     @Column(name = "so_nguoi_lon")
     public int songuoiLon;
 

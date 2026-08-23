@@ -34,6 +34,42 @@ public class HuyDonConstants {
      */
     public static final String DP_YEU_CAU_DAT_PHONG = "Yeu cau dat phong";
 
+    /** Trạng thái đơn đặt phòng khi đã được NV xác nhận yêu cầu, đang chờ khách thanh toán. */
+    public static final String DP_CHO_XAC_NHAN = "Cho xac nhan";
+
+    /**
+     * Trạng thái đơn đặt phòng khi đã được thanh toán ĐỦ (100%).
+     * KHÔNG còn do nhân viên bấm xác nhận thủ công quyết định — mọi nơi cập nhật
+     * HoaDon.daThanhToan qua {@code HoaDonService#saveWithPaymentStatusCheck} sẽ tự
+     * động đẩy đơn từ "Yeu cau dat phong" / "Cho xac nhan" sang trạng thái này khi
+     * hóa đơn được thanh toán đủ.
+     */
+    public static final String DP_DA_XAC_NHAN = "Da xac nhan";
+
+    /**
+     * Tập trạng thái "chưa xác nhận" — được phép tự động chuyển sang {@link #DP_DA_XAC_NHAN}
+     * khi hóa đơn tương ứng được thanh toán đủ. Các trạng thái hạ nguồn hơn (đã nhận phòng,
+     * đã trả phòng, đã hủy...) không bao giờ bị ghi đè bởi luồng thanh toán.
+     */
+    public static final Set<String> DP_TRANG_THAI_CHO_THANH_TOAN_TU_DONG = Set.of(
+            DP_YEU_CAU_DAT_PHONG,
+            DP_CHO_XAC_NHAN
+    );
+
+    /**
+     * Số giờ tối đa 1 đơn được phép ở trạng thái "Yeu cau dat phong" kể từ lúc tạo
+     * (ngayTao) trước khi bị dọn rác tự động nếu khách không hoàn tất thanh toán/
+     * không được nhân viên xử lý.
+     */
+    public static final long YEU_CAU_DAT_PHONG_HET_HAN_GIO = 24L;
+
+    /**
+     * Giờ chốt (giờ trong ngày) của chính sách "quá hạn nhận phòng": nếu đã qua
+     * 12:00 của ngày SAU ngày nhận phòng (ngaydatPhong) mà đơn vẫn ở trạng thái
+     * "Yeu cau dat phong", đơn bị dọn rác tự động dù chưa đủ 24h kể từ lúc tạo.
+     */
+    public static final int YEU_CAU_DAT_PHONG_GIO_CHOT_QUA_HAN = 12;
+
     /**
      * Tập các trạng thái đơn đặt phòng được phép hiển thị trên
      * trang quản lý đơn (admin + nhân viên). Mọi trạng thái nằm ngoài
@@ -65,10 +101,12 @@ public class HuyDonConstants {
 
     /**
      * Set trạng thái hiển thị trên trang QUẢN LÝ ĐƠN (admin/nhan-vien).
-     * Khác {@link #DP_TRANG_THAI_HIEN_THI} ở chỗ LOẠI TRỪ "Yeu cau dat phong" —
-     * các đơn này thuộc về trang quản lý yêu cầu đặt phòng riêng.
+     * Nay BAO GỒM "Yeu cau dat phong" — đơn ở trạng thái này đã giữ chỗ
+     * (khóa lịch) nên được coi là một đơn đặt phòng thực sự và phải xuất
+     * hiện trên trang quản lý đơn, không chỉ ở trang quản lý yêu cầu riêng.
      */
     public static final Set<String> DP_TRANG_THAI_HIEN_THI_BOOKING_MGMT = Set.of(
+            DP_YEU_CAU_DAT_PHONG,
             "Cho xac nhan",
             "Da xac nhan",
             "Da nhan phong",
@@ -82,6 +120,7 @@ public class HuyDonConstants {
      * Dùng cho toast cảnh báo trễ trên trang quản lý đơn (không tự hủy).
      */
     public static final Set<String> DP_TRANG_THAI_CHUA_NHAN_PHONG = Set.of(
+            DP_YEU_CAU_DAT_PHONG,
             "Cho xac nhan",
             "Da xac nhan"
     );

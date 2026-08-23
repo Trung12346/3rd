@@ -418,7 +418,7 @@
     // thi khach van co the dat, MIEN LA khoang ngay nhan/tra moi KHONG GIAO
     // (khong overlap) voi khoang ngay cua don do. Khong con bat buoc phai
     // chon ngay SAU ngay tra cua don cu nua.
-    const TRANG_THAI_DON_BI_KHOA = ['Da nhan phong', 'Cho xac nhan', 'Da xac nhan'];
+    const TRANG_THAI_DON_BI_KHOA = ['Yeu cau dat phong', 'Da nhan phong', 'Cho xac nhan', 'Da xac nhan'];
     function laTrangThaiBiKhoa(trangThaiDon) {
         return TRANG_THAI_DON_BI_KHOA.indexOf(trangThaiDon) !== -1;
     }
@@ -506,8 +506,8 @@
     /**
      * Lấy danh sách khoảng ngày đang bị KHÓA (đã có đơn còn hiệu lực) từ
      * giỏ hàng. Một phòng có khoảng khóa khi đơn đặt phòng liên kết với nó
-     * VẪN CÒN HIỆU LỰC, tức trangThaiDon thuộc {Da nhan phong, Cho xac nhan,
-     * Da xac nhan}. Phòng vẫn cho phép đặt (không disable) cho một khoảng
+     * VẪN CÒN HIỆU LỰC, tức trangThaiDon thuộc {Yeu cau dat phong, Da nhan
+     * phong, Cho xac nhan, Da xac nhan}. Phòng vẫn cho phép đặt (không disable) cho một khoảng
      * ngày KHÁC miễn là khoảng đó không giao (overlap) với khoảng đã khóa -
      * đúng như một khách sạn thật vẫn nhận đặt trước/đặt cho khoảng ngày
      * khác cho phòng đang có khách.

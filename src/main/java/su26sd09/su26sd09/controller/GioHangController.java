@@ -187,8 +187,6 @@ public class GioHangController {
             chiTietDatPhong.setGiaKhiDat(amount2);
             chiTietDatPhong.setPhuPhi(calculateExtraFee(PhongService.buildRoomGuardFor(p.getMaPhong()), ngayNhan, ngayTra));
             chiTietDatPhong.setD(datPhong);
-            chiTietDatPhong.setMa_cccd(ma_cccd);
-
 
             chiTietDatPhongService.save(chiTietDatPhong);
         } else {
@@ -201,16 +199,9 @@ public class GioHangController {
                 ChiTietDatPhong chiTietDatPhong = new ChiTietDatPhong();
                 chiTietDatPhong.setP(p);
                 chiTietDatPhong.setGiaMoiDem(p.getGiaMoiDem());
-                chiTietDatPhong.setMa_cccd(cccdTheoPhong.get(p.getMaPhong()));
-                System.out.println("ma_cccd cua phong: " + p.getMaPhong() + "la: " + cccdTheoPhong.get(p.getMaPhong()));
                 chiTietDatPhong.setGiaKhiDat(amount2);
                 chiTietDatPhong.setPhuPhi(calculateExtraFee(PhongService.buildRoomGuardFor(p.getMaPhong()), ngayNhan, ngayTra));
                 chiTietDatPhong.setD(datPhong);
-                Map<Integer, String> cccdPhong = allParamsCCCD.entrySet()
-                        .stream().filter(cccdP -> cccdP.getKey().startsWith("cccdPhong_")).
-                        collect(Collectors.toMap(e -> Integer.parseInt(e.getKey().substring("cccdPhong_".length())),
-                                Map.Entry::getValue));
-                chiTietDatPhong.setMa_cccd(cccdPhong.get(p.getMaPhong()));
                 System.out.println("Cac phong: " + p.getSoPhong() + "Gia la: " + amount2);
 
                 chiTietDatPhongService.save(chiTietDatPhong);

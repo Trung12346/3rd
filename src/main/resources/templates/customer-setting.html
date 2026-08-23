@@ -998,15 +998,17 @@
 
                         <table class="cancel-policy-table">
                             <thead>
-                            <tr><th>Thời gian kể từ lúc đặt</th><th>Tỷ lệ hoàn</th></tr>
+                            <tr><th>Thời gian đến ngày nhận phòng</th><th>Tỷ lệ hoàn</th></tr>
                             </thead>
                             <tbody>
-                            <tr id="tier-0-30"><td>Dưới 30 phút</td><td>70%</td></tr>
-                            <tr id="tier-30-180"><td>Từ 30 phút đến 3 giờ</td><td>50%</td></tr>
-                            <tr id="tier-180-480"><td>Từ 3 giờ đến 8 giờ</td><td>40%</td></tr>
-                            <tr id="tier-480-plus"><td>Trên 8 giờ</td><td>30%</td></tr>
+                            <tr id="tier-tu5"><td>Từ 5 ngày trở lên</td><td>100% (miễn phí)</td></tr>
+                            <tr id="tier-3-4"><td>Từ 3 đến dưới 5 ngày</td><td>50%</td></tr>
+                            <tr id="tier-duoi3"><td>Dưới 3 ngày</td><td>0%</td></tr>
                             </tbody>
                         </table>
+                        <p style="font-size:12px; color:var(--text-gray); margin-top:8px;">
+                            * Nếu đơn có áp dụng khuyến mại, khách sẽ không thể hủy đơn.
+                        </p>
 
                         <div class="cancel-refund-summary">
                             <div class="cancel-refund-row">
@@ -1025,8 +1027,9 @@
 
                         <p style="font-size:12px; color:var(--text-gray); margin-top:12px;">
                             * Số tiền hoàn là ước tính tại thời điểm hiện tại và có thể thay đổi nếu bạn chờ
-                            thêm trước khi xác nhận, do được tính theo thời gian thực đã trôi qua kể từ lúc đặt phòng.
-                            Việc hoàn tiền sẽ được nhân viên/quản trị xác nhận thủ công sau khi tiếp nhận yêu cầu.
+                            thêm trước khi xác nhận, do được tính theo số ngày còn lại từ lúc bạn xác nhận hủy
+                            đến ngày nhận phòng dự kiến. Việc hoàn tiền sẽ được nhân viên/quản trị xác nhận thủ
+                            công sau khi tiếp nhận yêu cầu.
                         </p>
                     </div>
                 </div>
@@ -1210,16 +1213,16 @@
         return Number(n).toLocaleString('vi-VN') + ' đ';
     }
 
-    function highlightRefundTier(soPhutDaTroi) {
-        ['tier-0-30', 'tier-30-180', 'tier-180-480', 'tier-480-plus'].forEach(function (rid) {
+    function highlightRefundTier(soNgayConLai) {
+        ['tier-tu5', 'tier-3-4', 'tier-duoi3'].forEach(function (rid) {
             var el = document.getElementById(rid);
             if (el) el.classList.remove('tier-active');
         });
+        if (soNgayConLai === null || soNgayConLai === undefined) return;
         var activeId;
-        if (soPhutDaTroi < 30) activeId = 'tier-0-30';
-        else if (soPhutDaTroi < 180) activeId = 'tier-30-180';
-        else if (soPhutDaTroi < 480) activeId = 'tier-180-480';
-        else activeId = 'tier-480-plus';
+        if (soNgayConLai >= 5) activeId = 'tier-tu5';
+        else if (soNgayConLai >= 3) activeId = 'tier-3-4';
+        else activeId = 'tier-duoi3';
         var activeEl = document.getElementById(activeId);
         if (activeEl) activeEl.classList.add('tier-active');
     }
@@ -1253,7 +1256,7 @@
                 document.getElementById('cancelSoTienDaThanhToan').textContent = formatVND(d.daThanhToan);
                 document.getElementById('cancelTyLeHoan').textContent = d.tyLePhanTram + '%';
                 document.getElementById('cancelSoTienHoan').textContent = formatVND(d.soTienHoanDuKien);
-                highlightRefundTier(d.soPhutDaTroi);
+                highlightRefundTier(d.soNgayConLaiDenCheckIn);
 
                 document.getElementById('cancelModalContent').style.display = 'block';
                 document.getElementById('cancelModalConfirmBtn').disabled = false;

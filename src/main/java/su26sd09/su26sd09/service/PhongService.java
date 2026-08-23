@@ -552,7 +552,7 @@
                 return new RoomBookingGuardDTO(
                         null, null, java.util.Collections.emptyList(),
                         LocalTime.of(11, 0), LocalTime.of(14, 0), LocalTime.of(11, 0),
-                        new BigDecimal("100000"),
+                        BigDecimal.ZERO /* phu phi ngoai gio da bo, giu field de tuong thich */,
                         false
                 );
             }
@@ -576,7 +576,7 @@
                 }
     
                 // Chỉ các trạng thái này mới thực sự khóa lịch (chặn overlap ngày).
-                if ("Da nhan phong".equals(tt) || "Cho xac nhan".equals(tt) || "Da xac nhan".equals(tt)) {
+                if ("Da nhan phong".equals(tt) || "Yeu cau dat phong".equals(tt) || "Cho xac nhan".equals(tt) || "Da xac nhan".equals(tt)) {
                     khoaLich.add(new su26sd09.su26sd09.dto.KhoangNgayBiKhoaDTO(
                             dp.getId(), dp.getNgaydatPhong(), dp.getNgaytraPhong(), tt));
                 }
@@ -590,8 +590,7 @@
             //   - gio nhan toi thieu = 11:00 (khong cho nhan som hon 11:00)
             //   - gio nhan toi da    = 14:00 (gio nhan phong mac dinh)
             //   - gio tra toi da     = 11:00 (gio tra phong mac dinh)
-            //   - phu phi ngoai gio  = 100.000 VND / phong / lan
-            // Khach den som hon 11:00 hoac tra sau 11:00 -> +100k/phong.
+            //   - phu phi ngoai gio  = DA BO (khach den som/tra tre khong con bi tinh phi)
             return new RoomBookingGuardDTO(
                     phong.getTrangThai(),
                     trangThaiDonGanNhat,
@@ -599,7 +598,7 @@
                     LocalTime.of(11, 0),
                     LocalTime.of(14, 0),
                     LocalTime.of(11, 0),
-                    new BigDecimal("100000"),
+                    BigDecimal.ZERO /* phu phi ngoai gio da bo, giu field de tuong thich */,
                     true
             );
         }
@@ -608,35 +607,19 @@
             return new RoomBookingGuardDTO(
                     trangThaiPhong, trangThaiDon, java.util.Collections.emptyList(),
                     LocalTime.of(11, 0), LocalTime.of(14, 0), LocalTime.of(11, 0),
-                    new BigDecimal("100000"),
+                    BigDecimal.ZERO /* phu phi ngoai gio da bo, giu field de tuong thich */,
                     false
             );
         }
     
         /**
-     * Tính phụ phí ngoài giờ cho 1 phòng dựa trên guard và khoảng ngày đặt.
-     * Chính sách (đã chốt với KH):
-     *   - KHÔNG tính phụ phí cho check-in muộn (gioNhan > gioNhanToiThieu).
-     *   - KHÔNG tính phụ phí cho check-out sớm (gioTra < gioTraToiDa).
-     *   - CHỈ tính khi check-in QUÁ SỚM (trước giờ nhận tối thiểu)
-     *     HOẶC check-out QUÁ TRỄ (sau giờ trả tối đa).
-     *
-     * Nếu trong khoảng hợp lệ, trả về ZERO.
+     * Phụ phí ngoài giờ (check-in quá sớm / check-out quá trễ so với giờ chuẩn
+     * cua guard) ĐÃ ĐƯỢC BỎ theo yêu cầu — luôn trả về ZERO bất kể giờ nhận/tra
+     * thực tế. Giữ nguyên chữ ký hàm để không phải sửa các noi goi (DatPhongService,
+     * AdminDatPhongController, NhanVienDatPhongController, ...).
      */
     public BigDecimal calculateExtraFeeFor(int maPhong, LocalDateTime ngayNhan, LocalDateTime ngayTra) {
-            if (ngayNhan == null || ngayTra == null) {
-                return BigDecimal.ZERO;
-            }
-            RoomBookingGuardDTO guard = buildRoomGuardFor(maPhong);
-            if (guard == null) {
-                return BigDecimal.ZERO;
-            }
-
-            LocalTime gioNhan = ngayNhan.toLocalTime();
-            LocalTime gioTra = ngayTra.toLocalTime();
-            boolean nhanQuaSom = gioNhan.isBefore(guard.getGioNhanToiThieu());
-            boolean traQuaTre = gioTra.isAfter(guard.getGioTraToiDa());
-            return (nhanQuaSom || traQuaTre) ? guard.getPhuPhiNgoaiGioVND() : BigDecimal.ZERO;
+            return BigDecimal.ZERO;
         }
 
     /**

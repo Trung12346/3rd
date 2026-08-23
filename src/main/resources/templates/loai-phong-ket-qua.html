@@ -657,6 +657,7 @@
         }
         .spin-box.spin-box--sm .spin-btn { width: 28px; height: 28px; font-size: 14px; }
         .spin-box.spin-box--sm .spin-value { min-width: 34px; font-size: 12.5px; }
+        .spin-box.is-disabled { opacity: 0.55; }
         .room-card .children-note {
             font-size: 12px;
             color: var(--text-gray);
@@ -818,6 +819,25 @@
             text-decoration: underline;
             margin-left: 8px;
         }
+        .summary-guests-row {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .summary-guests-label {
+            font-weight: 600;
+        }
+        .summary-guests-hint {
+            font-size: 11.5px;
+            color: var(--text-gray);
+            font-style: italic;
+            flex-basis: 100%;
+        }
+        .summary-guests-children {
+            font-size: 12.5px;
+            color: var(--text-gray);
+        }
         .summary-room-section {
             border-top: 1px dashed var(--border-color);
             margin-top: 14px;
@@ -951,6 +971,9 @@
     <form class="hero-search-card" id="heroSearchForm" th:action="@{/loai-phong/tim-kiem}" method="get">
         <input type="hidden" name="ngayNhan" id="ngayNhanPhongInput" th:value="${ngayNhan}">
         <input type="hidden" name="ngayTra" id="ngayTraPhongInput" th:value="${ngayTra}">
+        <!-- Gio tra phong chuan: 12:00 (truoc day la 11:00). Duoc forward lai qua
+             /loai-phong/tim-kiem khi khach sua ngay tren trang nay. -->
+        <input type="hidden" name="checkOutTime" id="checkOutTimeInput" th:value="${checkOutTime != null ? checkOutTime : '12:00'}">
         <input type="hidden" name="nguoiLon" id="soNguoiLonInput" th:value="${nguoiLon != null ? nguoiLon : 2}">
         <input type="hidden" name="treEm" id="soTreEmInput" th:value="${treEm != null ? treEm : 0}">
 
@@ -1052,7 +1075,8 @@
                          data-gia-mot-dem=${giaMotDem},
                          data-so-dem=${soDem != null ? soDem : 1},
                          data-max-qty=${maxQty},
-                         data-only-one=${conTrong == 1}">
+                         data-only-one=${conTrong == 1},
+                         data-suc-chua=${lp.sucChuaToiDa}">
 
                 <div class="card-header">
                     <div class="header-top">
@@ -1208,14 +1232,20 @@
                 <div>
                     <span class="label">Trả phòng</span>
                     <span th:text="${ngayTra != null ? ngayTra : '—'}">2026-08-11</span><br>
-                    <small style="font-size:11.5px; color:var(--text-gray);">cho đến 11:00</small>
+                    <small style="font-size:11.5px; color:var(--text-gray);">cho đến <span th:text="${checkOutTime != null ? checkOutTime : '12:00'}">12:00</span></small>
                 </div>
             </div>
         </div>
-        <div class="summary-guests">
+        <div class="summary-guests summary-guests-row">
             <i class="fa-solid fa-user-group"></i>
-            <span th:text="${(nguoiLon != null ? nguoiLon : 0)} + ' người lớn, ' + ${(treEm != null ? treEm : 0)} + ' trẻ em'">2 người lớn, 1 trẻ em</span>
-<!--            <a href="#" onclick="event.preventDefault();">Sửa lựa chọn</a>-->
+            <span class="summary-guests-label">Người lớn:</span>
+            <div class="spin-box spin-box--sm js-adult-spin" id="adultSpin">
+                <button type="button" class="spin-btn spin-dec" id="adultDecBtn" aria-label="Giảm số người lớn">−</button>
+                <span class="spin-value" id="adultValue">0</span>
+                <button type="button" class="spin-btn spin-inc" id="adultIncBtn" aria-label="Tăng số người lớn">+</button>
+            </div>
+            <span class="summary-guests-hint" id="adultHint"></span>
+            <span th:if="${treEm != null and treEm > 0}" class="summary-guests-children" th:text="'· ' + ${treEm} + ' trẻ em'">· 1 trẻ em</span>
         </div>
 
         <!-- Phong da chon (filled by JS) -->
@@ -1244,7 +1274,10 @@
             <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
             <input type="hidden" name="ngayNhan" id="hiddenNgayNhan" th:value="${ngayNhan}">
             <input type="hidden" name="ngayTra" id="hiddenNgayTra" th:value="${ngayTra}">
-            <input type="hidden" name="nguoiLon" id="hiddenNguoiLon" th:value="${nguoiLon}">
+            <!-- Gio tra phong chuan: 12:00 (truoc day la 11:00), forward xuong
+                 /loai-phong/dat-nhanh de tao don voi dung gio tra da hien thi. -->
+            <input type="hidden" name="checkOutTime" id="hiddenCheckOutTime" th:value="${checkOutTime != null ? checkOutTime : '12:00'}">
+            <input type="hidden" name="nguoiLon" id="hiddenNguoiLon" th:value="${nguoiLon != null ? nguoiLon : 1}">
             <input type="hidden" name="treEm" id="hiddenTreEm" th:value="${treEm}">
             <input type="hidden" name="mucGia" id="hiddenMucGia" th:value="${mucGia}">
             <input type="hidden" name="loaiPhongId" id="hiddenLoaiId">
@@ -1475,6 +1508,68 @@
         const hiddenLoaiId = document.getElementById('hiddenLoaiId');
         const hiddenSoLuong = document.getElementById('hiddenSoLuong');
 
+        // ===== SPIN BOX "Người lớn" trong tom tat: max = tong suc chua cua
+        //       cac phong dang duoc chon (sucChuaToiDa * so luong phong moi loai). =====
+        const adultSpin = document.getElementById('adultSpin');
+        const adultValueEl = document.getElementById('adultValue');
+        const adultDecBtn = document.getElementById('adultDecBtn');
+        const adultIncBtn = document.getElementById('adultIncBtn');
+        const adultHintEl = document.getElementById('adultHint');
+        const hiddenNguoiLon = document.getElementById('hiddenNguoiLon');
+
+        let guestAdults = parseInt(hiddenNguoiLon.value, 10) || 1;
+        let guestMaxCapacity = 0;
+
+        function computeGuestMaxCapacity() {
+            let max = 0;
+            cards.forEach(card => {
+                const qtySelect = card.querySelector('.js-qty-select');
+                const qty = parseInt(qtySelect.value, 10) || 0;
+                if (qty > 0) {
+                    const sucChua = parseInt(card.dataset.sucChua, 10) || 0;
+                    max += sucChua * qty;
+                }
+            });
+            return max;
+        }
+
+        function renderAdultSpin() {
+            adultValueEl.textContent = guestAdults;
+            const hasRoomSelected = guestMaxCapacity > 0;
+            adultDecBtn.disabled = !hasRoomSelected || guestAdults <= 1;
+            adultIncBtn.disabled = !hasRoomSelected || guestAdults >= guestMaxCapacity;
+            adultSpin.classList.toggle('is-disabled', !hasRoomSelected);
+            adultHintEl.textContent = hasRoomSelected
+                ? ('Tối đa ' + guestMaxCapacity + ' người lớn theo phòng đã chọn')
+                : 'Vui lòng chọn phòng để đặt số người lớn';
+            hiddenNguoiLon.value = hasRoomSelected ? guestAdults : 0;
+        }
+
+        function updateGuestMax() {
+            guestMaxCapacity = computeGuestMaxCapacity();
+            if (guestMaxCapacity <= 0) {
+                renderAdultSpin();
+                return;
+            }
+            // Giu nguyen lua chon cua khach neu con hop le, chi keo ve trong
+            // khoang [1, guestMaxCapacity] khi thay doi so luong phong lam
+            // suc chua toi da thay doi (vd bot phong khien vuot suc chua).
+            if (guestAdults < 1) guestAdults = 1;
+            if (guestAdults > guestMaxCapacity) guestAdults = guestMaxCapacity;
+            renderAdultSpin();
+        }
+
+        function setGuestAdults(newVal) {
+            if (guestMaxCapacity <= 0) return;
+            newVal = Math.max(1, Math.min(guestMaxCapacity, newVal));
+            if (newVal === guestAdults) return;
+            guestAdults = newVal;
+            renderAdultSpin();
+        }
+
+        adultDecBtn.addEventListener('click', () => setGuestAdults(guestAdults - 1));
+        adultIncBtn.addEventListener('click', () => setGuestAdults(guestAdults + 1));
+
         const overlay = document.getElementById('cccdModalOverlay');
         const cccdInput = document.getElementById('cccdInput');
         const cccdError = document.getElementById('cccdError');
@@ -1655,6 +1750,8 @@
             cta.disabled = items.length === 0;
             hiddenLoaiId.value = firstSelectedId || '';
             hiddenSoLuong.value = firstSelectedQty || 0;
+
+            updateGuestMax();
         }
 
         cards.forEach(card => {

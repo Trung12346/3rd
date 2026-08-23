@@ -181,6 +181,7 @@ public class LoaiPhongController {
             @RequestParam(name = "nguoiLon", required = false) Integer nguoiLon,
             @RequestParam(name = "treEm", required = false) Integer treEm,
             @RequestParam(name = "mucGia", required = false) String mucGia,
+            @RequestParam(name = "checkOutTime", required = false, defaultValue = "12:00") String checkOutTime,
             Model model,
             RedirectAttributes redirectAttributes
     ) {
@@ -193,11 +194,22 @@ public class LoaiPhongController {
             return "redirect:/home";
         }
 
+        // Gio tra phong chuan (mac dinh 12:00). FE (index.html / loai-phong-ket-qua.html)
+        // forward gia tri nay tu form tim kiem, va no se duoc forward tiep xuong
+        // dat-nhanh ben duoi de tao don voi dung gio tra da hien thi cho khach.
+        LocalTime gioTraChuan;
+        try {
+            gioTraChuan = LocalTime.parse(checkOutTime.trim());
+        } catch (Exception e) {
+            gioTraChuan = LocalTime.of(12, 0);
+        }
+
         model.addAttribute("ngayNhan", ngayNhan);
         model.addAttribute("ngayTra", ngayTra);
         model.addAttribute("nguoiLon", nguoiLon);
         model.addAttribute("treEm", treEm);
         model.addAttribute("mucGia", mucGia);
+        model.addAttribute("checkOutTime", gioTraChuan.toString());
 
         LocalDateTime ngayNhanPhong = null;
         LocalDateTime ngayTraPhong = null;
@@ -205,11 +217,12 @@ public class LoaiPhongController {
 
         if (coNgay) {
             try {
-                // Ap dung dung quy tac nhan phong 14:00 / tra phong 11:00 khi tinh
-                // khoang tim kiem, dong bo voi luc tao don thuc su (dat-nhanh ben duoi)
-                // de tranh sai lech gio gay chong lan gia (khoa lich nham).
+                // Ap dung dung quy tac nhan phong 14:00 / tra phong 12:00 (gioTraChuan,
+                // forward tu FE) khi tinh khoang tim kiem, dong bo voi luc tao don
+                // thuc su (dat-nhanh ben duoi) de tranh sai lech gio gay chong lan gia
+                // (khoa lich nham).
                 ngayNhanPhong = LocalDate.parse(ngayNhan.trim()).atTime(14, 0);
-                ngayTraPhong = LocalDate.parse(ngayTra.trim()).atTime(11, 0);
+                ngayTraPhong = LocalDate.parse(ngayTra.trim()).atTime(gioTraChuan);
             } catch (DateTimeParseException e) {
                 model.addAttribute("timKiemError", "Định dạng ngày không hợp lệ.");
                 model.addAttribute("loaiPhongs", List.of());
@@ -290,6 +303,7 @@ public class LoaiPhongController {
             @RequestParam(name = "nguoiLon", required = false) String nguoiLonStr,
             @RequestParam(name = "treEm", required = false) String treEmStr,
             @RequestParam(name = "mucGia", required = false) String mucGia,
+            @RequestParam(name = "checkOutTime", required = false, defaultValue = "12:00") String checkOutTimeStr,
             @RequestParam(name = "maCccd") String maCccdStr,
             RedirectAttributes redirectAttributes,
             jakarta.servlet.http.HttpServletRequest request,
@@ -307,13 +321,22 @@ public class LoaiPhongController {
 
         if (soLuong <= 0) soLuong = 1;
 
+        // Gio tra phong: forward tu FE (index.html / loai-phong-ket-qua.html), mac dinh
+        // 12:00 neu khong duoc gui kem (vi du goi truc tiep endpoint khong qua form).
+        LocalTime gioTraChuan;
+        try {
+            gioTraChuan = LocalTime.parse(checkOutTimeStr == null ? "" : checkOutTimeStr.trim());
+        } catch (Exception e) {
+            gioTraChuan = LocalTime.of(12, 0);
+        }
+
         LocalDateTime ngayNhan;
         LocalDateTime ngayTra;
         try {
-            // Gio nhan/tra phong co dinh cho luong dat nhanh: nhan phong 14:00 (2PM),
-            // tra phong 11:00 (11AM), khong phu thuoc gio nguoi dung bam nut.
+            // Gio nhan phong co dinh cho luong dat nhanh: nhan phong 14:00 (2PM).
+            // Gio tra phong lay tu checkOutTime FE gui len (mac dinh 12:00/12PM).
             ngayNhan = LocalDate.parse(ngayNhanStr.trim()).atTime(14, 0);
-            ngayTra = LocalDate.parse(ngayTraStr.trim()).atTime(11, 0);
+            ngayTra = LocalDate.parse(ngayTraStr.trim()).atTime(gioTraChuan);
         } catch (DateTimeParseException | NullPointerException e) {
             redirectAttributes.addFlashAttribute("timKiemError", "Vui long chon ngay nhan va ngay tra phong.");
             return redirectTimKiem(ngayNhanStr, ngayTraStr, nguoiLon, treEm, mucGia);

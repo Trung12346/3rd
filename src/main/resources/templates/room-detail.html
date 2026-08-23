@@ -812,7 +812,7 @@
     // scope nay (truoc do chi co o IIFE thu 2), neu khong cac ham kiemTraLogic
     // va kiemTraHopLe se gap ReferenceError -> IIFE nay crash -> nut Dat
     // phong ngay bi disable vinh vien, user bam khong co tac dung.
-    const TRANG_THAI_DON_BI_KHOA = ['Da nhan phong', 'Cho xac nhan', 'Da xac nhan'];
+    const TRANG_THAI_DON_BI_KHOA = ['Yeu cau dat phong', 'Da nhan phong', 'Cho xac nhan', 'Da xac nhan'];
     function laTrangThaiBiKhoa(t) {
       return TRANG_THAI_DON_BI_KHOA.indexOf(t) !== -1;
     }
@@ -1058,7 +1058,7 @@
     // ===== Trang thai don duoc coi la "dang khoa lich" =====
     // Phai trung voi validateRoomBookingGuard() ben PhongController va
     // buildSingleRoomGuard() ben PhongService.
-    const TRANG_THAI_DON_BI_KHOA_LOCAL = ['Da nhan phong', 'Cho xac nhan', 'Da xac nhan'];
+    const TRANG_THAI_DON_BI_KHOA_LOCAL = ['Yeu cau dat phong', 'Da nhan phong', 'Cho xac nhan', 'Da xac nhan'];
     function laTrangThaiBiKhoa(t) {
       return TRANG_THAI_DON_BI_KHOA_LOCAL.indexOf(t) !== -1;
     }

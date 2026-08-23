@@ -17,7 +17,6 @@ public class VnpayController {
     @Autowired
     VnpayService vnpayService;
 
-
     @GetMapping("/API/payment/vnpay-payment")
     public String GetVnpayPayment(HttpServletRequest request, RedirectAttributes redirectAttributes, Authentication authentication) {
         String orderInfo = request.getParameter("vnp_OrderInfo");

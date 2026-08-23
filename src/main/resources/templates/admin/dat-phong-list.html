@@ -326,6 +326,7 @@
                     <label>Trạng thái</label>
                     <select name="trangThai">
                         <option value="">-- Tất cả --</option>
+                        <option value="Yeu cau dat phong" th:selected="${trangThai == 'Yeu cau dat phong'}">Yêu cầu đặt phòng</option>
                         <option value="Chua thanh toan" th:selected="${trangThai == 'Chua thanh toan'}">Chưa thanh toán</option>
                         <option value="Cho xac nhan" th:selected="${trangThai == 'Cho xac nhan'}">Chờ xác nhận</option>
                         <option value="Da xac nhan" th:selected="${trangThai == 'Da xac nhan'}">Đã xác nhận</option>
@@ -430,6 +431,7 @@
                 <div class="admin-field">
                     <label>Trạng thái</label>
                     <select name="trangThai">
+                        <option value="Yeu cau dat phong" th:selected="${dpEdit.trangThai == 'Yeu cau dat phong'}">Yêu cầu đặt phòng</option>
                         <option value="Chua thanh toan" th:selected="${dpEdit.trangThai == 'Chua thanh toan'}">Chưa thanh toán</option>
                         <option value="Cho xac nhan" th:selected="${dpEdit.trangThai == 'Cho xac nhan'}">Chờ xác nhận</option>
                         <option value="Da xac nhan" th:selected="${dpEdit.trangThai == 'Da xac nhan'}">Đã xác nhận</option>
@@ -506,12 +508,31 @@
                         <!-- Du lieu an cho modal -->
                         <span style="display:none;" th:each="ctdp : ${MapCtdp[dp.datPhong.id]}"
                               th:class="'cccd-data-' + ${dp.datPhong.id}"
-                              th:attr="data-so-phong=${ctdp.p != null ? ctdp.p.soPhong : ''}, data-cccd=${ctdp.ma_cccd != null ? ctdp.ma_cccd : ''}">
+                              th:attr="data-so-phong=${ctdp.p != null ? ctdp.p.soPhong : ''}, data-cccd=${dp.datPhong.ma_cccd != null ? dp.datPhong.ma_cccd : ''}">
                         </span>
                     </td>
 
                     <td>
                         <div class="status-row">
+                            <!-- Đơn "Yeu cau dat phong" — khách online vừa gửi yêu cầu, NV chưa xét.
+                                 Dùng chung endpoint với trang quản lý yêu cầu (/nhan-su/dat-phong/...). -->
+                            <form th:if="${dp.datPhong.trangThai == 'Yeu cau dat phong'}"
+                                  th:action="@{/nhan-su/dat-phong/xac-nhan-yeu-cau/{id}(id=${dp.datPhong.id})}" method="post" style="margin: 0; display: inline;">
+                                <button type="submit" class="status-badge warning"
+                                        style="cursor: pointer; border: none;"
+                                        th:disabled="${dp.datPhong.ma_cccd == null or dp.datPhong.ma_cccd.isEmpty()}">
+                                    Xác nhận yêu cầu
+                                </button>
+                            </form>
+                            <form th:if="${dp.datPhong.trangThai == 'Yeu cau dat phong'}"
+                                  th:action="@{/nhan-su/dat-phong/huy-yeu-cau/{id}(id=${dp.datPhong.id})}" method="post" style="margin: 0; display: inline;"
+                                  onsubmit="return confirm('Bạn có chắc muốn từ chối yêu cầu đặt phòng này? Phòng đã gán sẽ được giải phóng.');">
+                                <button type="submit" class="status-badge danger"
+                                        style="cursor: pointer; border: none;">
+                                    Từ chối yêu cầu
+                                </button>
+                            </form>
+
                             <span th:if="${dp.datPhong.trangThai == 'Chua thanh toan'}" class="status-badge neutral">
                                 Chưa thanh toán
                             </span>
@@ -563,7 +584,7 @@
                                 Đã hủy
                             </span>
 
-                            <form th:if="${dp.datPhong.trangThai != 'Da nhan phong' and dp.datPhong.trangThai != 'Da tra phong' and dp.datPhong.trangThai != 'Da huy' and dp.datPhong.trangThai != 'Cho huy'}"
+                            <form th:if="${dp.datPhong.trangThai != 'Yeu cau dat phong' and dp.datPhong.trangThai != 'Da nhan phong' and dp.datPhong.trangThai != 'Da tra phong' and dp.datPhong.trangThai != 'Da huy' and dp.datPhong.trangThai != 'Cho huy'}"
                                   th:action="@{/nhan-su/admin/dat-phong/huy}" method="post" style="margin: 0;">
                                 <input type="hidden" name="id" th:value="${dp.datPhong.id}">
                                 <input type="hidden" name="page" th:value="${currentPage}">

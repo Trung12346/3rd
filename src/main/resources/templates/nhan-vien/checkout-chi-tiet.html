@@ -767,7 +767,6 @@
                                 <th>Số phòng</th>
                                 <th>Tầng</th>
                                 <th>Loại phòng</th>
-                                <th>CCCD khách ở</th>
                                 <th style="text-align:right;">Giá phòng</th>
                             </tr>
                             </thead>
@@ -776,11 +775,10 @@
                                 <td th:text="${ct.p != null ? ct.p.soPhong : '—'}"></td>
                                 <td th:text="${ct.p != null ? ct.p.soTang : '—'}"></td>
                                 <td th:text="${ct.p != null and ct.p.loaiPhong != null ? ct.p.loaiPhong.tenLoai : '—'}"></td>
-                                <td th:text="${ct.ma_cccd != null ? ct.ma_cccd : '—'}"></td>
                                 <td style="text-align:right;" th:text="${#numbers.formatDecimal(ct.giaKhiDat, 0, 'COMMA', 0, 'POINT') + ' VND'}"></td>
                             </tr>
                             <tr th:if="${phongList.isEmpty()}">
-                                <td colspan="5"><div class="empty-state">Đơn này chưa có phòng nào.</div></td>
+                                <td colspan="4"><div class="empty-state">Đơn này chưa có phòng nào.</div></td>
                             </tr>
                             </tbody>
                         </table>

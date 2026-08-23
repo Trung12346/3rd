@@ -22,6 +22,8 @@ public interface DatPhongRepo extends JpaRepository<DatPhong,Integer> {
 
     List<DatPhong> findByTrangThaiAndNgayTaoBefore(String trangThai, LocalDateTime ngay);
 
+    List<DatPhong> findByTrangThai(String trangThai);
+
 
     @Query("select d from DatPhong d where d.n.ma_khach_hang = :id")
     List<DatPhong> FindByNguoiDung(Integer id);
@@ -66,6 +68,7 @@ public interface DatPhongRepo extends JpaRepository<DatPhong,Integer> {
     select d
     from DatPhong d
     where d.trangThai in (
+        'Yeu cau dat phong',
         'Cho xac nhan',
         'Da xac nhan',
         'Da nhan phong',
@@ -86,7 +89,7 @@ public interface DatPhongRepo extends JpaRepository<DatPhong,Integer> {
         from DatPhong d
         join ChiTietDatPhong c on c.d.id = d.id
         where c.p.maPhong = :id
-        and d.trangThai='Cho xac nhan'
+        and d.trangThai in ('Yeu cau dat phong','Cho xac nhan')
 """)
     Long findPendingBookingsByPhong(@Param("id") Integer id);
 
@@ -96,7 +99,7 @@ public interface DatPhongRepo extends JpaRepository<DatPhong,Integer> {
     join ChiTietDatPhong c on c.d.id = dp.id
     where c.p.maPhong = :maPhong
       and dp.id <> :maDatPhong
-      and dp.trangThai in ('Cho xac nhan','Da xac nhan','Da nhan phong')
+      and dp.trangThai in ('Yeu cau dat phong','Cho xac nhan','Da xac nhan','Da nhan phong')
 """)
     boolean existsBookingNotCheckout(@Param("maPhong") Integer maPhong,
                                      @Param("maDatPhong") Integer maDatPhong);
@@ -156,7 +159,7 @@ order by d.ngaytraPhong desc
         select distinct c.p.maPhong
         from DatPhong d
         join ChiTietDatPhong c on c.d.id = d.id
-        where d.trangThai in ('Cho xac nhan','Da xac nhan','Da nhan phong')
+        where d.trangThai in ('Yeu cau dat phong','Cho xac nhan','Da xac nhan','Da nhan phong')
         and d.ngaydatPhong < :ngayTra
         and d.ngaytraPhong > :ngayNhan
     """)
@@ -183,7 +186,7 @@ order by d.ngaytraPhong desc
         select c.p.maPhong as maPhong, d.ngaydatPhong as ngayNhan, d.ngaytraPhong as ngayTra
         from DatPhong d
         join ChiTietDatPhong c on c.d.id = d.id
-        where d.trangThai in ('Cho xac nhan','Da xac nhan','Da nhan phong')
+        where d.trangThai in ('Yeu cau dat phong','Cho xac nhan','Da xac nhan','Da nhan phong')
         and c.p.loaiPhong.id = :loaiPhongId
         and d.ngaydatPhong < :denNgay
         and d.ngaytraPhong > :tuNgay

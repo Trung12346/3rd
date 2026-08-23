@@ -6,18 +6,26 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestClient;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.util.UriComponents;
+import org.springframework.web.util.UriComponentsBuilder;
+import su26sd09.su26sd09.dto.VNPayParserDTO;
 import su26sd09.su26sd09.entity.*;
 import su26sd09.su26sd09.service.*;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Controller
 @RequestMapping("/thanh-toan")
 public class ThanhToanController {
+
+    public static Map<Integer, String> VNPayRequests = new HashMap<>();
 
     @Autowired
     VnpayService vnpayService;
@@ -101,12 +109,80 @@ public class ThanhToanController {
         BigDecimal tienVat = tongTien.multiply(VATCD).setScale(2, RoundingMode.HALF_UP);
         tongTien = tongTien.add(tienVat);
 
+        //them cong nang
+        HoaDon hd = hoaDonService.findByDatPhongId(id);
+        if(hd != null && hd.getTrangThai().equals("Cho thanh toan"))
+        {
+            tongTien = hd.getTongTien().subtract(hd.getDaThanhToan());
+        }
+
         String baseUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort();
         String vnpayUrl = vnpayService.createOrder(tongTien.longValue(), id, "ChuyenKhoan", baseUrl);
+
+        VNPayRequests.put(id, vnpayUrl);
 
         return "redirect:" + vnpayUrl;
     }
 
+    @GetMapping("/pool")
+    public String thanhToanPool(
+            @RequestParam("dat-phong-id") Integer id,
+            Model model,
+            HttpServletRequest request
+    )
+    {
+        HoaDon hd = hoaDonService.findByDatPhongId(id);
+        if(
+                hd == null ||
+                (hd.getTongTien().subtract(hd.getDaThanhToan()).compareTo(BigDecimal.ZERO) > 0 && hd.getTrangThai().equals("Cho thanh toan"))
+        )
+        {
+            String url = VNPayRequests.get(id);
+            if(url != null)
+            {
+                String params = url.substring(url.indexOf("?"));
+//                String baseUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort();
+//                RestClient client = RestClient.create();
+//                VNPayParserDTO result = client.get()
+//                        .uri(baseUrl + "/thanh-toan/vnpay-parser" + params)
+//                        .retrieve()
+//                        .body(VNPayParserDTO.class);
+                UriComponents uri = UriComponentsBuilder
+                        .fromUriString(url)
+                        .build();
+
+                String timeString = uri.getQueryParams().getFirst("vnp_ExpireDate");
+
+                LocalDateTime expireDate = LocalDateTime.of(
+                        Integer.parseInt(timeString.substring(0, 4)),
+                        Integer.parseInt(timeString.substring(4, 6)),
+                        Integer.parseInt(timeString.substring(6, 8)),
+                        Integer.parseInt(timeString.substring(8, 10)),
+                        Integer.parseInt(timeString.substring(10, 12)),
+                        Integer.parseInt(timeString.substring(12, 14))
+                );
+                if(LocalDateTime.now().isBefore(expireDate))
+                {
+                    System.out.println("111111111111111111");
+                    return "redirect:" + url;
+                }
+            }
+            model.addAttribute("id", id);
+            System.out.println("222222222222222222222");
+            return "vnpay-forward";
+
+        }
+        System.out.println("33333333333333333333");
+        return "inform-thanh-toan-du";
+    }
+
+    @GetMapping("/vnpay-parser")
+    public VNPayParserDTO VNPayParse(@RequestParam("vnp_ExpireDate") String vnpExpireDate)
+    {
+        return new VNPayParserDTO(
+                vnpExpireDate
+        );
+    }
 
     @PostMapping("/dat-phong/{id}")
     public String submitTienMat(@PathVariable Integer id,
@@ -137,10 +213,12 @@ public class ThanhToanController {
         BigDecimal tienVat = amountTongTien.multiply(VATCD).setScale(2, RoundingMode.HALF_UP);
         amountTongTien = amountTongTien.add(tienVat);
 
+        //-------------------------------------------------------deprecated--
         // KHONG doi trangThai DatPhong o day — don nay la "Yeu cau dat phong",
         // nhan vien se xac nhan + xep phong trong trang /nhan-su/yeu-cau-dat-phong.
         // Trang thai chi duoc phep thay doi boi NV qua nut "Xac nhan yeu cau".
         // Luu ngayCapNhat de audit.
+        //-------------------------------------------------------------------
         dp.setNgayCapNhat(LocalDateTime.now());
         datPhongService.save(dp);
 
@@ -213,6 +291,8 @@ public class ThanhToanController {
         model.addAttribute("TienDv", amountDv);
         model.addAttribute("TienGiam", tienGiam);
         model.addAttribute("TongCong", Totalamount);
+
+
 
         return "thanh-toan-thanh-cong";
     }

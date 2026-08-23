@@ -6,6 +6,11 @@
     <title th:text="'Chi tiết đặt phòng #' + (${datPhong != null ? datPhong.id : ''}) + ' | Hotel'">Chi tiết đặt phòng | Hotel</title>
     <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- FullCalendar dung cho calendar chon ngay nhan/tra (chi tai khi mo trang nay
+         doc lap o tab moi; khi nhung vao so-do-phong.html, thu vien nay da duoc nap
+         san o trang cha nen script src trong <head> nay se khong duoc "nhung" lai
+         (nhungNoiDungDon() chi lay <style>, khong lay <script> trong <head>). -->
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
     <style>
         *, *::before, *::after { box-sizing: border-box; }
         body { background: #f4f7fa; }
@@ -79,6 +84,87 @@
         .stay-hint { color: #94a3b8; font-size: 11px; margin-top: 5px; display: block; }
         .stay-guests { display: grid; gap: 16px; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 16px; }
         .stay-guests input { width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; }
+
+        /* ===== Calendar chon ngay nhan/tra (dong bo voi sidebar "Lên lịch đặt
+           phòng" ben so-do-phong.html - cung logic RoomAvailabilityCalendar,
+           chi doi tien to sdp-lich- -> cdp-). ===== */
+        .cdp-dates {
+            display: flex; border: 1px solid #dbe3ee; border-radius: 10px; overflow: hidden;
+            background: #f8fafc;
+        }
+        .cdp-date-field { flex: 1; padding: 10px 12px; cursor: pointer; transition: background .15s; }
+        .cdp-date-field:first-child { border-right: 1px solid #dbe3ee; }
+        .cdp-date-field:hover, .cdp-date-field.active { background: #eef6fc; }
+        .cdp-date-field label {
+            display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700;
+            color: #64748b; text-transform: uppercase; letter-spacing: .02em; margin-bottom: 3px;
+        }
+        .cdp-date-value { font-size: 14px; font-weight: 700; color: #1f2937; }
+        .cdp-date-value.placeholder { color: #9ca3af; font-weight: 600; }
+
+        .cdp-cal-wrap {
+            display: none; margin-top: 10px; border: 1px solid #e5e9f0; border-radius: 12px;
+            padding: 14px; background: #fff; box-shadow: 0 4px 16px rgba(15,23,42,0.06);
+        }
+        .cdp-cal-wrap.open { display: block; }
+        .cdp-cal-legend {
+            font-size: 11.5px; color: #6b7280; margin-bottom: 10px; padding-bottom: 10px;
+            border-bottom: 1px solid #eef1f5;
+        }
+        .cdp-cal-legend strong { color: #2196c4; }
+        .cdp-cal-actions {
+            display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px;
+            padding-top: 10px; border-top: 1px solid #eef1f5;
+        }
+        .cdp-cal-actions button {
+            border: none; padding: 8px 16px; font-size: 12px; font-weight: 700;
+            border-radius: 6px; cursor: pointer; text-transform: uppercase; letter-spacing: .3px;
+        }
+        .cdp-cal-clear { background: transparent; color: #6b7280; }
+        .cdp-cal-clear:hover { color: #2196c4; }
+        .cdp-cal-apply { background: #2196c4; color: #fff; }
+        .cdp-cal-apply:hover { background: #1d7fae; }
+
+        .cdp-cal-wrap .fc { font-family: inherit; font-size: 12.5px; }
+        .cdp-cal-wrap .fc-daygrid-day-frame { cursor: pointer; }
+        .cdp-cal-wrap .fc-daygrid-day.fc-day-past { opacity: .35; pointer-events: none; }
+        .cdp-cal-wrap .drp-range-start .fc-daygrid-day-frame,
+        .cdp-cal-wrap .drp-range-end .fc-daygrid-day-frame,
+        .cdp-cal-wrap .drp-range-only .fc-daygrid-day-frame {
+            background-color: #2196c4; color: #fff; border-radius: 4px;
+        }
+        .cdp-cal-wrap .drp-range-mid .fc-daygrid-day-frame { background-color: #eaf6fb; }
+        .cdp-cal-wrap .fc-toolbar-title { font-size: 14.5px; color: #1f2937; font-weight: 700; }
+        .cdp-cal-wrap .fc-button {
+            background: transparent; border: 1px solid #e2e8f0; color: #374151;
+            padding: 4px 8px; font-size: 12px;
+        }
+        .cdp-cal-wrap .fc-button:hover { background: #f0f9ff; border-color: #2196c4; color: #2196c4; }
+
+        .cdp-cal-wrap .drp-day-fully-booked .fc-daygrid-day-frame {
+            background: repeating-linear-gradient(135deg, #f3f3f3, #f3f3f3 4px, #e6e6e6 4px, #e6e6e6 8px);
+            color: #b5b5b5; cursor: not-allowed; pointer-events: none; border-radius: 4px;
+        }
+        .cdp-cal-wrap .drp-day-fully-booked.drp-range-start .fc-daygrid-day-frame,
+        .cdp-cal-wrap .drp-day-fully-booked.drp-range-mid .fc-daygrid-day-frame,
+        .cdp-cal-wrap .drp-day-fully-booked.drp-range-end .fc-daygrid-day-frame {
+            background: repeating-linear-gradient(135deg, #f3f3f3, #f3f3f3 4px, #e6e6e6 4px, #e6e6e6 8px);
+            color: #b5b5b5;
+        }
+        .cdp-cal-legend .cdp-cal-legend-booked { display: inline-flex; align-items: center; gap: 5px; margin-left: 10px; }
+        .cdp-cal-legend .cdp-cal-legend-swatch {
+            display: inline-block; width: 12px; height: 12px; border-radius: 3px;
+            background: repeating-linear-gradient(135deg, #f3f3f3, #f3f3f3 4px, #e6e6e6 4px, #e6e6e6 8px);
+            border: 1px solid #ddd;
+        }
+
+        .cdp-field-error {
+            display: none; color: #c0392b; font-size: 11.5px; margin-top: 7px; font-weight: 600; line-height: 1.4;
+        }
+        .cdp-field-error.show { display: block; }
+        .cdp-dates.has-error { border-color: #e74c3c; background: #fdf3f2; }
+
+        .stay-gio-grid { display: grid; gap: 16px; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 16px; }
 
         .canh-bao-phu-thu {
             margin-top: 14px; padding: 12px 14px; border-radius: 6px;
@@ -171,7 +257,6 @@
         .dv-table tr:last-child td { border-bottom: none; }
         .dv-table input[type="number"] { width: 100%; max-width: 80px; padding: 6px 8px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 13px; }
         .dv-table input[type="datetime-local"] { padding: 6px 8px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 12px; width: 100%; max-width: 175px; }
-        .dv-empty { color: #94a3b8; font-size: 13px; text-align: center; padding: 22px 0; font-style: italic; }
         .btn-xoa-dv {
             background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; border-radius: 5px;
             padding: 5px 10px; font-size: 12px; cursor: pointer; font-weight: 600;
@@ -354,12 +439,110 @@
         }
         .btn-dp-primary:hover { background: var(--sky-dark); }
         .btn-dp-primary:disabled { background: #94a3b8; cursor: not-allowed; }
+
+        /* Che do nhung (embed=true) trong sidebar cua so-do-phong.html:
+           bo bot khoang trong thua vi khong con canh cua man hinh lon nua. */
+        body.cdp-embed-mode { background: #fff; }
+        body.cdp-embed-mode .cdp-shell { padding: 18px 18px 40px; max-width: 100%; }
+        body.cdp-embed-mode .cdp-layout { grid-template-columns: minmax(0, 1fr); }
+
+        /* =====================================================================
+         * Dong bo giao dien voi sidebar "Lên lịch đặt phòng" trong so-do-phong.html:
+         * bo het khung/vien/box/shadow cua panel, chi giu text + o nhap lieu +
+         * nut bam quan trong, style theo tinh than nhat - nen mo - bo vien tron nhe.
+         * ===================================================================== */
+        .cdp-panel,
+        .thu-tien-panel,
+        .summary-panel,
+        .dp-form-row,
+        .dp-room-card,
+        .dp-form-reason,
+        .dv-them-form,
+        .dv-them-form-phatsinh {
+            border: none !important; box-shadow: none !important; background: transparent !important;
+            border-radius: 0 !important;
+        }
+        .cdp-panel-title {
+            border: none !important; box-shadow: none !important; background: transparent !important;
+            padding: 0 0 8px !important; margin: 0 0 12px !important;
+            font-size: 12px !important; font-weight: 700 !important; color: #475569 !important;
+            text-transform: uppercase; letter-spacing: .03em;
+        }
+        .cdp-panel-title i { display: none; }
+        .cdp-panel-sub { font-size: 11.5px; font-weight: 600; color: #94a3b8; text-transform: none; letter-spacing: 0; }
+
+        .dv-them-form, .dv-them-form-phatsinh { padding: 14px 0 !important; }
+        .dp-form-row { padding: 14px 0 !important; border-bottom: 1px solid #eef2f6 !important; border-radius: 0 !important; }
+        .dp-form-row.is-selected { background: #f8fafc !important; }
+        .dp-form-row-body { border-top: 1px dashed #e5e7eb !important; }
+        .dp-room-card { border: 1px solid #dbe3ee !important; border-radius: 9px !important; }
+        .dp-room-card.selected { border-color: #2196c4 !important; background: #eaf6fb !important; box-shadow: none !important; }
+        .dp-room-card.selected::after { background: #2196c4; }
+        .dp-form-reason { padding: 0 !important; }
+        .dp-form-reason-title { color: #475569 !important; }
+        .dp-form-reason-title i { display: inline-block; color: #94a3b8 !important; }
+        .dv-table th, .dv-table td { border-bottom: 1px solid #f1f5f9 !important; }
+        .dv-tab { border-radius: 9px 9px 0 0 !important; }
+
+        .dp-form-submit-row { border-top: 1px solid #eef2f6 !important; }
+        .thu-tien-info { border-bottom: none !important; }
+
+        /* Text field & cac o nhap lieu quan trong: dua ve dung style sdp-lich-field */
+        label {
+            display: block; font-size: 12px; font-weight: 700; color: #475569;
+            text-transform: none !important; letter-spacing: 0 !important; margin-bottom: 6px;
+        }
+        input[type="text"],
+        input[type="email"],
+        input[type="tel"],
+        input[type="number"],
+        input[type="date"],
+        input[type="time"],
+        input[type="datetime-local"],
+        select,
+        textarea {
+            width: 100%; border: 1px solid #dbe3ee !important; border-radius: 9px !important;
+            padding: 10px 12px !important; font-size: 13.5px; font-family: inherit; color: #1f2937;
+            background: #f8fafc !important; box-shadow: none !important; outline: none;
+            transition: border-color .15s, background .15s;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none; border-color: #2196c4 !important; background: #fff !important;
+        }
+        textarea { resize: vertical; min-height: 64px; }
+        input[type="checkbox"], input[type="radio"] { accent-color: #2196c4; }
+
+        /* Nut bam quan trong: style flat, dong bo mau voi sidebar */
+        button, input[type="submit"] {
+            border: none !important; border-radius: 10px !important; padding: 10px 16px !important;
+            font-size: 13px; font-weight: 700; cursor: pointer; box-shadow: none !important;
+            background: #f3f4f6; color: #475569; transition: background .15s;
+            text-transform: none !important; letter-spacing: 0 !important;
+        }
+        button:hover { background: #e5e7eb; }
+        button[type="submit"],
+        .btn-thu-tien,
+        .btn-luu-thay-doi,
+        .btn-dp-primary,
+        .btn-them-dv {
+            background: linear-gradient(120deg, #2196c4, #1d7fae) !important; color: #fff !important;
+        }
+        button[type="submit"]:hover,
+        .btn-thu-tien:hover,
+        .btn-luu-thay-doi:hover,
+        .btn-dp-primary:hover,
+        .btn-them-dv:hover {
+            background: linear-gradient(120deg, #1d8fbb, #176a92) !important;
+        }
+        button:disabled { opacity: .5; cursor: not-allowed; background: #f3f4f6 !important; color: #94a3b8 !important; }
+
+        .sum-total { background: #2196c4 !important; border-radius: 9px !important; }
     </style>
 </head>
-<body>
+<body th:classappend="${embed} ? 'cdp-embed-mode' : ''">
 
-<div th:replace="~{fragments/cms-sidebar :: cmsSidebar}"></div>
-<div th:replace="~{fragments/headers/cms-header :: cmsHeader}"></div>
+<div th:if="${embed == null or embed == false}" th:replace="~{fragments/cms-sidebar :: cmsSidebar}"></div>
+<div th:if="${embed == null or embed == false}" th:replace="~{fragments/headers/cms-header :: cmsHeader}"></div>
 <main class="cdp-shell">
 
     <div class="cdp-header">
@@ -507,7 +690,7 @@
                  th:attr="data-ct-id=${ct.id},
                           data-old-room-id=${ct.p != null ? ct.p.maPhong : 0},
                           data-old-room-price=${ct.p != null ? ct.p.giaMoiDem : 0},
-                          data-old-cccd=${ct.ma_cccd != null ? ct.ma_cccd : ''}">
+                          data-old-cccd=${cccdPhongMap.get(ct.id) != null ? cccdPhongMap.get(ct.id) : ''}">
                 <div class="dp-form-row-head">
                     <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
                         <input type="checkbox" class="dp-toggle dp-ctdp-cb" name="ctdpIds" th:value="${ct.id}">
@@ -517,7 +700,7 @@
                         Hiện tại: <strong th:text="'Phòng ' + (${ct.p != null ? ct.p.soPhong : ''})">Phòng 101</strong>
                         (<span th:text="${ct.p != null and ct.p.loaiPhong != null ? ct.p.loaiPhong.tenLoai : 'Standard'}">Standard</span>)
                         · <span th:text="${#numbers.formatDecimal(ct.giaMoiDem, 0, 'COMMA', 0, 'POINT')} + ' VND/đêm'">0 VND/đêm</span>
-                        · CCCD: <strong th:text="${ct.ma_cccd != null ? ct.ma_cccd : '(chưa có)'}">--</strong>
+                        · CCCD: <strong th:text="${cccdPhongMap.get(ct.id) != null ? cccdPhongMap.get(ct.id) : '(chưa có)'}">--</strong>
                     </div>
                     <div class="dp-row-price">
                         <span th:text="${#numbers.formatDecimal(ct.giaKhiDat, 0, 'COMMA', 0, 'POINT')} + ' VND'">0 VND</span>
@@ -589,7 +772,7 @@
                 <div class="dp-form-grid">
                     <div class="dp-field" style="margin-bottom: 0;">
                         <label>Loại lý do</label>
-                        <select name="lyDoDoiLoai" id="lyDoDoiLoai">
+                        <select name="lyDoDoiLoai" id="lyDoDoiLoai" disabled>
                             <option value="">-- Chọn --</option>
                             <option value="Sua chua">Sửa chữa / Bảo trì</option>
                             <option value="Yeu cau khach hang">Yêu cầu khách hàng</option>
@@ -600,7 +783,7 @@
                     </div>
                     <div class="dp-field" style="margin-bottom: 0;">
                         <label>Mô tả chi tiết <span style="color:red">*</span></label>
-                        <textarea name="lyDoDoi" id="lyDoDoiChiTiet" required minlength="5"
+                        <textarea name="lyDoDoi" id="lyDoDoiChiTiet" required minlength="5" readonly
                                   placeholder="Ví dụ: Phòng 101 bị rò nước, chuyển khách sang phòng 205 cùng loại..."></textarea>
                     </div>
                 </div>
@@ -621,7 +804,8 @@
         </form>
     </div>
     <!-- ===== THU TIỀN CÒN NỢ (form riêng, tách khỏi form cập nhật đơn) ===== -->
-    <div class="thu-tien-panel" th:if="${hoaDon != null}">
+    <div class="thu-tien-panel"
+         th:if="${hoaDon != null and hoaDon.tongTien != null and (hoaDon.daThanhToan == null or hoaDon.daThanhToan.compareTo(hoaDon.tongTien) < 0)}">
         <div class="cdp-panel-title" style="border:none; margin-bottom:12px; padding-bottom:0;">
             <i class="fa-solid fa-money-bill-wave"></i> Thu Tiền Còn Thiếu
         </div>
@@ -689,22 +873,52 @@
                 <div class="cdp-panel">
                     <div class="cdp-panel-title"><i class="fa-solid fa-calendar-days"></i> Thông Tin Lưu Trú</div>
 
-                    <div class="stay-grid">
+                    <div class="stay-field">
+                        <label>Ngày nhận / trả phòng</label>
+                        <div class="cdp-dates" id="cdpDatesRow">
+                            <div class="cdp-date-field" data-field="checkin" id="cdpCheckinField">
+                                <label><i class="fa-regular fa-calendar"></i> Nhận phòng</label>
+                                <span class="cdp-date-value placeholder" id="cdpCheckinDisplay">Chọn ngày</span>
+                            </div>
+                            <div class="cdp-date-field" data-field="checkout" id="cdpCheckoutField">
+                                <label><i class="fa-regular fa-calendar"></i> Trả phòng</label>
+                                <span class="cdp-date-value placeholder" id="cdpCheckoutDisplay">Chọn ngày</span>
+                            </div>
+                        </div>
+                        <div class="cdp-field-error" id="cdpNgayError"></div>
+
+                        <div class="cdp-cal-wrap" id="cdpCalWrap">
+                            <div class="cdp-cal-legend">
+                                Chọn ngày <strong>nhận phòng</strong>, sau đó chọn ngày <strong>trả phòng</strong>
+                                <span class="cdp-cal-legend-booked">
+                                    <span class="cdp-cal-legend-swatch"></span> Phòng đã có lịch
+                                </span>
+                            </div>
+                            <div id="cdpCalendar"></div>
+                            <div class="cdp-cal-actions">
+                                <button type="button" class="cdp-cal-clear" id="cdpCalClear">Xóa</button>
+                                <button type="button" class="cdp-cal-apply" id="cdpCalApply">Áp dụng</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="stay-gio-grid">
                         <div class="stay-field">
-                            <label>Ngày nhận phòng</label>
-                            <input type="datetime-local" id="ngayNhan" name="ngayNhan"
-                                   th:value="${datPhong != null and datPhong.ngaydatPhong != null} ? ${#temporals.format(datPhong.ngaydatPhong, 'yyyy-MM-dd''T''HH:mm')} : ''"
-                                   required>
+                            <label>Giờ nhận phòng</label>
+                            <input type="time" id="gioNhan">
                             <small class="stay-hint">Giờ chuẩn không phụ thu: 08:00 hoặc 12:00</small>
                         </div>
                         <div class="stay-field">
-                            <label>Ngày trả phòng</label>
-                            <input type="datetime-local" id="ngayTra" name="ngayTra"
-                                   th:value="${datPhong != null and datPhong.ngaytraPhong != null} ? ${#temporals.format(datPhong.ngaytraPhong, 'yyyy-MM-dd''T''HH:mm')} : ''"
-                                   required>
-                            <small class="stay-hint">Tối thiểu 1 ngày sau ngày nhận phòng &middot; Giờ chuẩn: 08:00 hoặc 12:00</small>
+                            <label>Giờ trả phòng</label>
+                            <input type="time" id="gioTra">
+                            <small class="stay-hint">Giờ chuẩn: 08:00 hoặc 12:00</small>
                         </div>
                     </div>
+
+                    <input type="hidden" id="ngayNhan" name="ngayNhan"
+                           th:value="${datPhong != null and datPhong.ngaydatPhong != null} ? ${#temporals.format(datPhong.ngaydatPhong, 'yyyy-MM-dd''T''HH:mm')} : ''">
+                    <input type="hidden" id="ngayTra" name="ngayTra"
+                           th:value="${datPhong != null and datPhong.ngaytraPhong != null} ? ${#temporals.format(datPhong.ngaytraPhong, 'yyyy-MM-dd''T''HH:mm')} : ''">
 
                     <div class="stay-guests">
                         <div class="stay-field">
@@ -732,7 +946,7 @@
                         <span class="cdp-panel-sub" th:text="${chiTietDatPhongList != null ? #lists.size(chiTietDatPhongList) : 0} + ' phòng'">1 phòng</span>
                     </div>
                     <div th:each="ct : ${chiTietDatPhongList}" class="room-row"
-                         th:attr="data-gia=${ct.p != null ? ct.p.giaMoiDem : 0}">
+                         th:attr="data-gia=${ct.p != null ? ct.p.giaMoiDem : 0}, data-ma-phong=${ct.p != null ? ct.p.maPhong : 0}">
                         <div>
                             <div class="room-name"
                                  th:text="'Phòng ' + (${ct.p != null ? ct.p.soPhong : ''}) + ' - ' + (${ct.p != null and ct.p.loaiPhong != null ? ct.p.loaiPhong.tenLoai : ''})">
@@ -750,9 +964,6 @@
                              th:text="${ct.p != null} ? (${#numbers.formatDecimal(ct.p.giaMoiDem, 0, 'COMMA', 0, 'POINT')} + ' VND/đêm') : '0 VND/đêm'">
                             1.200.000 VND/đêm
                         </div>
-                    </div>
-                    <div th:if="${chiTietDatPhongList == null or #lists.isEmpty(chiTietDatPhongList)}" class="dv-empty">
-                        Không có phòng nào trong đơn đặt này.
                     </div>
                 </div>
 
@@ -799,10 +1010,6 @@
                             <i class="fa-solid fa-plus"></i> Thêm
                         </button>
                     </div>
-                    <div th:if="${dichVuList == null or #lists.isEmpty(dichVuList)}" class="dv-empty" style="margin-bottom:10px;">
-                        Khách sạn hiện chưa có dịch vụ bổ sung nào đang hoạt động.
-                    </div>
-
                     <!-- Form thêm dịch vụ PHÁT SINH: mô tả tự do, giá nhập tay, bắt buộc ghi chú lý do -->
                     <div class="dv-them-form dv-them-form-phatsinh" id="formPhatSinh" style="display:none;">
                         <p class="ps-hint">
@@ -861,7 +1068,6 @@
                         </thead>
                         <tbody id="dvTableBody"></tbody>
                     </table>
-                    <div class="dv-empty" id="dvEmptyRow">Chưa có dịch vụ nào được thêm vào đơn.</div>
                 </div>
 
             </section>
@@ -919,10 +1125,6 @@
         </fieldset>
     </form>
 </main>
-
-<footer>
-    <p>&copy; 2026 Hotel. All rights reserved.</p>
-</footer>
 
 <!-- Bind gia tri tong phu phi luu san trong DB vao dong tom tat ngay khi mo trang -->
 <script th:inline="javascript">
@@ -1050,7 +1252,12 @@
         id: /*[[${ct.dv != null ? ct.dv.id : 0}]]*/ 0,
         ten: /*[[${ct.dv != null ? ct.dv.ten_dich_vu : ''}]]*/ '',
         donVi: /*[[${ct.dv != null ? ct.dv.donVi : ''}]]*/ '',
-        giaDonVi: /*[[${ct.dv != null ? ct.dv.gia : 0}]]*/ 0,
+        // giaDonVi: uu tien lay tu chinh so tien da luu tren dong dich vu (ct.donGia)
+        // khi so luong = 1 (dung cho cac dong phu thu tu dong tao, vi du "Phu thu nhan
+        // phong som"/"Phu thu tra phong muon" - dich_vu goc co gia = 0 nen KHONG the
+        // dung dv.gia, neu khong tong tien dich vu se bi tinh sai thanh 0). Voi cac dich
+        // vu thuong (so luong > 1, gia lay tu danh muc), giu nguyen hanh vi cu la dv.gia.
+        giaDonVi: /*[[${ct.soluong != null and ct.soluong == 1 and ct.donGia != null ? ct.donGia : (ct.dv != null ? ct.dv.gia : 0)}]]*/ 0,
         soLuong: /*[[${ct.soluong != null ? ct.soluong : 1}]]*/ 1,
         ngaySuDung: /*[[${ct.ngay_su_dung != null ? #temporals.format(ct.ngay_su_dung, 'yyyy-MM-dd''T''HH:mm') : ''}]]*/ '',
         // Phân biệt dịch vụ thường / phát sinh dựa theo loại dịch vụ trong danh mục (Dich_vu.loaiDv = PHAT_SINH).
@@ -1256,11 +1463,9 @@
 
     function veLaiBangDichVu() {
         const tbody = document.getElementById('dvTableBody');
-        const emptyRow = document.getElementById('dvEmptyRow');
         const countLabel = document.getElementById('dvCountLabel');
 
         countLabel.textContent = dsDichVu.length + ' dịch vụ';
-        emptyRow.style.display = dsDichVu.length === 0 ? 'block' : 'none';
         tbody.innerHTML = '';
 
         dsDichVu.forEach(dv => {
@@ -1594,6 +1799,14 @@
 
             document.getElementById('dpSoPhongDoi').textContent = soPhongDoi;
 
+            // Cac truong "Ly do doi phong" mac dinh readonly/disabled; chi mo khoa
+            // khi co it nhat 1 checkbox doi phong duoc tick (HIGH).
+            const lyDoLoaiEl = document.getElementById('lyDoDoiLoai');
+            const lyDoChiTietEl = document.getElementById('lyDoDoiChiTiet');
+            const coDongTick = soPhongDoi > 0;
+            lyDoLoaiEl.disabled = !coDongTick;
+            lyDoChiTietEl.readOnly = !coDongTick;
+
             const totalEl = document.getElementById('dpTongChenhLech');
             totalEl.textContent = (tongChenhLech > 0 ? '+' : '') + fmtVnd(tongChenhLech);
             totalEl.classList.remove('positive', 'negative');
@@ -1699,6 +1912,338 @@
         });
 
         capNhatTatCa();
+    })();
+</script>
+
+<!-- ============================================================
+     Calendar chon "Ngày nhận / trả phòng" - dung lai y het logic
+     RoomAvailabilityCalendar + kiem tra overlap cua sidebar
+     "Lên lịch đặt phòng" (so-do-phong.html), CHI KHAC 1 diem:
+     khi kiem tra overlap, LOAI TRU chinh don dang xem (id ===
+     CDP_DAT_PHONG_ID) khoi danh sach khoa cua tung phong, vi doi
+     lai ngay cho chinh don nay khong the coi la "trung lich voi
+     chinh no" - miem la khong trung voi 1 don KHAC nao khac.
+     ============================================================ -->
+<script th:inline="javascript">
+    var CDP_BOOKINGS = [(${bookingsByRoomJson})];
+    var CDP_DAT_PHONG_ID = /*[[${datPhong != null ? datPhong.id : 0}]]*/ 0;
+</script>
+<script>
+    (function () {
+        var VN_MONTHS = ['Th1', 'Th2', 'Th3', 'Th4', 'Th5', 'Th6', 'Th7', 'Th8', 'Th9', 'Th10', 'Th11', 'Th12'];
+
+        function formatDisplay(d) {
+            return d.getDate() + ' ' + VN_MONTHS[d.getMonth()] + ', ' + d.getFullYear();
+        }
+        function toISO(d) {
+            var y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, '0'), day = String(d.getDate()).padStart(2, '0');
+            return y + '-' + m + '-' + day;
+        }
+        function startOfDay(d) { return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
+        function sameDay(a, b) { return !!a && !!b && a.toDateString() === b.toDateString(); }
+        function parseDt(s) {
+            if (!s) return null;
+            var d = new Date(s);
+            return isNaN(d.getTime()) ? null : d;
+        }
+
+        // Giong TRANG_THAI_DON_BI_KHOA ben so-do-phong.html.
+        var TRANG_THAI_DON_BI_KHOA = ['Yeu cau dat phong', 'Da nhan phong', 'Cho xac nhan', 'Da xac nhan'];
+        function laTrangThaiBiKhoa(t) { return TRANG_THAI_DON_BI_KHOA.indexOf(t) !== -1; }
+
+        // Danh sach ma phong dang dung trong don nay (co the nhieu phong).
+        function getMaPhongTrongDon() {
+            return Array.prototype.slice.call(document.querySelectorAll('.room-row[data-ma-phong]'))
+                .map(function (el) { return el.getAttribute('data-ma-phong'); })
+                .filter(function (v) { return v && v !== '0'; });
+        }
+
+        // Hop nhat khoang bi khoa cua TAT CA phong trong don (ngay moi phai hop le
+        // cho moi phong cua don), NHUNG loai tru chinh don dang xem (id ===
+        // CDP_DAT_PHONG_ID) - day la diem khac duy nhat so voi buildLockedRanges
+        // ben sidebar "Lên lịch đặt phòng".
+        function buildLockedRanges() {
+            var ranges = [];
+            getMaPhongTrongDon().forEach(function (maPhong) {
+                var list = (CDP_BOOKINGS && CDP_BOOKINGS[maPhong]) ? CDP_BOOKINGS[maPhong] : [];
+                list.forEach(function (b) {
+                    if (String(b.id) === String(CDP_DAT_PHONG_ID)) return; // bo qua chinh don nay
+                    if (!laTrangThaiBiKhoa(b.trangThai)) return;
+                    var ci = parseDt(b.checkin), co = parseDt(b.checkout);
+                    if (!ci || !co) return;
+                    ranges.push({ start: startOfDay(ci), end: startOfDay(co) });
+                });
+            });
+            return ranges;
+        }
+
+        /** Ban rut gon giong het RoomAvailabilityCalendar ben so-do-phong.html. */
+        function RoomAvailabilityCalendar(options) {
+            this.calendarEl = document.getElementById(options.calendarElId);
+            this.onChange = typeof options.onChange === 'function' ? options.onChange : function () {};
+            this.minDate = startOfDay(options.minDate || new Date());
+            this.lockedRanges = options.lockedRanges || [];
+            this.startDate = null;
+            this.endDate = null;
+            this.calendar = null;
+            this._init();
+        }
+        RoomAvailabilityCalendar.prototype._init = function () {
+            if (!this.calendarEl || typeof FullCalendar === 'undefined') return;
+            var self = this;
+            this.calendar = new FullCalendar.Calendar(this.calendarEl, {
+                initialView: 'dayGridMonth',
+                locale: 'vi',
+                duration: { months: 2 },
+                headerToolbar: { left: 'prev', center: 'title', right: 'next' },
+                height: 'auto',
+                fixedWeekCount: false,
+                validRange: { start: toISO(this.minDate) },
+                dateClick: function (info) { self._handleDateClick(info.date); },
+                dayCellClassNames: function (arg) { return self._dayCellClassNames(arg.date); }
+            });
+            this.calendar.render();
+        };
+        RoomAvailabilityCalendar.prototype._isDisabled = function (date) {
+            // Nua-mo [start, end): ngay TRA phong (r.end) khong bi khoa - khach
+            // moi co the NHAN phong dung ngay do (turnover cung ngay), miem la
+            // khong giao thuc su ve gio.
+            return this.lockedRanges.some(function (r) { return date >= r.start && date < r.end; });
+        };
+        RoomAvailabilityCalendar.prototype._coKhoangBiKhoaGiua = function (start, end) {
+            var cursor = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+            var cuoi = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+            while (cursor < cuoi) {
+                cursor.setDate(cursor.getDate() + 1);
+                if (this._isDisabled(cursor)) return true;
+            }
+            return false;
+        };
+        RoomAvailabilityCalendar.prototype._handleDateClick = function (clickedRaw) {
+            var clicked = startOfDay(clickedRaw);
+            if (clicked < this.minDate) return;
+            if (this._isDisabled(clicked)) return;
+
+            if (!this.startDate || (this.startDate && this.endDate)) {
+                this.startDate = clicked;
+                this.endDate = null;
+            } else if (clicked <= this.startDate) {
+                this.startDate = clicked;
+                this.endDate = null;
+            } else {
+                if (this._coKhoangBiKhoaGiua(this.startDate, clicked)) return;
+                this.endDate = clicked;
+            }
+            if (this.calendar) this.calendar.render();
+            this.onChange(this.startDate, this.endDate);
+        };
+        RoomAvailabilityCalendar.prototype._dayCellClassNames = function (dateRaw) {
+            var date = startOfDay(dateRaw);
+            var classes = [];
+            var isStart = this.startDate && sameDay(date, this.startDate);
+            var isEnd = this.endDate && sameDay(date, this.endDate);
+            var isMid = this.startDate && this.endDate && date > this.startDate && date < this.endDate;
+            var isOnly = this.startDate && !this.endDate && sameDay(date, this.startDate);
+            if (isStart) classes.push('drp-range-start');
+            if (isEnd) classes.push('drp-range-end');
+            if (isMid) classes.push('drp-range-mid');
+            if (isOnly) classes.push('drp-range-only');
+            if (this._isDisabled(date)) classes.push('drp-day-fully-booked');
+            return classes;
+        };
+        RoomAvailabilityCalendar.prototype.setLockedRanges = function (ranges) {
+            this.lockedRanges = ranges || [];
+            if (this.calendar) this.calendar.render();
+        };
+        RoomAvailabilityCalendar.prototype.setSelection = function (start, end) {
+            this.startDate = start ? startOfDay(start) : null;
+            this.endDate = end ? startOfDay(end) : null;
+            if (this.calendar) this.calendar.render();
+        };
+        RoomAvailabilityCalendar.prototype.reset = function () {
+            this.startDate = null;
+            this.endDate = null;
+            if (this.calendar) this.calendar.render();
+            this.onChange(null, null);
+        };
+        RoomAvailabilityCalendar.prototype.refresh = function () {
+            var cal = this.calendar;
+            if (cal) requestAnimationFrame(function () { cal.updateSize(); });
+        };
+
+        // ============ Wiring ============
+        var datesRow = document.getElementById('cdpDatesRow');
+        var calWrap = document.getElementById('cdpCalWrap');
+        var checkinField = document.getElementById('cdpCheckinField');
+        var checkoutField = document.getElementById('cdpCheckoutField');
+        var checkinDisplay = document.getElementById('cdpCheckinDisplay');
+        var checkoutDisplay = document.getElementById('cdpCheckoutDisplay');
+        var ngayError = document.getElementById('cdpNgayError');
+        var ngayNhanHidden = document.getElementById('ngayNhan');
+        var ngayTraHidden = document.getElementById('ngayTra');
+        var gioNhanEl = document.getElementById('gioNhan');
+        var gioTraEl = document.getElementById('gioTra');
+
+        if (!datesRow || !ngayNhanHidden || !ngayTraHidden) return; // trang khac / khong co panel nay
+
+        function clearError() {
+            datesRow.classList.remove('has-error');
+            if (ngayError) { ngayError.classList.remove('show'); ngayError.textContent = ''; }
+        }
+        function showError(msg) {
+            datesRow.classList.add('has-error');
+            if (ngayError) { ngayError.textContent = msg; ngayError.classList.add('show'); }
+        }
+
+        function ngayBatDauCuaHomNay() {
+            var now = new Date();
+            return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        }
+        function laNgayQuaKhu(dateObj) {
+            if (!dateObj || isNaN(dateObj.getTime())) return false;
+            return startOfDay(dateObj) < ngayBatDauCuaHomNay();
+        }
+        function timOverlapVoiPhong(d1, d2, ranges) {
+            for (var i = 0; i < ranges.length; i++) {
+                var r = ranges[i];
+                // Nua-mo [r.start, r.end): d1 (nhan phong moi) == r.end (tra
+                // phong cu) la hop le (turnover cung ngay). KHONG cong them
+                // 23:59:59 nhu truoc.
+                if (d1 < r.end && d2 > r.start) return r;
+            }
+            return null;
+        }
+
+        // Tach phan ngay (yyyy-MM-dd) va gio (HH:mm) tu 1 chuoi datetime-local.
+        function splitDateTime(v) {
+            if (!v) return { date: '', time: '' };
+            var parts = v.split('T');
+            return { date: parts[0] || '', time: parts[1] || '' };
+        }
+
+        var picker = new RoomAvailabilityCalendar({
+            calendarElId: 'cdpCalendar',
+            minDate: new Date(),
+            lockedRanges: buildLockedRanges(),
+            onChange: function (start, end) {
+                if (start) {
+                    checkinDisplay.textContent = formatDisplay(start);
+                    checkinDisplay.classList.remove('placeholder');
+                } else {
+                    checkinDisplay.textContent = 'Chọn ngày';
+                    checkinDisplay.classList.add('placeholder');
+                }
+                if (end) {
+                    checkoutDisplay.textContent = formatDisplay(end);
+                    checkoutDisplay.classList.remove('placeholder');
+                } else {
+                    checkoutDisplay.textContent = 'Chọn ngày';
+                    checkoutDisplay.classList.add('placeholder');
+                }
+                capNhatHiddenTuPicker();
+                kiemTraNgay();
+                if (start && end) calWrap.classList.remove('open');
+            }
+        });
+
+        // Ghep lai ngay (tu calendar) + gio (tu gioNhan/gioTra) thanh datetime-local
+        // roi ghi vao 2 input hidden ngayNhan/ngayTra (dung name de submit len server),
+        // dong thoi ban 'change' de toan bo logic tinh tien / dich vu (co san ben
+        // script chinh) tu dong chay lai giong nhu khi nguoi dung sua datetime-local truc tiep.
+        function capNhatHiddenTuPicker() {
+            var gio1 = (gioNhanEl && gioNhanEl.value) ? gioNhanEl.value : '00:00';
+            var gio2 = (gioTraEl && gioTraEl.value) ? gioTraEl.value : '00:00';
+            var v1 = picker.startDate ? (toISO(picker.startDate) + 'T' + gio1) : '';
+            var v2 = picker.endDate ? (toISO(picker.endDate) + 'T' + gio2) : '';
+            if (ngayNhanHidden.value !== v1) {
+                ngayNhanHidden.value = v1;
+                ngayNhanHidden.dispatchEvent(new Event('change'));
+            }
+            if (ngayTraHidden.value !== v2) {
+                ngayTraHidden.value = v2;
+                ngayTraHidden.dispatchEvent(new Event('change'));
+            }
+        }
+
+        function kiemTraNgay() {
+            clearError();
+            if (!picker.startDate || !picker.endDate) {
+                showError('Vui lòng chọn cả ngày nhận và ngày trả phòng.');
+                return { ok: false };
+            }
+            var d1 = picker.startDate, d2 = picker.endDate;
+
+            if (laNgayQuaKhu(d1)) {
+                showError('Ngày nhận phòng không được là ngày trong quá khứ.');
+                return { ok: false };
+            }
+            var diffDays = Math.round((d2 - d1) / 86400000);
+            if (diffDays < 1) {
+                showError('Ngày trả phòng phải cách ngày nhận phòng ít nhất 1 ngày.');
+                return { ok: false };
+            }
+
+            var trung = timOverlapVoiPhong(d1, d2, buildLockedRanges());
+            if (trung) {
+                showError('Phòng đã có lịch đặt (đơn khác) từ ' + formatDisplay(trung.start) + ' đến ' +
+                    formatDisplay(trung.end) + '. Vui lòng chọn khoảng ngày khác.');
+                return { ok: false };
+            }
+            return { ok: true };
+        }
+
+        function toggleCalendar() {
+            var willOpen = !calWrap.classList.contains('open');
+            calWrap.classList.toggle('open', willOpen);
+            checkinField.classList.toggle('active', willOpen);
+            checkoutField.classList.toggle('active', willOpen);
+            if (willOpen) requestAnimationFrame(function () { picker.refresh(); });
+        }
+        checkinField.addEventListener('click', toggleCalendar);
+        checkoutField.addEventListener('click', toggleCalendar);
+        var calClearBtn = document.getElementById('cdpCalClear');
+        var calApplyBtn = document.getElementById('cdpCalApply');
+        if (calClearBtn) calClearBtn.addEventListener('click', function () { picker.reset(); capNhatHiddenTuPicker(); clearError(); });
+        if (calApplyBtn) calApplyBtn.addEventListener('click', function () { calWrap.classList.remove('open'); });
+
+        if (gioNhanEl) gioNhanEl.addEventListener('change', capNhatHiddenTuPicker);
+        if (gioTraEl) gioTraEl.addEventListener('change', capNhatHiddenTuPicker);
+
+        // Khoi tao tu gia tri hien co cua don (hidden ngayNhan/ngayTra da duoc
+        // Thymeleaf render san tu datPhong).
+        (function initTuGiaTriHienCo() {
+            var dt1 = splitDateTime(ngayNhanHidden.value);
+            var dt2 = splitDateTime(ngayTraHidden.value);
+            if (gioNhanEl) gioNhanEl.value = dt1.time || '08:00';
+            if (gioTraEl) gioTraEl.value = dt2.time || '12:00';
+
+            var start = dt1.date ? parseDt(dt1.date + 'T00:00:00') : null;
+            var end = dt2.date ? parseDt(dt2.date + 'T00:00:00') : null;
+            picker.setSelection(start, end);
+            if (start) { checkinDisplay.textContent = formatDisplay(start); checkinDisplay.classList.remove('placeholder'); }
+            if (end) { checkoutDisplay.textContent = formatDisplay(end); checkoutDisplay.classList.remove('placeholder'); }
+        })();
+
+        document.addEventListener('click', function (e) {
+            if (calWrap.classList.contains('open') && !calWrap.contains(e.target)
+                    && !checkinField.contains(e.target) && !checkoutField.contains(e.target)) {
+                calWrap.classList.remove('open');
+            }
+        });
+
+        // Chan luu don neu vi pham chinh sach ngay / lich cua phong (giong sidebar
+        // "Lên lịch đặt phòng"), CHI KHAC o cho buildLockedRanges() da loai tru
+        // san chinh don dang xem.
+        if (chiTietFormEl) {
+            chiTietFormEl.addEventListener('submit', function (e) {
+                if (!kiemTraNgay().ok) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    calWrap.classList.add('open');
+                    requestAnimationFrame(function () { picker.refresh(); });
+                }
+            });
+        }
     })();
 </script>
 </body>

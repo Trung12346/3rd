@@ -55,6 +55,10 @@ public class DatPhongService {
         return repo.findByTrangThaiAndNgayTaoBefore(trangThai, ngay);
     }
 
+    public List<DatPhong> findByTrangThai(String trangThai) {
+        return repo.findByTrangThai(trangThai);
+    }
+
     public void delete(DatPhong dp) {
         repo.delete(dp);
     }
@@ -121,7 +125,7 @@ public class DatPhongService {
             }
 
             if (maNhanVien != null && (dp.getNv() == null || !maNhanVien.equals(dp.getNv().getId()))) return false;
-//            if (ma_cccd != null && !ma_cccd.isEmpty() && !ma_cccd.equals(dp.getMa_cccd())) return false;
+            if (ma_cccd != null && !ma_cccd.isEmpty() && !ma_cccd.equals(dp.getMa_cccd())) return false;
             if (soNguoiLon != null && !soNguoiLon.equals(dp.getSonguoiLon())) return false;
             if (soTreEm != null && !soTreEm.equals(dp.getSotreEm())) return false;
             if (trangThai != null && !trangThai.isEmpty() && !trangThai.equals(dp.getTrangThai())) return false;
@@ -307,7 +311,6 @@ public class DatPhongService {
             chiTiet.setGiaKhiDat(giaKhiDat);
             chiTiet.setPhuPhi(phuPhi);
             chiTiet.setD(datPhong);
-            chiTiet.setMa_cccd(maCccd);
             chiTietDatPhongService.save(chiTiet);
             chiTietList.add(chiTiet);
         }

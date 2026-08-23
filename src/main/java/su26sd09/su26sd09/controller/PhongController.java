@@ -651,7 +651,6 @@ public class PhongController {
         ctdp.setP(phong);
         ctdp.setGiaMoiDem(phong.getGiaMoiDem());
         ctdp.setGiaKhiDat(phong.getGiaMoiDem().multiply(BigDecimal.valueOf(soDem)).add(phuPhiNgoaiGio));
-        ctdp.setMa_cccd(ma_cccd);
         ctdp.setPhuPhi(phuPhiNgoaiGio);
         chiTietDatPhongService.save(ctdp);
 
