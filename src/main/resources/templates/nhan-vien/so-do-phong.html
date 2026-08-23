@@ -12,7 +12,7 @@
         *, *::before, *::after { box-sizing: border-box; }
         body { background: linear-gradient(180deg, #f3f7fb 0%, #eef2f7 100%); font-family: 'Montserrat', sans-serif; }
 
-        .sdp-shell { margin: 0 auto; width: 85vw; max-width: 1800px; padding: 32px; }
+        .sdp-shell { margin: 0 auto auto 100px !important; width: 85vw; max-width: 1800px; padding: 32px; }
 
         .sdp-header {
             display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px; flex-wrap: wrap; gap: 14px;
@@ -46,6 +46,78 @@
         .icon-cleaning { background: linear-gradient(135deg, #fbbf24, #d97706); }
         .icon-maintenance { background: linear-gradient(135deg, #f87171, #dc2626); }
 
+        .sdp-view-switch {
+            display: flex; align-items: center; gap: 8px;
+            background: rgba(255,255,255,0.14); border: 1px solid rgba(255,255,255,0.26);
+            border-radius: 12px; padding: 8px 14px;
+        }
+        .sdp-view-switch label { color: #fff; font-size: 12.5px; font-weight: 600; }
+        .sdp-view-switch select {
+            border: none; border-radius: 8px; padding: 6px 10px; font-size: 13px;
+            font-weight: 600; color: #1f2937; background: #fff; cursor: pointer;
+        }
+
+        .sdp-list-table-wrap { overflow-x: auto; }
+        .sdp-list-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+        .sdp-list-table th, .sdp-list-table td {
+            padding: 10px 14px; text-align: left; border-bottom: 1px solid #e2e8f0;
+        }
+        .sdp-list-table th {
+            background: #f8fafc; color: #475569; font-weight: 700; font-size: 12px;
+            text-transform: uppercase; letter-spacing: .3px;
+        }
+        .sdp-list-table tbody tr:hover { background: #f0f9ff; }
+        .sdp-list-cancel-btn {
+            background:#fdedec; color:#e74c3c; border:1px solid #f1948a; border-radius:8px;
+            padding:6px 12px; font-size:12.5px; font-weight:600; cursor:pointer;
+            display:inline-flex; align-items:center; gap:6px;
+        }
+        .sdp-list-cancel-btn:hover { background:#fadbd8; }
+
+        /* Modal: xác nhận hủy đơn (chính sách hoàn tiền) — dùng chung style với modal khách hàng */
+        .sdp-cancel-modal-overlay {
+            display:none; position:fixed; inset:0; background:rgba(15,23,42,0.45);
+            z-index:1000; align-items:center; justify-content:center; padding:16px;
+        }
+        .sdp-cancel-modal-box {
+            background:#fff; border-radius:16px; max-width:480px; width:100%;
+            box-shadow:0 20px 50px rgba(15,23,42,0.25); overflow:hidden;
+        }
+        .sdp-cancel-modal-header {
+            display:flex; align-items:center; gap:10px; padding:18px 22px;
+            border-bottom:1px solid #e2e8f0;
+        }
+        .sdp-cancel-modal-header h3 { font-size:15px; margin:0; flex:1; color:#1f2937; }
+        .sdp-cancel-modal-close { background:none; border:none; font-size:20px; cursor:pointer; color:#94a3b8; }
+        .sdp-cancel-modal-body { padding:20px 22px; }
+        .sdp-cancel-policy-table { width:100%; border-collapse:collapse; font-size:13px; margin-bottom:12px; }
+        .sdp-cancel-policy-table th, .sdp-cancel-policy-table td {
+            padding:8px 10px; text-align:left; border-bottom:1px solid #e2e8f0;
+        }
+        .sdp-cancel-policy-table th { background:#f8fafc; color:#475569; font-size:11.5px; text-transform:uppercase; }
+        .sdp-cancel-policy-table tr.tier-active td { background:#fff7ed; font-weight:700; color:#c2410c; }
+        .sdp-cancel-refund-summary { background:#f8fafc; border-radius:10px; padding:12px 14px; margin-top:6px; }
+        .sdp-cancel-refund-row { display:flex; justify-content:space-between; font-size:13px; padding:4px 0; }
+        .sdp-cancel-refund-highlight strong { color:#0ea5c7; font-size:15px; }
+        .sdp-cancel-modal-footer {
+            display:flex; justify-content:flex-end; gap:10px; padding:16px 22px;
+            border-top:1px solid #e2e8f0; background:#f8fafc;
+        }
+        .sdp-btn-secondary {
+            background:#fff; border:1px solid #cbd5e1; color:#475569; border-radius:8px;
+            padding:8px 16px; font-size:13px; font-weight:600; cursor:pointer;
+        }
+        .sdp-btn-danger {
+            background:#e74c3c; border:1px solid #e74c3c; color:#fff; border-radius:8px;
+            padding:8px 16px; font-size:13px; font-weight:600; cursor:pointer;
+        }
+        .sdp-btn-danger:disabled { opacity:.6; cursor:not-allowed; }
+        .sdp-cancel-alert-error {
+            background:#fdedec; border:1px solid #f1948a; color:#c0392b; border-radius:8px;
+            padding:10px 12px; font-size:13px;
+        }
+
+
         /* Layout: side floor tabs + room grid */
         .sdp-layout {
             display: grid; grid-template-columns: 190px 1fr; gap: 20px; align-items: start;
@@ -77,9 +149,10 @@
 
         .sdp-panel {
             background: #fff; border: 1px solid #e2e8f0; border-radius: 16px;
-            box-shadow: 0 4px 20px rgba(15,23,42,0.06); padding: 24px; min-height: 420px;
+            box-shadow: 0 4px 20px rgba(15,23,42,0.06); padding: 0 24px 24px 24px; min-height: 420px;
         }
         .sdp-panel-title {
+            margin-top: 25px;
             display: flex; align-items: center; justify-content: space-between;
             margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px solid #e5e7eb;
         }
@@ -820,9 +893,17 @@
                 </span>
             </span>
         </div>
+
+        <div class="sdp-view-switch">
+            <label for="sdpViewMode">Hiển thị</label>
+            <select id="sdpViewMode" onchange="sdpSwitchView(this.value)">
+                <option value="layout">Sơ đồ phòng</option>
+                <option value="list">Danh sách đặt phòng</option>
+            </select>
+        </div>
     </div>
 
-    <div class="sdp-layout">
+    <div class="sdp-layout" id="sdpViewLayout">
 
         <!-- Side tabs: switch between floors -->
         <div class="sdp-floor-tabs" id="sdpFloorTabs">
@@ -903,11 +984,145 @@
             </div>
         </div>
     </div>
+
+    <!-- Chế độ xem: Danh sách đặt phòng (chỉ hiển thị, chưa có thao tác) -->
+    <div class="sdp-panel" id="sdpViewList" style="display:none;">
+        <div class="sdp-panel-title">
+            <h2>Danh sách đặt phòng</h2>
+            <span th:text="${dsDatPhongList.size()} + ' đơn'">0 đơn</span>
+        </div>
+
+        <div class="sdp-list-table-wrap">
+            <table class="sdp-list-table">
+                <thead>
+                <tr>
+                    <th>Mã đơn</th>
+                    <th>Khách hàng</th>
+                    <th>SĐT</th>
+                    <th>Phòng</th>
+                    <th>Nhận phòng</th>
+                    <th>Trả phòng</th>
+                    <th>Trạng thái</th>
+                    <th>Thao tác</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="dp : ${dsDatPhongList}">
+                    <td th:text="'#' + ${dp.id}">#1</td>
+                    <td th:text="${dp.hoten}">Nguyễn Văn A</td>
+                    <td th:text="${dp.sdt}">0900000000</td>
+                    <td>
+                        <span th:each="p, iter : ${phongTheoDonSoDo.get(dp.id)}"
+                              th:text="'P' + ${p.soPhong} + (${iter.last} ? '' : ', ')">P101</span>
+                    </td>
+                    <td th:text="${dp.ngaydatPhong != null ? #temporals.format(dp.ngaydatPhong, 'dd/MM/yyyy HH:mm') : '—'}">—</td>
+                    <td th:text="${dp.ngaytraPhong != null ? #temporals.format(dp.ngaytraPhong, 'dd/MM/yyyy HH:mm') : '—'}">—</td>
+                    <td th:text="${dp.trangThai}">—</td>
+                    <td>
+                        <button th:if="${dp.trangThai == 'Yeu cau dat phong' || dp.trangThai == 'Cho xac nhan' || dp.trangThai == 'Da xac nhan'}"
+                                type="button" class="sdp-list-cancel-btn"
+                                th:attr="onclick=|sdpOpenCancelModal(${dp.id})|">
+                            <i class="fa-solid fa-ban"></i> Huỷ đơn
+                        </button>
+                        <span th:if="${dp.trangThai == 'Da nhan phong'}" style="color:var(--text-gray,#6b7280); font-size:12px;">Đang ở — không thể huỷ</span>
+                    </td>
+                </tr>
+                <tr th:if="${dsDatPhongList.isEmpty()}">
+                    <td colspan="8" class="sdp-empty-msg">Chưa có đơn đặt phòng nào.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
 </main>
+
+<!-- ==================== MODAL: XÁC NHẬN HỦY ĐƠN (nhân viên) ====================
+     Bấm "Huỷ đơn" chỉ mở modal xem trước chính sách hoàn tiền. Hủy thật sự chỉ
+     diễn ra khi bấm "Xác nhận hủy đơn" — submit sang /nhan-su/dat-phong/cancel,
+     controller dùng lại đúng luồng HuyDonService.huyDon() rồi tự điều hướng sang
+     trang xử lý Hoàn tiền (/nhan-su/hoan-tien/chi-tiet/{id}) nếu có phát sinh hoàn. -->
+<div id="sdpCancelBookingOverlay" class="sdp-cancel-modal-overlay">
+    <div class="sdp-cancel-modal-box">
+        <div class="sdp-cancel-modal-header">
+            <i class="fa-solid fa-triangle-exclamation" style="color:#e74c3c;"></i>
+            <h3>Xác nhận hủy đơn <span id="sdpCancelModalMaDon"></span></h3>
+            <button type="button" class="sdp-cancel-modal-close" onclick="sdpCloseCancelModal()">&times;</button>
+        </div>
+
+        <div class="sdp-cancel-modal-body">
+            <div id="sdpCancelModalLoading" style="text-align:center; padding:20px 0;">
+                <i class="fa-solid fa-spinner fa-spin"></i> Đang tải chính sách hoàn tiền...
+            </div>
+
+            <div id="sdpCancelModalError" class="sdp-cancel-alert-error" style="display:none;"></div>
+
+            <div id="sdpCancelModalContent" style="display:none;">
+                <p style="margin:0 0 12px; font-size:13px; color:#475569;">
+                    Vui lòng đọc kỹ chính sách hoàn tiền trước khi xác nhận hủy. Yêu cầu hủy sẽ được
+                    ghi nhận và đơn sẽ được chuyển sang bước xử lý hoàn tiền.
+                </p>
+
+                <table class="sdp-cancel-policy-table">
+                    <thead>
+                    <tr><th>Thời gian đến ngày nhận phòng</th><th>Tỷ lệ hoàn</th></tr>
+                    </thead>
+                    <tbody>
+                    <tr id="sdp-tier-tu5"><td>Từ 5 ngày trở lên</td><td>100% (miễn phí)</td></tr>
+                    <tr id="sdp-tier-3-4"><td>Từ 3 đến dưới 5 ngày</td><td>50%</td></tr>
+                    <tr id="sdp-tier-duoi3"><td>Dưới 3 ngày</td><td>0%</td></tr>
+                    </tbody>
+                </table>
+                <p style="font-size:12px; color:#94a3b8; margin:0 0 12px;">
+                    * Đơn có áp dụng khuyến mại sẽ không thể hủy.
+                </p>
+
+                <div class="sdp-cancel-refund-summary">
+                    <div class="sdp-cancel-refund-row">
+                        <span>Đã thanh toán:</span>
+                        <strong id="sdpCancelSoTienDaThanhToan">—</strong>
+                    </div>
+                    <div class="sdp-cancel-refund-row">
+                        <span>Tỷ lệ hoàn áp dụng:</span>
+                        <strong id="sdpCancelTyLeHoan">—</strong>
+                    </div>
+                    <div class="sdp-cancel-refund-row sdp-cancel-refund-highlight">
+                        <span>Số tiền dự kiến được hoàn:</span>
+                        <strong id="sdpCancelSoTienHoan">—</strong>
+                    </div>
+                </div>
+
+                <p style="font-size:12px; color:#94a3b8; margin-top:12px;">
+                    * Sau khi xác nhận, nếu có phát sinh hoàn tiền bạn sẽ được chuyển sang
+                    trang xử lý Hoàn tiền để xác nhận phương thức và số tiền hoàn thực tế cho khách.
+                </p>
+            </div>
+        </div>
+
+        <div class="sdp-cancel-modal-footer">
+            <button type="button" class="sdp-btn-secondary" onclick="sdpCloseCancelModal()">
+                Đóng, giữ đơn
+            </button>
+            <button type="button" id="sdpCancelModalConfirmBtn" class="sdp-btn-danger" disabled
+                    onclick="sdpConfirmCancelBooking()">
+                <i class="fa-solid fa-ban"></i> Xác nhận hủy đơn
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Form ẩn dùng chung để submit yêu cầu hủy thật sự (tái sử dụng /nhan-su/dat-phong/cancel) -->
+<form id="sdpCancelBookingForm" th:action="@{/nhan-su/dat-phong/cancel}" method="post" style="display:none;">
+    <input type="hidden" name="id" id="sdpCancelBookingFormId">
+    <input type="hidden"
+           th:if="${_csrf != null}"
+           th:name="${_csrf.parameterName}"
+           th:value="${_csrf.token}"/>
+</form>
 
 <!-- Context menu cho ô phòng -->
 <div class="sdp-ctx-backdrop" id="sdpCtxBackdrop"></div>
 <div class="sdp-ctx-menu" id="sdpCtxMenu" role="menu"></div>
+
 
 <!-- Modal thông báo phụ thu nhận phòng sớm / trả phòng muộn -->
 <div class="sdp-policy-backdrop" id="sdpPolicyBackdrop"></div>
@@ -1176,6 +1391,112 @@
     })();
 </script>
 
+<script>
+    function sdpSwitchView(mode) {
+        var layoutEl = document.getElementById('sdpViewLayout');
+        var listEl = document.getElementById('sdpViewList');
+        if (mode === 'list') {
+            layoutEl.style.display = 'none';
+            listEl.style.display = 'block';
+        } else {
+            layoutEl.style.display = '';
+            listEl.style.display = 'none';
+        }
+    }
+</script>
+
+<!-- ==================== MODAL: XÁC NHẬN HỦY ĐƠN (nhân viên) - JS ==================== -->
+<script th:inline="javascript">
+    var SDP_URL_HUY_PREVIEW = /*[[@{/nhan-su/dat-phong/}]]*/ '/nhan-su/dat-phong/'; // + id + '/huy-preview'
+    var sdpCancelModalTargetId = null;
+
+    function sdpFormatVND(n) {
+        if (n === null || n === undefined || isNaN(n)) return '—';
+        return Number(n).toLocaleString('vi-VN') + ' đ';
+    }
+
+    function sdpHighlightRefundTier(soNgayConLai) {
+        ['sdp-tier-tu5', 'sdp-tier-3-4', 'sdp-tier-duoi3'].forEach(function (rid) {
+            var el = document.getElementById(rid);
+            if (el) el.classList.remove('tier-active');
+        });
+        if (soNgayConLai === null || soNgayConLai === undefined) return;
+        var activeId;
+        if (soNgayConLai >= 5) activeId = 'sdp-tier-tu5';
+        else if (soNgayConLai >= 3) activeId = 'sdp-tier-3-4';
+        else activeId = 'sdp-tier-duoi3';
+        var activeEl = document.getElementById(activeId);
+        if (activeEl) activeEl.classList.add('tier-active');
+    }
+
+    function sdpOpenCancelModal(maDatPhong) {
+        sdpCancelModalTargetId = maDatPhong;
+
+        document.getElementById('sdpCancelModalMaDon').textContent = '#' + maDatPhong;
+        document.getElementById('sdpCancelModalLoading').style.display = 'block';
+        document.getElementById('sdpCancelModalError').style.display = 'none';
+        document.getElementById('sdpCancelModalContent').style.display = 'none';
+        document.getElementById('sdpCancelModalConfirmBtn').disabled = true;
+        document.getElementById('sdpCancelBookingOverlay').style.display = 'flex';
+
+        fetch(SDP_URL_HUY_PREVIEW + maDatPhong + '/huy-preview', {
+            method: 'GET',
+            headers: { 'Accept': 'application/json' }
+        })
+            .then(function (resp) { return resp.json(); })
+            .then(function (data) {
+                document.getElementById('sdpCancelModalLoading').style.display = 'none';
+
+                if (!data.ok) {
+                    var errBox = document.getElementById('sdpCancelModalError');
+                    errBox.textContent = data.message || 'Không thể tải thông tin hủy đơn. Vui lòng thử lại.';
+                    errBox.style.display = 'block';
+                    return;
+                }
+
+                document.getElementById('sdpCancelSoTienDaThanhToan').textContent = sdpFormatVND(data.daThanhToan);
+                document.getElementById('sdpCancelTyLeHoan').textContent = data.tyLePhanTram + '%';
+                document.getElementById('sdpCancelSoTienHoan').textContent = sdpFormatVND(data.soTienHoanDuKien);
+                sdpHighlightRefundTier(data.soNgayConLaiDenCheckIn);
+
+                document.getElementById('sdpCancelModalContent').style.display = 'block';
+                document.getElementById('sdpCancelModalConfirmBtn').disabled = false;
+            })
+            .catch(function () {
+                document.getElementById('sdpCancelModalLoading').style.display = 'none';
+                var errBox = document.getElementById('sdpCancelModalError');
+                errBox.textContent = 'Có lỗi xảy ra khi tải thông tin hủy đơn. Vui lòng thử lại.';
+                errBox.style.display = 'block';
+            });
+    }
+
+    function sdpCloseCancelModal() {
+        sdpCancelModalTargetId = null;
+        document.getElementById('sdpCancelBookingOverlay').style.display = 'none';
+    }
+
+    // Chỉ khi bấm nút này bên trong modal thì yêu cầu hủy mới thực sự được gửi đi.
+    // Submit sang /nhan-su/dat-phong/cancel — controller tái sử dụng HuyDonService.huyDon()
+    // và tự điều hướng sang trang xử lý Hoàn tiền nếu có phát sinh hoàn.
+    function sdpConfirmCancelBooking() {
+        if (!sdpCancelModalTargetId) return;
+        var btn = document.getElementById('sdpCancelModalConfirmBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang xử lý...';
+
+        document.getElementById('sdpCancelBookingFormId').value = sdpCancelModalTargetId;
+        document.getElementById('sdpCancelBookingForm').submit();
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        var overlay = document.getElementById('sdpCancelBookingOverlay');
+        if (overlay) {
+            overlay.addEventListener('click', function (e) {
+                if (e.target === this) sdpCloseCancelModal();
+            });
+        }
+    });
+</script>
 <script th:inline="javascript">
     (function () {
         var CTX_URL_LICH_PHONG = /*[[@{/nhan-su/lich-phong}]]*/ '/nhan-su/lich-phong';
@@ -1313,6 +1634,7 @@
         var CTX_URL_CHECK_IN_API = /*[[@{/nhan-su/so-do-phong/check-in/}]]*/ '/nhan-su/so-do-phong/check-in/';
         var CTX_URL_CHECK_IN_NHOM_API = /*[[@{/nhan-su/so-do-phong/check-in-nhom/}]]*/ '/nhan-su/so-do-phong/check-in-nhom/';
         var CTX_URL_CHECK_OUT_API = /*[[@{/nhan-su/so-do-phong/check-out/}]]*/ '/nhan-su/so-do-phong/check-out/';
+        var CTX_URL_CHECK_OUT_NHOM_API = /*[[@{/nhan-su/so-do-phong/check-out-nhom/}]]*/ '/nhan-su/so-do-phong/check-out-nhom/';
         var CTX_URL_GIAYTO_INFO_SUFFIX = '/giay-to-info';
         var CTX_URL_GIAYTO_SAVE_SUFFIX = '/giay-to';
 
@@ -1540,14 +1862,22 @@
                 capNhatTrangThaiLoiGiayTo();
                 return;
             }
-            // Ngoai ra van con chan khi TONG toan don da du theo tong suc chua cac
-            // phong (truong hop cac phong khac da vuot buc chua thi khong the biet
-            // chan phong nao, nen chan chung o day, dong thoi "+ Thêm giấy tờ" tu
-            // bi khoa - xem capNhatTrangThaiLoiGiayTo).
-            var tongSucChua = tongSucChuaCuaDon();
-            if (tongSucChua && tongSoGiayToDaNhap() >= tongSucChua) {
-                capNhatTrangThaiLoiGiayTo();
-                return;
+            // Chan them khi TONG so giay to da dat toi SO NGUOI LON da dat cua don
+            // — day la GIOI HAN TONG chinh (khong phai tong suc chua cac phong).
+            var soNguoiLon = (giayToState && giayToState.soNguoiLon) || 0;
+            if (soNguoiLon) {
+                if (tongSoGiayToDaNhap() >= soNguoiLon) {
+                    capNhatTrangThaiLoiGiayTo();
+                    return;
+                }
+            } else {
+                // Fallback hiem gap: don khong co soNguoiLon -> tam dung tong suc
+                // chua cac phong de khong chan hoan toan viec check-in.
+                var tongSucChua = tongSucChuaCuaDon();
+                if (tongSucChua && tongSoGiayToDaNhap() >= tongSucChua) {
+                    capNhatTrangThaiLoiGiayTo();
+                    return;
+                }
             }
             var doc = {
                 localId: 'd' + (giayToDocSeq++),
@@ -1600,11 +1930,15 @@
         // Quy tac hien hanh (thay cho alert() cu):
         //  - Moi phong: dung 1 "Nguoi dai dien" — KHONG nhieu hon, KHONG it hon
         //    (kho khac ban cu: du phong chua co giay to nao van tinh la thieu).
-        //  - KHONG con gioi han so giay to THEO TUNG phong — chi con 1 gioi han
-        //    DUY NHAT cho TONG so giay to toan don, va gioi han do = tong suc
-        //    chua cua cac phong trong don (khong phai so nguoi lon).
+        //  - Moi phong: KHONG duoc vuot suc chua CUA CHINH PHONG DO (gioi han vat
+        //    ly, van giu de tranh 1 phong nhan qua nhieu nguoi).
+        //  - TONG so giay to toan don PHAI BANG SO NGUOI LON da dat cua don (KHONG
+        //    phai tong suc chua cac phong — truoc day dung nham chi so nay, khien
+        //    nut "Tiep tuc" doi hoi du theo suc chua phong thay vi so nguoi lon
+        //    thuc te, la 1 loi da duoc bao cao va sua o day).
         function tinhTrangThaiLoiGiayTo() {
             var tongSucChua = tongSucChuaCuaDon();
+            var soNguoiLon = giayToState.soNguoiLon || 0;
             var tongSoGiayTo = 0;
             var loiTheoPhong = {};   // chiTietId -> thong bao
             var docThieuTruong = {}; // localId -> true
@@ -1616,8 +1950,8 @@
                 if (soDaiDien !== 1) {
                     loiTheoPhong[phong.chiTietId] = 'Cần đúng 1 "Người đại diện" cho phòng này (hiện có ' + soDaiDien + ').';
                 } else if (phong.sucChua && phong.docs.length > phong.sucChua) {
-                    // Rieng phong nay da vuot suc chua cua chinh no (du tong don
-                    // chua chac da vuot) — van phai bao loi tai day de khoa Luu/Tiep tuc.
+                    // Rieng phong nay da vuot suc chua VAT LY cua chinh no — day
+                    // van la 1 gioi han hop le rieng, khac voi tong toan don ben duoi.
                     loiTheoPhong[phong.chiTietId] = 'Số giấy tờ (' + phong.docs.length + ') vượt quá sức chứa phòng (' + phong.sucChua + ').';
                 }
 
@@ -1628,16 +1962,30 @@
                 });
             });
 
+            // Gioi han TONG toan don: phai bang dung SO NGUOI LON da dat cua don
+            // (khong phai tong suc chua cac phong — 1 phong 3 cho van co the chi
+            // co 2 nguoi lon o, khong bat buoc phai nhap du 3 giay to).
             var loiTong = null;
-            if (tongSucChua && tongSoGiayTo !== tongSucChua) {
+            if (soNguoiLon) {
+                if (tongSoGiayTo !== soNguoiLon) {
+                    loiTong = 'Tổng số giấy tờ đã nhập (' + tongSoGiayTo + ') phải bằng số người lớn của đơn (' + soNguoiLon + ').';
+                }
+            } else if (tongSucChua && tongSoGiayTo !== tongSucChua) {
+                // Fallback hiem gap: don khong co thong tin so nguoi lon (du lieu
+                // cu/thieu) — tam thoi quay lai dung tong suc chua de khong chan
+                // hoan toan viec check-in, nhung day chi la truong hop du phong.
                 loiTong = 'Tổng số giấy tờ đã nhập (' + tongSoGiayTo + ') phải bằng tổng sức chứa các phòng đã đặt (' + tongSucChua + ').';
             }
 
+            // Da du so nguoi lon: dung de khoa nut "+ Them giay to" NGAY KHI dat
+            // toi soNguoiLon, thay vi cho nhap vuot roi moi bao loi qua loiTong.
+            var daDuNguoiLon = !!(soNguoiLon && tongSoGiayTo >= soNguoiLon);
+
             var hopLe = !loiTong && Object.keys(loiTheoPhong).length === 0 && Object.keys(docThieuTruong).length === 0;
             return {
-                tongSoGiayTo: tongSoGiayTo, tongSucChua: tongSucChua,
+                tongSoGiayTo: tongSoGiayTo, tongSucChua: tongSucChua, soNguoiLon: soNguoiLon,
                 loiTheoPhong: loiTheoPhong, docThieuTruong: docThieuTruong,
-                loiTong: loiTong, hopLe: hopLe
+                loiTong: loiTong, daDuNguoiLon: daDuNguoiLon, hopLe: hopLe
             };
         }
 
@@ -1651,9 +1999,11 @@
 
             var subtitleGoc = (giayToState.laNhom ? 'Cả đoàn — Đơn #' : 'Đơn #') + giayToState.maDatPhong +
                     ' — ' + giayToState.phongs.length + ' phòng — cần ' + giayToState.soNguoiLon + ' người lớn';
-            var tongLabel = tt.tongSucChua
-                    ? ('Đã nhập ' + tt.tongSoGiayTo + '/' + tt.tongSucChua + ' giấy tờ (theo tổng sức chứa các phòng đã đặt)')
-                    : ('Đã nhập ' + tt.tongSoGiayTo + ' giấy tờ');
+            var tongLabel = tt.soNguoiLon
+                    ? ('Đã nhập ' + tt.tongSoGiayTo + '/' + tt.soNguoiLon + ' giấy tờ (theo số người lớn của đơn)')
+                    : (tt.tongSucChua
+                            ? ('Đã nhập ' + tt.tongSoGiayTo + '/' + tt.tongSucChua + ' giấy tờ (theo tổng sức chứa các phòng đã đặt)')
+                            : ('Đã nhập ' + tt.tongSoGiayTo + ' giấy tờ'));
             var subtitleEl = document.getElementById('sdpGiayToSubtitle');
             if (subtitleEl) {
                 subtitleEl.innerHTML = subtitleGoc + '<br><span class="' +
@@ -1680,11 +2030,18 @@
                 if (addBox) {
                     var phongNay = timPhongTheoChiTiet(chiTietId);
                     var daDuPhong = !!(phongNay && phongNay.sucChua && phongNay.docs.length >= phongNay.sucChua);
-                    var daDuTong = !!(tt.tongSucChua && tt.tongSoGiayTo >= tt.tongSucChua);
-                    addBox.classList.toggle('disabled', daDuPhong || daDuTong);
+                    var daDuNguoiLon = !!tt.daDuNguoiLon;
+                    // Chi dung tongSucChua lam gioi han tong (fallback) khi don
+                    // KHONG co soNguoiLon — binh thuong gioi han tong la soNguoiLon.
+                    var daDuTongFallback = !tt.soNguoiLon && !!(tt.tongSucChua && tt.tongSoGiayTo >= tt.tongSucChua);
+                    addBox.classList.toggle('disabled', daDuPhong || daDuNguoiLon || daDuTongFallback);
                     addBox.title = daDuPhong
                             ? 'Phòng này đã đủ giấy tờ theo sức chứa (' + phongNay.sucChua + ').'
-                            : (daDuTong ? 'Đã đủ tổng số giấy tờ theo sức chứa các phòng của đơn.' : '');
+                            : (daDuNguoiLon
+                                    ? 'Đã đủ tổng số giấy tờ theo số người lớn của đơn (' + tt.soNguoiLon + ').'
+                                    : (daDuTongFallback
+                                            ? 'Đã đủ tổng số giấy tờ theo sức chứa các phòng của đơn.'
+                                            : ''));
                 }
             });
 
@@ -2308,6 +2665,45 @@
             });
         }
 
+        function xuLyCaDoanKhachTraPhong(card, don) {
+            if (!don) {
+                alert('Không tìm thấy đơn đang lưu trú tại phòng này.');
+                return;
+            }
+            thucHienTraPhongNhom(card, don, false);
+        }
+
+        // Nhu thucHienTraPhong nhung ap dung cho CA DOAN (nhieu phong cung 1 don):
+        // sau khi tra phong thanh cong, phai cap nhat trang thai TAT CA the phong
+        // duoc gan cho don nay, khong chi rieng the phong vua bam chuot phai vao.
+        function thucHienTraPhongNhom(card, don, xacNhan) {
+            var url = CTX_URL_CHECK_OUT_NHOM_API + don.id + (xacNhan ? '?xacNhan=true' : '');
+            goiApi(url).then(function (kq) {
+                if (!kq.ok) {
+                    alert(kq.loi || 'Không thể trả phòng cả đoàn.');
+                    return;
+                }
+                if (kq.viPham && !kq.daApDung) {
+                    moModalPhuThu(
+                            'Vi phạm chính sách trả phòng muộn (cả đoàn)',
+                            kq.moTaChinhSach,
+                            kq.soTien,
+                            'Nhấn "Đã hiểu" để xác nhận trả phòng cho cả đoàn và ghi khoản phụ thu vào chi tiết dịch vụ của đơn #' + don.id + '.',
+                            function () { thucHienTraPhongNhom(card, don, true); }
+                    );
+                    return;
+                }
+                don.trangThai = 'Da tra phong';
+                don.checkoutThuc = new Date().toISOString();
+                (kq.maPhongDaTra || []).forEach(function (maPhong) {
+                    var thePhong = document.querySelector('.sdp-room-cell[data-ma-phong="' + maPhong + '"]');
+                    if (thePhong) capNhatTrangThaiThePhong(thePhong, kq.trangThaiMoi);
+                });
+            }).catch(function () {
+                alert('Có lỗi xảy ra khi trả phòng cả đoàn, vui lòng thử lại.');
+            });
+        }
+
         function buildMenuItems(card) {
             var maPhong = card.getAttribute('data-ma-phong');
             var trangThai = card.getAttribute('data-trang-thai');
@@ -2332,7 +2728,11 @@
 
             var donDangO = tinDangSuDung(maPhong);
             if (donDangO && trangThai === 'Đang sử dụng') {
-                items.push({ label: 'Khách trả phòng', icon: 'fa-solid fa-right-from-bracket', action: function () { xuLyKhachTraPhong(card, donDangO); } });
+                if (donDangO.soPhong > 1) {
+                    items.push({ label: 'Cả đoàn khách trả phòng', icon: 'fa-solid fa-people-group', action: function () { xuLyCaDoanKhachTraPhong(card, donDangO); } });
+                } else {
+                    items.push({ label: 'Khách trả phòng', icon: 'fa-solid fa-right-from-bracket', action: function () { xuLyKhachTraPhong(card, donDangO); } });
+                }
             }
 
             if (trangThai === 'Trống' || trangThai === 'Đang dọn') {
