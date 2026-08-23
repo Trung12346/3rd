@@ -72,7 +72,8 @@ public interface DatPhongRepo extends JpaRepository<DatPhong,Integer> {
         'Cho xac nhan',
         'Da xac nhan',
         'Da nhan phong',
-        'Da tra phong'
+        'Da tra phong',
+        'Khach vang'
     )
     and exists (
         select 1

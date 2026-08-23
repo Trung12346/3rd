@@ -675,6 +675,23 @@
         }
         .sdp-lich-btn-luu:hover { background: linear-gradient(120deg, #1d8fbb, #176a92); }
 
+        /* Tom tat gia (hien ngay tren nut Luu) */
+        .sdp-lich-summary {
+            margin: 0 22px 14px; padding: 12px 14px; background: #f8fafc;
+            border: 1px solid #e5e7eb; border-radius: 10px; font-size: 13px;
+        }
+        .sdp-lich-summary-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 3px 0; color: #475569;
+        }
+        .sdp-lich-summary-row.total {
+            margin-top: 6px; padding-top: 8px; border-top: 1px dashed #cbd5e1;
+            font-size: 15px; font-weight: 800; color: #0f172a;
+        }
+        .sdp-lich-summary-hint {
+            font-size: 11px; color: #94a3b8; margin-top: 6px;
+        }
+
         /* ============ Sidebar "Xem đơn hiện tại" (nhung /nhan-su/dat-phong/chi-tiet/{id}) ============ */
         .sdp-don-sidebar {
             position: fixed; top: 0; right: -900px; width: 860px; max-width: 92vw; height: 100vh;
@@ -958,7 +975,10 @@
                             <div class="sdp-room-card__meta">
                                 <span class="sdp-capacity" th:if="${phong.loaiPhong != null}">
                                     <i class="fa-solid fa-user-group"></i>
-                                    <span th:text="${phong.loaiPhong.sucChuaToiDa} + ' khách'">2 khách</span>
+                                    <span th:if="${soNguoiLonHienTai.get(phong.maPhong) != null}"
+                                          th:text="${soNguoiLonHienTai.get(phong.maPhong)} + '/' + ${phong.loaiPhong.sucChuaToiDa} + ' khách'">1/2 khách</span>
+                                    <span th:unless="${soNguoiLonHienTai.get(phong.maPhong) != null}"
+                                          th:text="${phong.loaiPhong.sucChuaToiDa} + ' khách'">2 khách</span>
                                 </span>
                             </div>
 
@@ -1286,7 +1306,7 @@
                  khop dung voi ma_dich_vu that su khi luu xuong chi_tiet_dich_vu. -->
             <div class="sdp-lich-services" id="sdpLichServicesWrap">
                 <label class="sdp-lich-service-chip" th:each="dv : ${dichVuOptions}">
-                    <input type="checkbox" th:value="${dv.id}">
+                    <input type="checkbox" th:value="${dv.id}" th:attr="data-gia=${dv.gia}">
                     <span><i class="fa-solid fa-concierge-bell"></i>
                         <span th:text="${dv.ten_dich_vu}">Dịch vụ</span>
                     </span>
@@ -1320,6 +1340,34 @@
     </form>
 
     <div class="sdp-lich-field-error" id="sdpLichSubmitError" style="margin:0 20px 8px;"></div>
+
+    <!-- Tom tat gia: dung lai chinh xac cong thuc tinh tien phong + dich vu + VAT 10%
+         da co san o trang "Chi tiet dat phong" (tinhTongTien / BookingValidate), de
+         nhan vien thay ngay so tien du kien TRUOC khi bam Luu lich dat phong. -->
+    <div class="sdp-lich-summary" id="sdpLichSummary">
+        <div class="sdp-lich-summary-row">
+            <span>Số đêm</span>
+            <span id="sdpLichSumSoDem">--</span>
+        </div>
+        <div class="sdp-lich-summary-row">
+            <span>Tiền phòng</span>
+            <span id="sdpLichSumTienPhong">đ 0</span>
+        </div>
+        <div class="sdp-lich-summary-row">
+            <span>Tiền dịch vụ</span>
+            <span id="sdpLichSumTienDv">đ 0</span>
+        </div>
+        <div class="sdp-lich-summary-row">
+            <span>VAT (10%)</span>
+            <span id="sdpLichSumVat">đ 0</span>
+        </div>
+        <div class="sdp-lich-summary-row total">
+            <span>Tổng cộng</span>
+            <span id="sdpLichSumTongCong">đ 0</span>
+        </div>
+        <div class="sdp-lich-summary-hint">Chưa gồm khuyến mại (áp dụng khi lưu, nếu mã hợp lệ).</div>
+    </div>
+
     <div class="sdp-lich-footer">
         <button type="button" class="sdp-lich-btn sdp-lich-btn-huy" id="sdpLichHuyBtn">Hủy</button>
         <button type="button" class="sdp-lich-btn sdp-lich-btn-luu" id="sdpLichLuuBtn">Lưu lịch đặt phòng</button>
@@ -3332,6 +3380,7 @@
         var luuBtn = document.getElementById('sdpLichLuuBtn');
 
         var currentMaPhong = null;
+        var currentGiaMoiDem = 0;
         var picker = null;
 
         function ensurePicker() {
@@ -3361,6 +3410,7 @@
                     }
                     kiemTraNgay();
                     if (start && end) calWrap.classList.remove('open');
+                    tinhTongTienLenLich();
                 }
             });
             return picker;
@@ -3493,6 +3543,8 @@
             clearError(null, document.getElementById('sdpLichSoNguoiError'));
             dienLoiSubmit('');
             if (picker) picker.reset();
+            currentGiaMoiDem = 0;
+            tinhTongTienLenLich();
         }
 
         window.moLenLichDatPhong = function (card) {
@@ -3504,11 +3556,95 @@
             title.textContent = 'Lên lịch đặt phòng · ' + soPhong;
             subtitle.textContent = (loaiPhong ? loaiPhong + ' · ' : '') + 'Tầng ' + tang;
 
+            // Gioi han so nguoi theo suc chua toi da cua phong (khong cho nhap
+            // vuot qua ngay tu spinbox, thay vi chi bao loi luc bam Luu).
+            var infoPhong = (window.SDP_ROOM_INFO && window.SDP_ROOM_INFO[currentMaPhong]) || null;
+            var sucChua = infoPhong && infoPhong.loaiPhong ? infoPhong.loaiPhong.sucChuaToiDa : null;
+            var soNguoiLonEl = document.getElementById('sdpLichSoNguoiLon');
+            var soTreEmEl = document.getElementById('sdpLichSoTreEm');
+            if (sucChua != null && sucChua > 0) {
+                soNguoiLonEl.max = sucChua;
+                soTreEmEl.max = sucChua;
+            } else {
+                soNguoiLonEl.removeAttribute('max');
+                soTreEmEl.removeAttribute('max');
+            }
+
             ensurePicker().setLockedRanges(buildLockedRanges(currentMaPhong));
+            currentGiaMoiDem = infoPhong ? (parseFloat(infoPhong.gia) || 0) : 0;
+            tinhTongTienLenLich();
 
             sidebar.classList.add('open');
             backdrop.classList.add('open');
         };
+
+        /**
+         * Gioi han spinbox "So nguoi lon" / "So tre em" khong vuot qua suc chua toi
+         * da cua phong (tong 2 truong). Kep tai cho khi nguoi dung go/tang giam,
+         * bo sung cho validate luc bam Luu (giu nguyen validate do de an toan).
+         */
+        function kepSoNguoiTheoSucChua() {
+            var soNguoiLonEl = document.getElementById('sdpLichSoNguoiLon');
+            var soTreEmEl = document.getElementById('sdpLichSoTreEm');
+            var infoPhong = (window.SDP_ROOM_INFO && window.SDP_ROOM_INFO[currentMaPhong]) || null;
+            var sucChua = infoPhong && infoPhong.loaiPhong ? infoPhong.loaiPhong.sucChuaToiDa : null;
+            if (sucChua == null || sucChua <= 0) return;
+
+            var soNguoiLon = parseInt(soNguoiLonEl.value, 10) || 0;
+            var soTreEm = parseInt(soTreEmEl.value, 10) || 0;
+            if (soNguoiLon + soTreEm > sucChua) {
+                // Kep truong vua bi sua doi, giu nguyen truong con lai.
+                if (document.activeElement === soTreEmEl) {
+                    soTreEmEl.value = Math.max(0, sucChua - soNguoiLon);
+                } else {
+                    soNguoiLonEl.value = Math.max(1, sucChua - soTreEm);
+                }
+            }
+        }
+        document.getElementById('sdpLichSoNguoiLon').addEventListener('input', kepSoNguoiTheoSucChua);
+        document.getElementById('sdpLichSoTreEm').addEventListener('input', kepSoNguoiTheoSucChua);
+
+        /**
+         * Tom tat gia du kien cho "Len lich dat phong": TAI SU DUNG dung cong thuc
+         * tien phong (gia/dem * so dem) + tien dich vu + VAT 10% da co san o trang
+         * "Chi tiet dat phong" (ham tinhTongTien / BookingValidate). Khong tinh phu
+         * thu gio (backend PhongService#calculateExtraFeeFor luon tra 0 cho luong
+         * nay) va khong ap khuyen mai (khong co du lieu ma khuyen mai o trang nay,
+         * se duoc backend ap dung that su luc Luu).
+         */
+        function tinhTongTienLenLich() {
+            var soDemEl = document.getElementById('sdpLichSumSoDem');
+            var tienPhongEl = document.getElementById('sdpLichSumTienPhong');
+            var tienDvEl = document.getElementById('sdpLichSumTienDv');
+            var vatEl = document.getElementById('sdpLichSumVat');
+            var tongCongEl = document.getElementById('sdpLichSumTongCong');
+
+            var v1 = checkinInput.value, v2 = checkoutInput.value;
+            var soDem = 0;
+            if (v1 && v2) {
+                var d1 = new Date(v1 + 'T00:00:00');
+                var d2 = new Date(v2 + 'T00:00:00');
+                soDem = Math.max(0, Math.round((d2 - d1) / 86400000));
+            }
+
+            var tienPhong = soDem > 0 ? (currentGiaMoiDem || 0) * soDem : 0;
+
+            var tienDv = 0;
+            Array.prototype.slice.call(form.querySelectorAll('.sdp-lich-service-chip input:checked'))
+                    .forEach(function (el) { tienDv += parseFloat(el.getAttribute('data-gia')) || 0; });
+
+            var vat = Math.round((tienPhong + tienDv) * 0.10);
+            var tongCong = tienPhong + tienDv + vat;
+
+            soDemEl.textContent = soDem > 0 ? (soDem + ' đêm') : '--';
+            tienPhongEl.textContent = 'đ ' + Math.round(tienPhong).toLocaleString('vi-VN');
+            tienDvEl.textContent = 'đ ' + Math.round(tienDv).toLocaleString('vi-VN');
+            vatEl.textContent = 'đ ' + Math.round(vat).toLocaleString('vi-VN');
+            tongCongEl.textContent = 'đ ' + Math.round(tongCong).toLocaleString('vi-VN');
+        }
+        form.querySelectorAll('.sdp-lich-service-chip input').forEach(function (el) {
+            el.addEventListener('change', tinhTongTienLenLich);
+        });
 
         function dongLichSidebar() {
             sidebar.classList.remove('open');

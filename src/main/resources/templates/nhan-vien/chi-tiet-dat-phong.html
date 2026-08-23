@@ -652,6 +652,35 @@
         </form>
     </div>
 
+    <!-- ===== CHINH SACH NO-SHOW: GIA HAN CHECK-IN (form rieng, khong long trong form khac) ===== -->
+    <div class="cdp-panel" th:if="${apDungChinhSachKhachVang}">
+        <div class="cdp-panel-title">
+            <i class="fa-solid fa-hourglass-half"></i> Hạn Check-in (chính sách khách vắng)
+        </div>
+        <p style="margin:0 0 12px; font-size:14px; color:#555;">
+            Nếu khách chưa check-in sau
+            <strong th:text="${#temporals.format(hanCheckInHieuLuc, 'HH:mm dd/MM/yyyy')}">—</strong>,
+            hệ thống sẽ tự động chuyển đơn sang trạng thái
+            <strong>Khách vắng</strong> và giải phóng phòng.
+            <span th:if="${daGiaHanCheckIn}" style="color:#b45309;">
+                (đã được gia hạn so với mặc định
+                <span th:text="${#temporals.format(hanCheckInMacDinh, 'HH:mm dd/MM/yyyy')}">—</span>)
+            </span>
+        </p>
+        <form th:action="@{/nhan-su/dat-phong/chi-tiet/{id}/gia-han-checkin(id=${datPhong.id})}" method="post"
+              class="stay-grid" style="grid-template-columns: repeat(2, minmax(0,1fr)); align-items:end;">
+            <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+            <div class="stay-field">
+                <label>Gia hạn đến (khách gọi điện xin đến trễ)</label>
+                <input type="datetime-local" name="hanCheckInMoi" required
+                       th:value="${#temporals.format(hanCheckInHieuLuc, 'yyyy-MM-dd''T''HH:mm')}">
+            </div>
+            <button type="submit" class="btn-thu-tien" style="height:42px;">
+                <i class="fa-solid fa-clock-rotate-left"></i> Gia hạn check-in
+            </button>
+        </form>
+    </div>
+
     <!-- ===== KHUYEN MAI (form rieng, dat duoi form doi thong tin khach) ===== -->
     <div class="thu-tien-panel">
         <div class="cdp-panel-title" style="border:none; margin-bottom:12px; padding-bottom:0;">
@@ -662,16 +691,13 @@
             <div class="ff">
                 <label>Mã khuyến mãi</label>
                 <input type="text" id="promoInput" class="promo-select"
-                       placeholder="Nhập mã khuyến mãi (ví dụ: SUMMER2026)"
+                       placeholder="Không có"
                        autocomplete="off"
-                       th:readonly="${hoaDonDaXuat}"
+                       readonly
                        th:value="${datPhong != null and datPhong.km != null ? datPhong.km.promoCode : ''}">
             </div>
             <div class="promo-info" id="promoInputInfo" style="display:none;"></div>
             <div class="promo-error" id="promoInputError" style="display:none;"></div>
-            <p style="font-size:12px; color:#94a3b8; margin: 6px 0 0;">
-                Mã sẽ được lưu cùng đơn khi bấm <b>Lưu Thay Đổi</b> ở mục Tóm Tắt Chi Phí.
-            </p>
         </div>
     </div>
 

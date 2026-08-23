@@ -82,7 +82,8 @@ public class HuyDonConstants {
             "Da nhan phong",
             "Da tra phong",
             "Da huy",
-            DP_CHO_HUY
+            DP_CHO_HUY,
+            "Khach vang"
     );
 
     /**
@@ -96,7 +97,8 @@ public class HuyDonConstants {
             "Da nhan phong",
             "Da tra phong",
             "Da huy",
-            DP_CHO_HUY
+            DP_CHO_HUY,
+            "Khach vang"
     );
 
     /**
@@ -112,7 +114,8 @@ public class HuyDonConstants {
             "Da nhan phong",
             "Da tra phong",
             "Da huy",
-            DP_CHO_HUY
+            DP_CHO_HUY,
+            "Khach vang"
     );
 
     /**
@@ -133,4 +136,24 @@ public class HuyDonConstants {
 
     /** Ngưỡng cảnh báo trễ: đơn đã qua giờ nhận > 1 ngày mới hiện toast. */
     public static final long CANH_BAO_TRE_SONGAY = 1L;
+
+    /**
+     * Trạng thái đơn đặt phòng khi khách KHÔNG đến check-in đúng hạn (chính sách
+     * no-show): quá 12:00 của ngày SAU ngày_nhan_phong (hoặc hạn đã được nhân viên
+     * gia hạn — xem CheckInExpirationCacheService) mà đơn vẫn chưa check-in.
+     * Phòng được giải phóng và đơn được đối xử tương tự đơn đã "Da tra phong"
+     * (không còn giữ chỗ / chặn lịch phòng).
+     */
+    public static final String DP_KHACH_VANG = "Khach vang";
+
+    /**
+     * Tập trạng thái "đã xác nhận nhưng chưa check-in" — đối tượng áp dụng chính
+     * sách no-show tự động chuyển sang {@link #DP_KHACH_VANG}. KHÔNG bao gồm
+     * "Yeu cau dat phong" vì trạng thái đó đã có luồng dọn rác riêng
+     * (xem XoaDatPhongConfigSchedule#xoaYeuCauDatPhongQuaHan).
+     */
+    public static final Set<String> DP_TRANG_THAI_AP_DUNG_KHACH_VANG = Set.of(
+            "Cho xac nhan",
+            DP_DA_XAC_NHAN
+    );
 }

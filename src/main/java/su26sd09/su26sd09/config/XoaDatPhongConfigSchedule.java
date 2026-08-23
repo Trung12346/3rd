@@ -10,12 +10,15 @@ import su26sd09.su26sd09.entity.DatPhong;
 import su26sd09.su26sd09.entity.Phong;
 import su26sd09.su26sd09.service.ChiTietDatPhongService;
 import su26sd09.su26sd09.service.ChiTietDichVuService;
+import su26sd09.su26sd09.service.CheckInExpirationCacheService;
 import su26sd09.su26sd09.service.DatPhongService;
 import su26sd09.su26sd09.service.PhongService;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Component
 @Transactional
@@ -32,6 +35,9 @@ public class XoaDatPhongConfigSchedule {
 
     @Autowired
     private PhongService phongService;
+
+    @Autowired
+    private CheckInExpirationCacheService checkInExpirationCacheService;
 
     @Scheduled(fixedRate = 5 * 60 * 1000)
     public void xoaDonQuaHan(){
@@ -62,6 +68,66 @@ public class XoaDatPhongConfigSchedule {
         }
 
         xoaYeuCauDatPhongQuaHan();
+        xuLyKhachVangQuaHanCheckIn();
+    }
+
+    /**
+     * Chinh sach no-show: don da duoc XAC NHAN ("Cho xac nhan" / "Da xac nhan")
+     * nhung khach chua check-in khi qua han check-in hieu luc (mac dinh 12:00 ngay
+     * hom sau ngay_nhan_phong, hoac moc gia han rieng do nhan vien thiet lap qua
+     * CheckInExpirationCacheService neu khach da goi dien xin den tre) se:
+     *  - Chuyen trang thai don sang "Khach vang".
+     *  - Giai phong cac phong dang giu cho don (ve "Trong"), doi xu tuong tu
+     *    1 don da checkout (khong con chan lich).
+     *
+     * Khong ap dung cho "Yeu cau dat phong" (da co luong don rac rieng o
+     * xoaYeuCauDatPhongQuaHan) va khong dung toi cac don da check-in/checkout/huy.
+     */
+    public void xuLyKhachVangQuaHanCheckIn() {
+        LocalDateTime bayGio = LocalDateTime.now();
+        List<DatPhong> dangTheoDoi = new ArrayList<>();
+        for (String tt : HuyDonConstants.DP_TRANG_THAI_AP_DUNG_KHACH_VANG) {
+            dangTheoDoi.addAll(datPhongService.findByTrangThai(tt));
+        }
+
+        List<DatPhong> khachVang = new ArrayList<>();
+        for (DatPhong dp : dangTheoDoi) {
+            LocalDateTime han = checkInExpirationCacheService.hanHieuLuc(dp);
+            if (han != null && bayGio.isAfter(han)) {
+                khachVang.add(dp);
+            }
+        }
+
+        for (DatPhong dp : khachVang) {
+            List<ChiTietDatPhong> chiTietList = chiTietDatPhongService.findByDatPhongId(dp.getId());
+            for (ChiTietDatPhong ct : chiTietList) {
+                Phong p = ct.getP();
+                if (p != null && !"Trong".equals(p.getTrangThai())) {
+                    p.setTrangThai("Trong");
+                    phongService.save1(p);
+                }
+            }
+
+            dp.setTrangThai(HuyDonConstants.DP_KHACH_VANG);
+            dp.setNgayCapNhat(bayGio);
+            datPhongService.save(dp);
+
+            checkInExpirationCacheService.xoaKhoiTheoDoi(dp.getId());
+
+            System.out.println("Da chuyen don sang Khach vang (qua han check-in) ma dat phong: " + dp.getId());
+        }
+
+        if (!khachVang.isEmpty()) {
+            System.out.println("Scheduler: da xu ly " + khachVang.size() + " don Khach vang.");
+        }
+
+        // Don dep cache: chi giu lai gia han cua nhung don van dang duoc theo doi,
+        // tranh file cache phinh to voi cac don da xu ly xong tu lau.
+        Set<Integer> maConTheoDoi = new HashSet<>();
+        for (DatPhong dp : dangTheoDoi) {
+            if (!khachVang.contains(dp)) maConTheoDoi.add(dp.getId());
+        }
+        checkInExpirationCacheService.donDep(maConTheoDoi);
     }
 
     /**

@@ -59,6 +59,11 @@ public class DatPhongService {
         return repo.findByTrangThai(trangThai);
     }
 
+    /** Don dang giu phong (trang thai "Da nhan phong") cho 1 phong cu the, moi nhat truoc. */
+    public List<DatPhong> findUsingBookings(Integer maPhong) {
+        return repo.findUsingBookings(maPhong);
+    }
+
     public void delete(DatPhong dp) {
         repo.delete(dp);
     }

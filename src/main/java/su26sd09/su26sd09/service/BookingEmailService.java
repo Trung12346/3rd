@@ -347,6 +347,7 @@ public class BookingEmailService {
             case "Da xac nhan" -> "Đã xác nhận";
             case "Da nhan phong" -> "Đã nhận phòng";
             case "Da tra phong" -> "Đã trả phòng";
+            case "Khach vang" -> "Khách vắng mặt (quá hạn check-in)";
             case "Da huy" -> "Đã hủy";
             default -> tt;
         };
