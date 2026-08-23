@@ -231,6 +231,38 @@
             50% { box-shadow: 0 0 0 5px rgba(185,28,28,0.03); }
         }
 
+        /* Text nho "Xac nhan phong sach" tren the phong khi nhan vien ve sinh
+           da upload anh, cho le tan bam vao de mo modal xac nhan. */
+        .sdp-xac-nhan-ve-sinh {
+            display: flex; align-items: center; gap: 6px; margin-top: 10px;
+            padding: 6px 9px; border-radius: 8px; background: #ecfdf5; color: #047857;
+            font-size: 11.5px; font-weight: 700; cursor: pointer; width: fit-content;
+        }
+        .sdp-xac-nhan-ve-sinh:hover { background: #d1fae5; }
+        .sdp-xac-nhan-ve-sinh i { font-size: 11px; }
+
+        /* Modal xac nhan phong sach */
+        .sdp-vs-backdrop {
+            display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.55); z-index: 1000;
+            align-items: center; justify-content: center;
+        }
+        .sdp-vs-backdrop.open { display: flex; }
+        .sdp-vs-modal {
+            background: #fff; border-radius: 16px; width: 92%; max-width: 480px; padding: 22px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.25);
+        }
+        .sdp-vs-modal h3 { margin: 0 0 4px; font-size: 17px; font-weight: 800; color: #1f2937; }
+        .sdp-vs-modal p { margin: 0 0 14px; font-size: 13px; color: #6b7280; }
+        .sdp-vs-modal img { width: 100%; max-height: 360px; object-fit: contain; border-radius: 12px; border: 1px solid #e5e7eb; background: #f8fafc; }
+        .sdp-vs-actions { display: flex; gap: 10px; margin-top: 18px; }
+        .sdp-vs-actions button {
+            flex: 1; padding: 11px; border-radius: 10px; border: none; font-weight: 700; font-size: 14px; cursor: pointer;
+        }
+        .sdp-vs-back-btn { background: #f1f5f9; color: #334155; }
+        .sdp-vs-back-btn:hover { background: #e2e8f0; }
+        .sdp-vs-confirm-btn { background: linear-gradient(120deg, #10b981, #059669); color: #fff; }
+        .sdp-vs-confirm-btn:hover { opacity: .92; }
+
         .sdp-empty-msg { text-align: center; color: #9ca3af; padding: 60px 0; font-size: 14px; }
 
         .sdp-room-card { cursor: pointer; user-select: none; }
@@ -994,6 +1026,13 @@
                                     <span class="sdp-cd-time" data-cd-time></span>
                                 </span>
                             </div>
+
+                            <div class="sdp-xac-nhan-ve-sinh"
+                                 th:if="${phongChoXacNhanVeSinh[phong.maPhong]}"
+                                 th:data-ma-phong="${phong.maPhong}"
+                                 th:data-so-phong="${phong.soPhong}">
+                                <i class="fa-solid fa-broom"></i> Xác nhận phòng sạch
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1162,6 +1201,19 @@
     <div class="sdp-policy-actions">
         <button type="button" class="admin-btn outline" id="sdpPolicyQuayLaiBtn">Quay lại</button>
         <button type="button" class="admin-btn" id="sdpPolicyOkBtn">Đã hiểu</button>
+    </div>
+</div>
+
+<!-- Modal xac nhan phong sach (anh do nhan vien ve sinh upload) -->
+<div class="sdp-vs-backdrop" id="sdpVsBackdrop">
+    <div class="sdp-vs-modal" role="dialog" aria-modal="true">
+        <h3>Xác nhận phòng sạch — Phòng <span id="sdpVsSoPhong"></span></h3>
+        <p>Kiểm tra ảnh nhân viên vệ sinh vừa upload, sau đó chọn "Xác nhận" để chuyển phòng về trạng thái Trống.</p>
+        <img id="sdpVsAnh" src="" alt="Ảnh phòng đã dọn">
+        <div class="sdp-vs-actions">
+            <button type="button" class="sdp-vs-back-btn" id="sdpVsBackBtn">Trở lại</button>
+            <button type="button" class="sdp-vs-confirm-btn" id="sdpVsConfirmBtn">Xác nhận</button>
+        </div>
     </div>
 </div>
 
@@ -2972,6 +3024,67 @@
                 var rect = card.getBoundingClientRect();
                 moContextMenu(card, rect.left + 12, rect.bottom + 6);
             });
+        });
+
+        // ===== Modal "Xac nhan phong sach" (anh nhan vien ve sinh upload) =====
+        var vsBackdrop = document.getElementById('sdpVsBackdrop');
+        var vsSoPhongEl = document.getElementById('sdpVsSoPhong');
+        var vsAnhEl = document.getElementById('sdpVsAnh');
+        var vsConfirmBtn = document.getElementById('sdpVsConfirmBtn');
+        var vsMaPhongDangXet = null;
+
+        function moModalXacNhanVeSinh(maPhong, soPhong) {
+            vsMaPhongDangXet = maPhong;
+            vsSoPhongEl.textContent = soPhong;
+            vsAnhEl.src = '/nhan-su/ve-sinh/anh/' + maPhong + '?t=' + Date.now();
+            vsBackdrop.classList.add('open');
+        }
+
+        function dongModalXacNhanVeSinh() {
+            vsBackdrop.classList.remove('open');
+            vsMaPhongDangXet = null;
+        }
+
+        document.querySelectorAll('.sdp-xac-nhan-ve-sinh').forEach(function (badge) {
+            badge.addEventListener('click', function (e) {
+                e.stopPropagation();
+                var maPhong = badge.getAttribute('data-ma-phong');
+                var soPhong = badge.getAttribute('data-so-phong');
+                moModalXacNhanVeSinh(maPhong, soPhong);
+            });
+        });
+
+        document.getElementById('sdpVsBackBtn').addEventListener('click', dongModalXacNhanVeSinh);
+        vsBackdrop.addEventListener('click', function (e) {
+            if (e.target === vsBackdrop) dongModalXacNhanVeSinh();
+        });
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && vsBackdrop.classList.contains('open')) dongModalXacNhanVeSinh();
+        });
+
+        vsConfirmBtn.addEventListener('click', function () {
+            if (!vsMaPhongDangXet) return;
+            vsConfirmBtn.disabled = true;
+            fetch('/nhan-su/ve-sinh/xac-nhan/' + vsMaPhongDangXet, { method: 'POST' })
+                .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+                .then(function (r) {
+                    vsConfirmBtn.disabled = false;
+                    if (!r.ok || !r.data.success) {
+                        alert(r.data && r.data.message ? r.data.message : 'Có lỗi xảy ra, vui lòng thử lại.');
+                        return;
+                    }
+                    var card = document.querySelector('.sdp-room-cell[data-ma-phong="' + vsMaPhongDangXet + '"]');
+                    if (card) {
+                        capNhatTrangThaiThePhong(card, r.data.trangThaiMoi || 'Trống');
+                        var badge = card.querySelector('.sdp-xac-nhan-ve-sinh');
+                        if (badge) badge.remove();
+                    }
+                    dongModalXacNhanVeSinh();
+                })
+                .catch(function () {
+                    vsConfirmBtn.disabled = false;
+                    alert('Có lỗi xảy ra khi xác nhận, vui lòng thử lại.');
+                });
         });
 
         ctxBackdrop.addEventListener('click', dongContextMenu);

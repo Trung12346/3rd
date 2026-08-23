@@ -67,6 +67,7 @@ public class NhanVienDatPhongController {
     @Autowired private su26sd09.su26sd09.repository.TienNghiPhongRepository tienNghiPhongRepository;
     @Autowired private su26sd09.su26sd09.repository.GiayToRepo giayToRepo;
     @Autowired private CheckInExpirationCacheService checkInExpirationCacheService;
+    @Autowired private JanitorCacheService janitorCacheService;
 
     /**
      * Lay so giay to (CCCD/Ho chieu) cua khach dai dien cho 1 phong cu the
@@ -1896,6 +1897,17 @@ public class NhanVienDatPhongController {
         }
         model.addAttribute("dsDatPhongList", dsDatPhongList);
         model.addAttribute("phongTheoDonSoDo", phongTheoDonSoDo);
+
+        // Phong dang cho lễ tân xac nhan da don sach (nhan vien ve sinh da
+        // upload anh, chua duoc xac nhan) - dung de hien text "Xac nhan phong
+        // sach" tren the phong o so do phong.
+        Map<Integer, Boolean> phongChoXacNhanVeSinh = new HashMap<>();
+        for (su26sd09.su26sd09.dto.PhongVeSinhAssignment a : janitorCacheService.getAll()) {
+            if (su26sd09.su26sd09.dto.PhongVeSinhAssignment.DA_UPLOAD.equals(a.getTrangThai())) {
+                phongChoXacNhanVeSinh.put(a.getMaPhong(), true);
+            }
+        }
+        model.addAttribute("phongChoXacNhanVeSinh", phongChoXacNhanVeSinh);
 
         return "nhan-vien/so-do-phong";
     }

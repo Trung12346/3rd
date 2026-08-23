@@ -114,6 +114,23 @@ public class NhanVienService {
                 || "Le Tan".equalsIgnoreCase(normalized);
     }
 
+    /**
+     * Nhận diện bộ phận "Vệ Sinh" (housekeeping/janitor), dùng bởi
+     * {@code JanitorAssignmentEngine} để lọc ra danh sách nhân viên vệ sinh
+     * hợp lệ cho việc phân công dọn phòng tự động.
+     */
+    public boolean laBoPhanVeSinh(String boPhan) {
+        if (boPhan == null) {
+            return false;
+        }
+        String normalized = Normalizer.normalize(boPhan.trim(), Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "");
+        return normalized.equalsIgnoreCase("Ve Sinh")
+                || normalized.equalsIgnoreCase("Housekeeping")
+                || normalized.toLowerCase().contains("ve sinh")
+                || normalized.toLowerCase().contains("buong phong");
+    }
+
     public boolean checkTrungCccd(String maCCCD, int id) {
         return repo.existsByMaCCCDAndIdNot(maCCCD, id);
     }

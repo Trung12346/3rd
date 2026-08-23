@@ -1,0 +1,156 @@
+﻿<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dọn phòng | Hotel</title>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; }
+        body { background: linear-gradient(180deg, #f3f7fb 0%, #eef2f7 100%); font-family: 'Montserrat', sans-serif; }
+
+        .vs-shell { margin: 0 auto auto 100px !important; width: 85vw; max-width: 900px; padding: 32px; }
+
+        .vs-header {
+            display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px; flex-wrap: wrap; gap: 14px;
+            background: linear-gradient(120deg, #0ea5c7 0%, #2196c4 55%, #1d7fae 100%);
+            border-radius: 16px; padding: 22px 26px; box-shadow: 0 10px 26px rgba(33,150,196,0.28);
+        }
+        .vs-header h1 { color: #fff; font-size: 22px; margin: 0; font-weight: 800; }
+        .vs-header p { color: rgba(255,255,255,0.85); margin: 4px 0 0; font-size: 13.5px; }
+
+        .vs-card {
+            background: #fff; border-radius: 16px; padding: 28px; box-shadow: 0 6px 20px rgba(15,23,42,0.06);
+            margin-bottom: 20px;
+        }
+
+        .vs-empty { text-align: center; padding: 40px 20px; color: #6b7280; }
+        .vs-empty i { font-size: 40px; color: #cbd5e1; margin-bottom: 14px; display: block; }
+
+        .vs-room-badge {
+            display: inline-flex; align-items: center; gap: 8px; background: #eaf6fb; color: #1d7fae;
+            font-weight: 800; font-size: 20px; padding: 10px 18px; border-radius: 12px; margin-bottom: 6px;
+        }
+        .vs-meta { color: #6b7280; font-size: 13.5px; margin-bottom: 22px; }
+
+        .vs-status-pill {
+            display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 700;
+            padding: 4px 12px; border-radius: 999px; margin-left: 8px;
+        }
+        .vs-status-pill.cho-don { background: #fef3c7; color: #92400e; }
+        .vs-status-pill.da-upload { background: #dcfce7; color: #15803d; }
+
+        .vs-upload-zone {
+            border: 2px dashed #cbd5e1; border-radius: 14px; padding: 28px; text-align: center; cursor: pointer;
+            transition: border-color .15s, background .15s;
+        }
+        .vs-upload-zone:hover { border-color: #2196c4; background: #f8fbfd; }
+        .vs-upload-zone i { font-size: 32px; color: #94a3b8; margin-bottom: 10px; display: block; }
+        .vs-upload-zone input { display: none; }
+
+        .vs-preview { margin-top: 16px; text-align: center; }
+        .vs-preview img { max-width: 100%; max-height: 340px; border-radius: 12px; border: 1px solid #e5e7eb; }
+
+        .vs-submit-btn {
+            margin-top: 16px; width: 100%; padding: 13px; border: none; border-radius: 10px;
+            background: linear-gradient(120deg, #2196c4, #1d7fae); color: #fff; font-weight: 700; font-size: 15px;
+            cursor: pointer; transition: opacity .15s;
+        }
+        .vs-submit-btn:hover { opacity: 0.92; }
+        .vs-submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .vs-toast {
+            padding: 12px 16px; border-radius: 10px; margin-bottom: 16px; font-size: 14px; font-weight: 600;
+        }
+        .vs-toast.success { background: #dcfce7; color: #15803d; }
+        .vs-toast.error { background: #fee2e2; color: #b91c1c; }
+
+        .vs-current-img { margin-top: 18px; }
+        .vs-current-img p { font-size: 13px; color: #6b7280; font-weight: 700; margin-bottom: 8px; }
+    </style>
+</head>
+<body>
+<div th:replace="~{fragments/cms-sidebar :: cmsSidebar}"></div>
+<div th:replace="~{fragments/headers/cms-header :: cmsHeader}"></div>
+
+<main class="vs-shell">
+    <div class="vs-header">
+        <div>
+            <h1><i class="fa-solid fa-broom"></i> Dọn phòng</h1>
+            <p>Phòng được hệ thống tự động phân công sẽ hiển thị bên dưới.</p>
+        </div>
+    </div>
+
+    <div th:if="${toastSuccess}" class="vs-toast success" th:text="${toastSuccess}"></div>
+    <div th:if="${toastError}" class="vs-toast error" th:text="${toastError}"></div>
+
+    <div class="vs-card">
+        <div th:if="${assignment == null}" class="vs-empty">
+            <i class="fa-solid fa-mug-hot"></i>
+            <div>Bạn hiện chưa được phân công phòng nào. Trang sẽ tự cập nhật khi có phòng cần dọn.</div>
+        </div>
+
+        <div th:if="${assignment != null}">
+            <span class="vs-room-badge"><i class="fa-solid fa-door-closed"></i> Phòng P<span th:text="${assignment.soPhong}">101</span></span>
+            <span class="vs-status-pill cho-don" th:if="${assignment.trangThai == 'DA_GAN'}">Chờ dọn &amp; upload ảnh</span>
+            <span class="vs-status-pill da-upload" th:if="${assignment.trangThai == 'DA_UPLOAD'}">Đã upload — chờ xác nhận</span>
+            <div class="vs-meta">Bạn được phân công phòng này, hãy dọn dẹp và upload 1 ảnh phòng sau khi hoàn thành.</div>
+
+            <div th:if="${assignment.duongDanAnh != null}" class="vs-current-img">
+                <p>Ảnh đã upload (upload ảnh mới sẽ thay thế ảnh này):</p>
+                <img th:src="@{'/nhan-su/ve-sinh/anh/' + ${assignment.maPhong} + '?t=' + ${#dates.createNow().getTime()}}" alt="Ảnh phòng đã dọn">
+            </div>
+
+            <form id="vsUploadForm" method="post" action="/nhan-su/ve-sinh/upload" enctype="multipart/form-data">
+                <label class="vs-upload-zone" id="vsUploadZone">
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                    <div id="vsUploadLabel">Nhấn để chọn ảnh phòng đã dọn (1 ảnh)</div>
+                    <input type="file" name="file" id="vsFileInput" accept="image/*" required>
+                </label>
+                <div class="vs-preview" id="vsPreviewWrap" style="display:none;">
+                    <img id="vsPreviewImg" src="" alt="Xem trước">
+                </div>
+                <button type="submit" class="vs-submit-btn" id="vsSubmitBtn" disabled>Upload ảnh phòng</button>
+            </form>
+        </div>
+    </div>
+</main>
+
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    var vsCoAssignment = /*[[${assignment != null}]]*/ false;
+    /*]]>*/
+    var fileInput = document.getElementById('vsFileInput');
+    var submitBtn = document.getElementById('vsSubmitBtn');
+    var previewWrap = document.getElementById('vsPreviewWrap');
+    var previewImg = document.getElementById('vsPreviewImg');
+    var uploadLabel = document.getElementById('vsUploadLabel');
+
+    if (fileInput) {
+        fileInput.addEventListener('change', function () {
+            if (!fileInput.files || !fileInput.files[0]) {
+                submitBtn.disabled = true;
+                previewWrap.style.display = 'none';
+                return;
+            }
+            var file = fileInput.files[0];
+            uploadLabel.textContent = file.name;
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                previewImg.src = e.target.result;
+                previewWrap.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+            submitBtn.disabled = false;
+        });
+    }
+
+    // Tu dong lam moi trang moi 15s de nhan phong duoc engine gan (khi chua co
+    // phong nao duoc gan), tranh nguoi dung phai bam F5 thu cong.
+    if (!vsCoAssignment) {
+        setTimeout(function () { window.location.reload(); }, 15000);
+    }
+</script>
+</body>
+</html>

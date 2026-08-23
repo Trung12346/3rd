@@ -18,6 +18,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import su26sd09.su26sd09.repository.NhanVienRepo;
 import su26sd09.su26sd09.service.CustomerUserDetailsService;
 import su26sd09.su26sd09.service.EmployeeUserDetailsService;
 
@@ -31,6 +32,9 @@ public class SecurityConfig {
 
     @Autowired
     EmployeeUserDetailsService employeeDetailsService;
+
+    @Autowired
+    NhanVienRepo nhanVienRepo;
 
     @Bean
     @Order(1)
@@ -56,7 +60,14 @@ public class SecurityConfig {
                                 response.sendRedirect("/nhan-su/admin/thong-ke");
                             } else if (authentication.getAuthorities().stream()
                                     .anyMatch(a -> a.getAuthority().equals("ROLE_STAFF"))) {
-                                response.sendRedirect("/nhan-su/dat-phong");
+                                boolean laNhanVienVeSinh = nhanVienRepo.findByEmail(authentication.getName())
+                                        .map(nv -> laBoPhanVeSinh(nv.getBoPhan()))
+                                        .orElse(false);
+                                if (laNhanVienVeSinh) {
+                                    response.sendRedirect("/nhan-su/ve-sinh");
+                                } else {
+                                    response.sendRedirect("/nhan-su/dat-phong");
+                                }
                             }
 
                         }))
@@ -116,5 +127,22 @@ public class SecurityConfig {
 
         provider.setPasswordEncoder(passwordEncoder());
         return provider;
+    }
+
+    /**
+     * Nhan dien bo phan "Ve Sinh" (housekeeping/janitor) chi de quyet dinh
+     * trang dieu huong sau khi dang nhap. Duoc khai bao truc tiep tai day
+     * (thay vi goi NhanVienService.laBoPhanVeSinh) de tranh circular
+     * dependency: SecurityConfig -> NhanVienService -> UserService ->
+     * PasswordEncoder (bean duoc khai bao trong chinh SecurityConfig).
+     */
+    private static boolean laBoPhanVeSinh(String boPhan) {
+        if (boPhan == null) {
+            return false;
+        }
+        String normalized = java.text.Normalizer.normalize(boPhan.trim(), java.text.Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "");
+        String lower = normalized.toLowerCase();
+        return lower.contains("ve sinh") || lower.contains("housekeeping") || lower.contains("buong phong");
     }
 }
