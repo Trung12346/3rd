@@ -1754,7 +1754,25 @@ public class NhanVienDatPhongController {
         // De tranh duplicate, KHONG add vao tienDichVu o day.
         hoaDon.setTongTien(defaultMoney(hoaDon.getTongTien()).add(soTienPhuThu));
         hoaDon.setNgayCapNhat(LocalDateTime.now());
-        hoaDonService.saveWithPaymentStatusCheck(hoaDon);
+        HoaDon hoaDonDaLuu = hoaDonService.saveWithPaymentStatusCheck(hoaDon);
+
+        // Phu thu vua cong lam tang cong no -> gui email kem QR de khach thanh
+        // toan ngay phan con lai, khong can doi den luc tra phong moi biet.
+        BigDecimal conLai = defaultMoney(hoaDonDaLuu.getTongTien()).subtract(defaultMoney(hoaDonDaLuu.getDaThanhToan()));
+        if (conLai.compareTo(BigDecimal.ZERO) > 0) {
+            bookingEmailService.guiEmailYeuCauThanhToan(
+                    maDatPhong,
+                    "Phát sinh chi phí phụ thu - Đơn đặt phòng #" + maDatPhong,
+                    "Đơn đặt phòng #" + maDatPhong + " vừa phát sinh thêm khoản phụ thu "
+                            + formatTienPhuThu(soTienPhuThu) + ". Quý khách vui lòng thanh toán phần còn lại.",
+                    conLai
+            );
+        }
+    }
+
+    private String formatTienPhuThu(BigDecimal tien) {
+        if (tien == null) tien = BigDecimal.ZERO;
+        return String.format("%,.0f", tien.doubleValue()) + " VND";
     }
 
     private Dich_vu timHoacTaoDichVuPhuThu(String ten) {
@@ -2154,7 +2172,7 @@ public class NhanVienDatPhongController {
         hd.setTongTien(tongCong);
         hd.setDaThanhToan(daThu);
         hd.setGhiChu("Len lich dat phong tu So Do Phong, ma don: " + savedDp.getId());
-        hoaDonService.saveWithPaymentStatusCheck(hd);
+        HoaDon hoaDonDaLuu = hoaDonService.saveWithPaymentStatusCheck(hd);
 
         if (daThu.compareTo(BigDecimal.ZERO) > 0) {
             ThanhToan tt = new ThanhToan();
@@ -2166,6 +2184,19 @@ public class NhanVienDatPhongController {
             tt.setGichu("Thu tien luc len lich dat phong tu So Do Phong");
             tt.setNv(nhanVienXuLy);
             thanhToanService.save(tt);
+        }
+
+        // Bao dat phong vua duoc len lich (tao) tu So Do Phong. Neu con no, gui kem
+        // QR de khach thanh toan phan con lai qua /thanh-toan/pool.
+        BigDecimal conLai = defaultMoney(hoaDonDaLuu.getTongTien()).subtract(defaultMoney(hoaDonDaLuu.getDaThanhToan()));
+        if (conLai.compareTo(BigDecimal.ZERO) > 0) {
+            bookingEmailService.guiEmailYeuCauThanhToan(
+                    savedDp.getId(),
+                    "Đặt phòng thành công - Đơn #" + savedDp.getId(),
+                    "Đơn đặt phòng #" + savedDp.getId() + " của quý khách đã được lên lịch thành công. "
+                            + "Quý khách vui lòng thanh toán phần còn lại để giữ phòng.",
+                    conLai
+            );
         }
 
         result.put("ok", true);

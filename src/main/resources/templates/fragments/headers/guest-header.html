@@ -78,37 +78,6 @@
                         </div>
                     </div>
 
-                    <!-- ====== Trường hợp A2: KH đã gửi yêu cầu đặt phòng thành công
-                          ("Yeu cau dat phong" + đủ thông tin) — NV sẽ xét duyệt.
-                          KHÔNG cần thanh toán mới hiện thông báo này. ====== -->
-                    <div th:if="${bookingDraftMode == 'submitted'}">
-                        <div class="hb-bell-popover-title hb-bell-popover-success">
-                            <i class="fa-solid fa-paper-plane"></i>
-                            <span>Gửi yêu cầu đặt phòng thành công!</span>
-                        </div>
-                        <div class="hb-bell-popover-step">
-                            Yêu cầu đặt phòng của bạn đã được gửi tới nhân viên lễ tân. Chúng tôi sẽ xét duyệt và phản hồi trong ít phút. Bạn có thể tiếp tục thanh toán sau khi được duyệt.
-                        </div>
-                        <div class="hb-bell-popover-meta">
-                            <div>Mã đơn: <strong>#<span th:text="${bookingDraft.id}">0</span></strong></div>
-                            <div th:if="${bookingDraft.maTraCuu != null and !bookingDraft.maTraCuu.isBlank()}">
-                                Mã tra cứu: <strong th:text="${bookingDraft.maTraCuu}">XXXXXX</strong>
-                            </div>
-                            <div>
-                                Nhận phòng <strong th:text="${bookingDraft.ngaydatPhong != null ? #temporals.format(bookingDraft.ngaydatPhong, 'dd/MM/yyyy HH:mm') : '-'}">-</strong>
-                                · Trả phòng <strong th:text="${bookingDraft.ngaytraPhong != null ? #temporals.format(bookingDraft.ngaytraPhong, 'dd/MM/yyyy') : '-'}">-</strong>
-                            </div>
-                        </div>
-                        <div class="hb-bell-popover-actions">
-                            <a th:href="@{/tra-cuu-don}" class="hb-bell-dismiss">
-                                <i class="fa-solid fa-magnifying-glass"></i> Tra cứu đơn
-                            </a>
-                            <a th:href="@{/phong/dat-phong/tiep-tuc-dat/{id}(id=${bookingDraft.id})}" class="hb-bell-go">
-                                <i class="fa-solid fa-credit-card"></i> Tiếp tục thanh toán
-                            </a>
-                        </div>
-                    </div>
-
                     <!-- ====== Trường hợp B: đơn vừa gửi yêu cầu, NV chưa xét ("Yeu cau dat phong") ====== -->
                     <div th:if="${bookingDraftMode == 'pending'}">
                         <div class="hb-bell-popover-title">

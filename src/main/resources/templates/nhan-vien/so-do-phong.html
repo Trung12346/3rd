@@ -1187,6 +1187,20 @@
                     ghi nhận đã hoàn cho khách theo phương thức chọn ở trên (không cần vào trang
                     Hoàn tiền để xác nhận lại).
                 </p>
+
+                <div style="margin-top:14px; padding-top:14px; border-top:1px dashed #e2e8f0;">
+                    <label for="sdpCancelConfirmAmountInput" style="font-size:13px; font-weight:600; color:#334155; display:block; margin-bottom:6px;">
+                        Nhập số tiền cần hoàn cho khách để xác nhận <span style="color:#e74c3c;">*</span>
+                    </label>
+                    <input type="text" inputmode="numeric" id="sdpCancelConfirmAmountInput"
+                           class="admin-input" style="width:100%;"
+                           placeholder="Nhập lại số tiền dự kiến được hoàn ở trên (VD: 500000)"
+                           oninput="sdpValidateCancelConfirmAmount()" autocomplete="off">
+                    <p id="sdpCancelConfirmAmountHint" style="font-size:12px; color:#94a3b8; margin:6px 0 0;">
+                        Vui lòng nhập đúng số tiền hoàn dự kiến ở trên trước khi bấm "Xác nhận hủy đơn".
+                        Đây là bước xác nhận thứ 2 để tránh bấm nhầm.
+                    </p>
+                </div>
             </div>
         </div>
 
@@ -1577,8 +1591,11 @@
         if (activeEl) activeEl.classList.add('tier-active');
     }
 
+    var sdpCancelExpectedRefundAmount = null;
+
     function sdpOpenCancelModal(maDatPhong) {
         sdpCancelModalTargetId = maDatPhong;
+        sdpCancelExpectedRefundAmount = null;
 
         document.getElementById('sdpCancelModalMaDon').textContent = '#' + maDatPhong;
         document.getElementById('sdpCancelModalLoading').style.display = 'block';
@@ -1587,6 +1604,13 @@
         document.getElementById('sdpCancelModalConfirmBtn').disabled = true;
         var ptSelectEl = document.getElementById('sdpCancelPhuongThucHoan');
         if (ptSelectEl) ptSelectEl.value = 'Tien Mat';
+        var amountInputEl = document.getElementById('sdpCancelConfirmAmountInput');
+        if (amountInputEl) amountInputEl.value = '';
+        var amountHintEl = document.getElementById('sdpCancelConfirmAmountHint');
+        if (amountHintEl) {
+            amountHintEl.textContent = 'Vui lòng nhập đúng số tiền hoàn dự kiến ở trên trước khi bấm "Xác nhận hủy đơn". Đây là bước xác nhận thứ 2 để tránh bấm nhầm.';
+            amountHintEl.style.color = '#94a3b8';
+        }
         document.getElementById('sdpCancelBookingOverlay').style.display = 'flex';
 
         fetch(SDP_URL_HUY_PREVIEW + maDatPhong + '/huy-preview', {
@@ -1609,8 +1633,12 @@
                 document.getElementById('sdpCancelSoTienHoan').textContent = sdpFormatVND(data.soTienHoanDuKien);
                 sdpHighlightRefundTier(data.soNgayConLaiDenCheckIn);
 
+                sdpCancelExpectedRefundAmount = Number(data.soTienHoanDuKien) || 0;
+
                 document.getElementById('sdpCancelModalContent').style.display = 'block';
-                document.getElementById('sdpCancelModalConfirmBtn').disabled = false;
+                // Nút "Xác nhận hủy đơn" vẫn khóa cho tới khi nhân viên tự nhập đúng
+                // số tiền hoàn dự kiến vào ô xác nhận bên dưới (bước xác nhận thứ 2).
+                sdpValidateCancelConfirmAmount();
             })
             .catch(function () {
                 document.getElementById('sdpCancelModalLoading').style.display = 'none';
@@ -1618,6 +1646,48 @@
                 errBox.textContent = 'Có lỗi xảy ra khi tải thông tin hủy đơn. Vui lòng thử lại.';
                 errBox.style.display = 'block';
             });
+    }
+
+    // Chỉ mở khóa nút "Xác nhận hủy đơn" khi nhân viên tự gõ đúng số tiền hoàn dự
+    // kiến (đã hiển thị ở trên) vào ô xác nhận — bước xác nhận thứ 2 để tránh bấm nhầm.
+    function sdpValidateCancelConfirmAmount() {
+        var btn = document.getElementById('sdpCancelModalConfirmBtn');
+        var amountInputEl = document.getElementById('sdpCancelConfirmAmountInput');
+        var hintEl = document.getElementById('sdpCancelConfirmAmountHint');
+        if (!btn || !amountInputEl) return;
+
+        // Chưa tải xong dữ liệu preview thì luôn khóa nút.
+        if (sdpCancelExpectedRefundAmount === null || document.getElementById('sdpCancelModalContent').style.display === 'none') {
+            btn.disabled = true;
+            return;
+        }
+
+        var raw = amountInputEl.value.replace(/[.,\s]/g, '').trim();
+        var entered = raw === '' ? NaN : Number(raw);
+
+        if (raw === '') {
+            btn.disabled = true;
+            if (hintEl) {
+                hintEl.textContent = 'Vui lòng nhập đúng số tiền hoàn dự kiến ở trên trước khi bấm "Xác nhận hủy đơn". Đây là bước xác nhận thứ 2 để tránh bấm nhầm.';
+                hintEl.style.color = '#94a3b8';
+            }
+            return;
+        }
+
+        if (isNaN(entered) || entered !== sdpCancelExpectedRefundAmount) {
+            btn.disabled = true;
+            if (hintEl) {
+                hintEl.textContent = 'Số tiền chưa khớp với số tiền hoàn dự kiến ở trên. Vui lòng kiểm tra lại.';
+                hintEl.style.color = '#e74c3c';
+            }
+            return;
+        }
+
+        btn.disabled = false;
+        if (hintEl) {
+            hintEl.textContent = 'Số tiền khớp. Bạn có thể bấm "Xác nhận hủy đơn".';
+            hintEl.style.color = '#16a34a';
+        }
     }
 
     function sdpCloseCancelModal() {
@@ -1630,6 +1700,16 @@
     // và tự điều hướng sang trang xử lý Hoàn tiền nếu có phát sinh hoàn.
     function sdpConfirmCancelBooking() {
         if (!sdpCancelModalTargetId) return;
+
+        // Chốt chặn thứ 2: dù nút có bị enable bằng cách nào đó, vẫn phải đúng số tiền xác nhận.
+        var amountInputEl = document.getElementById('sdpCancelConfirmAmountInput');
+        var enteredRaw = amountInputEl ? amountInputEl.value.replace(/[.,\s]/g, '').trim() : '';
+        var entered = enteredRaw === '' ? NaN : Number(enteredRaw);
+        if (sdpCancelExpectedRefundAmount === null || isNaN(entered) || entered !== sdpCancelExpectedRefundAmount) {
+            sdpValidateCancelConfirmAmount();
+            return;
+        }
+
         var btn = document.getElementById('sdpCancelModalConfirmBtn');
         btn.disabled = true;
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang xử lý...';
@@ -1688,9 +1768,6 @@
         }
 
         // Đơn chưa nhận phòng (còn hiệu lực) gần nhất theo thời điểm check-in
-        // CHỈ tính các đơn đã gửi yêu cầu thật sự (Yeu cau dat phong / Cho xac nhan /
-        // Da xac nhan). Đơn "Chua thanh toan" (KH vãng lai mới nhập CCCD, chưa điền
-        // đủ hoten/email/sdt) KHÔNG hiện countdown vì chưa phải đơn đặt trước thật.
         function tinChoNhanPhongGanNhat(maPhong, t) {
             var list = getBookings(maPhong).filter(function (b) {
                 return b.trangThai === 'Yeu cau dat phong' || b.trangThai === 'Cho xac nhan' || b.trangThai === 'Da xac nhan';

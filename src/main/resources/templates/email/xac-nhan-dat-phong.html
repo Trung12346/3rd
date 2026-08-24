@@ -44,12 +44,12 @@
                                     <!-- Status badge (outline, single-color) -->
                                     <div style="display: inline-block; border: 1.5px solid #2980B9; padding: 6px 18px; border-radius: 24px; margin-bottom: 24px;">
                                         <span style="color: #2980B9; font-size: 11px; font-weight: 600; text-transform: uppercase;"
-                                              th:text="${trangThaiEmail == 'thanh-toan' ? 'THANH TOAN THANH CONG' : (trangThaiEmail == 'da-xac-nhan' ? 'DA XAC NHAN' : 'YEU CAU DAT PHONG')}">YEU CAU DAT PHONG</span>
+                                              th:text="${trangThaiEmail == 'thanh-toan' ? 'THANH TOAN THANH CONG' : (trangThaiEmail == 'da-xac-nhan' ? 'DA XAC NHAN' : (trangThaiEmail == 'yeu-cau-thanh-toan' ? 'YEU CAU THANH TOAN' : 'YEU CAU DAT PHONG'))}">YEU CAU DAT PHONG</span>
                                     </div>
 
                                     <!-- Tieu de lon -->
                                     <h1 style="margin: 0 0 16px; font-family: 'Playfair Display', Georgia, serif; color: #0f2740; font-size: 32px; font-weight: 700; line-height: 1.25;"
-                                        th:text="${trangThaiEmail == 'thanh-toan' ? 'Cảm ơn quý khách' : (trangThaiEmail == 'da-xac-nhan' ? 'Yêu cầu đã được xác nhận' : 'Yêu cầu đã được gửi')}">
+                                        th:text="${trangThaiEmail == 'thanh-toan' ? 'Cảm ơn quý khách' : (trangThaiEmail == 'da-xac-nhan' ? 'Yêu cầu đã được xác nhận' : (trangThaiEmail == 'yeu-cau-thanh-toan' ? 'Yêu cầu thanh toán' : 'Yêu cầu đã được gửi'))}">
                                         Cam on quy khach
                                     </h1>
 
@@ -59,7 +59,8 @@
                                     <p style="margin: 0; color: #4b5563; font-size: 15px; max-width: 480px; margin: 0 auto;"
                                        th:text="${trangThaiEmail == 'thanh-toan' ? 'Quý khách đã hoàn tất thanh toán. Chúng tôi rất mong được đón tiếp quý khách tại ' + tenKhachSan + '.'
                                                 : (trangThaiEmail == 'da-xac-nhan' ? 'Yêu cầu đặt phòng của quý khách đã được nhân viên xác nhận. Quý khách vui lòng hoàn tất thanh toán để giữ phòng.'
-                                                : 'Yêu cầu đặt phòng của quý khách đã được gửi thành công. Đội ngũ nhân viên sẽ kiểm tra và xác nhận trong thời gian sớm nhất.')}">
+                                                : (trangThaiEmail == 'yeu-cau-thanh-toan' ? thongBaoChinh
+                                                : 'Yêu cầu đặt phòng của quý khách đã được gửi thành công. Đội ngũ nhân viên sẽ kiểm tra và xác nhận trong thời gian sớm nhất.'))}">
                                         Thong bao chinh
                                     </p>
                                 </td>
@@ -445,6 +446,38 @@
                 </tr>
 
                 <!-- ===================================================================== -->
+                <!-- QR THANH TOAN (chi hien khi con no phai tra) -->
+                <!-- ===================================================================== -->
+                <tr th:if="${qrThanhToanUrl != null}">
+                    <td style="padding: 8px 40px 28px;">
+                        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px;">
+                            <tr>
+                                <td style="padding: 22px 24px; text-align: center;">
+                                    <div style="color: #6b7280; font-size: 11px; text-transform: uppercase; font-weight: 600;">Số tiền cần thanh toán</div>
+                                    <div style="font-family: 'Playfair Display', Georgia, serif; color: #b45309; font-size: 24px; font-weight: 700; margin-top: 4px;"
+                                         th:text="${soTienConLai}">0 VND</div>
+                                    <div style="margin-top: 16px;">
+                                        <img th:src="${qrThanhToanUrl}" width="200" height="200" alt="QR thanh toan"
+                                             style="display: inline-block; width: 200px; height: 200px; border: 1px solid #e5e7eb; border-radius: 8px; background: #ffffff; padding: 8px;"/>
+                                    </div>
+                                    <div style="color: #6b7280; font-size: 13px; margin-top: 12px;">Quét mã QR bằng camera điện thoại để mở trang thanh toán, hoặc bấm nút bên dưới.</div>
+                                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin: 16px auto 0;">
+                                        <tr>
+                                            <td style="background: #2980B9; border-radius: 8px;">
+                                                <a th:href="${linkThanhToan}" target="_blank"
+                                                   style="display: inline-block; padding: 12px 28px; color: #ffffff; font-size: 14px; font-weight: 700; text-decoration: none;">
+                                                    Thanh toán ngay
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+
+                <!-- ===================================================================== -->
                 <!-- TRẠNG THÁI ĐƠN -->
                 <!-- ===================================================================== -->
                 <tr>
@@ -461,7 +494,7 @@
                                             </td>
                                             <td style="vertical-align: middle; text-align: right;">
                                                 <span style="display: inline-block; padding: 6px 14px; background: #2980B9; color: #ffffff; border-radius: 14px; font-size: 11px; font-weight: 600; text-transform: uppercase;"
-                                                      th:text="${trangThaiEmail == 'thanh-toan' ? 'HOAN TAT' : (trangThaiEmail == 'da-xac-nhan' ? 'DA XAC NHAN' : 'CHO XAC NHAN')}">
+                                                      th:text="${trangThaiEmail == 'thanh-toan' ? 'HOAN TAT' : (trangThaiEmail == 'da-xac-nhan' ? 'DA XAC NHAN' : (trangThaiEmail == 'yeu-cau-thanh-toan' ? 'CON NO' : 'CHO XAC NHAN'))}">
                                                     CHO XAC NHAN
                                                 </span>
                                             </td>
@@ -566,6 +599,22 @@
                                             <td style="vertical-align: top; padding-left: 8px;">
                                                 <div style="color: #1f2937; font-size: 14px; font-weight: 600;">Chờ nhân viên xác nhận</div>
                                                 <div style="color: #6b7280; font-size: 13px; margin-top: 2px;">Thông thường trong vòng 15-30 phút trong giờ hành chính.</div>
+                                            </td>
+                                        </tr>
+                                    </table>
+                                </td>
+                            </tr>
+                            <!-- Neu la yeu cau thanh toan phan con lai (phu thu / con no luc len lich) -->
+                            <tr th:if="${trangThaiEmail == 'yeu-cau-thanh-toan'}">
+                                <td style="padding: 12px 0;">
+                                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                                        <tr>
+                                            <td style="vertical-align: top; width: 32px;">
+                                                <div style="width: 24px; height: 24px; border: 1.5px solid #2980B9; border-radius: 50%; color: #2980B9; font-size: 12px; font-weight: 700; line-height: 21px; text-align: center;">1</div>
+                                            </td>
+                                            <td style="vertical-align: top; padding-left: 8px;">
+                                                <div style="color: #1f2937; font-size: 14px; font-weight: 600;">Thanh toán phần còn lại</div>
+                                                <div style="color: #6b7280; font-size: 13px; margin-top: 2px;">Quét mã QR ở trên hoặc bấm nút "Thanh toán ngay" để hoàn tất.</div>
                                             </td>
                                         </tr>
                                     </table>

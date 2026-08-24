@@ -76,6 +76,9 @@ public class BookingEmailService {
     @Value("${app.hotel-address:123 Đường ABC, Quận 1, TP.HCM}")
     private String hotelAddress;
 
+    @Value("${app.base-url:http://localhost:8080}")
+    private String baseUrl;
+
     /**
      * Gui email xac nhan cho khach sau khi tao yeu cau dat phong online.
      * Trang thai don luc nay la "Yeu cau dat phong", cho NV xac nhan.
@@ -176,6 +179,58 @@ public class BookingEmailService {
         } catch (Exception e) {
             log.error("[Email] Loi gui email thanh toan don #{}: {}", maDatPhong, e.getMessage(), e);
         }
+    }
+
+    /**
+     * Gui email kem QR thanh toan khi don co mot khoan CON PHAI TRA (soTienConLai > 0).
+     * Dung chung cho 2 truong hop:
+     *   1) Don vua duoc "len lich" (tao) tu So Do Phong ma chua thu du tien.
+     *   2) Don vua phat sinh chi phi (phu thu nhan som/tra muon...) lam tang cong no.
+     *
+     * QR tro thang toi /thanh-toan/pool?dat-phong-id={id} — endpoint nay se tu tao
+     * (hoac tai su dung) yeu cau VNPay va redirect khach toi trang thanh toan phan
+     * con lai cua don.
+     */
+    @Async
+    public void guiEmailYeuCauThanhToan(Integer maDatPhong, String tieuDeNgan, String thongBao, BigDecimal soTienConLai) {
+        DatPhong dp = layDatPhong(maDatPhong);
+        if (dp == null) return;
+        if (soTienConLai == null || soTienConLai.compareTo(BigDecimal.ZERO) <= 0) return;
+
+        String emailNhan = layEmailKhach(dp);
+        if (!emailHopLe(emailNhan)) {
+            log.warn("[Email] Bo qua QR thanh toan: don #{} khong co email hop le (email={})", maDatPhong, emailNhan);
+            return;
+        }
+
+        try {
+            Map<String, Object> vars = buildCommonVars(dp, "yeu-cau-thanh-toan");
+            vars.put("tieuDe", tieuDeNgan);
+            vars.put("loiChao", "Kính gửi quý khách,");
+            vars.put("thongBaoChinh", thongBao);
+            vars.put("soTienConLai", formatTien(soTienConLai));
+
+            String linkThanhToan = baseUrl + "/thanh-toan/pool?dat-phong-id=" + maDatPhong;
+            vars.put("linkThanhToan", linkThanhToan);
+            vars.put("qrThanhToanUrl", buildQrCodeUrl(linkThanhToan));
+
+            sendEmail(emailNhan,
+                    "[Hotel] Yêu cầu thanh toán - Đơn đặt phòng #" + dp.getId(),
+                    "email/xac-nhan-dat-phong", vars);
+            log.info("[Email] Da gui email QR thanh toan toi {} (don #{}, con lai {})", emailNhan, maDatPhong, soTienConLai);
+        } catch (Exception e) {
+            log.error("[Email] Loi gui email QR thanh toan don #{}: {}", maDatPhong, e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Sinh URL anh QR (qua dich vu QR cong khai) ma-hoa link thanh toan.
+     * Khong luu file, khong can them thu vien QR o backend — client mail app se
+     * tu tai anh nay khi mo thu.
+     */
+    private String buildQrCodeUrl(String data) {
+        String encoded = java.net.URLEncoder.encode(data, StandardCharsets.UTF_8);
+        return "https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=" + encoded;
     }
 
     // ============== PRIVATE HELPERS ==============

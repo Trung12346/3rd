@@ -169,41 +169,25 @@ public class BookingDraftService {
         // 3) Đơn đã được NV xác nhận (xem như "thành công" ở góc độ nghiệp vụ)
         boolean daXacNhan = tt.contains("da xac nhan") || tt.contains("da nhan phong");
 
-        // ===== PHÂN LOẠI CHUÔNG =====
-        // - "success"   : Đặt phòng HOÀN TẤT (đã thanh toán HOẶC NV đã xác nhận "Da xac nhan"/"Da nhan phong")
-        //                 VÀ đủ thông tin.
-        // - "submitted" : KH đã GỬI YÊU CẦU thành công ("Yeu cau dat phong" + đủ thông tin) nhưng
-        //                 CHƯA thanh toán. NV sẽ xét duyệt. Chuông hiện "Yêu cầu đặt phòng của
-        //                 bạn đã được gửi thành công!" thay vì "Đặt phòng thành công" để KH
-        //                 không hiểu nhầm là đã xong toàn bộ.
-        // - "approved"  : NV đã duyệt ("Cho xac nhan") nhưng KH chưa thanh toán.
-        // - "draft"     : Đơn đang dở ("Chua thanh toan") hoặc "Yeu cau dat phong" mà CHƯA đủ
-        //                 thông tin khách -> backup về trang thanh toán / nhập thông tin.
-        // - null        : Không xác định / không hiện chuông.
-
-        // (a) KH vừa điền xong thông tin -> đơn chuyển sang "Yeu cau dat phong".
-        //     "Gửi yêu cầu" đã thành công ở góc độ KH, NV sẽ xét sau.
-        if (tt.contains("yeu cau") && duThongTin) {
-            return "submitted";
-        }
-
-        // (b) Đã thanh toán VÀ đủ thông tin -> "success"
+        // Chỉ thông báo "đặt thành công" khi thỏa CẢ 2 điều kiện:
+        // (a) thông tin khách đầy đủ VÀ (b) đã thanh toán (hoặc NV đã xác nhận)
         if (daThanhToan && duThongTin) {
             return "success";
         }
 
-        // (c) NV đã xác nhận (Da xac nhan / Da nhan phong) VÀ đủ thông tin -> "success"
+        // Đã thanh toán nhưng thiếu thông tin -> vẫn coi là "draft" để backup
+        // (một số luồng NV ghi nhận thanh toán trước khi KH cập nhật info)
         if (daXacNhan && duThongTin) {
             return "success";
         }
 
-        // (d) NV đã duyệt ("Cho xac nhan") hoặc đã xác nhận mà KH chưa thanh toán
+        // NV đã duyệt / đã xác nhận nhưng KH chưa thanh toán -> tiếp tục thanh toán
         if (tt.contains("cho xac") || daXacNhan) {
             return "approved";
         }
 
-        // (e) Đơn đang dở ("Chua thanh toan") hoặc "Yeu cau dat phong" mà CHƯA đủ
-        //     thông tin -> backup về trang thanh toán / trang nhập thông tin khách
+        // Đơn mới tạo ("Yeu cau dat phong") hoặc "Chua thanh toan"
+        // mà chưa đủ thông tin -> backup về trang thanh toán
         if (tt.contains("yeu cau") || tt.contains("chua thanh toan")) {
             return "draft";
         }

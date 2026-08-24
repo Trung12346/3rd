@@ -578,18 +578,6 @@ public class PhongController {
             dp.setSdt(sodienthoai);
             dp.setYeuCauThem(yeucauthem);
 
-            // ===== Sau khi KH vãng lai đã điền đủ thông tin khách, chuyển trạng thái
-            // don sang "Yeu cau dat phong" de NV xet duyet. KH online (co tai khoan)
-            // đa o trang thai nay tu luc tao don nen khong can doi.
-            // - Trang thai cu: "Chua thanh toan" (don moi tao tu /loai-phong/dat-nhanh
-            //   voi KH vang lai, moi co CCCD chua co hoten/email/sdt) -> day moi la
-            //   thoi diem "da gui yeu cau dat phong".
-            // - Neu don da qua cac trang thai khac (Da xac nhan / Da huy / ...)
-            //   thi KHONG doi, giu nguyen de tranh pha workflow.
-            if (dp.getN() == null && "Chua thanh toan".equalsIgnoreCase(dp.getTrangThai())) {
-                dp.setTrangThai("Yeu cau dat phong");
-            }
-
             datphongservice.save(dp);
 
             // LƯU COOKIE để backup trong luồng VNPay: nếu khách bấm "Thanh toán qua

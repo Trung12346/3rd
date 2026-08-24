@@ -887,7 +887,6 @@
         <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
         <input type="hidden" name="maDatPhong" th:value="${datPhong != null ? datPhong.id : 0}">
         <input type="hidden" name="tongTienPhong" id="h-tien-phong" value="0">
-        <input type="hidden" name="tongPhuThuGio" id="h-phu-thu" value="0">
         <input type="hidden" name="tongTienDichVu" id="h-tien-dv" value="0">
         <input type="hidden" name="tongTienGiam" id="h-tien-giam" value="0">
         <input type="hidden" name="maKhuyenMai" id="promoIdHidden"
@@ -937,12 +936,10 @@
                         <div class="stay-field">
                             <label>Giờ nhận phòng</label>
                             <input type="time" id="gioNhan">
-                            <small class="stay-hint">Giờ chuẩn không phụ thu: 08:00 hoặc 12:00</small>
                         </div>
                         <div class="stay-field">
                             <label>Giờ trả phòng</label>
                             <input type="time" id="gioTra">
-                            <small class="stay-hint">Giờ chuẩn: 08:00 hoặc 12:00</small>
                         </div>
                     </div>
 
@@ -963,11 +960,6 @@
                                    th:value="${datPhong != null ? datPhong.sotreEm : 0}">
                         </div>
                     </div>
-
-                    <div class="canh-bao-phu-thu" id="canhBaoPhuThu">
-                        <i class="fa-solid fa-circle-exclamation"></i>
-                        <span id="canhBaoPhuThuText"></span>
-                    </div>
                 </div>
 
                 <!-- ===== 2. PHÒNG ĐÃ ĐẶT ===== -->
@@ -984,12 +976,6 @@
                                 Phòng 101 - Deluxe
                             </div>
                             <div class="room-sub" th:text="${ct.p != null ? ('Tầng ' + ct.p.soTang) : ''}">Tầng 1</div>
-                            <div class="room-phu-thu"
-                                 th:if="${ct.phuPhi != null and ct.phuPhi.signum() > 0}"
-                                 th:title="'Phụ phí ngoài khung giờ chuẩn 08:00 / 12:00'">
-                                Phụ phí:&nbsp;
-                                <span th:text="${'+ ' + #numbers.formatDecimal(ct.phuPhi, 0, 'COMMA', 0, 'POINT') + ' VND'}">+ 100.000 VND</span>
-                            </div>
                         </div>
                         <div class="room-price"
                              th:text="${ct.p != null} ? (${#numbers.formatDecimal(ct.p.giaMoiDem, 0, 'COMMA', 0, 'POINT')} + ' VND/đêm') : '0 VND/đêm'">
@@ -1115,10 +1101,6 @@
                     <span>Tiền phòng</span>
                     <span id="sumTienPhong">đ 0</span>
                 </div>
-                <div class="sum-row phu-thu" id="sumPhuThuRow" style="display:none;">
-                    <span>Phụ thu giờ nhận/trả</span>
-                    <span id="sumPhuThu">đ 0</span>
-                </div>
                 <div class="sum-row">
                     <span>Tiền dịch vụ</span>
                     <span id="sumTienDv">đ 0</span>
@@ -1166,25 +1148,11 @@
     </form>
 </main>
 
-<!-- Bind gia tri tong phu phi luu san trong DB vao dong tom tat ngay khi mo trang -->
+<!-- Bind gia tri da thanh toan luu san trong DB vao bien dung chung phia duoi -->
 <script th:inline="javascript">
     (function () {
-        const tongPhuThuDb = /*[[${tongPhuThu != null ? tongPhuThu.doubleValue() : 0}]]*/ 0;
         const daThanhToanDb = /*[[${daThanhToanHd != null ? daThanhToanHd.doubleValue() : 0}]]*/ 0;
         window.__daThanhToanDb = daThanhToanDb;
-        const phuThuRow = document.getElementById('sumPhuThuRow');
-        const phuThuEl = document.getElementById('sumPhuThu');
-        const canhBao = document.getElementById('canhBaoPhuThu');
-        const canhBaoText = document.getElementById('canhBaoPhuThuText');
-        if (tongPhuThuDb > 0 && phuThuRow && phuThuEl) {
-            phuThuEl.textContent = 'đ ' + Math.round(tongPhuThuDb).toLocaleString('vi-VN');
-            phuThuRow.style.display = 'flex';
-            if (canhBao && canhBaoText) {
-                canhBao.classList.add('show');
-                canhBaoText.textContent = 'Đơn đang có khoản phụ thu giờ nhận/trả đã lưu trước đó: ' +
-                    Math.round(tongPhuThuDb).toLocaleString('vi-VN') + ' VND.';
-            }
-        }
     })();
 </script>
 
@@ -1224,19 +1192,6 @@
             }
             return { hopLe: true, thongBao: '' };
         },
-        tinhPhuThuGio(ngayNhan, ngayTra) {
-            // "Phu thu ngoai gio" o buoc CHINH SUA don nay da bi VO HIEU HOA phia
-            // backend tu lau: PhongService.calculateExtraFeeFor(...) luon tra ve
-            // ZERO (xem javadoc cua ham do — chinh sach nay "DA BO theo yeu cau"),
-            // va truong an "tongPhuThuGio" JS tinh o day thuc ra KHONG duoc backend
-            // doc (khong nam trong @RequestParam cua updateChiTietDatPhong) nen bi
-            // bo qua hoan toan luc luu. Rule cu (08:30-11:00 nhan / sau 18:30 tra ->
-            // cong 100.000d) chi con la UI "ma", khong khop voi bat ky gi thuc su
-            // duoc tinh/luu -> gay hieu lam cho nhan vien. Giu ham nay tra ve 0 de
-            // giao dien khop chinh xac voi nhung gi se duoc luu (khong con phu thu
-            // gio nhan/tra o man hinh nay).
-            return { tong: 0, chiTiet: [] };
-        }
     };
 
     // Giá từng phòng trong đơn (lấy từ data-gia của .room-row)
@@ -1641,21 +1596,17 @@
         promoInfoRowEl.style.display = 'flex';
     }
 
-    /** Tinh toan bong tong tien: tien phong + phu thu gio + tien dich vu + VAT, ap dung khuyen mai neu co */
+    /** Tinh toan bong tong tien: tien phong + tien dich vu + VAT, ap dung khuyen mai neu co */
     function tinhTongTien() {
         BookingValidate.capNhatMinNgayTra(ngayNhanEl, ngayTraEl);
         const ketQuaNgay = BookingValidate.validateNgayNhanTra(ngayNhanEl.value, ngayTraEl.value);
         BookingValidate.hienThiLoi(ngayTraEl, ketQuaNgay.hopLe ? '' : ketQuaNgay.thongBao);
 
-        const canhBao = document.getElementById('canhBaoPhuThu');
-        const canhBaoText = document.getElementById('canhBaoPhuThuText');
-
-        let soDem = 0, tienPhong = 0, phuThu = { tong: 0, chiTiet: [] }, tienDv = 0, vat = 0, tongCong = 0;
+        let soDem = 0, tienPhong = 0, tienDv = 0, vat = 0, tongCong = 0;
 
         if (ketQuaNgay.hopLe) {
             soDem = ketQuaNgay.soDem;
             tienPhong = tongGiaMoiDem * soDem;
-            phuThu = BookingValidate.tinhPhuThuGio(ngayNhanEl.value, ngayTraEl.value);
         }
 
         // Cập nhật min/max ngày sử dụng dịch vụ theo khoảng lưu trú mới + tái validate từng dòng
@@ -1673,13 +1624,13 @@
             }
         });
 
-        vat = Math.round((tienPhong + phuThu.tong + tienDv) * 0.10);
+        vat = Math.round((tienPhong + tienDv) * 0.10);
 
         // ===== Ap dung khuyen mai (neu co) =====
         let tienGiam = 0;
         if (currentKM) {
             const dieuKien = Number(currentKM.dieuKien || 0);
-            const tongTruocVat = tienPhong + phuThu.tong + tienDv;
+            const tongTruocVat = tienPhong + tienDv;
             if (dieuKien <= 0 || tongTruocVat >= dieuKien) {
                 const gtri = Number(currentKM.giatriGiam || 0);
                 const isPercent = (currentKM.loaiGiam || '').toUpperCase() === 'PERCENT';
@@ -1692,7 +1643,7 @@
             }
         }
         // Gioi han so tien giam khong vuot qua tong truoc VAT
-        const tongTruocVat = tienPhong + phuThu.tong + tienDv;
+        const tongTruocVat = tienPhong + tienDv;
         if (tienGiam > tongTruocVat) {
             tienGiam = Math.round(tongTruocVat);
         }
@@ -1722,21 +1673,7 @@
         sumConLaiEl.textContent = (conLai < 0 ? '- đ ' : 'đ ') + BookingValidate.formatVND(Math.abs(conLai)).replace(' VND', '');
         if (sumConLaiRowEl) sumConLaiRowEl.classList.toggle('da-du', conLai <= 0);
 
-        const phuThuRow = document.getElementById('sumPhuThuRow');
-        if (phuThu.tong > 0) {
-            document.getElementById('sumPhuThu').textContent = 'đ ' + BookingValidate.formatVND(phuThu.tong).replace(' VND', '');
-            phuThuRow.style.display = 'flex';
-            canhBao.classList.add('show');
-            canhBaoText.textContent = 'Đơn đang bị phụ thu ' + BookingValidate.formatVND(phuThu.tong) +
-                ' vì ' + phuThu.chiTiet.map(ct => ct.nhan.toLowerCase() + ' lúc ' + ct.gio).join(' và ') +
-                ' (ngoài khung giờ chuẩn 08:00 / 12:00).';
-        } else {
-            phuThuRow.style.display = 'none';
-            canhBao.classList.remove('show');
-        }
-
         document.getElementById('h-tien-phong').value = Math.round(tienPhong);
-        document.getElementById('h-phu-thu').value = Math.round(phuThu.tong);
         document.getElementById('h-tien-dv').value = Math.round(tienDv);
         document.getElementById('h-tien-giam').value = Math.round(tienGiam);
         document.getElementById('h-tien-vat').value = Math.round(vat);

@@ -154,7 +154,10 @@ public class ThanhToanController {
         HoaDon hd = hoaDonService.findByDatPhongId(id);
         if(
                 hd == null ||
-                (hd.getTongTien().subtract(hd.getDaThanhToan()).compareTo(BigDecimal.ZERO) > 0 && hd.getTrangThai().equals("Cho thanh toan"))
+                // Yoda-style + "Cho thanh toan".equals(...) thay vi hd.getTrangThai().equals(...):
+                // tranh NullPointerException neu mot luong tao HoaDon nao khac quen gan
+                // trangThai (vd: bug da fix o submitTienMat phia tren).
+                (hd.getTongTien().subtract(hd.getDaThanhToan()).compareTo(BigDecimal.ZERO) > 0 && "Cho thanh toan".equals(hd.getTrangThai()))
         )
         {
             String url = VNPayRequests.get(id);
@@ -262,7 +265,12 @@ public class ThanhToanController {
         hd.setTongTien(amountTongTien);
         hd.setDaThanhToan(BigDecimal.ZERO);
         hd.setGhiChu("Thanh toan tien mat tai quay, ma don: " + id);
-        hoaDonService.save(hd);
+        // BUG CU: goi hoaDonService.save(hd) truc tiep khong gan trangThai, khien
+        // hd.getTrangThai() == null. /thanh-toan/pool sau do goi
+        // hd.getTrangThai().equals("Cho thanh toan") tren hoa don nay se nem NPE.
+        // Dung saveWithPaymentStatusCheck (dong bo voi moi noi khac tao HoaDon)
+        // de tu dong gan trangThai = "Cho thanh toan" / "Da thanh toan".
+        hoaDonService.saveWithPaymentStatusCheck(hd);
 
 
 
