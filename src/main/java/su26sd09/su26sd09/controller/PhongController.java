@@ -59,6 +59,12 @@ public class PhongController {
 
     @Autowired
     private BookingDraftService bookingDraftService;
+
+    @Autowired
+    private PendingBookingService pendingBookingService;
+
+    @Autowired
+    private BookingEmailService bookingEmailService;
 //
 ////    @GetMapping
 ////    public String index(Model model) {
@@ -167,7 +173,14 @@ public class PhongController {
 //    }
 //
     @GetMapping("/dat-phong/xac-nhan/{id}")
-    public String ConfirmOrder(@PathVariable int id,Model model){
+    public String ConfirmOrder(@PathVariable int id, Model model,
+                               RedirectAttributes redirectAttributes,
+                               HttpServletRequest request){
+        // id < 0 => ban nhap (CHUA co DatPhong that trong DB) tu
+        // /loai-phong/dat-nhanh. Xem PendingBookingService.
+        if (pendingBookingService.isPending(id)) {
+            return confirmOrderPending(id, model, redirectAttributes, request);
+        }
         DatPhong dp =  datphongservice.findById(id);
         if (dp.getTrangThai().equals("Da xac nhan")){
             return "redirect:/home";
@@ -234,6 +247,134 @@ public class PhongController {
 
         return "dat-phong-xac-nhan";
     }
+
+    /**
+     * Ban xem truoc (PREVIEW) trang chon dich vu bo sung cho 1 ban nhap
+     * dang cho (id < 0), tai su dung dung 1 template "dat-phong-xac-nhan"
+     * nhu don that. KHONG dong nao duoc ghi vao DB o day -
+     * phongService.assignRoomsForType() chi doc, dung de tinh gia hien thi
+     * (phong cu the co the doi khi tao that neu co khach khac dat truoc).
+     */
+    private String confirmOrderPending(int id, Model model, RedirectAttributes redirectAttributes,
+                                        HttpServletRequest request) {
+        su26sd09.su26sd09.dto.PendingBookingDraft draft = pendingBookingService.get(request, id);
+        if (draft == null) {
+            redirectAttributes.addFlashAttribute("timKiemError",
+                    "Phien dat phong da het han hoac khong hop le. Vui long dat lai.");
+            return "redirect:/loai-phong";
+        }
+
+        List<Phong> phongDuocChon;
+        try {
+            phongDuocChon = phongService.assignRoomsForType(
+                    draft.getLoaiPhongId(), draft.getSoLuong(), draft.getNgayNhan(), draft.getNgayTra());
+        } catch (IllegalStateException | IllegalArgumentException e) {
+            pendingBookingService.remove(request, id);
+            redirectAttributes.addFlashAttribute("timKiemError", e.getMessage());
+            return "redirect:/loai-phong/" + draft.getLoaiPhongId();
+        }
+
+        if (!phongDuocChon.isEmpty()) {
+            int tongSucChua = phongDuocChon.stream()
+                    .filter(p -> p.getLoaiPhong() != null)
+                    .mapToInt(p -> p.getLoaiPhong().getSucChuaToiDa())
+                    .sum();
+            int tongNguoi = draft.getNguoiLon() + draft.getTreEm();
+            if (tongNguoi > tongSucChua) {
+                model.addAttribute("canhBaoSucChua",
+                        "Tong nguoi (" + tongNguoi + ") vuot suc chua toi da (" + tongSucChua
+                                + ") cua " + phongDuocChon.size() + " phong dang chon. "
+                                + "Yeu cau se duoc nhan vien xu ly.");
+            }
+        }
+
+        DatPhong dp = buildTransientDatPhong(id, draft);
+
+        long soDemVal = soDem(draft.getNgayNhan(), draft.getNgayTra());
+        BigDecimal amountP = BigDecimal.ZERO;
+        BigDecimal tongPhuPhi = BigDecimal.ZERO;
+        List<ChiTietDatPhong> listCt = new ArrayList<>();
+        for (Phong p : phongDuocChon) {
+            BigDecimal phuPhi = phongService.calculateExtraFeeFor(p.getMaPhong(), draft.getNgayNhan(), draft.getNgayTra());
+            BigDecimal giaKhiDat = p.getGiaMoiDem().multiply(BigDecimal.valueOf(soDemVal)).add(phuPhi);
+            ChiTietDatPhong ct = new ChiTietDatPhong();
+            ct.setP(p);
+            ct.setGiaMoiDem(p.getGiaMoiDem());
+            ct.setGiaKhiDat(giaKhiDat);
+            ct.setPhuPhi(phuPhi);
+            ct.setD(dp);
+            listCt.add(ct);
+            amountP = amountP.add(giaKhiDat);
+            tongPhuPhi = tongPhuPhi.add(phuPhi);
+        }
+
+        Map<Integer, Chi_tiet_dich_vu> dichVuDaChonMap = new HashMap<>();
+        List<Integer> dichVuDaChonIds = new ArrayList<>();
+        BigDecimal amountDv = BigDecimal.ZERO;
+        if (draft.getDichVuIds() != null) {
+            for (Integer maDichVu : draft.getDichVuIds()) {
+                Dich_vu dv = dichVuService.findById(maDichVu);
+                if (dv == null) continue;
+                String slStr = draft.getSoLuongDichVu().get(maDichVu);
+                int sl = (slStr != null && !slStr.isBlank()) ? Integer.parseInt(slStr) : 1;
+                Chi_tiet_dich_vu ct = new Chi_tiet_dich_vu();
+                ct.setSoluong(sl);
+                ct.setDv(dv);
+                ct.setDonGia(dv.getGia().multiply(BigDecimal.valueOf(sl)));
+                dichVuDaChonMap.put(maDichVu, ct);
+                dichVuDaChonIds.add(maDichVu);
+                amountDv = amountDv.add(ct.getDonGia());
+            }
+        }
+
+        KhuyenMai km = draft.getMaKhuyenMai() != null ? khuyenMaiService.findbyId(draft.getMaKhuyenMai()) : null;
+        dp.setKm(km);
+        BigDecimal tienGiam = tinhTienGiam(amountP, km);
+        BigDecimal tienPhongSauGiam = amountP.subtract(tienGiam);
+        BigDecimal tongSauGiam = tienPhongSauGiam.add(amountDv);
+        BigDecimal amount = amountP.add(amountDv);
+
+        model.addAttribute("TienDv", amountDv);
+        model.addAttribute("TongTien", amount);
+        model.addAttribute("TienPhong", amountP);
+        model.addAttribute("TienGiam", tienGiam);
+        model.addAttribute("TongSauGiam", tongSauGiam);
+        model.addAttribute("TongPhuPhi", tongPhuPhi);
+        model.addAttribute("datPhong", dp);
+        model.addAttribute("chiTietDatPhongList", listCt);
+        model.addAttribute("nightCount", BigDecimal.valueOf(soDemVal));
+        model.addAttribute("dichVuList", dichVuService.findAll().stream()
+                .filter(n -> n.isHoatDong())
+                .filter(n -> {
+                    String loai = n.getLoaiDv();
+                    if (loai == null) return true;
+                    String loaiUpper = loai.trim().toUpperCase();
+                    return loaiUpper.equals("THUONG") || loaiUpper.equals("DICH VU");
+                })
+                .toList());
+        model.addAttribute("dichVuDaChonIds", dichVuDaChonIds);
+        model.addAttribute("dichVuDaChonMap", dichVuDaChonMap);
+        model.addAttribute("kmJson", buildKhuyenMaiJson());
+
+        return "dat-phong-xac-nhan";
+    }
+
+    /** Doi tuong DatPhong CHUA LUU (transient) chi de hien thi template, dung id am cua ban nhap. */
+    private DatPhong buildTransientDatPhong(int pendingId, su26sd09.su26sd09.dto.PendingBookingDraft draft) {
+        DatPhong dp = new DatPhong();
+        dp.setId(pendingId);
+        dp.setNgaydatPhong(draft.getNgayNhan());
+        dp.setNgaytraPhong(draft.getNgayTra());
+        dp.setSonguoiLon(draft.getNguoiLon());
+        dp.setSotreEm(draft.getTreEm());
+        dp.setMa_cccd(draft.getMaCccd());
+        dp.setTrangThai("Yeu cau dat phong");
+        dp.setHoten(draft.getHoten());
+        dp.setEmail(draft.getEmail());
+        dp.setSdt(draft.getSdt());
+        dp.setYeuCauThem(draft.getYeuCauThem());
+        return dp;
+    }
 //
     @PostMapping("/dat-phong/xac-nhan/{id}")
     public String ConfirmDV(@PathVariable int id,
@@ -243,6 +384,10 @@ public class PhongController {
                             RedirectAttributes redirectAttributes,
                             HttpServletRequest request,
                             HttpServletResponse response) {
+
+        if (pendingBookingService.isPending(id)) {
+            return confirmDVPending(id, dichvuid, maKhuyenMai, allParams, redirectAttributes, request);
+        }
 
         DatPhong dp = datphongservice.findById(id);
         if (dp == null) {
@@ -334,6 +479,66 @@ public class PhongController {
         }
     }
 
+    /**
+     * Tuong duong ConfirmDV nhung cho ban nhap dang cho (id < 0): chi luu
+     * lua chon dich vu bo sung + khuyen mai VAO SESSION (draft), KHONG dung
+     * cham gi den DB - DatPhong that chi duoc tao o buoc "Hoan tat dat phong".
+     */
+    private String confirmDVPending(int id, List<Integer> dichvuid, Integer maKhuyenMai,
+                                     Map<String, String> allParams, RedirectAttributes redirectAttributes,
+                                     HttpServletRequest request) {
+        su26sd09.su26sd09.dto.PendingBookingDraft draft = pendingBookingService.get(request, id);
+        if (draft == null) {
+            redirectAttributes.addFlashAttribute("timKiemError",
+                    "Phien dat phong da het han hoac khong hop le. Vui long dat lai.");
+            return "redirect:/loai-phong";
+        }
+
+        Map<Integer, String> soLuongMap = new HashMap<>();
+        Map<Integer, String> ngaySuDungMap = new HashMap<>();
+        if (dichvuid != null) {
+            for (Integer maDichVu : dichvuid) {
+                Dich_vu dv = dichVuService.findById(maDichVu);
+                if (dv == null) continue;
+
+                String ngayStr = allParams.get("ngaySuDung_" + maDichVu);
+                LocalDateTime ngaySuDung = (ngayStr != null && !ngayStr.isBlank())
+                        ? LocalDateTime.parse(ngayStr)
+                        : LocalDateTime.now();
+
+                if (ngaySuDung.isBefore(draft.getNgayNhan()) || ngaySuDung.isAfter(draft.getNgayTra())) {
+                    redirectAttributes.addFlashAttribute("bookingError",
+                            dv.getTen_dich_vu() + ": ngày sử dụng phải nằm trong thời gian lưu trú.");
+                    return "redirect:/phong/dat-phong/xac-nhan/" + id;
+                }
+
+                if (dv.getGioBatDau() != null || dv.getGioKetThuc() != null) {
+                    LocalTime gio = ngaySuDung.toLocalTime();
+                    boolean hopLe = (dv.getGioBatDau() == null || !gio.isBefore(dv.getGioBatDau()))
+                            && (dv.getGioKetThuc() == null || !gio.isAfter(dv.getGioKetThuc()));
+                    if (!hopLe) {
+                        redirectAttributes.addFlashAttribute("bookingError",
+                                dv.getTen_dich_vu() + " chỉ phục vụ từ " + dv.getGioBatDau()
+                                        + " đến " + dv.getGioKetThuc() + " mỗi ngày.");
+                        return "redirect:/phong/dat-phong/xac-nhan/" + id;
+                    }
+                }
+
+                String slStr = allParams.get("soLuong_" + maDichVu);
+                soLuongMap.put(maDichVu, slStr);
+                ngaySuDungMap.put(maDichVu, ngayStr);
+            }
+        }
+
+        draft.setDichVuIds(dichvuid);
+        draft.setSoLuongDichVu(soLuongMap);
+        draft.setNgaySuDungDichVu(ngaySuDungMap);
+        draft.setMaKhuyenMai(maKhuyenMai);
+        pendingBookingService.update(request, id, draft);
+
+        return "redirect:/phong/dat-phong/thong-tin-khach/" + id;
+    }
+
 //    /**
 //     * Phục hồi luồng đặt phòng cho khách VÃNG LAI (không có tài khoản).
 //     *
@@ -378,7 +583,12 @@ public class PhongController {
     }
 //
     @GetMapping("/dat-phong/thong-tin-khach/{id}")
-    public String ConfirmCustomerInfor(@PathVariable int id, Model model, Authentication authentication){
+    public String ConfirmCustomerInfor(@PathVariable int id, Model model, Authentication authentication,
+                                       HttpServletRequest request){
+
+        if (pendingBookingService.isPending(id)) {
+            return confirmCustomerInforPending(id, model, authentication, request);
+        }
 
         DatPhong dp = datphongservice.findById(id);
         if (dp == null) {
@@ -472,6 +682,174 @@ public class PhongController {
         model.addAttribute("chiTietDichVuList", listctdv);
         return "dat-phong-thong-tin-khach";
     }
+
+    /**
+     * Ban nhap (id < 0). Neu khach hien dang dang nhap voi tai khoan da co
+     * (ROLE_GUEST) - da biet ho ten/email/sdt - thi coi nhu buoc "Hoan tat
+     * dat phong" da du dieu kien, TAO DatPhong that ngay (bo qua form nhap
+     * tay) roi chuyen sang thanh toan, giong het hanh vi cu. Neu la khach
+     * vang lai (chua co thong tin lien he) thi CHUA tao gi ca, chi hien thi
+     * preview + form - DatPhong that chi duoc tao khi khach bam nut
+     * "Hoan tat dat phong" (xem SaveXacThucThongTin).
+     */
+    private String confirmCustomerInforPending(int id, Model model, Authentication authentication,
+                                                HttpServletRequest request) {
+        su26sd09.su26sd09.dto.PendingBookingDraft draft = pendingBookingService.get(request, id);
+        if (draft == null) {
+            return "redirect:/loai-phong";
+        }
+
+        KhachHang currentKhach = null;
+        if (authentication != null && authentication.isAuthenticated()
+                && !(authentication instanceof AnonymousAuthenticationToken)) {
+            KhachHang nd = nguoiDungService.findByEmail(authentication.getName());
+            if (nd != null && nd.getVaiTro() != null
+                    && "ROLE_GUEST".equals(nd.getVaiTro().getTenVaiTro())) {
+                currentKhach = nd;
+            }
+        }
+
+        if (currentKhach != null) {
+            try {
+                DatPhong datPhong = createBookingFromDraft(draft, currentKhach);
+                datPhong.setHoten(currentKhach.getHoTen());
+                datPhong.setEmail(currentKhach.getEmail());
+                datPhong.setSdt(currentKhach.getSoDienThoai());
+                datphongservice.save(datPhong);
+                pendingBookingService.remove(request, id);
+                return "redirect:/thanh-toan/dat-phong/" + datPhong.getId();
+            } catch (IllegalStateException | IllegalArgumentException e) {
+                return "redirect:/loai-phong/" + draft.getLoaiPhongId();
+            }
+        }
+
+        // Khach vang lai: preview, chua tao gi trong DB.
+        List<Phong> phongDuocChon;
+        try {
+            phongDuocChon = phongService.assignRoomsForType(
+                    draft.getLoaiPhongId(), draft.getSoLuong(), draft.getNgayNhan(), draft.getNgayTra());
+        } catch (IllegalStateException | IllegalArgumentException e) {
+            return "redirect:/loai-phong/" + draft.getLoaiPhongId();
+        }
+
+        DatPhong dp = buildTransientDatPhong(id, draft);
+        long soDemVal = soDem(draft.getNgayNhan(), draft.getNgayTra());
+
+        BigDecimal amount = BigDecimal.ZERO;
+        BigDecimal tongPhuPhi = BigDecimal.ZERO;
+        List<ChiTietDatPhong> listCt = new ArrayList<>();
+        for (Phong p : phongDuocChon) {
+            BigDecimal phuPhi = phongService.calculateExtraFeeFor(p.getMaPhong(), draft.getNgayNhan(), draft.getNgayTra());
+            BigDecimal giaKhiDat = p.getGiaMoiDem().multiply(BigDecimal.valueOf(soDemVal)).add(phuPhi);
+            ChiTietDatPhong ct = new ChiTietDatPhong();
+            ct.setP(p);
+            ct.setGiaMoiDem(p.getGiaMoiDem());
+            ct.setGiaKhiDat(giaKhiDat);
+            ct.setPhuPhi(phuPhi);
+            ct.setD(dp);
+            listCt.add(ct);
+            amount = amount.add(giaKhiDat);
+            tongPhuPhi = tongPhuPhi.add(phuPhi);
+        }
+
+        List<Chi_tiet_dich_vu> listctdv = new ArrayList<>();
+        BigDecimal amountDv = BigDecimal.ZERO;
+        if (draft.getDichVuIds() != null) {
+            for (Integer maDichVu : draft.getDichVuIds()) {
+                Dich_vu dv = dichVuService.findById(maDichVu);
+                if (dv == null) continue;
+                String slStr = draft.getSoLuongDichVu().get(maDichVu);
+                int sl = (slStr != null && !slStr.isBlank()) ? Integer.parseInt(slStr) : 1;
+                Chi_tiet_dich_vu ct = new Chi_tiet_dich_vu();
+                ct.setSoluong(sl);
+                ct.setDv(dv);
+                ct.setDonGia(dv.getGia().multiply(BigDecimal.valueOf(sl)));
+                listctdv.add(ct);
+                amountDv = amountDv.add(ct.getDonGia());
+            }
+        }
+
+        KhuyenMai km = draft.getMaKhuyenMai() != null ? khuyenMaiService.findbyId(draft.getMaKhuyenMai()) : null;
+        dp.setKm(km);
+
+        BigDecimal tienGiam = tinhTienGiam(amount, km);
+        BigDecimal tienPhongSauGiam = amount.subtract(tienGiam);
+        BigDecimal totalAmount = tienPhongSauGiam.add(amountDv);
+        BigDecimal thueVat = new BigDecimal("0.10");
+        BigDecimal tienVat = totalAmount.multiply(thueVat).setScale(2, RoundingMode.HALF_UP);
+        totalAmount = totalAmount.add(tienVat);
+
+        model.addAttribute("datPhong", dp);
+        model.addAttribute("nightCount", Math.max(1, soDemVal));
+        model.addAttribute("chiTietDatPhongList", listCt);
+        model.addAttribute("TienDv", amountDv);
+        model.addAttribute("TienVat", tienVat);
+        model.addAttribute("TienPhong", amount);
+        model.addAttribute("TienGiam", tienGiam);
+        model.addAttribute("TongTien", totalAmount);
+        model.addAttribute("TongCong", totalAmount);
+        model.addAttribute("TongPhuPhi", tongPhuPhi);
+        model.addAttribute("chiTietDichVuList", listctdv);
+        return "dat-phong-thong-tin-khach";
+    }
+
+    /**
+     * Tao DatPhong THAT (+ ChiTietDatPhong, Chi_tiet_dich_vu, khuyen mai) tu
+     * 1 ban nhap. Day la DIEM DUY NHAT ma booking that su duoc tao trong
+     * luong /loai-phong -> /phong/dat-phong/... (khac voi truoc day, luc
+     * DatPhong duoc tao ngay khi khach bam "Dat phong"/"Dat phong loai
+     * nay"). Duoc goi tu SaveXacThucThongTin (khach bam "Hoan tat dat
+     * phong") va tu confirmCustomerInforPending (khach da dang nhap, du
+     * thong tin lien he nen duoc bo qua form).
+     */
+    private DatPhong createBookingFromDraft(su26sd09.su26sd09.dto.PendingBookingDraft draft, KhachHang khachHang) {
+        List<Phong> phongDuocChon = phongService.assignRoomsForType(
+                draft.getLoaiPhongId(), draft.getSoLuong(), draft.getNgayNhan(), draft.getNgayTra());
+
+        DatPhong datPhong = datphongservice.createAutoAssignedBooking(
+                phongDuocChon, khachHang, draft.getNgayNhan(), draft.getNgayTra(),
+                draft.getNguoiLon(), draft.getTreEm(), draft.getMaCccd());
+
+        if (draft.getMaKhuyenMai() != null) {
+            KhuyenMai km = khuyenMaiService.findbyId(draft.getMaKhuyenMai());
+            if (km != null && km.isHoatDong()) {
+                datPhong.setKm(km);
+            }
+        }
+
+        if (draft.getDichVuIds() != null) {
+            for (Integer maDichVu : draft.getDichVuIds()) {
+                Dich_vu dv = dichVuService.findById(maDichVu);
+                if (dv == null) continue;
+
+                String slStr = draft.getSoLuongDichVu().get(maDichVu);
+                int sl = (slStr != null && !slStr.isBlank()) ? Integer.parseInt(slStr) : 1;
+
+                String ngayStr = draft.getNgaySuDungDichVu().get(maDichVu);
+                LocalDateTime ngaySuDung = (ngayStr != null && !ngayStr.isBlank())
+                        ? LocalDateTime.parse(ngayStr)
+                        : LocalDateTime.now();
+
+                Chi_tiet_dich_vu ct = new Chi_tiet_dich_vu();
+                ct.setSoluong(sl);
+                ct.setDatPhong(datPhong);
+                ct.setDv(dv);
+                ct.setDonGia(dv.getGia().multiply(BigDecimal.valueOf(sl)));
+                ct.setNgay_su_dung(ngaySuDung);
+                ctdvService.save(ct);
+            }
+        }
+
+        datphongservice.save(datPhong);
+
+        try {
+            bookingEmailService.guiEmailYeuCauDatPhong(datPhong.getId());
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+
+        return datPhong;
+    }
 //
     private BigDecimal tinhTienGiam(BigDecimal tienPhong, KhuyenMai km) {
         if (km == null || !km.isHoatDong() || km.getGiatriGiam() == null) {
@@ -529,7 +907,54 @@ public class PhongController {
                                       @RequestParam("yeuCauThem") String yeucauthem,
                                       Authentication authentication,
                                       HttpServletRequest request,
-                                      HttpServletResponse response) {
+                                      HttpServletResponse response,
+                                      RedirectAttributes redirectAttributes) {
+            // ===== DIEM DUY NHAT tao DatPhong that cho luong /loai-phong: khach
+            // vua bam "Hoan tat dat phong" va vua nhap du ho ten/email/sdt.
+            // Truoc do (buoc /loai-phong/dat-nhanh, /phong/dat-phong/xac-nhan)
+            // hoan toan CHUA co dong nao trong bang dat_phong - moi thu chi la
+            // ban nhap trong SESSION - de tranh tao "don rac" giu phong truoc
+            // khach khac khi khach chua he cung cap thong tin lien he. =====
+            if (pendingBookingService.isPending(id)) {
+                su26sd09.su26sd09.dto.PendingBookingDraft draft = pendingBookingService.get(request, id);
+                if (draft == null) {
+                    redirectAttributes.addFlashAttribute("timKiemError",
+                            "Phien dat phong da het han hoac khong hop le. Vui long dat lai.");
+                    return "redirect:/loai-phong";
+                }
+
+                Authentication auth0 = SecurityContextHolder.getContext().getAuthentication();
+                KhachHang khachHang = null;
+                if (auth0 != null && auth0.isAuthenticated()
+                        && !(auth0 instanceof AnonymousAuthenticationToken)
+                        && !isNhanVienOrAdmin(auth0)) {
+                    khachHang = nguoiDungService.findByEmail(auth0.getName());
+                }
+
+                DatPhong dpThat;
+                try {
+                    dpThat = createBookingFromDraft(draft, khachHang);
+                } catch (IllegalStateException | IllegalArgumentException e) {
+                    redirectAttributes.addFlashAttribute("timKiemError", e.getMessage());
+                    return "redirect:/loai-phong/" + draft.getLoaiPhongId();
+                }
+
+                dpThat.setHoten(hoten);
+                dpThat.setEmail(email);
+                dpThat.setSdt(sodienthoai);
+                dpThat.setYeuCauThem(yeucauthem);
+                datphongservice.save(dpThat);
+
+                pendingBookingService.remove(request, id);
+
+                // Ghi nho vao COOKIE cho khach vang lai (giu nguyen hanh vi cu tu day tro di).
+                if (dpThat.getN() == null) {
+                    bookingDraftService.remember(request, response, dpThat.getId());
+                }
+
+                return "redirect:/thanh-toan/dat-phong/" + dpThat.getId();
+            }
+
             BigDecimal amount = BigDecimal.ZERO;
             BigDecimal amountdv = BigDecimal.ZERO;
             DatPhong dp = datphongservice.findById(id);

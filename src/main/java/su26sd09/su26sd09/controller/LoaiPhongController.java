@@ -73,6 +73,9 @@ public class LoaiPhongController {
     private BookingDraftService bookingDraftService;
 
     @Autowired
+    private su26sd09.su26sd09.service.PendingBookingService pendingBookingService;
+
+    @Autowired
     private DanhGiaService danhGiaService;
 
     @Autowired
@@ -348,59 +351,33 @@ public class LoaiPhongController {
         }
 
         try {
-            // Booking engine tu chon (soLuong) phong con trong thuc su cua loai
-            // -> assignRoomsForType se nem IllegalStateException neu khong du.
-            List<Phong> phongDuocChon = phongService.assignRoomsForType(loaiPhongId, soLuong, ngayNhan, ngayTra);
+            // CHUA tao DatPhong o day nua. Chi kiem tra con du (soLuong) phong
+            // trong thuc su cua loai (dung chung engine voi luc tao that o
+            // buoc "Hoan tat dat phong") de bao loi som cho khach neu het
+            // phong, nhung KHONG giu/khoa phong nao ca - assignRoomsForType()
+            // chi doc, khong ghi DB. Ket qua o day bi bo qua, chi de bat
+            // IllegalStateException giong het hanh vi cu.
+            phongService.assignRoomsForType(loaiPhongId, soLuong, ngayNhan, ngayTra);
 
-            // Validate suc chua: neu tong nguoi (NL + TE) vuot suc chua tong cua cac phong duoc chon,
-            // chi canh bao de nhan vien xep loai phong lon hon luc xac nhan yeu cau.
-            // KHONG chan dat yeu cau vi khach van co quyen gui yeu cau, nhan vien se xu ly.
-            if (phongDuocChon != null && !phongDuocChon.isEmpty()) {
-                int tongSucChua = phongDuocChon.stream()
-                        .filter(p -> p.getLoaiPhong() != null)
-                        .mapToInt(p -> p.getLoaiPhong().getSucChuaToiDa())
-                        .sum();
-                int tongNguoi = (nguoiLon != null ? nguoiLon : 0) + (treEm != null ? treEm : 0);
-                if (tongNguoi > tongSucChua) {
-                    redirectAttributes.addFlashAttribute("canhBaoSucChua",
-                            "Tong nguoi (" + tongNguoi + ") vuot suc chua toi da (" + tongSucChua
-                                    + ") cua " + phongDuocChon.size() + " phong dang chon. "
-                                    + "Yeu cau se duoc nhan vien xu ly.");
-                }
-            }
+            // ===== Dong goi thong tin da nhap thanh 1 ban nhap (PendingBookingDraft)
+            // va luu trong SESSION (khong dung DB) de forward qua cac buoc tiep theo
+            // (chon dich vu bo sung -> nhap thong tin lien he). DatPhong THAT chi
+            // duoc tao khi khach bam "Hoan tat dat phong" o buoc cuoi, tranh tao
+            // "don rac" (khong co thong tin lien he) giu phong truoc khach khac. =====
+            su26sd09.su26sd09.dto.PendingBookingDraft draft = new su26sd09.su26sd09.dto.PendingBookingDraft();
+            draft.setLoaiPhongId(loaiPhongId);
+            draft.setSoLuong(soLuong);
+            draft.setNgayNhan(ngayNhan);
+            draft.setNgayTra(ngayTra);
+            draft.setNguoiLon(nguoiLon != null ? nguoiLon : 0);
+            draft.setTreEm(treEm != null ? treEm : 0);
+            draft.setMucGia(mucGia);
+            draft.setCheckOutTime(gioTraChuan.toString());
+            draft.setMaCccd(maCccd);
 
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            KhachHang khachHang = null;
-            if (authentication != null && authentication.isAuthenticated()
-                    && !(authentication instanceof AnonymousAuthenticationToken)
-                    && !isNhanVienOrAdmin(authentication)) {
-                khachHang = nguoiDungService.findByEmail(authentication.getName());
-            }
+            int pendingId = pendingBookingService.create(request, draft);
 
-            // createAutoAssignedBooking da vong lap tao 1 ChiTietDatPhong cho MOI
-            // phong trong danh sach, nen dat nhieu phong se tao dong dang N dong.
-            // Dat phong voi trangThai="Yeu cau dat phong" — NV xac nhan + xep phong sau.
-            // Sau do KHACH van di tiep qua flow xac nhan (chọn DV, KM, thanh toan VNPay)
-            // giong het guest checkout. Sau khi thanh toan, trangThai giu nguyen de NV xu ly.
-            DatPhong datPhong = datPhongService.createAutoAssignedBooking(
-                    phongDuocChon, khachHang, ngayNhan, ngayTra,
-                    nguoiLon != null ? nguoiLon : 0, treEm != null ? treEm : 0, maCccd);
-
-            // Gui email xac nhan cho khach (async, khong block redirect)
-            try {
-                bookingEmailService.guiEmailYeuCauDatPhong(datPhong.getId());
-            } catch (Exception ex) {
-                // Khong block luong dat phong neu gui mail loi
-                ex.printStackTrace();
-            }
-
-            // ===== Ghi nhớ đơn đang dở vào COOKIE cho khách vãng lai (sống 30 ngày
-            // ở trình duyệt, không bị mất khi restart server) =====
-            if (datPhong.getN() == null) {
-                bookingDraftService.remember(request, response, datPhong.getId());
-            }
-
-            return "redirect:/phong/dat-phong/xac-nhan/" + datPhong.getId();
+            return "redirect:/phong/dat-phong/xac-nhan/" + pendingId;
         } catch (IllegalStateException | IllegalArgumentException e) {
             redirectAttributes.addFlashAttribute("timKiemError", e.getMessage());
             return redirectTimKiem(ngayNhanStr, ngayTraStr, nguoiLon, treEm, mucGia);
