@@ -118,7 +118,7 @@ public class AdminNhanVienController {
         }
         System.out.println(" đây là mật khẩu: " + nv.getMat_khau_hash());
         for (FieldError fe : bindingResult.getFieldErrors()) {
-            if ( fe.getField().equals("vaitro") || (fe.getField().equals("mat_khau_hash") && matKhauMoi != null && !matKhauMoi.isBlank())) {
+            if ( fe.getField().equals("vaitro") || (fe.getField().equals("mat_khau_hash") && nv.id != null )) {
                 System.out.println("hello");
                 continue;
             }
