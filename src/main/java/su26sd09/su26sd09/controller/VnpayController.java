@@ -1,12 +1,14 @@
 package su26sd09.su26sd09.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import su26sd09.su26sd09.service.BookingDraftService;
 import su26sd09.su26sd09.service.VnpayService;
 
 import java.security.Principal;
@@ -17,8 +19,14 @@ public class VnpayController {
     @Autowired
     VnpayService vnpayService;
 
+    @Autowired
+    BookingDraftService bookingDraftService;
+
     @GetMapping("/API/payment/vnpay-payment")
-    public String GetVnpayPayment(HttpServletRequest request, RedirectAttributes redirectAttributes, Authentication authentication) {
+    public String GetVnpayPayment(HttpServletRequest request,
+                                  HttpServletResponse response,
+                                  RedirectAttributes redirectAttributes,
+                                  Authentication authentication) {
         String orderInfo = request.getParameter("vnp_OrderInfo");
         boolean laHoanTien = "HoanTienChoKhach".equals(orderInfo);
 
@@ -68,6 +76,11 @@ public class VnpayController {
                 redirectAttributes.addFlashAttribute("success", "Thanh toán chuyển khoản thành công.");
                 return "redirect:/nhan-su/dat-phong/chi-tiet/" + maDatPhong;
             }
+            // Thanh toán VNPay thành công cho đơn của khách -> XÓA COOKIE backup.
+            // Sau bước này đơn đã hoàn tất (đã thanh toán + đủ thông tin), không
+            // cần backup nữa -> tránh hiển thị chuông "đơn đang chờ thanh toán"
+            // cho đơn đã xong.
+            bookingDraftService.consume(request, response);
             return "redirect:/thanh-toan/thanh-cong/" + maDatPhong;
         } else {
             if (laThuThemDichVu) {

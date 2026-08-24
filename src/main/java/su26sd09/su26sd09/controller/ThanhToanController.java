@@ -51,11 +51,31 @@ public class ThanhToanController {
     BookingEmailService bookingEmailService;
 
         @GetMapping("/dat-phong/{id}")
-        public String submitTransaction(@PathVariable Integer id,Model model){
+        public String submitTransaction(@PathVariable Integer id,Model model,
+                                        RedirectAttributes redirectAttributes){
             DatPhong dp = datPhongService.findById(id);
-            if(dp.getTrangThai().equals("Da xac nhan")){
+            if(dp == null){
                 return "redirect:/home";
             }
+            if(dp.getTrangThai().equals("Da xac nhan") || dp.getTrangThai().equalsIgnoreCase("Da thanh toan")){
+                return "redirect:/home";
+            }
+
+            // ===== Backup thông minh cho khách vãng lai =====
+            // Kiểm tra xem khách đã điền đủ thông tin chưa. Nếu thiếu -> redirect
+            // về trang điền thông tin (KHÔNG hiện trang chọn PTTT VNPay).
+            // Dịch vụ bổ sung là optional, nên KHÔNG ép khách quay lại chọn DV.
+            if (dp.getN() == null) {
+                boolean thieuThongTin = dp.getHoten() == null || dp.getHoten().isBlank()
+                        || dp.getEmail() == null || dp.getEmail().isBlank()
+                        || dp.getSdt() == null || dp.getSdt().isBlank();
+                if (thieuThongTin) {
+                    redirectAttributes.addFlashAttribute("thongBao",
+                            "Vui lòng hoàn tất thông tin khách trước khi thanh toán.");
+                    return "redirect:/phong/dat-phong/thong-tin-khach/" + id;
+                }
+            }
+
             BigDecimal Totalamount = BigDecimal.ZERO;
             BigDecimal amountDv = BigDecimal.ZERO;
             BigDecimal amountPhong = BigDecimal.ZERO;
@@ -202,14 +222,23 @@ public class ThanhToanController {
         }
 
         BigDecimal amountDv = BigDecimal.ZERO;
+        BigDecimal amountPhuThu = BigDecimal.ZERO;
         List<Chi_tiet_dich_vu> chiTietDichVus = ctdvService.findByDatPhongId(id);
         for (Chi_tiet_dich_vu ctdv : chiTietDichVus) {
-            amountDv = amountDv.add(ctdv.getDonGia());
+            BigDecimal donGia = ctdv.getDonGia() == null ? BigDecimal.ZERO : ctdv.getDonGia();
+            // Phan biet: loaiDv = "Phu thu" la penalty, KHONG cong vao tienDichVu
+            if (ctdv.getDv() != null && "Phu thu".equalsIgnoreCase(ctdv.getDv().getLoaiDv())) {
+                amountPhuThu = amountPhuThu.add(donGia);
+            } else {
+                amountDv = amountDv.add(donGia);
+            }
         }
 
         BigDecimal VATCD = new BigDecimal("0.10");
         BigDecimal tienGiam = tinhTienGiam(amountPhong, dp.getKm());
-        BigDecimal amountTongTien = amountPhong.subtract(tienGiam).add(amountDv);
+        // Phu thu (dv.loaiDv = "Phu thu") KHONG cong vao tienDichVu (chi ghi rieng de hien thi dong "Phu thu"),
+        // van cong vao tongTien (vi khach van phai tra).
+        BigDecimal amountTongTien = amountPhong.subtract(tienGiam).add(amountDv).add(amountPhuThu);
         BigDecimal tienVat = amountTongTien.multiply(VATCD).setScale(2, RoundingMode.HALF_UP);
         amountTongTien = amountTongTien.add(tienVat);
 

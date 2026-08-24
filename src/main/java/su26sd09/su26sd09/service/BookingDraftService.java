@@ -133,22 +133,76 @@ public class BookingDraftService {
      * Phân loại đơn đang xử lý (peek() != null) để template popup chuông
      * hiển thị nội dung phù hợp + nút bấm đúng bước.
      *
-     * @return "pending"  — đơn vừa gửi yêu cầu, NV chưa xét ("Yeu cau dat phong").
-     *                       Hiện thông báo + mã đơn + mã tra cứu.
-     *         "draft"    — đơn đang dở ("Chua thanh toan"), KH chưa hoàn tất.
-     *                       Hiện "Bước hiện tại..." + nút Tiếp tục đặt.
-     *         "approved" — NV đã xét duyệt ("Cho xac nhan"), KH có thể tiếp tục thanh toán.
-     *         null       — không xác định.
+     * Quy tắc mới (KHÔNG override logic backup luồng thanh toán):
+     *  - "success"  — đơn đã thỏa ĐỦ 2 điều kiện: (1) khách đã điền đủ
+     *                  thông tin cá nhân (hoten + email + sdt đều không
+     *                  rỗng) VÀ (2) đã thanh toán đủ (trangThai chứa
+     *                  "da thanh toan" hoặc NV đã "xac nhan"). Lúc này
+     *                  chuông mới được phép hiện "Đã đặt phòng thành
+     *                  công" + mã đơn + mã tra cứu.
+     *  - "approved" — NV đã xét duyệt ("Cho xac nhan") hoặc đã xác nhận
+     *                  ("Da xac nhan") nhưng KH chưa thanh toán đủ. Hiện
+     *                  "NV đã duyệt, bạn có thể tiếp tục thanh toán" +
+     *                  nút Tiếp tục thanh toán.
+     *  - "draft"    — đơn đang dở ("Chua thanh toan") và KH chưa điền
+     *                  đủ thông tin. Hiện "Đơn đang chờ thanh toán" +
+     *                  nút Tiếp tục thanh toán (điều hướng về
+     *                  /thanh-toan/dat-phong/{id} để vừa điền thông tin
+     *                  vừa thanh toán).
+     *  - "pending"  — đơn vừa gửi yêu cầu ("Yeu cau dat phong"), NV
+     *                  chưa xét. Cũng hiện "Đơn đang chờ thanh toán"
+     *                  + nút Tiếp tục thanh toán (giống draft).
+     *  - null       — không xác định / không hiện chuông.
      */
     public String currentMode(DatPhong dp) {
         if (dp == null || dp.getTrangThai() == null) {
             return null;
         }
         String tt = dp.getTrangThai().toLowerCase();
-        if (tt.contains("yeu cau")) return "pending";
-        if (tt.contains("cho xac")) return "approved";
-        if (tt.contains("chua thanh toan")) return "draft";
+
+        // 1) Đơn đã hoàn tất thanh toán (do KH tự thanh toán VNPay hoặc NV xác nhận)
+        boolean daThanhToan = tt.contains("da thanh toan");
+
+        // 2) Khách đã điền đủ thông tin cá nhân
+        boolean duThongTin = isDuThongTinKhach(dp);
+
+        // 3) Đơn đã được NV xác nhận (xem như "thành công" ở góc độ nghiệp vụ)
+        boolean daXacNhan = tt.contains("da xac nhan") || tt.contains("da nhan phong");
+
+        // Chỉ thông báo "đặt thành công" khi thỏa CẢ 2 điều kiện:
+        // (a) thông tin khách đầy đủ VÀ (b) đã thanh toán (hoặc NV đã xác nhận)
+        if (daThanhToan && duThongTin) {
+            return "success";
+        }
+
+        // Đã thanh toán nhưng thiếu thông tin -> vẫn coi là "draft" để backup
+        // (một số luồng NV ghi nhận thanh toán trước khi KH cập nhật info)
+        if (daXacNhan && duThongTin) {
+            return "success";
+        }
+
+        // NV đã duyệt / đã xác nhận nhưng KH chưa thanh toán -> tiếp tục thanh toán
+        if (tt.contains("cho xac") || daXacNhan) {
+            return "approved";
+        }
+
+        // Đơn mới tạo ("Yeu cau dat phong") hoặc "Chua thanh toan"
+        // mà chưa đủ thông tin -> backup về trang thanh toán
+        if (tt.contains("yeu cau") || tt.contains("chua thanh toan")) {
+            return "draft";
+        }
+
         return null;
+    }
+
+    /**
+     * Kiểm tra đơn đã có đủ thông tin khách hàng (họ tên + email + SĐT) chưa.
+     * Trả về false nếu bất kỳ trường nào null/rỗng.
+     */
+    private boolean isDuThongTinKhach(DatPhong dp) {
+        return dp.getHoten() != null && !dp.getHoten().isBlank()
+                && dp.getEmail() != null && !dp.getEmail().isBlank()
+                && dp.getSdt() != null && !dp.getSdt().isBlank();
     }
 
     /**

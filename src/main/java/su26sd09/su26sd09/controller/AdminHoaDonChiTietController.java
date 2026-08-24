@@ -69,6 +69,21 @@ public class AdminHoaDonChiTietController {
             }
         }
 
+        // Tinh tong phu thu check-in som / check-out muon tu cac dich vu co loaiDv = "Phu thu"
+        // (phan biet voi tongPhuThu o tren - day la phu phi phong). Day la dong tien rieng
+        // se hien thi tren hoa don de minh bach, nghiep vu penalty.
+        BigDecimal tongPhuThuCheckInSom = BigDecimal.ZERO;
+        BigDecimal tongDichVuThuong = BigDecimal.ZERO;
+        for (Chi_tiet_dich_vu ctdv : dichVuList) {
+            if (ctdv == null || ctdv.getDonGia() == null) continue;
+            String loai = ctdv.getDv() != null ? ctdv.getDv().getLoaiDv() : null;
+            if ("Phu thu".equalsIgnoreCase(loai)) {
+                tongPhuThuCheckInSom = tongPhuThuCheckInSom.add(ctdv.getDonGia());
+            } else {
+                tongDichVuThuong = tongDichVuThuong.add(ctdv.getDonGia());
+            }
+        }
+
         BigDecimal tongTien = hoaDon.getTongTien() != null ? hoaDon.getTongTien() : BigDecimal.ZERO;
         BigDecimal daThanhToan = hoaDon.getDaThanhToan() != null ? hoaDon.getDaThanhToan() : BigDecimal.ZERO;
         BigDecimal conLai = tongTien.subtract(daThanhToan);
@@ -113,6 +128,8 @@ public class AdminHoaDonChiTietController {
         model.addAttribute("tongHoan", tongHoan);
         model.addAttribute("conLai", conLai);
         model.addAttribute("tongPhuThu", tongPhuThu);
+        model.addAttribute("tongPhuThuCheckInSom", tongPhuThuCheckInSom);
+        model.addAttribute("tongDichVuThuong", tongDichVuThuong);
         model.addAttribute("trangThaiThanhToanLabel", trangThaiThanhToanLabel);
         model.addAttribute("trangThaiThanhToanClass", trangThaiThanhToanClass);
         model.addAttribute("trangThaiHoaDonLabel", trangThaiHoaDonLabel);

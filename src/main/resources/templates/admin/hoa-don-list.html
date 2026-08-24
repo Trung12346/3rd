@@ -165,6 +165,10 @@
                     <label>Tiền dịch vụ</label>
                     <input type="number" th:field="*{tienDichVu}" th:readonly="${hoaDon.id != 0}">
                 </div>
+                <div class="admin-field" th:if="${amountPhuThu != null and amountPhuThu.signum() > 0}">
+                    <label>Phụ thu check-in sớm / check-out muộn</label>
+                    <input type="number" th:value="${amountPhuThu}" readonly>
+                </div>
                 <div class="admin-field">
                     <label>Tiền giảm</label>
                     <input type="number" th:field="*{tienGiam}" th:readonly="${hoaDon.id != 0}">

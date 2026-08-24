@@ -217,7 +217,17 @@ public class PhongController {
         model.addAttribute("datPhong",dp);
         model.addAttribute("chiTietDatPhongList",listCt);
         model.addAttribute("nightCount",resthue);
-        model.addAttribute("dichVuList",dichVuService.findAll().stream().filter(n -> n.getLoaiDv().equalsIgnoreCase("THUONG")));
+        // Lấy dịch vụ thường để khách chọn bổ sung. Chấp nhận cả "THUONG" (do form admin tạo)
+        // lẫn "dich vu" (dữ liệu seed cũ trong DB), bỏ qua các dịch vụ phát sinh / ngừng hoạt động.
+        model.addAttribute("dichVuList", dichVuService.findAll().stream()
+                .filter(n -> n.isHoatDong())
+                .filter(n -> {
+                    String loai = n.getLoaiDv();
+                    if (loai == null) return true;
+                    String loaiUpper = loai.trim().toUpperCase();
+                    return loaiUpper.equals("THUONG") || loaiUpper.equals("DICH VU");
+                })
+                .toList());
         model.addAttribute("dichVuDaChonIds", dichVuDaChonIds);
         model.addAttribute("dichVuDaChonMap", dichVuDaChonMap);
         model.addAttribute("kmJson", buildKhuyenMaiJson());
@@ -346,18 +356,25 @@ public class PhongController {
             return "redirect:/phong";
         }
 
-        // Xác định bước đang dở
-        List<Chi_tiet_dich_vu> dsDv = ctdvService.findByDatPhongId(id);
-        if (dsDv == null || dsDv.isEmpty()) {
-            // Chưa qua bước chọn DV -> quay lại trang xác nhận
+        // ====== Backup thông minh: kiểm tra khách đang thiếu gì rồi redirect đúng trang ======
+        // Quy tắc ưu tiên (theo thứ tự):
+        //   1. Thiếu thông tin khách (hoten/email/sdt) -> về trang điền thông tin
+        //   2. Đủ thông tin -> về trang thanh toán VNPay
+        //   (DV bổ sung là optional, KHÔNG ép khách quay lại chọn DV)
+        boolean thieuThongTin = dp.getHoten() == null || dp.getHoten().isBlank()
+                || dp.getEmail() == null || dp.getEmail().isBlank()
+                || dp.getSdt() == null || dp.getSdt().isBlank();
+
+        if (thieuThongTin) {
             redirectAttributes.addFlashAttribute("thongBao",
-                    "Tiếp tục đặt phòng: bạn có thể chọn dịch vụ bổ sung hoặc bỏ qua và đi tới bước thanh toán.");
-            return "redirect:/phong/dat-phong/xac-nhan/" + id;
+                    "Tiếp tục đặt phòng: vui lòng hoàn tất thông tin khách trước khi thanh toán.");
+            return "redirect:/phong/dat-phong/thong-tin-khach/" + id;
         }
-        // Đã chọn DV -> đưa thẳng về trang thông tin khách (vãng lai) -> thanh toán
+
+        // Đủ thông tin rồi -> sang trang thanh toán VNPay
         redirectAttributes.addFlashAttribute("thongBao",
-                "Tiếp tục đặt phòng: vui lòng hoàn tất thông tin khách và thanh toán.");
-        return "redirect:/phong/dat-phong/thong-tin-khach/" + id;
+                "Tiếp tục đặt phòng: vui lòng hoàn tất thanh toán.");
+        return "redirect:/thanh-toan/dat-phong/" + id;
     }
 //
     @GetMapping("/dat-phong/thong-tin-khach/{id}")
@@ -564,11 +581,13 @@ public class PhongController {
 
             datphongservice.save(dp);
 
-            // Khách vãng lai đã hoàn tất thông tin -> xóa COOKIE draft
-            // (vì đơn gi� đã được gắn hoten/email/sdt, không còn ở trạng thái "dở")
-            // Khách vãng lai đã hoàn tất thông tin -> xóa COOKIE draft
-            // (vì đơn đã được gắn hoten/email/sdt, không còn ở trạng thái "dở")
-            bookingDraftService.consume(request, response);
+            // LƯU COOKIE để backup trong luồng VNPay: nếu khách bấm "Thanh toán qua
+            // VNPay" rồi bị out ra ngoài (mất mạng, đóng tab,...) trước khi VNPay
+            // callback thì khi quay lại trang chủ vẫn còn chuông nhắc "đơn đang
+            // chờ thanh toán" để tiếp tục. Cookie CHỈ được xóa khi thanh toán
+            // thành công (xem ThanhToanController.vnpayParser hoặc callback VNPay).
+            // KHÔNG xóa ở đây vì khách chưa thanh toán xong.
+            bookingDraftService.remember(request, response, dp.getId());
 
             return "redirect:/thanh-toan/dat-phong/"+dp.getId();
     }

@@ -274,13 +274,22 @@
                 </td>
             </tr>
 
-            <!-- Tiền dịch vụ -->
-            <tr class="row-normal">
+            <!-- Phu thu check-in som / check-out muon (penalty, chi hien neu > 0) -->
+            <tr class="row-phuthu"
+                th:if="${tongPhuThuCheckInSom != null and tongPhuThuCheckInSom.compareTo(T(java.math.BigDecimal).ZERO) > 0}">
+                <td>Phụ thu check-in sớm / check-out muộn</td>
+                <td class="right"
+                    th:text="${'+ ' + #numbers.formatDecimal(tongPhuThuCheckInSom, 0, 'COMMA', 0, 'POINT')}">
+                    + 200.000
+                </td>
+            </tr>
+
+            <!-- Tiền dịch vụ (chi dich vu thuong, KHONG bao gom phu thu) -->
+            <tr class="row-normal"
+                th:if="${tongDichVuThuong != null and tongDichVuThuong.compareTo(T(java.math.BigDecimal).ZERO) > 0}">
                 <td>Tiền dịch vụ bổ sung</td>
                 <td class="right"
-                    th:text="${hoaDon.tienDichVu != null
-                        ? #numbers.formatDecimal(hoaDon.tienDichVu, 0, 'COMMA', 0, 'POINT')
-                        : '0'}">
+                    th:text="${#numbers.formatDecimal(tongDichVuThuong, 0, 'COMMA', 0, 'POINT')}">
                     350.000
                 </td>
             </tr>

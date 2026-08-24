@@ -396,8 +396,18 @@ public class VnpayService {
             amountPhong = amountPhong.add(ctdp.getGiaKhiDat());
         }
         BigDecimal amountDv = BigDecimal.ZERO;
+        BigDecimal amountPhuThu = BigDecimal.ZERO;
         for (Chi_tiet_dich_vu ctdv : chiTietDichVus) {
-            amountDv = amountDv.add(ctdv.getDonGia());
+            BigDecimal donGia = ctdv.getDonGia() == null ? BigDecimal.ZERO : ctdv.getDonGia();
+            // PHAN BIET RACH RAC:
+            // - dv.loaiDv = "Phu thu" -> penalty (check-in som/check-out muon),
+            //   KHONG cong vao tienDichVu. Day la dong tien rieng.
+            // - Con lai -> cong vao tienDichVu.
+            if (ctdv.getDv() != null && "Phu thu".equalsIgnoreCase(ctdv.getDv().getLoaiDv())) {
+                amountPhuThu = amountPhuThu.add(donGia);
+            } else {
+                amountDv = amountDv.add(donGia);
+            }
         }
 
         HoaDon _hd = hoaDonService.findByDatPhongId(dp.id);
@@ -408,7 +418,7 @@ public class VnpayService {
 
         BigDecimal VATCD = new BigDecimal("0.10");
         BigDecimal tienGiam = tinhTienGiam(amountPhong, dp.getKm());
-        BigDecimal amountTongTien = amountPhong.subtract(tienGiam).add(amountDv);
+        BigDecimal amountTongTien = amountPhong.subtract(tienGiam).add(amountDv).add(amountPhuThu);
         BigDecimal tienVat = amountTongTien.multiply(VATCD).setScale(2, RoundingMode.HALF_UP);
         amountTongTien = amountTongTien.add(tienVat);
 

@@ -1736,7 +1736,11 @@ public class NhanVienDatPhongController {
 
     /** Cong them mot khoan phu thu (vua tao chi_tiet_dich_vu) vao hoa_don cua don dat phong,
      *  neu don da co hoa don. Dung saveWithPaymentStatusCheck de tu dong dong bo lai
-     *  trangThai (vd: tu "Da thanh toan" chuyen ve "Cho thanh toan" khi tong tien tang len). */
+     *  trangThai (vd: tu "Da thanh toan" chuyen ve "Cho thanh toan" khi tong tien tang len).
+     *
+     *  Phu thu duoc luu trong chi_tiet_dich_vu (dv.loaiDv = "Phu thu"). View se doc
+     *  lai tu chi_tiet_dich_vu de tach rieng dong "Phu thu" tren hoa don, khong can
+     *  cot rieng trong HoaDon. */
     private void capNhatHoaDonSauKhiThemPhuThu(Integer maDatPhong, BigDecimal soTienPhuThu) {
         if (soTienPhuThu == null || soTienPhuThu.compareTo(BigDecimal.ZERO) <= 0) {
             return;
@@ -1745,7 +1749,9 @@ public class NhanVienDatPhongController {
         if (hoaDon == null) {
             return; // chua co hoa don thi thoi, se duoc tinh o buoc thanh toan/chot so sau
         }
-        hoaDon.setTienDichVu(defaultMoney(hoaDon.getTienDichVu()).add(soTienPhuThu));
+        // Phu thu: chi tang tongTien (gia dinh tienDichVu da tinh tu chi_tiet_dich_vu o
+        // luot update form sau, hoac se duoc tinh o luot render hoa don tiep theo).
+        // De tranh duplicate, KHONG add vao tienDichVu o day.
         hoaDon.setTongTien(defaultMoney(hoaDon.getTongTien()).add(soTienPhuThu));
         hoaDon.setNgayCapNhat(LocalDateTime.now());
         hoaDonService.saveWithPaymentStatusCheck(hoaDon);

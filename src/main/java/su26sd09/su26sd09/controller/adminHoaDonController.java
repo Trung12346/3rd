@@ -184,9 +184,19 @@ public class adminHoaDonController {
             return "redirect:/nhan-su/admin/dat-phong";
         }
         BigDecimal amountDv = BigDecimal.ZERO;
+        BigDecimal amountPhuThu = BigDecimal.ZERO;
         if(chiTietDichVus.size() !=0) {
             for (Chi_tiet_dich_vu ctdv : chiTietDichVus) {
-                amountDv = amountDv.add(ctdv.getDonGia());
+                BigDecimal dongia = ctdv.getDonGia() == null ? BigDecimal.ZERO : ctdv.getDonGia();
+                // PHAN BIET RACH RAC:
+                // - dv.loaiDv = "Phu thu" -> day la penalty (check-in som/check-out muon),
+                //   KHONG cong vao tienDichVu (do dich vu thuong). Hien thi rieng dong "Phu thu".
+                // - Con lai (THUONG / PHAT SINH / dich vu) -> cong vao tienDichVu.
+                if (ctdv.getDv() != null && "Phu thu".equalsIgnoreCase(ctdv.getDv().getLoaiDv())) {
+                    amountPhuThu = amountPhuThu.add(dongia);
+                } else {
+                    amountDv = amountDv.add(dongia);
+                }
             }
         }
         BigDecimal tienPhong = chiTietDatPhongService.findByDatPhongId(maDatPhong)
@@ -198,7 +208,7 @@ public class adminHoaDonController {
         BigDecimal tienVat = tienPhong.multiply(BigDecimal.valueOf(0.1)).
                 setScale(0,RoundingMode.HALF_UP);
         BigDecimal TongTien = tienPhong.add(tienVat).setScale(0,RoundingMode.HALF_UP);
-        TongTien = TongTien.add(amountDv);
+        TongTien = TongTien.add(amountDv).add(amountPhuThu);
         HoaDon hoaDon = new HoaDon();
         hoaDon.setD(datPhong);
         hoaDon.setTienPhong(tienPhong);
@@ -207,6 +217,10 @@ public class adminHoaDonController {
         hoaDon.setTienVat(tienVat);
         hoaDon.setTongTien(TongTien);
         hoaDon.setDaThanhToan(TongTien);
+        String ghiChuPhuThu = amountPhuThu.signum() > 0
+                ? "Bao gom phu thu check-in som/check-out muon: " + amountPhuThu.toPlainString() + " VND."
+                : null;
+        hoaDon.setGhiChu(ghiChuPhuThu);
 
 
 
@@ -214,6 +228,9 @@ public class adminHoaDonController {
         model.addAttribute("nguoiDungs",nguoiDungService.findWhereRoleNV());
         model.addAttribute("hoaDon", hoaDon);
         model.addAttribute("datPhongs", datPhongService.findAll());
+        // Truyen rieng amountPhuThu ra view de hien thi dong "Phu thu check-in som/check-out muon"
+        // tren trang tao hoa don (minh bach tien dv thuong vs tien phu thu).
+        model.addAttribute("amountPhuThu", amountPhuThu);
         model.addAttribute("title", "Tạo hóa đơn từ đơn #" + maDatPhong);
 
         return "admin/hoa-don-list";
@@ -389,6 +406,19 @@ public class adminHoaDonController {
             }
         }
 
+        // Tinh tong phu thu check-in som / check-out muon tu dich vu loaiDv = "Phu thu"
+        BigDecimal tongPhuThuCheckInSom = BigDecimal.ZERO;
+        BigDecimal tongDichVuThuong = BigDecimal.ZERO;
+        for (Chi_tiet_dich_vu ctdv : dichVuList) {
+            if (ctdv == null || ctdv.getDonGia() == null) continue;
+            String loai = ctdv.getDv() != null ? ctdv.getDv().getLoaiDv() : null;
+            if ("Phu thu".equalsIgnoreCase(loai)) {
+                tongPhuThuCheckInSom = tongPhuThuCheckInSom.add(ctdv.getDonGia());
+            } else {
+                tongDichVuThuong = tongDichVuThuong.add(ctdv.getDonGia());
+            }
+        }
+
         BigDecimal tongTien = hoaDon.getTongTien() != null ? hoaDon.getTongTien() : BigDecimal.ZERO;
         BigDecimal daThanhToan = hoaDon.getDaThanhToan() != null ? hoaDon.getDaThanhToan() : BigDecimal.ZERO;
         BigDecimal conLai = tongTien.subtract(daThanhToan);
@@ -422,6 +452,8 @@ public class adminHoaDonController {
         context.setVariable("dichVuList", dichVuList);
         context.setVariable("conLai", conLai);
         context.setVariable("tongPhuThu", tongPhuThu);
+        context.setVariable("tongPhuThuCheckInSom", tongPhuThuCheckInSom);
+        context.setVariable("tongDichVuThuong", tongDichVuThuong);
         context.setVariable("trangThaiThanhToanLabel", trangThaiThanhToanLabel);
         context.setVariable("trangThaiThanhToanClass", trangThaiThanhToanClass);
 

@@ -782,6 +782,22 @@ public class NhanVienCheckoutController {
             }
         }
 
+        // Tinh tong phu thu check-in som / check-out muon tu dich vu loaiDv = "Phu thu"
+        // (phan biet voi tongPhuThu - day la phu phi phong). Day la dong tien rieng
+        // se hien thi tren PDF hoa don de minh bach nghiep vu penalty.
+        BigDecimal tongPhuThuCheckInSom = BigDecimal.ZERO;
+        BigDecimal tongDichVuThuong = BigDecimal.ZERO;
+        List<Chi_tiet_dich_vu> dichVuListForRelease = ctdvService.findByDatPhongId(id);
+        for (Chi_tiet_dich_vu ctdv : dichVuListForRelease) {
+            if (ctdv == null || ctdv.getDonGia() == null) continue;
+            String loai = ctdv.getDv() != null ? ctdv.getDv().getLoaiDv() : null;
+            if ("Phu thu".equalsIgnoreCase(loai)) {
+                tongPhuThuCheckInSom = tongPhuThuCheckInSom.add(ctdv.getDonGia());
+            } else {
+                tongDichVuThuong = tongDichVuThuong.add(ctdv.getDonGia());
+            }
+        }
+
         // Lay lich su giao dich va tach rieng phan hoan tien
         java.util.List<ThanhToan> thanhToans = thanhToanRepo.findByH_IdOrderByNgaythanhToanAsc(hoaDon.getId());
         java.util.List<ThanhToan> hoanTienList = new java.util.ArrayList<>();
@@ -795,6 +811,8 @@ public class NhanVienCheckoutController {
         Context context = new Context();
         context.setVariable("hoaDon", hoaDon);
         context.setVariable("tongPhuThu", tongPhuThu);
+        context.setVariable("tongPhuThuCheckInSom", tongPhuThuCheckInSom);
+        context.setVariable("tongDichVuThuong", tongDichVuThuong);
         context.setVariable("hoanTienList", hoanTienList);
         context.setVariable("tongHoan", tongHoan);
 

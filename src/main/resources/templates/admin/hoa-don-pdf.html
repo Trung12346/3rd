@@ -383,9 +383,13 @@
                 <span class="summary-label">Phụ phí ngoài giờ</span>
                 <span class="summary-value" th:text="'+ ' + ${#numbers.formatDecimal(tongPhuThu, 0, 'COMMA', 0, 'POINT')} + ' VND'"></span>
             </div>
-            <div class="summary-row">
+            <div class="summary-row phuthu" th:if="${tongPhuThuCheckInSom != null and tongPhuThuCheckInSom.signum() > 0}">
+                <span class="summary-label">Phụ thu check-in sớm / check-out muộn</span>
+                <span class="summary-value" th:text="'+ ' + ${#numbers.formatDecimal(tongPhuThuCheckInSom, 0, 'COMMA', 0, 'POINT')} + ' VND'"></span>
+            </div>
+            <div class="summary-row" th:if="${tongDichVuThuong != null and tongDichVuThuong.signum() > 0}">
                 <span class="summary-label">Tiền dịch vụ</span>
-                <span class="summary-value" th:text="${#numbers.formatDecimal(hoaDon.tienDichVu, 0, 'COMMA', 0, 'POINT')} + ' VND'"></span>
+                <span class="summary-value" th:text="${#numbers.formatDecimal(tongDichVuThuong, 0, 'COMMA', 0, 'POINT')} + ' VND'"></span>
             </div>
             <div class="summary-row discount" th:if="${hoaDon.tienGiam != null and hoaDon.tienGiam.signum() > 0}">
                 <span class="summary-label">Giảm giá / khuyến mãi</span>

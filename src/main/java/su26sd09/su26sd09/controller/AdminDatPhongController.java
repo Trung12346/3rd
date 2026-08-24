@@ -1909,6 +1909,20 @@ public class AdminDatPhongController {
             }
         }
 
+        // Tinh tong phu thu check-in som / check-out muon tu dich vu loaiDv = "Phu thu"
+        BigDecimal tongPhuThuCheckInSom = BigDecimal.ZERO;
+        BigDecimal tongDichVuThuong = BigDecimal.ZERO;
+        List<Chi_tiet_dich_vu> dichVuListForPdf = chiTietDichVuService.findByDatPhongId(id);
+        for (Chi_tiet_dich_vu ctdv : dichVuListForPdf) {
+            if (ctdv == null || ctdv.getDonGia() == null) continue;
+            String loai = ctdv.getDv() != null ? ctdv.getDv().getLoaiDv() : null;
+            if ("Phu thu".equalsIgnoreCase(loai)) {
+                tongPhuThuCheckInSom = tongPhuThuCheckInSom.add(ctdv.getDonGia());
+            } else {
+                tongDichVuThuong = tongDichVuThuong.add(ctdv.getDonGia());
+            }
+        }
+
         List<ThanhToan> thanhToans = thanhToanServiceCheckout.findAllByHoaDonId(hoaDon.getId());
         List<ThanhToan> hoanTienList = new ArrayList<>();
         for (ThanhToan t : thanhToans) {
@@ -1921,6 +1935,8 @@ public class AdminDatPhongController {
         org.thymeleaf.context.Context context = new org.thymeleaf.context.Context();
         context.setVariable("hoaDon", hoaDon);
         context.setVariable("tongPhuThu", tongPhuThu);
+        context.setVariable("tongPhuThuCheckInSom", tongPhuThuCheckInSom);
+        context.setVariable("tongDichVuThuong", tongDichVuThuong);
         context.setVariable("hoanTienList", hoanTienList);
         context.setVariable("tongHoan", tongHoan);
 

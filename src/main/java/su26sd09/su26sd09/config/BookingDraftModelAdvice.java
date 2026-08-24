@@ -44,10 +44,25 @@ public class BookingDraftModelAdvice {
         return bookingDraftService.currentStep(dp);
     }
 
-    /** pending | draft | approved — phân loại trạng thái để popup chuông hiển thị. */
+    /** pending | draft | approved | success — phân loại trạng thái để popup chuông hiển thị. */
     @ModelAttribute("bookingDraftMode")
     public String bookingDraftMode(HttpServletRequest request) {
         DatPhong dp = bookingDraftService.peek(request);
         return bookingDraftService.currentMode(dp);
+    }
+
+    /**
+     * True nếu URL hiện tại thuộc luồng thanh toán (chọn DV, điền thông tin khách,
+     * chọn PTTT, gọi VNPay). Khi đang ở luồng thì KHÔNG hiển thị chuông để tránh
+     * popup đè lên giao diện thanh toán; chỉ hiện khi khách thoát ra trang khác
+     * (vd: trang chủ) thì chuông mới xuất hiện để backup.
+     */
+    @ModelAttribute("isInBookingFlow")
+    public boolean isInBookingFlow(HttpServletRequest request) {
+        String uri = request.getRequestURI();
+        if (uri == null) return false;
+        return uri.startsWith("/phong/dat-phong/")
+                || uri.startsWith("/thanh-toan/")
+                || uri.startsWith("/phong/dat-phong/tiep-tuc-dat");
     }
 }
