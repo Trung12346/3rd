@@ -242,6 +242,7 @@ public class NhanVienDatPhongController {
 
         model.addAttribute("tongTienThucTe", tongTienThucTe);
         model.addAttribute("conNoThucTe", conNoThucTe);
+        model.addAttribute("daThanhToanHd", daThanhToanHd);
 
         // ===== Data cho form đổi phòng =====
         // Lấy tất cả phòng active để render danh sách phòng khả dụng trong form đổi phòng.
@@ -1109,18 +1110,38 @@ public class NhanVienDatPhongController {
             @RequestParam("id") Integer id,
             @RequestParam(value = "page", defaultValue = "0") int page,
             @RequestParam(value = "size", defaultValue = "10") int size,
+            @RequestParam(value = "phuongThucHoan", required = false) String phuongThucHoan,
+            Authentication auth,
             RedirectAttributes redirectAttributes) {
 
-        // Dùng chung luồng với admin: tạo yêu cầu hủy + set "Cho xu ly" để NV/Admin xử lý thủ công
+        // Bước 1: dùng chung luồng với admin: tạo yêu cầu hủy + set "Cho xu ly"
         KetQuaHuyDonDTO ketQua = huyDonService.huyDon(id);
-        redirectAttributes.addFlashAttribute("thongBao", ketQua.getThongBao());
 
         if (ketQua.isCanHoanTien()) {
-            // Có phát sinh hoàn tiền -> đi sang trang xử lý hoàn tiền của nhân viên
-            return "redirect:/nhan-su/hoan-tien/chi-tiet/" + ketQua.getHoaDonId();
+            // Bước 2: NV chọn sẵn phương thức hoàn (Tien Mat / Chuyen Khoan) ngay trong modal
+            // Huỷ phòng => tự động xác nhận hoàn tiền luôn (tái sử dụng HuyDonService.xacNhanHoanTien),
+            // không cần thao tác thủ công thêm ở trang Hoàn tiền nữa.
+            String pt = (phuongThucHoan == null || phuongThucHoan.isBlank())
+                    ? HuyDonConstants.PT_TIEN_MAT
+                    : phuongThucHoan.trim();
+            NhanSu nvXuLy = auth == null ? null : nhanVienService.FindByemail(auth.getName());
+
+            huyDonService.xacNhanHoanTien(
+                    ketQua.getHoaDonId(),
+                    pt,
+                    null,   // maGiaoDichHoan: không có (tiền mặt/chuyển khoản thủ công, không qua VNPay)
+                    null,   // stkNhanHoan
+                    null,   // tenNganHang
+                    "Tu dong xac nhan hoan tien khi Huy phong (nhan vien)",
+                    null,   // soTienHoanNhap: null -> dùng đúng số tiền hệ thống đã tính theo rule
+                    nvXuLy);
+
+            redirectAttributes.addFlashAttribute("thongBao",
+                    ketQua.getThongBao() + " Da tu dong xac nhan hoan tien (" + pt + ").");
+        } else {
+            redirectAttributes.addFlashAttribute("thongBao", ketQua.getThongBao());
         }
 
-        // Không phát sinh hoàn tiền -> quay lại danh sách đặt phòng
         return "redirect:/nhan-su/dat-phong?page=" + page + "&size=" + size;
     }
 
@@ -2018,7 +2039,7 @@ public class NhanVienDatPhongController {
             return result;
         }
 
-        LocalDateTime ngayNhan = checkin.atStartOfDay();
+        LocalDateTime ngayNhan = checkin.atTime(14, 0);
         LocalDateTime ngayTra = checkout.atTime(12, 0);
 
         // Overlap dung chinh xac cung 1 luat voi lich phong hien thi tren So Do Phong

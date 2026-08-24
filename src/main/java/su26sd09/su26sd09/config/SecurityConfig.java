@@ -45,7 +45,7 @@ public class SecurityConfig {
                         .requestMatchers("/nhan-su/login").permitAll()
                         .requestMatchers("/api/auth/**", "/verify-email",
                                 "/*.css", "/*.js", "/*.jpg", "/*.png", "/Register", "/nhan-su/dat-phong", "/nhan-su/dat-phong/**",
-                                "/nhan-su/dat-phong-quay/**", "/nhan-su/hoan-tien", "/nhan-su/hoan-tien/**")
+                                "/nhan-su/dat-phong-quay/**", "/nhan-su/hoan-tien", "/nhan-su/hoan-tien/**", "/nhan-su/ve-sinh", "/nhan-su/ve-sinh/**")
                         .hasAnyRole("STAFF", "ADMIN")
                         .requestMatchers("/nhan-su/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()

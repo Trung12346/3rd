@@ -284,6 +284,11 @@
         .sum-total span:first-child { color: rgba(255,255,255,.8); font-size: 13px; }
         .sum-total span:last-child { color: #fff; font-size: 20px; font-weight: 700; text-align: right; word-break: break-word; }
 
+        .sum-row.sum-con-lai { margin-top: 4px; }
+        .sum-row.sum-con-lai span:first-child { font-weight: 700; color: #374151; }
+        .sum-row.sum-con-lai span:last-child { font-size: 15px; color: #dc2626; }
+        .sum-row.sum-con-lai.da-du span:last-child { color: #15803d; }
+
         .btn-luu-thay-doi {
             width: 100%; background: var(--sky-primary); color: #fff; border: none;
             padding: 13px; border-radius: 6px; font-weight: 700; font-size: 14px;
@@ -1140,6 +1145,15 @@
                     <span id="sumTongCong">đ 0</span>
                 </div>
 
+                <div class="sum-row">
+                    <span>Đã thanh toán</span>
+                    <span id="sumDaThanhToan">đ 0</span>
+                </div>
+                <div class="sum-row sum-con-lai">
+                    <span>Còn lại</span>
+                    <span id="sumConLai">đ 0</span>
+                </div>
+
                 <button type="submit" class="btn-luu-thay-doi" id="btnLuu">
                     <i class="fa-solid fa-floppy-disk"></i> Lưu Thay Đổi
                 </button>
@@ -1156,6 +1170,8 @@
 <script th:inline="javascript">
     (function () {
         const tongPhuThuDb = /*[[${tongPhuThu != null ? tongPhuThu.doubleValue() : 0}]]*/ 0;
+        const daThanhToanDb = /*[[${daThanhToanHd != null ? daThanhToanHd.doubleValue() : 0}]]*/ 0;
+        window.__daThanhToanDb = daThanhToanDb;
         const phuThuRow = document.getElementById('sumPhuThuRow');
         const phuThuEl = document.getElementById('sumPhuThu');
         const canhBao = document.getElementById('canhBaoPhuThu');
@@ -1165,9 +1181,8 @@
             phuThuRow.style.display = 'flex';
             if (canhBao && canhBaoText) {
                 canhBao.classList.add('show');
-                canhBaoText.textContent = 'Đơn đang bị phụ thu ' +
-                    Math.round(tongPhuThuDb).toLocaleString('vi-VN') + ' VND' +
-                    ' vì giờ nhận/trả ngoài khung chuẩn 08:00 / 12:00 (đã lưu trong đơn).';
+                canhBaoText.textContent = 'Đơn đang có khoản phụ thu giờ nhận/trả đã lưu trước đó: ' +
+                    Math.round(tongPhuThuDb).toLocaleString('vi-VN') + ' VND.';
             }
         }
     })();
@@ -1210,30 +1225,17 @@
             return { hopLe: true, thongBao: '' };
         },
         tinhPhuThuGio(ngayNhan, ngayTra) {
-            // Cung rule voi PhongService.calculateExtraFeeFor:
-            //   gioNhan ngoai [08:30, 11:00] hoac gioTra sau 18:30 -> cong 100.000 VND
-            if (!ngayNhan || !ngayTra) return { tong: 0, chiTiet: [] };
-            const phuPhi = 100000;
-            const nhan = new Date(ngayNhan);
-            const tra  = new Date(ngayTra);
-            const layGioPhut = (d) => d.getHours() * 60 + d.getMinutes();
-            const phutNhan = layGioPhut(nhan);
-            const phutTra  = layGioPhut(tra);
-            const ngoaiGioNhan = phutNhan < (8*60+30) || phutNhan > (11*60);
-            const ngoaiGioTra  = phutTra  > (18*60+30);
-            const chiTiet = [];
-            if (ngoaiGioNhan) {
-                const hh = String(nhan.getHours()).padStart(2, '0');
-                const mm = String(nhan.getMinutes()).padStart(2, '0');
-                chiTiet.push({ nhan: 'Nhận', gio: hh + ':' + mm });
-            }
-            if (ngoaiGioTra) {
-                const hh = String(tra.getHours()).padStart(2, '0');
-                const mm = String(tra.getMinutes()).padStart(2, '0');
-                chiTiet.push({ nhan: 'Trả', gio: hh + ':' + mm });
-            }
-            const tong = (ngoaiGioNhan || ngoaiGioTra) ? phuPhi : 0;
-            return { tong: tong, chiTiet: chiTiet };
+            // "Phu thu ngoai gio" o buoc CHINH SUA don nay da bi VO HIEU HOA phia
+            // backend tu lau: PhongService.calculateExtraFeeFor(...) luon tra ve
+            // ZERO (xem javadoc cua ham do — chinh sach nay "DA BO theo yeu cau"),
+            // va truong an "tongPhuThuGio" JS tinh o day thuc ra KHONG duoc backend
+            // doc (khong nam trong @RequestParam cua updateChiTietDatPhong) nen bi
+            // bo qua hoan toan luc luu. Rule cu (08:30-11:00 nhan / sau 18:30 tra ->
+            // cong 100.000d) chi con la UI "ma", khong khop voi bat ky gi thuc su
+            // duoc tinh/luu -> gay hieu lam cho nhan vien. Giu ham nay tra ve 0 de
+            // giao dien khop chinh xac voi nhung gi se duoc luu (khong con phu thu
+            // gio nhan/tra o man hinh nay).
+            return { tong: 0, chiTiet: [] };
         }
     };
 
@@ -1707,6 +1709,18 @@
             sumGiamRowEl.style.display = 'none';
         }
         document.getElementById('sumTongCong').textContent = 'đ ' + BookingValidate.formatVND(tongCong).replace(' VND', '');
+
+        // "Da thanh toan" la so tien THUC TE khach da tra (tu hoa don), khong doi
+        // theo cac thay doi nhap lieu tren man hinh nay; "Con lai" = tong cong
+        // (theo gia tri MOI NHAT dang chinh sua) - da thanh toan, cap nhat song
+        // song voi Tong Cong moi lan tinh lai.
+        const daThanhToan = Number(window.__daThanhToanDb || 0);
+        const conLai = Math.round(tongCong) - Math.round(daThanhToan);
+        document.getElementById('sumDaThanhToan').textContent = 'đ ' + BookingValidate.formatVND(daThanhToan).replace(' VND', '');
+        const sumConLaiEl = document.getElementById('sumConLai');
+        const sumConLaiRowEl = sumConLaiEl.closest('.sum-con-lai');
+        sumConLaiEl.textContent = (conLai < 0 ? '- đ ' : 'đ ') + BookingValidate.formatVND(Math.abs(conLai)).replace(' VND', '');
+        if (sumConLaiRowEl) sumConLaiRowEl.classList.toggle('da-du', conLai <= 0);
 
         const phuThuRow = document.getElementById('sumPhuThuRow');
         if (phuThu.tong > 0) {

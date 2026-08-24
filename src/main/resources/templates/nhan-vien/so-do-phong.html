@@ -14,6 +14,23 @@
 
         .sdp-shell { margin: 0 auto auto 100px !important; width: 85vw; max-width: 1800px; padding: 32px; }
 
+        /* Badge dem nguoc auto-refresh, goc tren phai man hinh */
+        .sdp-refresh-badge {
+            position: fixed; top: 16px; right: 20px; z-index: 900;
+            display: flex; align-items: center; gap: 8px;
+            background: #fff; border: 1px solid #e2e8f0; border-radius: 999px;
+            padding: 7px 14px; font-size: 12.5px; font-weight: 700; color: #475569;
+            box-shadow: 0 4px 14px rgba(15,23,42,0.08);
+        }
+        .sdp-refresh-badge i { color: #2196c4; font-size: 12px; }
+        .sdp-refresh-badge.paused i { color: #f59e0b; }
+        .sdp-refresh-badge .sdp-refresh-count {
+            display: inline-flex; align-items: center; justify-content: center;
+            min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px;
+            background: #eaf6fb; color: #1d7fae; font-size: 11.5px; font-weight: 800;
+        }
+        .sdp-refresh-badge.paused .sdp-refresh-count { background: #fef3c7; color: #92400e; }
+
         .sdp-header {
             display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px; flex-wrap: wrap; gap: 14px;
             background: linear-gradient(120deg, #0ea5c7 0%, #2196c4 55%, #1d7fae 100%);
@@ -904,6 +921,11 @@
 <div th:replace="~{fragments/cms-sidebar :: cmsSidebar}"></div>
 <div th:replace="~{fragments/headers/cms-header :: cmsHeader}"></div>
 
+<div class="sdp-refresh-badge" id="sdpRefreshBadge" title="Trang tự động tải lại mỗi 3 giây để cập nhật sơ đồ phòng">
+    <i class="fa-solid fa-rotate"></i>
+    <span>Tự cập nhật sau <span class="sdp-refresh-count" id="sdpRefreshCount">3</span>s</span>
+</div>
+
 <main class="sdp-shell">
 
     <div class="sdp-header">
@@ -1150,9 +1172,20 @@
                     </div>
                 </div>
 
+                <div style="margin-top:12px;">
+                    <label for="sdpCancelPhuongThucHoan" style="font-size:13px; font-weight:600; color:#334155; display:block; margin-bottom:6px;">
+                        Phương thức hoàn tiền
+                    </label>
+                    <select id="sdpCancelPhuongThucHoan" class="admin-input" style="width:100%;">
+                        <option value="Tien Mat">Tiền mặt</option>
+                        <option value="Chuyen Khoan">Chuyển khoản</option>
+                    </select>
+                </div>
+
                 <p style="font-size:12px; color:#94a3b8; margin-top:12px;">
-                    * Sau khi xác nhận, nếu có phát sinh hoàn tiền bạn sẽ được chuyển sang
-                    trang xử lý Hoàn tiền để xác nhận phương thức và số tiền hoàn thực tế cho khách.
+                    * Khi bấm "Xác nhận hủy đơn", nếu có phát sinh hoàn tiền, hệ thống sẽ TỰ ĐỘNG
+                    ghi nhận đã hoàn cho khách theo phương thức chọn ở trên (không cần vào trang
+                    Hoàn tiền để xác nhận lại).
                 </p>
             </div>
         </div>
@@ -1172,6 +1205,7 @@
 <!-- Form ẩn dùng chung để submit yêu cầu hủy thật sự (tái sử dụng /nhan-su/dat-phong/cancel) -->
 <form id="sdpCancelBookingForm" th:action="@{/nhan-su/dat-phong/cancel}" method="post" style="display:none;">
     <input type="hidden" name="id" id="sdpCancelBookingFormId">
+    <input type="hidden" name="phuongThucHoan" id="sdpCancelBookingFormPhuongThuc">
     <input type="hidden"
            th:if="${_csrf != null}"
            th:name="${_csrf.parameterName}"
@@ -1502,7 +1536,21 @@
             layoutEl.style.display = '';
             listEl.style.display = 'none';
         }
+        try { localStorage.setItem('sdpViewMode', mode); } catch (e) { /* storage khong kha dung, bo qua */ }
     }
+
+    // Khoi phuc che do hien thi (so do phong / danh sach) da luu tu lan xem
+    // truoc, de trang tu-refresh (setInterval reload moi 3s) khong lam nguoi
+    // dung bi bat ve lai che do mac dinh "So do phong" moi lan tai lai.
+    (function khoiPhucCheDoXem() {
+        var luu;
+        try { luu = localStorage.getItem('sdpViewMode'); } catch (e) { luu = null; }
+        if (luu === 'list') {
+            var selectEl = document.getElementById('sdpViewMode');
+            if (selectEl) selectEl.value = 'list';
+            sdpSwitchView('list');
+        }
+    })();
 </script>
 
 <!-- ==================== MODAL: XÁC NHẬN HỦY ĐƠN (nhân viên) - JS ==================== -->
@@ -1537,6 +1585,8 @@
         document.getElementById('sdpCancelModalError').style.display = 'none';
         document.getElementById('sdpCancelModalContent').style.display = 'none';
         document.getElementById('sdpCancelModalConfirmBtn').disabled = true;
+        var ptSelectEl = document.getElementById('sdpCancelPhuongThucHoan');
+        if (ptSelectEl) ptSelectEl.value = 'Tien Mat';
         document.getElementById('sdpCancelBookingOverlay').style.display = 'flex';
 
         fetch(SDP_URL_HUY_PREVIEW + maDatPhong + '/huy-preview', {
@@ -1584,7 +1634,9 @@
         btn.disabled = true;
         btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang xử lý...';
 
+        var ptSelect = document.getElementById('sdpCancelPhuongThucHoan');
         document.getElementById('sdpCancelBookingFormId').value = sdpCancelModalTargetId;
+        document.getElementById('sdpCancelBookingFormPhuongThuc').value = ptSelect ? ptSelect.value : 'Tien Mat';
         document.getElementById('sdpCancelBookingForm').submit();
     }
 
@@ -3065,7 +3117,15 @@
         vsConfirmBtn.addEventListener('click', function () {
             if (!vsMaPhongDangXet) return;
             vsConfirmBtn.disabled = true;
-            fetch('/nhan-su/ve-sinh/xac-nhan/' + vsMaPhongDangXet, { method: 'POST' })
+            var vsCsrfParamEl = document.getElementById('sdpCsrfParam');
+            var vsCsrfTokenEl = document.getElementById('sdpCsrfToken');
+            var vsBody = new URLSearchParams();
+            if (vsCsrfParamEl && vsCsrfTokenEl) vsBody.append(vsCsrfParamEl.value, vsCsrfTokenEl.value);
+            fetch('/nhan-su/ve-sinh/xac-nhan/' + vsMaPhongDangXet, {
+                method: 'POST',
+                headers: { 'Accept': 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: vsBody
+            })
                 .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
                 .then(function (r) {
                     vsConfirmBtn.disabled = false;
@@ -3853,6 +3913,59 @@
                     luuBtn.textContent = 'Lưu lịch đặt phòng';
                 });
         });
+    })();
+</script>
+
+<!-- Auto-refresh so-do-phong moi 3s, kem countdown goc tren phai -->
+<script>
+    (function () {
+        var DEM_GIAY = 3;
+        var conLai = DEM_GIAY;
+        var badgeEl = document.getElementById('sdpRefreshBadge');
+        var countEl = document.getElementById('sdpRefreshCount');
+
+        // Cac popup/sidebar/menu dang mo (nhan dien qua class .open) -> tam
+        // dung auto-refresh de khong lam mat du lieu nguoi dung dang nhap/xem.
+        var SELECTOR_DANG_MO = [
+            '.sdp-vs-backdrop.open', '.sdp-ctx-menu.open', '.sdp-ctx-backdrop.open',
+            '.sdp-policy-modal.open', '.sdp-giayto-modal.open', '.sdp-giayto-fields-panel.open',
+            '.sdp-info-sidebar.open', '.sdp-lich-sidebar.open', '.sdp-don-sidebar.open'
+        ].join(', ');
+
+        // Mot so modal khac (vd modal huy don) khong dung class .open ma bat/tat
+        // truc tiep qua style.display, nen kiem tra rieng bang computed style.
+        var ID_MODAL_INLINE_STYLE = ['sdpCancelBookingOverlay'];
+
+        function coPopupDangMo() {
+            if (document.querySelector(SELECTOR_DANG_MO)) return true;
+            for (var i = 0; i < ID_MODAL_INLINE_STYLE.length; i++) {
+                var el = document.getElementById(ID_MODAL_INLINE_STYLE[i]);
+                if (el && window.getComputedStyle(el).display !== 'none') return true;
+            }
+            return false;
+        }
+
+        function capNhatBadge() {
+            var dangMo = coPopupDangMo();
+            if (badgeEl) badgeEl.classList.toggle('paused', dangMo);
+            if (countEl) countEl.textContent = dangMo ? '⏸' : String(conLai);
+        }
+
+        setInterval(function () {
+            if (coPopupDangMo()) {
+                // Co popup dang mo: khong dem nguoc, cho den khi dong lai.
+                capNhatBadge();
+                return;
+            }
+            conLai -= 1;
+            if (conLai <= 0) {
+                window.location.reload();
+                return;
+            }
+            capNhatBadge();
+        }, 1000);
+
+        capNhatBadge();
     })();
 </script>
 

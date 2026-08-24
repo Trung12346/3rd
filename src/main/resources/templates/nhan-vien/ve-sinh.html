@@ -103,6 +103,7 @@
             </div>
 
             <form id="vsUploadForm" method="post" action="/nhan-su/ve-sinh/upload" enctype="multipart/form-data">
+                <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
                 <label class="vs-upload-zone" id="vsUploadZone">
                     <i class="fa-solid fa-cloud-arrow-up"></i>
                     <div id="vsUploadLabel">Nhấn để chọn ảnh phòng đã dọn (1 ảnh)</div>
