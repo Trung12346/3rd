@@ -299,7 +299,21 @@ public class DatPhongService {
         datPhong.setSonguoiLon(nguoiLon);
         datPhong.setSotreEm(treEm);
         datPhong.setYeuCauThem(null);
-        datPhong.setTrangThai("Yeu cau dat phong");
+        // ===== Trang thai ban dau =====
+        // - KH online (khachHang != null)         -> "Yeu cau dat phong" (NV se duyet)
+        // - KH vang lai (khachHang == null)       -> "Chua thanh toan" (don dang do, KH
+        //                                            phai dien day du hoten/email/sdt o
+        //                                            buoc "Thong tin khach" roi moi
+        //                                            chuyen sang trangThai "Yeu cau dat
+        //                                            phong" de NV xet). Lam vay tranh
+        //                                            hien popup "Yeu cau dat phong" dang
+        //                                            giai doan KH moi nhap CCCD chua co
+        //                                            thong tin khach -> gay hieu nham.
+        if (khachHang == null) {
+            datPhong.setTrangThai("Chua thanh toan");
+        } else {
+            datPhong.setTrangThai("Yeu cau dat phong");
+        }
         datPhong.setNgayTao(LocalDateTime.now());
         datPhong.setNgayCapNhat(null);
         datPhong.setSdt(null);

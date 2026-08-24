@@ -1688,6 +1688,9 @@
         }
 
         // Đơn chưa nhận phòng (còn hiệu lực) gần nhất theo thời điểm check-in
+        // CHỈ tính các đơn đã gửi yêu cầu thật sự (Yeu cau dat phong / Cho xac nhan /
+        // Da xac nhan). Đơn "Chua thanh toan" (KH vãng lai mới nhập CCCD, chưa điền
+        // đủ hoten/email/sdt) KHÔNG hiện countdown vì chưa phải đơn đặt trước thật.
         function tinChoNhanPhongGanNhat(maPhong, t) {
             var list = getBookings(maPhong).filter(function (b) {
                 return b.trangThai === 'Yeu cau dat phong' || b.trangThai === 'Cho xac nhan' || b.trangThai === 'Da xac nhan';
