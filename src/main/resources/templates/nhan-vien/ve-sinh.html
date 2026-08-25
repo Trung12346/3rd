@@ -10,7 +10,9 @@
         *, *::before, *::after { box-sizing: border-box; }
         body { background: linear-gradient(180deg, #f3f7fb 0%, #eef2f7 100%); font-family: 'Montserrat', sans-serif; }
 
-        .vs-shell { margin: 0 auto auto 100px !important; width: 85vw; max-width: 900px; padding: 32px; }
+        .vs-shell { margin-left: 250px !important; margin-right: auto; width: calc(100vw - 250px - 48px); max-width: 900px; padding: 32px; }
+        @media (max-width: 960px) { .vs-shell { margin-left: 80px !important; width: calc(100vw - 80px - 32px); padding: 24px 16px; } }
+        @media (max-width: 640px) { .vs-shell { margin-left: 0 !important; width: 100%; padding: 20px 14px; } }
 
         .vs-header {
             display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px; flex-wrap: wrap; gap: 14px;
@@ -42,12 +44,15 @@
         .vs-status-pill.da-upload { background: #dcfce7; color: #15803d; }
 
         .vs-upload-zone {
-            border: 2px dashed #cbd5e1; border-radius: 14px; padding: 28px; text-align: center; cursor: pointer;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            border: 2px dashed #cbd5e1; border-radius: 14px; padding: 28px 18px;
+            text-align: center; cursor: pointer; width: 100%; box-sizing: border-box;
             transition: border-color .15s, background .15s;
         }
         .vs-upload-zone:hover { border-color: #2196c4; background: #f8fbfd; }
         .vs-upload-zone i { font-size: 32px; color: #94a3b8; margin-bottom: 10px; display: block; }
-        .vs-upload-zone input { display: none; }
+        .vs-upload-zone > div { max-width: 100%; word-break: break-word; }
+        .vs-upload-zone input { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
 
         .vs-preview { margin-top: 16px; text-align: center; }
         .vs-preview img { max-width: 100%; max-height: 340px; border-radius: 12px; border: 1px solid #e5e7eb; }
