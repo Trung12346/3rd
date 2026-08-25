@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Không tìm thấy đơn | Hotel</title>
+    <style>
+        body { font-family: 'Montserrat', sans-serif; background: #f4f7fa; margin: 0; padding: 40px 20px; color: #1f2937; }
+        .box { max-width: 420px; margin: 60px auto; background: #fff; border-radius: 14px; padding: 32px; box-shadow: 0 6px 20px rgba(15,23,42,0.08); text-align: center; }
+        h2 { color: #b91c1c; margin: 0 0 12px; font-size: 20px; }
+        p { color: #6b7280; font-size: 14px; margin: 0 0 18px; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h2>Không tìm thấy đơn đặt phòng</h2>
+        <p th:text="${error}">Đơn đặt phòng không tồn tại hoặc đã bị xoá.</p>
+    </div>
+</body>
+</html>

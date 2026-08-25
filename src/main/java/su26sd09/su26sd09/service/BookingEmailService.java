@@ -362,9 +362,9 @@ public class BookingEmailService {
         vars.put("danhSachDichVu", dsDichVu);
         vars.put("tongTienDichVu", formatTien(tongTienDv));
 
-        // Khuyen mai (neu co)
+        // Khuyen mai (neu co) - ap dung tren TONG (phong + dich vu)
         KhuyenMai km = dp.getKm();
-        BigDecimal tienGiam = tinhTienGiam(tongTienPhong, km);
+        BigDecimal tienGiam = tinhTienGiam(tongTienPhong.add(tongTienDv), km);
         if (km != null) {
             vars.put("khuyenMai", km);
             vars.put("moTaKhuyenMai", km.getPromoCode() != null ? km.getPromoCode() : "—");
@@ -380,10 +380,10 @@ public class BookingEmailService {
         boolean coPhuPhiThucTe = tongPhuPhi != null && tongPhuPhi.compareTo(BigDecimal.ZERO) > 0;
         vars.put("coPhuPhiThucTe", coPhuPhiThucTe);
 
-        // Tong cong = (tien phong - giam) + dich vu + VAT 10%
+        // Tong cong = (phong + DV - giam) + VAT 10%
         // KHONG cong phu phi (phu phi chi ap dung khi da check-in/out that su)
-        BigDecimal tienSauGiam = tongTienPhong.subtract(tienGiam).max(BigDecimal.ZERO);
-        BigDecimal truocVat = tienSauGiam.add(tongTienDv);
+        BigDecimal tienSauGiam = tongTienPhong.add(tongTienDv).subtract(tienGiam).max(BigDecimal.ZERO);
+        BigDecimal truocVat = tienSauGiam;
         BigDecimal tienVat = truocVat.multiply(VAT_RATE).setScale(0, java.math.RoundingMode.HALF_UP);
         BigDecimal tongCong = truocVat.add(tienVat);
 

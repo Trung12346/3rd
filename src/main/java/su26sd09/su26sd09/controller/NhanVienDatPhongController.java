@@ -2,6 +2,7 @@ package su26sd09.su26sd09.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -211,14 +212,23 @@ public class NhanVienDatPhongController {
     public String chiTietDatPhong(@PathVariable Integer id,
                                   @RequestParam(value = "embed", required = false, defaultValue = "false") Boolean embed,
                                   Model model,
-                                  RedirectAttributes redirectAttributes) {
+                                  RedirectAttributes redirectAttributes,
+                                  HttpServletResponse response) {
+        boolean isEmbed = embed != null && embed;
         DatPhong datPhong = datPhongService.findById(id);
         if (datPhong == null) {
+            // Che do embed (popup trong so-do-phong): tra 404 HTML thay vi redirect,
+            // tranh JS parse nham noi dung trang khac.
+            if (isEmbed) {
+                response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+                model.addAttribute("error", "Khong tim thay don dat phong #" + id);
+                return "nhan-vien/chi-tiet-dat-phong-notfound";
+            }
             redirectAttributes.addFlashAttribute("error", "Khong tim thay don dat phong #" + id);
             return "redirect:/nhan-su/dat-phong";
         }
 
-        model.addAttribute("embed", embed != null && embed);
+        model.addAttribute("embed", isEmbed);
 
         HoaDon hoaDon = hoaDonService.findByDatPhongId(id);
         model.addAttribute("hoaDon", hoaDon);
@@ -387,11 +397,14 @@ public class NhanVienDatPhongController {
                 .filter(java.util.Objects::nonNull)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         BigDecimal tienGiamGoc = (hoaDon != null && hoaDon.tienGiam != null) ? hoaDon.tienGiam : BigDecimal.ZERO;
-        BigDecimal vatGoc = tienPhongGoc.add(tienDichVuGoc)
+        // KM ap tren TONG (phong + dich vu), VAT 10% tinh tren gia SAU GIAM
+        BigDecimal tongTruocGiam = tienPhongGoc.add(tienDichVuGoc);
+        BigDecimal tongSauGiam = tongTruocGiam.subtract(tienGiamGoc);
+        BigDecimal vatGoc = tongSauGiam
                 .multiply(new BigDecimal("0.10"))
                 .setScale(0, RoundingMode.HALF_UP);
-        BigDecimal tongTienKyVong = tienPhongGoc.add(tienDichVuGoc).add(vatGoc)
-                .subtract(tienGiamGoc).add(tongPhuThu == null ? BigDecimal.ZERO : tongPhuThu);
+        BigDecimal tongTienKyVong = tongSauGiam.add(vatGoc)
+                .add(tongPhuThu == null ? BigDecimal.ZERO : tongPhuThu);
 
         BigDecimal tongTienDaLuu = (hoaDon != null && hoaDon.getTongTien() != null)
                 ? hoaDon.getTongTien() : BigDecimal.ZERO;

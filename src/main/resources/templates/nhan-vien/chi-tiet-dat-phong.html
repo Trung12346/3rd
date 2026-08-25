@@ -446,10 +446,13 @@
         .btn-dp-primary:disabled { background: #94a3b8; cursor: not-allowed; }
 
         /* Che do nhung (embed=true) trong sidebar cua so-do-phong.html:
-           bo bot khoang trong thua vi khong con canh cua man hinh lon nua. */
-        body.cdp-embed-mode { background: #fff; }
-        body.cdp-embed-mode .cdp-shell { padding: 18px 18px 40px; max-width: 100%; }
-        body.cdp-embed-mode .cdp-layout { grid-template-columns: minmax(0, 1fr); }
+           bo bot khoang trong thua vi khong con canh cua man hinh lon nua.
+           Class .cdp-embed-mode duoc them vao mot <div> wrapper ben trong
+           #sdpDonContent (xem JS nhungNoiDungDon), nen cac rule ben duoi
+           dung theo selector "div.cdp-embed-mode ..." de khop. */
+        div.cdp-embed-mode { background: #fff; }
+        div.cdp-embed-mode .cdp-shell { padding: 18px 18px 40px; max-width: 100%; }
+        div.cdp-embed-mode .cdp-layout { grid-template-columns: minmax(0, 1fr); }
 
         /* =====================================================================
          * Dong bo giao dien voi sidebar "Lên lịch đặt phòng" trong so-do-phong.html:

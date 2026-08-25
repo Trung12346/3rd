@@ -399,11 +399,16 @@
                     <strong id="summary-tien-giam">− đ 0</strong>
                 </div>
 
+                <div class="summary-line" id="summary-row-vat" style="display:flex; margin-top:8px;">
+                    <span>VAT (10% trên giá sau giảm)</span>
+                    <strong id="summary-tien-vat">đ 0</strong>
+                </div>
+
                 <div class="summary-total">
                     <span>Tổng cộng</span>
-                    <strong id="summary-tong-cong" th:text="${'đ ' + #numbers.formatDecimal(TongSauGiam != null ? TongSauGiam : TongTien, 0, 'COMMA', 0, 'POINT')}">đ 0</strong>
+                    <strong id="summary-tong-cong" th:text="${'đ ' + #numbers.formatDecimal(TongCong != null ? TongCong : (TongSauGiam != null ? TongSauGiam : TongTien), 0, 'COMMA', 0, 'POINT')}">đ 0</strong>
                 </div>
-                <div style="color:#9ca3af; font-size:12px; margin-top:-8px;">Giá trước thuế</div>
+                <div style="color:#9ca3af; font-size:12px; margin-top:-8px;">Giá đã bao gồm VAT</div>
             </aside>
         </div>
 
@@ -623,8 +628,12 @@
             return null;
         }
 
+        // Dieu kien toi thieu kiem tren TONG (phong + dich vu) - dong bo voi backend
+        // tinhLaiTongTien() se tinh tongDichVu va truyen vao day thong qua global.
+        const tongTruocGiamCheck = (typeof window.__tongTruocGiamHienTai === 'number')
+            ? window.__tongTruocGiamHienTai : tienPhong;
         const dieuKien = parseFloat(matchedKm.dieuKien) || 0;
-        if (tienPhong < dieuKien) {
+        if (tongTruocGiamCheck < dieuKien) {
             promoError.textContent = 'Đơn chưa đạt điều kiện tối thiểu: đ ' + formatTien(dieuKien) + '.';
             promoError.style.display = 'block';
             return null;
@@ -653,18 +662,27 @@
 
         const matchedKm = timKhuyenMai();
         let tienGiam = 0;
+        // KM ap dung tren TONG (phong + dich vu), khong phai chi tren tien phong
+        const tongTruocGiam = tienPhong + tongDichVu;
+        // Cap nhat de timKhuyenMai() co the check dieu kien toi thieu tren tong
+        window.__tongTruocGiamHienTai = tongTruocGiam;
         if (matchedKm) {
             const giaTriGiam = parseFloat(matchedKm.giatriGiam) || 0;
             tienGiam = (matchedKm.loaiGiam || '').toUpperCase() === 'PERCENT'
-                ? tienPhong * giaTriGiam / 100
-                : Math.min(giaTriGiam, tienPhong);
+                ? tongTruocGiam * giaTriGiam / 100
+                : Math.min(giaTriGiam, tongTruocGiam);
         }
-        const tongCong = tienPhong - tienGiam + tongDichVu;
+        // VAT 10% tinh tren gia SAU GIAM (khong phai gia goc)
+        const tongSauGiam = tongTruocGiam - tienGiam;
+        const tienVat = tongSauGiam * 0.10;
+        const tongCong = tongSauGiam + tienVat;
 
         document.getElementById('summary-tien-dich-vu').textContent = 'đ ' + formatTien(tongDichVu);
+        document.getElementById('summary-tien-vat').textContent    = 'đ ' + formatTien(tienVat);
         document.getElementById('summary-tong-cong').textContent    = 'đ ' + formatTien(tongCong);
         document.getElementById('hidden-tien-dich-vu').value        = tongDichVu;
         document.getElementById('hidden-tien-giam').value           = Math.round(tienGiam);
+        document.getElementById('hidden-tien-vat').value            = Math.round(tienVat);
         document.getElementById('hidden-tong-cong').value           = tongCong;
         document.getElementById('hidden-tong-phu-phi').value        = Math.round(tongPhuPhi);
 

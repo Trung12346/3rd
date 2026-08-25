@@ -3273,8 +3273,14 @@
             // (copy) truc tiep vao DOM cua so-do-phong.html. Nho vay tranh duoc
             // loi "refused to connect" / X-Frame-Options cua trinh duyet khi frame,
             // va noi dung thuc su la mot phan cua trang nay chu khong phai document rieng.
-            fetch(fullUrl + '?embed=true', { credentials: 'same-origin' })
+            // Dung redirect: 'manual' de KHONG tu follow 302 - neu server redirect
+            // (vd khi datPhong == null) thi res.type === 'opaqueredirect' va tao error
+            // thay vi parse nham HTML trang so-do-phong.
+            fetch(fullUrl + '?embed=true', { credentials: 'same-origin', redirect: 'manual' })
                 .then(function (res) {
+                    if (res.type === 'opaqueredirect' || (res.status >= 300 && res.status < 400)) {
+                        throw new Error('Server redirect (status ' + res.status + ')');
+                    }
                     if (!res.ok) throw new Error('HTTP ' + res.status);
                     return res.text();
                 })
@@ -3286,6 +3292,7 @@
                 })
                 .catch(function (err) {
                     if (myToken !== donFetchToken) return;
+                    console.error('[sdp] loi load don hien tai', donId, err);
                     donLoading.classList.add('hide');
                     showDonLoadError(fullUrl);
                 });
@@ -3387,7 +3394,19 @@
                 donStylesInjected = true;
             }
 
-            donContent.innerHTML = doc.body ? doc.body.innerHTML : html;
+            // Khi server render che do embed, no se gan class "cdp-embed-mode" len <body>.
+            // Khi nhung vao DOM cua trang khac, <body> cu khong con, nen ta chen them 1
+            // <div class="cdp-embed-mode"> WRAPPER ben trong #sdpDonContent de cac rule
+            // "div.cdp-embed-mode ..." (duoc scope thanh "#sdpDonContent div.cdp-embed-mode ...")
+            // van co hieu luc.
+            var bodyEl = doc.body;
+            var isEmbed = bodyEl && bodyEl.classList && bodyEl.classList.contains('cdp-embed-mode');
+            var bodyHtml = doc.body ? doc.body.innerHTML : html;
+            if (isEmbed) {
+                donContent.innerHTML = '<div class="cdp-embed-mode">' + bodyHtml + '</div>';
+            } else {
+                donContent.innerHTML = bodyHtml;
+            }
 
             sapXepLaiNoiDungDon(donContent);
 

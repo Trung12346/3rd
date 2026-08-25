@@ -93,11 +93,11 @@ public class ThanhToanController {
                 amountDv = amountDv.add(ctdv.getDonGia());
             }
 
-            BigDecimal tienGiam = tinhTienGiam(amountPhong, dp.getKm());
-            BigDecimal tienPhongSauGiam = amountPhong.subtract(tienGiam);
-            Totalamount = tienPhongSauGiam.add(amountDv);
-            BigDecimal tienVat = Totalamount.multiply(ThueVat).setScale(2,RoundingMode.HALF_UP);
-            Totalamount = Totalamount.add(tienVat);
+            // KM: ap dung tren TONG (phong + dich vu), VAT 10% tinh tren gia SAU GIAM
+            BigDecimal tienGiam = tinhTienGiam(amountPhong.add(amountDv), dp.getKm());
+            BigDecimal tongSauGiam = amountPhong.add(amountDv).subtract(tienGiam);
+            BigDecimal tienVat = tongSauGiam.multiply(ThueVat).setScale(2,RoundingMode.HALF_UP);
+            Totalamount = tongSauGiam.add(tienVat);
             model.addAttribute("datPhong",dp);
             model.addAttribute("TongTien",amountPhong);
             model.addAttribute("TienDv",amountDv);
@@ -124,10 +124,11 @@ public class ThanhToanController {
 
         DatPhong dp = datPhongService.findById(id);
         BigDecimal VATCD = new BigDecimal("0.10");
-        BigDecimal tienGiam = tinhTienGiam(amount, dp != null ? dp.getKm() : null);
-        BigDecimal tongTien = amount.subtract(tienGiam).add(amountDv);
-        BigDecimal tienVat = tongTien.multiply(VATCD).setScale(2, RoundingMode.HALF_UP);
-        tongTien = tongTien.add(tienVat);
+        // KM: ap dung tren TONG (phong + dich vu), VAT 10% tinh tren gia SAU GIAM
+        BigDecimal tienGiam = tinhTienGiam(amount.add(amountDv), dp != null ? dp.getKm() : null);
+        BigDecimal tongSauGiam = amount.add(amountDv).subtract(tienGiam);
+        BigDecimal tienVat = tongSauGiam.multiply(VATCD).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal tongTien = tongSauGiam.add(tienVat);
 
         //them cong nang
         HoaDon hd = hoaDonService.findByDatPhongId(id);
@@ -238,12 +239,13 @@ public class ThanhToanController {
         }
 
         BigDecimal VATCD = new BigDecimal("0.10");
-        BigDecimal tienGiam = tinhTienGiam(amountPhong, dp.getKm());
+        // KM: ap dung tren TONG (phong + dich vu), VAT 10% tinh tren gia SAU GIAM.
         // Phu thu (dv.loaiDv = "Phu thu") KHONG cong vao tienDichVu (chi ghi rieng de hien thi dong "Phu thu"),
-        // van cong vao tongTien (vi khach van phai tra).
-        BigDecimal amountTongTien = amountPhong.subtract(tienGiam).add(amountDv).add(amountPhuThu);
-        BigDecimal tienVat = amountTongTien.multiply(VATCD).setScale(2, RoundingMode.HALF_UP);
-        amountTongTien = amountTongTien.add(tienVat);
+        // con phu thu khong chiu giam KM va khong chiu VAT - cong thang vao tongTien cuoi.
+        BigDecimal tienGiam = tinhTienGiam(amountPhong.add(amountDv), dp.getKm());
+        BigDecimal tongSauGiam = amountPhong.add(amountDv).subtract(tienGiam);
+        BigDecimal tienVat = tongSauGiam.multiply(VATCD).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal amountTongTien = tongSauGiam.add(tienVat).add(amountPhuThu);
 
         //-------------------------------------------------------deprecated--
         // KHONG doi trangThai DatPhong o day — don nay la "Yeu cau dat phong",

@@ -217,15 +217,19 @@ public class PhongController {
         }
         System.out.println("AmountDv: "+amountDv);
         amount = amount.add(amountDv);
-        BigDecimal tienGiam = tinhTienGiam(amountP, dp.getKm());
-        BigDecimal tienPhongSauGiam = amountP.subtract(tienGiam);
-        BigDecimal tongSauGiam = tienPhongSauGiam.add(amountDv);
+        // KM: ap dung tren TONG (phong + dich vu), sau do VAT 10% tinh tren gia SAU GIAM
+        BigDecimal tienGiam = tinhTienGiam(amountP.add(amountDv), dp.getKm());
+        BigDecimal tongSauGiam = amountP.add(amountDv).subtract(tienGiam);
+        BigDecimal tienVat = tongSauGiam.multiply(new BigDecimal("0.10")).setScale(2, java.math.RoundingMode.HALF_UP);
+        BigDecimal tongCong = tongSauGiam.add(tienVat);
         model.addAttribute("TienDv",amountDv);
 
         model.addAttribute("TongTien",amount);
         model.addAttribute("TienPhong",amountP);
         model.addAttribute("TienGiam", tienGiam);
         model.addAttribute("TongSauGiam", tongSauGiam);
+        model.addAttribute("TienVat", tienVat);
+        model.addAttribute("TongCong", tongCong);
         model.addAttribute("TongPhuPhi", datphongservice.sumExtraFeeForDatPhong(id));
         model.addAttribute("datPhong",dp);
         model.addAttribute("chiTietDatPhongList",listCt);
@@ -329,9 +333,11 @@ public class PhongController {
 
         KhuyenMai km = draft.getMaKhuyenMai() != null ? khuyenMaiService.findbyId(draft.getMaKhuyenMai()) : null;
         dp.setKm(km);
-        BigDecimal tienGiam = tinhTienGiam(amountP, km);
-        BigDecimal tienPhongSauGiam = amountP.subtract(tienGiam);
-        BigDecimal tongSauGiam = tienPhongSauGiam.add(amountDv);
+        // KM: ap dung tren TONG (phong + dich vu), sau do VAT 10% tinh tren gia SAU GIAM
+        BigDecimal tienGiam = tinhTienGiam(amountP.add(amountDv), km);
+        BigDecimal tongSauGiam = amountP.add(amountDv).subtract(tienGiam);
+        BigDecimal tienVat = tongSauGiam.multiply(new BigDecimal("0.10")).setScale(2, java.math.RoundingMode.HALF_UP);
+        BigDecimal tongCong = tongSauGiam.add(tienVat);
         BigDecimal amount = amountP.add(amountDv);
 
         model.addAttribute("TienDv", amountDv);
@@ -339,6 +345,8 @@ public class PhongController {
         model.addAttribute("TienPhong", amountP);
         model.addAttribute("TienGiam", tienGiam);
         model.addAttribute("TongSauGiam", tongSauGiam);
+        model.addAttribute("TienVat", tienVat);
+        model.addAttribute("TongCong", tongCong);
         model.addAttribute("TongPhuPhi", tongPhuPhi);
         model.addAttribute("datPhong", dp);
         model.addAttribute("chiTietDatPhongList", listCt);
@@ -667,11 +675,11 @@ public class PhongController {
             System.out.println("In for each loops: "+chiTietDatPhong.getGiaMoiDem());
 
         }
-        BigDecimal tienGiam = tinhTienGiam(amount, dp.getKm());
-        BigDecimal tienPhongSauGiam = amount.subtract(tienGiam);
-        BigDecimal TotalAmount = tienPhongSauGiam.add(amountDv);
-        BigDecimal TienVat = TotalAmount.multiply(ThueVat).setScale(2, RoundingMode.HALF_UP);
-        TotalAmount = TotalAmount.add(TienVat);
+        // KM: ap dung tren TONG (phong + dich vu), VAT 10% tinh tren gia SAU GIAM
+        BigDecimal tienGiam = tinhTienGiam(amount.add(amountDv), dp.getKm());
+        BigDecimal tongSauGiam = amount.add(amountDv).subtract(tienGiam);
+        BigDecimal TienVat = tongSauGiam.multiply(ThueVat).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal TotalAmount = tongSauGiam.add(TienVat);
         System.out.println("Amount: "+ amount);
         model.addAttribute("TienVat",TienVat);
         model.addAttribute("TienPhong",amount);
@@ -772,12 +780,12 @@ public class PhongController {
         KhuyenMai km = draft.getMaKhuyenMai() != null ? khuyenMaiService.findbyId(draft.getMaKhuyenMai()) : null;
         dp.setKm(km);
 
-        BigDecimal tienGiam = tinhTienGiam(amount, km);
-        BigDecimal tienPhongSauGiam = amount.subtract(tienGiam);
-        BigDecimal totalAmount = tienPhongSauGiam.add(amountDv);
+        // KM: ap dung tren TONG (phong + dich vu), VAT 10% tinh tren gia SAU GIAM
+        BigDecimal tienGiam = tinhTienGiam(amount.add(amountDv), km);
+        BigDecimal tongSauGiam = amount.add(amountDv).subtract(tienGiam);
         BigDecimal thueVat = new BigDecimal("0.10");
-        BigDecimal tienVat = totalAmount.multiply(thueVat).setScale(2, RoundingMode.HALF_UP);
-        totalAmount = totalAmount.add(tienVat);
+        BigDecimal tienVat = tongSauGiam.multiply(thueVat).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal totalAmount = tongSauGiam.add(tienVat);
 
         model.addAttribute("datPhong", dp);
         model.addAttribute("nightCount", Math.max(1, soDemVal));

@@ -417,10 +417,11 @@ public class VnpayService {
         System.out.println("DA THANH TOAN: " + daThanhToan);
 
         BigDecimal VATCD = new BigDecimal("0.10");
-        BigDecimal tienGiam = tinhTienGiam(amountPhong, dp.getKm());
-        BigDecimal amountTongTien = amountPhong.subtract(tienGiam).add(amountDv).add(amountPhuThu);
-        BigDecimal tienVat = amountTongTien.multiply(VATCD).setScale(2, RoundingMode.HALF_UP);
-        amountTongTien = amountTongTien.add(tienVat);
+        // KM ap dung tren TONG (phong + dich vu), VAT tren gia SAU GIAM, phu thu khong giam/KM/VAT
+        BigDecimal tienGiam = tinhTienGiam(amountPhong.add(amountDv), dp.getKm());
+        BigDecimal tongSauGiam = amountPhong.add(amountDv).subtract(tienGiam);
+        BigDecimal tienVat = tongSauGiam.multiply(VATCD).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal amountTongTien = tongSauGiam.add(tienVat).add(amountPhuThu);
 
         BigDecimal tongDaThanhToan = amountVnpay.add(daThanhToan);
         System.out.println("DA THANH TOAN: " + tongDaThanhToan);
