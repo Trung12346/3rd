@@ -104,7 +104,7 @@ public class NhanVienService {
                 && laBoPhanLeTan(nhanSu.getBoPhan());
     }
 
-    private boolean laBoPhanLeTan(String boPhan) {
+    public boolean laBoPhanLeTan(String boPhan) {
         if (boPhan == null) {
             return false;
         }
