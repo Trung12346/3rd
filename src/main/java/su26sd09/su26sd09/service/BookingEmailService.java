@@ -80,8 +80,13 @@ public class BookingEmailService {
     private String baseUrl;
 
     /**
-     * Gui email xac nhan cho khach sau khi tao yeu cau dat phong online.
-     * Trang thai don luc nay la "Yeu cau dat phong", cho NV xac nhan.
+     * Gui email xac nhan cho khach sau khi tao dat phong online.
+     * Trang thai don luc nay la "Yeu cau dat phong" nhung KHONG can NV duyet
+     * nua — don da duoc tinh la mot dat phong (reservation) va giu phong
+     * ngay. Khach co 24h de thanh toan (xem BookingExpiryScheduler / job huy
+     * don qua han), neu khong don se bi XOA khoi CSDL. Vi vay email nay
+     * luon kem QR + link toi /thanh-toan/pool de khach thanh toan ngay,
+     * phong khi luong thanh toan chinh (VNPay redirect) bi gian doan.
      */
     @Async
     public void guiEmailYeuCauDatPhong(Integer maDatPhong) {
@@ -96,16 +101,25 @@ public class BookingEmailService {
 
         try {
             Map<String, Object> vars = buildCommonVars(dp, "yeu-cau");
-            vars.put("tieuDe", "Yêu cầu đặt phòng đã được gửi");
+            vars.put("tieuDe", "Đặt phòng đã được ghi nhận");
             vars.put("loiChao", "Cảm ơn quý khách đã chọn " + hotelName + "!");
             vars.put("thongBaoChinh",
-                    "Yêu cầu đặt phòng của quý khách đã được gửi thành công. "
-                            + "Đội ngũ nhân viên sẽ kiểm tra và xác nhận trong thời gian sớm nhất.");
+                    "Đặt phòng #" + dp.getId() + " của quý khách đã được ghi nhận và giữ chỗ trong hệ thống. "
+                            + "Quý khách vui lòng hoàn tất thanh toán trong vòng 24 giờ kể từ khi đặt — "
+                            + "nếu quá thời hạn mà chưa thanh toán, đơn sẽ tự động bị hủy.");
+
+            // Kem QR + link thanh toan toi /thanh-toan/pool ngay tu email dau tien,
+            // vi don khong con qua buoc NV xac nhan truoc khi thanh toan nua.
+            BigDecimal soTienCanTra = (BigDecimal) vars.getOrDefault("tongCongRaw", BigDecimal.ZERO);
+            String linkThanhToan = baseUrl + "/thanh-toan/pool?dat-phong-id=" + maDatPhong;
+            vars.put("linkThanhToan", linkThanhToan);
+            vars.put("qrThanhToanUrl", buildQrCodeUrl(linkThanhToan));
+            vars.put("soTienConLai", formatTien(soTienCanTra));
 
             sendEmail(emailNhan,
-                    "[Hotel] Xác nhận yêu cầu đặt phòng #" + dp.getId(),
+                    "[Hotel] Đặt phòng #" + dp.getId() + " đã được ghi nhận - Vui lòng thanh toán trong 24h",
                     "email/xac-nhan-dat-phong", vars);
-            log.info("[Email] Da gui email yeu cau dat phong toi {} (don #{})", emailNhan, maDatPhong);
+            log.info("[Email] Da gui email dat phong (kem QR thanh toan) toi {} (don #{})", emailNhan, maDatPhong);
         } catch (Exception e) {
             log.error("[Email] Loi gui email yeu cau dat phong don #{}: {}", maDatPhong, e.getMessage(), e);
         }
@@ -376,6 +390,7 @@ public class BookingEmailService {
         vars.put("tienTruocVat", formatTien(truocVat));
         vars.put("tienVat", formatTien(tienVat));
         vars.put("tongCong", formatTien(tongCong));
+        vars.put("tongCongRaw", tongCong); // BigDecimal chua format, dung de tinh QR/soTienConLai
 
         // Thong tin khach san
         vars.put("tenKhachSan", hotelName);
@@ -397,7 +412,7 @@ public class BookingEmailService {
     private String formatTrangThai(String tt) {
         if (tt == null) return "—";
         return switch (tt) {
-            case "Yeu cau dat phong" -> "Chờ nhân viên xác nhận";
+            case "Yeu cau dat phong" -> "Đã giữ phòng - chờ thanh toán (trong 24h)";
             case "Cho xac nhan" -> "Chờ xác nhận thanh toán";
             case "Da xac nhan" -> "Đã xác nhận";
             case "Da nhan phong" -> "Đã nhận phòng";

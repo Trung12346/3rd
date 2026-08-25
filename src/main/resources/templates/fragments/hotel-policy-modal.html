@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!--
+    Fragment dung chung: modal "Chinh sach khach san" (Dieu khoan dich vu day du).
+    Dung tren ca 2 trang dat phong:
+      - /loai-phong/{id}       (loai-phong-detail.html)
+      - /loai-phong/tim-kiem   (loai-phong-ket-qua.html)
+
+    Cach dung o trang goi:
+      1) th:insert="~{fragments/hotel-policy-modal :: hotelPolicyModal}" mot lan
+         truoc the </body>.
+      2) Dat nut "Dat cho"/"Dat loai phong nay" o trang goi voi thuoc tinh
+         `disabled` san co (mac dinh khoa).
+      3) Dat doan text kich hoat voi class "js-hotel-policy-trigger" ngay
+         phia tren nut dat phong — fragment nay tu gan click-listener cho
+         MOI phan tu co class do (khong can id cu the), mo modal va phat
+         CustomEvent "hotel-policy-agreed" tren `document`.
+      4) O trang goi, lang nghe event do de tu go `disabled` cho nut cua minh:
+             document.addEventListener('hotel-policy-agreed', function () {
+                 document.getElementById('btn-confirm-booking').disabled = false;
+             });
+         (Trang loai-phong-ket-qua.html can gate them theo trang thai chon
+         phong — xem script rieng trong file do.)
+-->
+<div th:fragment="hotelPolicyModal">
+    <style>
+        .hotel-tos-modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15,23,42,0.55);
+            z-index: 2200;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+        .hotel-tos-modal {
+            background: #fff;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 640px;
+            max-height: 88vh;
+            overflow-y: auto;
+            padding: 28px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .hotel-tos-modal h3 {
+            margin: 0 0 6px;
+            color: var(--text-dark, #333);
+            font-family: 'Georgia', serif;
+            font-size: 19px;
+        }
+        .hotel-tos-modal .hts-subtitle {
+            font-size: 12px;
+            color: var(--text-gray, #666);
+            margin: 0 0 18px;
+            padding-bottom: 14px;
+            border-bottom: 1px dashed var(--border-color, #e0e0e0);
+        }
+        .hotel-tos-modal .hts-section-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-dark, #333);
+            margin: 20px 0 8px;
+        }
+        .hotel-tos-modal .hts-section-title:first-of-type { margin-top: 0; }
+        .hotel-tos-modal p.hts-text {
+            font-size: 13px;
+            color: var(--text-dark, #333);
+            line-height: 1.65;
+            margin: 0 0 10px;
+        }
+        .hotel-tos-modal ul.hts-list {
+            margin: 0 0 10px;
+            padding-left: 20px;
+            font-size: 13px;
+            color: var(--text-dark, #333);
+            line-height: 1.7;
+        }
+        .hotel-tos-modal table.hts-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12.5px;
+            margin: 6px 0 10px;
+        }
+        .hotel-tos-modal table.hts-table th,
+        .hotel-tos-modal table.hts-table td {
+            border: 1px solid var(--border-color, #e0e0e0);
+            padding: 8px 10px;
+            text-align: left;
+        }
+        .hotel-tos-modal table.hts-table th {
+            background: var(--sky-light, #EBF5FB);
+            color: var(--sky-dark, #2980B9);
+            font-weight: 700;
+            font-size: 11.5px;
+            text-transform: uppercase;
+            letter-spacing: .2px;
+        }
+        .hotel-tos-modal table.hts-table td.hts-free { color: #2F9E4D; font-weight: 700; }
+        .hotel-tos-modal table.hts-table td.hts-half { color: #E0A800; font-weight: 700; }
+        .hotel-tos-modal table.hts-table td.hts-full,
+        .hotel-tos-modal table.hts-table td.hts-none { color: #D23F3F; font-weight: 700; }
+        .hotel-tos-modal .hts-note-box {
+            background: #fff7ed;
+            border: 1px solid #fde68a;
+            border-radius: 6px;
+            padding: 10px 12px;
+            font-size: 12px;
+            color: #92400e;
+            line-height: 1.55;
+            margin: 4px 0 6px;
+        }
+        .hotel-tos-modal .hts-footer-note {
+            font-size: 11px;
+            color: var(--text-gray, #666);
+            margin-top: 20px;
+            padding-top: 12px;
+            border-top: 1px dashed var(--border-color, #e0e0e0);
+            line-height: 1.6;
+        }
+        .hotel-tos-modal .hts-close-btn {
+            width: 100%;
+            margin-top: 18px;
+            border: none;
+            border-radius: 4px;
+            padding: 11px 18px;
+            background: var(--sky-primary, #3498DB);
+            color: #fff;
+            font-weight: 700;
+            font-size: 13.5px;
+            cursor: pointer;
+        }
+        .hts-policy-trigger {
+            background: none;
+            border: none;
+            padding: 0;
+            font: inherit;
+            color: var(--sky-dark, #2980B9);
+            font-size: 12.5px;
+            text-decoration: underline dotted;
+            cursor: pointer;
+        }
+        .hts-policy-trigger:hover { color: var(--sky-primary, #3498DB); }
+    </style>
+
+    <div class="hotel-tos-modal-overlay" id="hotelPolicyModalOverlay">
+        <div class="hotel-tos-modal" role="dialog" aria-modal="true" aria-labelledby="hotelPolicyModalTitle">
+            <h3 id="hotelPolicyModalTitle">
+                <i class="fa-solid fa-file-contract" style="color: var(--sky-primary, #3498DB); margin-right: 6px;"></i>
+                Chính sách khách sạn &amp; Điều khoản dịch vụ
+            </h3>
+            <p class="hts-subtitle">
+                Bằng việc tiếp tục đặt phòng, quý khách xác nhận đã đọc, hiểu rõ và đồng ý với toàn bộ điều khoản
+                dịch vụ dưới đây. Điều khoản này là một phần không thể tách rời của hợp đồng đặt phòng giữa
+                quý khách và khách sạn.
+            </p>
+
+            <div class="hts-section-title">1. Đặt phòng và giữ chỗ</div>
+            <p class="hts-text">
+                Ngay sau khi đặt phòng thành công, đơn của quý khách được ghi nhận và giữ chỗ trong hệ thống mà
+                không cần chờ xác nhận thủ công. Để đảm bảo phòng được giữ chắc chắn, quý khách vui lòng hoàn tất
+                thanh toán trong vòng <strong>24 giờ</strong> kể từ thời điểm đặt phòng. Quá thời hạn nêu trên mà
+                đơn vẫn chưa được thanh toán, đơn sẽ tự động bị hủy và phòng được nhả lại cho hệ thống.
+            </p>
+
+            <div class="hts-section-title">2. Thanh toán</div>
+            <p class="hts-text">
+                Quý khách có thể thanh toán trực tuyến ngay khi đặt phòng, hoặc thông qua cổng thanh toán riêng
+                được gửi kèm trong email xác nhận (áp dụng cho trường hợp luồng thanh toán chính bị gián đoạn).
+                Mọi khoản phụ thu phát sinh trong quá trình lưu trú (nếu có) sẽ được thông báo rõ ràng cho quý
+                khách trước khi được cộng vào tổng chi phí của đơn.
+            </p>
+
+            <div class="hts-section-title">3. Phụ thu nhận phòng sớm / trả phòng muộn</div>
+            <p class="hts-text">
+                Mức phụ thu được tính theo số giờ chênh lệch so với giờ nhận/trả phòng quý khách đã đặt
+                (không phải theo một khung giờ cố định trong ngày).
+            </p>
+            <p class="hts-text" style="font-weight:600; margin-bottom:4px;">Nhận phòng sớm hơn giờ đã đặt:</p>
+            <table class="hts-table">
+                <thead>
+                    <tr><th>Sớm hơn bao lâu</th><th>Phụ thu</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Từ 7 giờ trở lên</td><td class="hts-full">100% giá 1 đêm</td></tr>
+                    <tr><td>Từ 4 giờ đến dưới 7 giờ</td><td class="hts-half">50% giá 1 đêm</td></tr>
+                    <tr><td>Từ 1 giờ đến dưới 4 giờ</td><td class="hts-half">30% giá 1 đêm</td></tr>
+                    <tr><td>Dưới 1 giờ</td><td class="hts-free">Miễn phí</td></tr>
+                </tbody>
+            </table>
+            <p class="hts-text" style="font-weight:600; margin-bottom:4px;">Trả phòng muộn hơn giờ đã đặt:</p>
+            <table class="hts-table">
+                <thead>
+                    <tr><th>Muộn hơn bao lâu</th><th>Phụ thu</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Từ 5 giờ trở lên</td><td class="hts-full">100% giá 1 đêm</td></tr>
+                    <tr><td>Từ 3 giờ đến dưới 5 giờ</td><td class="hts-half">50% giá 1 đêm</td></tr>
+                    <tr><td>Trên 0 đến dưới 3 giờ</td><td class="hts-half">30% giá 1 đêm</td></tr>
+                    <tr><td>Đúng giờ hoặc sớm hơn</td><td class="hts-free">Miễn phí</td></tr>
+                </tbody>
+            </table>
+
+            <div class="hts-section-title">4. Trường hợp không đến nhận phòng (no-show)</div>
+            <p class="hts-text">
+                Áp dụng cho các đơn đặt phòng đã được xác nhận nhưng quý khách không đến nhận phòng đúng thời
+                gian dự kiến.
+            </p>
+            <table class="hts-table">
+                <tbody>
+                    <tr><th style="width:40%;">Thời hạn giữ phòng</th><td>Đến 12:00 trưa ngày hôm sau ngày nhận phòng dự kiến</td></tr>
+                    <tr><th>Nếu đến trễ hơn dự kiến</th><td>Quý khách vui lòng liên hệ trước với khách sạn để được giữ phòng thêm</td></tr>
+                    <tr><th>Nếu quá thời hạn mà không báo trước</th><td class="hts-full">Đơn được xem là "Khách vắng mặt", phòng sẽ được nhả và không còn được giữ chỗ</td></tr>
+                </tbody>
+            </table>
+
+            <div class="hts-section-title">5. Chính sách huỷ đặt phòng</div>
+            <p class="hts-text">
+                Quyền huỷ đặt phòng và mức hoàn tiền tương ứng được tính dựa trên khoảng thời gian còn lại giữa
+                thời điểm quý khách gửi yêu cầu huỷ và ngày nhận phòng dự kiến trên đơn.
+            </p>
+            <p class="hts-text" style="font-weight:600; margin-bottom:4px;">Đối với đơn không áp dụng khuyến mại:</p>
+            <table class="hts-table">
+                <thead>
+                    <tr><th>Thời điểm huỷ (so với ngày nhận phòng)</th><th>Mức hoàn tiền</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Từ 5 ngày trở lên</td><td class="hts-free">Miễn phí huỷ - hoàn 100%</td></tr>
+                    <tr><td>Dưới 5 ngày và từ 3 ngày trở lên</td><td class="hts-half">Hoàn 50% giá trị đơn</td></tr>
+                    <tr><td>Dưới 3 ngày</td><td class="hts-none">Không hoàn tiền (0%)</td></tr>
+                </tbody>
+            </table>
+            <div class="hts-note-box">
+                <i class="fa-solid fa-circle-info"></i>
+                Đối với đơn có áp dụng mã khuyến mại/ưu đãi giảm giá: mức giá ưu đãi đi kèm điều kiện
+                không huỷ/không hoàn. Các đơn thuộc trường hợp này sẽ không được huỷ và không được hoàn tiền
+                dưới mọi hình thức, không phân biệt thời điểm gửi yêu cầu.
+            </div>
+
+            <div class="hts-section-title">6. Giấy tờ tuỳ thân khi nhận phòng</div>
+            <p class="hts-text">Vui lòng chuẩn bị đầy đủ giấy tờ tùy thân theo yêu cầu sau khi đến nhận phòng:</p>
+            <table class="hts-table">
+                <tbody>
+                    <tr><th style="width:45%;">Người đại diện mỗi phòng</th><td>Đúng 1 người đại diện cho mỗi phòng (không thừa, không thiếu)</td></tr>
+                    <tr><th>Số lượng khách mỗi phòng</th><td>Không vượt quá sức chứa tối đa của chính phòng đó</td></tr>
+                    <tr><th>Tổng số giấy tờ cần xuất trình</th><td>Bằng đúng tổng số người lớn đã đặt trong toàn bộ đơn</td></tr>
+                </tbody>
+            </table>
+
+            <div class="hts-section-title">7. Quyền và trách nhiệm chung</div>
+            <ul class="hts-list">
+                <li>Quý khách chịu trách nhiệm về tính chính xác của thông tin cung cấp khi đặt phòng (họ tên, số điện thoại, giấy tờ tuỳ thân).</li>
+                <li>Khách sạn có quyền từ chối nhận phòng nếu thông tin giấy tờ không khớp với thông tin đã đăng ký trên đơn.</li>
+                <li>Mọi khiếu nại liên quan đến đơn đặt phòng cần được gửi trong thời gian hợp lý để được hỗ trợ tra soát kịp thời.</li>
+            </ul>
+
+            <p class="hts-footer-note">
+                Điều khoản dịch vụ này có thể được cập nhật theo từng thời kỳ mà không cần thông báo trước.
+                Phiên bản áp dụng cho một đơn đặt phòng là phiên bản có hiệu lực tại thời điểm đơn đó được tạo.
+                Mọi thắc mắc, quý khách vui lòng liên hệ trực tiếp bộ phận chăm sóc khách hàng để được hỗ trợ.
+            </p>
+
+            <button type="button" class="hts-close-btn js-hotel-policy-close">Đã đọc và đồng ý</button>
+        </div>
+    </div>
+
+    <script th:inline="none">
+        (function () {
+            var overlay = document.getElementById('hotelPolicyModalOverlay');
+            if (!overlay) return;
+            var closeBtn = document.querySelector('.js-hotel-policy-close');
+
+            function openModal() {
+                overlay.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+            }
+
+            function closeModal() {
+                overlay.style.display = 'none';
+                document.body.style.overflow = '';
+            }
+
+            // Gan cho MOI trigger tren trang (co the co nhieu, vd nhieu the phong).
+            document.querySelectorAll('.js-hotel-policy-trigger').forEach(function (el) {
+                el.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    openModal();
+                    document.dispatchEvent(new CustomEvent('hotel-policy-agreed'));
+                });
+            });
+
+            if (closeBtn) closeBtn.addEventListener('click', closeModal);
+
+            overlay.addEventListener('click', function (e) {
+                if (e.target === overlay) closeModal();
+            });
+
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape' && overlay.style.display === 'flex') closeModal();
+            });
+        })();
+    </script>
+</div>
+</body>
+</html>

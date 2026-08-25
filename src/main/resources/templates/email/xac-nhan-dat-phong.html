@@ -44,12 +44,12 @@
                                     <!-- Status badge (outline, single-color) -->
                                     <div style="display: inline-block; border: 1.5px solid #2980B9; padding: 6px 18px; border-radius: 24px; margin-bottom: 24px;">
                                         <span style="color: #2980B9; font-size: 11px; font-weight: 600; text-transform: uppercase;"
-                                              th:text="${trangThaiEmail == 'thanh-toan' ? 'THANH TOAN THANH CONG' : (trangThaiEmail == 'da-xac-nhan' ? 'DA XAC NHAN' : (trangThaiEmail == 'yeu-cau-thanh-toan' ? 'YEU CAU THANH TOAN' : 'YEU CAU DAT PHONG'))}">YEU CAU DAT PHONG</span>
+                                              th:text="${trangThaiEmail == 'thanh-toan' ? 'THANH TOAN THANH CONG' : (trangThaiEmail == 'da-xac-nhan' ? 'DA XAC NHAN' : (trangThaiEmail == 'yeu-cau-thanh-toan' ? 'YEU CAU THANH TOAN' : 'DA GIU PHONG'))}">DA GIU PHONG</span>
                                     </div>
 
                                     <!-- Tieu de lon -->
                                     <h1 style="margin: 0 0 16px; font-family: 'Playfair Display', Georgia, serif; color: #0f2740; font-size: 32px; font-weight: 700; line-height: 1.25;"
-                                        th:text="${trangThaiEmail == 'thanh-toan' ? 'Cảm ơn quý khách' : (trangThaiEmail == 'da-xac-nhan' ? 'Yêu cầu đã được xác nhận' : (trangThaiEmail == 'yeu-cau-thanh-toan' ? 'Yêu cầu thanh toán' : 'Yêu cầu đã được gửi'))}">
+                                        th:text="${trangThaiEmail == 'thanh-toan' ? 'Cảm ơn quý khách' : (trangThaiEmail == 'da-xac-nhan' ? 'Yêu cầu đã được xác nhận' : (trangThaiEmail == 'yeu-cau-thanh-toan' ? 'Yêu cầu thanh toán' : 'Đặt phòng đã được ghi nhận'))}">
                                         Cam on quy khach
                                     </h1>
 
@@ -60,7 +60,7 @@
                                        th:text="${trangThaiEmail == 'thanh-toan' ? 'Quý khách đã hoàn tất thanh toán. Chúng tôi rất mong được đón tiếp quý khách tại ' + tenKhachSan + '.'
                                                 : (trangThaiEmail == 'da-xac-nhan' ? 'Yêu cầu đặt phòng của quý khách đã được nhân viên xác nhận. Quý khách vui lòng hoàn tất thanh toán để giữ phòng.'
                                                 : (trangThaiEmail == 'yeu-cau-thanh-toan' ? thongBaoChinh
-                                                : 'Yêu cầu đặt phòng của quý khách đã được gửi thành công. Đội ngũ nhân viên sẽ kiểm tra và xác nhận trong thời gian sớm nhất.'))}">
+                                                : 'Đặt phòng của quý khách đã được ghi nhận và giữ chỗ. Vui lòng hoàn tất thanh toán trong vòng 24 giờ, nếu không đơn sẽ tự động bị hủy.'))}">
                                         Thong bao chinh
                                     </p>
                                 </td>
@@ -494,8 +494,8 @@
                                             </td>
                                             <td style="vertical-align: middle; text-align: right;">
                                                 <span style="display: inline-block; padding: 6px 14px; background: #2980B9; color: #ffffff; border-radius: 14px; font-size: 11px; font-weight: 600; text-transform: uppercase;"
-                                                      th:text="${trangThaiEmail == 'thanh-toan' ? 'HOAN TAT' : (trangThaiEmail == 'da-xac-nhan' ? 'DA XAC NHAN' : (trangThaiEmail == 'yeu-cau-thanh-toan' ? 'CON NO' : 'CHO XAC NHAN'))}">
-                                                    CHO XAC NHAN
+                                                      th:text="${trangThaiEmail == 'thanh-toan' ? 'HOAN TAT' : (trangThaiEmail == 'da-xac-nhan' ? 'DA XAC NHAN' : (trangThaiEmail == 'yeu-cau-thanh-toan' ? 'CON NO' : 'CHO THANH TOAN'))}">
+                                                    CHO THANH TOAN
                                                 </span>
                                             </td>
                                         </tr>
@@ -597,8 +597,8 @@
                                                 <div style="width: 24px; height: 24px; border: 1.5px solid #2980B9; border-radius: 50%; color: #2980B9; font-size: 12px; font-weight: 700; line-height: 21px; text-align: center;">1</div>
                                             </td>
                                             <td style="vertical-align: top; padding-left: 8px;">
-                                                <div style="color: #1f2937; font-size: 14px; font-weight: 600;">Chờ nhân viên xác nhận</div>
-                                                <div style="color: #6b7280; font-size: 13px; margin-top: 2px;">Thông thường trong vòng 15-30 phút trong giờ hành chính.</div>
+                                                <div style="color: #1f2937; font-size: 14px; font-weight: 600;">Hoàn tất thanh toán trong 24 giờ</div>
+                                                <div style="color: #6b7280; font-size: 13px; margin-top: 2px;">Quét mã QR ở trên hoặc bấm "Thanh toán ngay" để giữ phòng. Đơn sẽ tự động bị hủy nếu quá 24h chưa thanh toán.</div>
                                             </td>
                                         </tr>
                                     </table>
@@ -681,7 +681,7 @@
                             <p style="margin: 0; font-family: 'Playfair Display', Georgia, serif; color: #0f2740; font-size: 18px; font-style: italic; line-height: 1.5;">
                                 <span th:if="${trangThaiEmail == 'thanh-toan'}">"Chúng tôi rất mong được đón tiếp quý khách."</span>
                                 <span th:if="${trangThaiEmail == 'da-xac-nhan'}">"Cảm ơn quý khách đã tin tưởng dịch vụ của chúng tôi."</span>
-                                <span th:if="${trangThaiEmail == 'yeu-cau'}">"Yêu cầu của quý khách đang được xử lý. Xin cảm ơn!"</span>
+                                <span th:if="${trangThaiEmail == 'yeu-cau'}">"Phòng của quý khách đã được giữ. Đừng quên hoàn tất thanh toán trong 24h nhé!"</span>
                             </p>
                         </div>
                     </td>

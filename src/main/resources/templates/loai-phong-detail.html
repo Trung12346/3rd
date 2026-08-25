@@ -513,10 +513,17 @@
                 id="btn-confirm-booking"
                 class="btn btn-filled"
                 style="width: 100%; padding: 15px; font-size: 16px;"
+                disabled
         >
           <span>Đặt Loại Phòng Này</span>
         </button>
-        <p style="text-align: center; font-size: 12px; color: var(--text-gray); margin-top: 15px;">* Hệ thống tự động xếp phòng còn trống, quý khách thanh toán khi nhận phòng.</p>
+        <p style="text-align: center; font-size: 12px; color: var(--text-gray); margin: 10px 0 4px;">
+          Vui lòng đọc và đồng ý với
+          <button type="button" class="hts-policy-trigger js-hotel-policy-trigger"
+                  aria-haspopup="dialog" aria-controls="hotelPolicyModalOverlay">Chính sách khách sạn</button>
+          trước khi tiếp tục đặt phòng.
+        </p>
+        <p style="text-align: center; font-size: 12px; color: var(--text-gray); margin-top: 4px;">* Hệ thống tự động xếp phòng còn trống, quý khách thanh toán khi nhận phòng.</p>
       </form>
     </div>
   </div>
@@ -979,6 +986,11 @@
     form.addEventListener('submit', function (e) {
       if (!kiemTraHopLe()) {
         e.preventDefault();
+        return;
+      }
+      var btn = document.getElementById('btn-confirm-booking');
+      if (btn && btn.disabled) {
+        e.preventDefault();
       }
     });
 
@@ -993,6 +1005,18 @@
 
     window.__typeCalendarKiemTraHopLe = kiemTraHopLe;
   })();
+</script>
+
+<!-- MODAL: Chinh sach khach san (dung chung, xem fragments/hotel-policy-modal.html) -->
+<div th:insert="~{fragments/hotel-policy-modal :: hotelPolicyModal}"></div>
+<script>
+  // Nguoi dung phai bam vao "Chinh sach khach san" (mo modal Dieu khoan dich vu)
+  // truoc khi nut dat phong duoc mo khoa. Su kien nay duoc phat boi
+  // fragments/hotel-policy-modal.html ngay khi bam vao trigger.
+  document.addEventListener('hotel-policy-agreed', function () {
+    var btn = document.getElementById('btn-confirm-booking');
+    if (btn) btn.disabled = false;
+  });
 </script>
 </body>
 </html>

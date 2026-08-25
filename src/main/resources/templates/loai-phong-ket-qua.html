@@ -355,6 +355,117 @@
             padding: 16px;
             background: #fcfdff;
         }
+        /* Modal "Chinh sach huy don" - dung chung cho tat ca cac the phong */
+        .cancel-policy-modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(15,23,42,0.55);
+            z-index: 2100;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+        .cancel-policy-modal {
+            background: #fff;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 560px;
+            max-height: 86vh;
+            overflow-y: auto;
+            padding: 28px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .cancel-policy-modal h3 {
+            margin: 0 0 6px;
+            color: var(--text-dark);
+            font-family: 'Georgia', serif;
+            font-size: 19px;
+        }
+        .cancel-policy-modal .cp-subtitle {
+            font-size: 12px;
+            color: var(--text-gray);
+            margin: 0 0 18px;
+        }
+        .cancel-policy-modal .cp-section-title {
+            font-size: 13.5px;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin: 18px 0 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .cancel-policy-modal .cp-section-title i { color: var(--brand); font-size: 12px; }
+        .cancel-policy-modal p.cp-text {
+            font-size: 13px;
+            color: var(--text-dark);
+            line-height: 1.65;
+            margin: 0 0 10px;
+        }
+        .cancel-policy-modal table.cp-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            margin: 4px 0 6px;
+        }
+        .cancel-policy-modal table.cp-table th,
+        .cancel-policy-modal table.cp-table td {
+            border: 1px solid var(--border-color);
+            padding: 9px 12px;
+            text-align: left;
+        }
+        .cancel-policy-modal table.cp-table th {
+            background: var(--brand-soft);
+            color: var(--brand-dark);
+            font-weight: 700;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: .2px;
+        }
+        .cancel-policy-modal table.cp-table td.cp-refund-full { color: var(--success); font-weight: 700; }
+        .cancel-policy-modal table.cp-table td.cp-refund-half { color: #E0A800; font-weight: 700; }
+        .cancel-policy-modal table.cp-table td.cp-refund-none { color: var(--danger); font-weight: 700; }
+        .cancel-policy-modal .cp-note-box {
+            background: #fff7ed;
+            border: 1px solid #fde68a;
+            border-radius: 6px;
+            padding: 10px 12px;
+            font-size: 12px;
+            color: #92400e;
+            line-height: 1.55;
+            margin-top: 4px;
+        }
+        .cancel-policy-modal .cp-promo-box {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 6px;
+            padding: 10px 12px;
+            font-size: 12.5px;
+            color: #991b1b;
+            line-height: 1.6;
+            margin-top: 4px;
+        }
+        .cancel-policy-modal .cp-footer-note {
+            font-size: 11px;
+            color: var(--text-gray);
+            margin-top: 18px;
+            padding-top: 12px;
+            border-top: 1px dashed var(--border-color);
+            line-height: 1.6;
+        }
+        .cancel-policy-modal .cp-close-btn {
+            width: 100%;
+            margin-top: 18px;
+            border: none;
+            border-radius: 4px;
+            padding: 10px 18px;
+            background: var(--brand);
+            color: #fff;
+            font-weight: 700;
+            font-size: 13.5px;
+            cursor: pointer;
+        }
         .room-card .child-toggle-row {
             margin-top: 12px;
         }
@@ -533,6 +644,22 @@
             font-size: 11.5px;
             margin-left: 6px;
         }
+        .room-card .perk-quote-trigger {
+            background: none;
+            border: none;
+            padding: 0;
+            margin-left: 4px;
+            color: var(--brand);
+            font-size: 11.5px;
+            font-weight: 600;
+            text-decoration: underline dotted;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .room-card .perk-quote-trigger:hover { color: var(--brand-dark); }
+        .room-card .perk-quote-trigger i { color: inherit; margin-right: 0; font-size: 11px; }
 
         /* Phan info ben phai anh phong (card ngang): hien thi deal + gia + qty + them tre em. */
         .room-card .room-info {
@@ -1149,6 +1276,13 @@
                                 <div class="perk">
                                     <i class="fa-solid fa-check"></i> Vệ sinh phòng mỗi ngày
                                 </div>
+                                <div class="perk">
+                                    <i class="fa-solid fa-check"></i> Chính sách huỷ đơn
+                                    <button type="button" class="perk-quote-trigger js-cancel-policy-trigger"
+                                            aria-haspopup="dialog" aria-controls="cancelPolicyModalOverlay">
+                                        <i class="fa-solid fa-quote-right"></i> xem chi tiết
+                                    </button>
+                                </div>
                                 <div class="price-line">
                                     <div class="price-stack">
                                         <div class="price-now"
@@ -1289,6 +1423,13 @@
             </button>
         </form>
 
+        <p class="summary-note" style="text-align:center;">
+            Vui lòng đọc và đồng ý với
+            <button type="button" class="hts-policy-trigger js-hotel-policy-trigger"
+                    aria-haspopup="dialog" aria-controls="hotelPolicyModalOverlay">Chính sách khách sạn</button>
+            trước khi tiếp tục đặt phòng.
+        </p>
+
         <p class="summary-note">
             <i class="fa-solid fa-shield-halved"></i>
             Bạn chưa bị trừ tiền. Thanh toán khi nhận phòng hoặc theo chính sách khách sạn.
@@ -1329,6 +1470,81 @@
                 Xác nhận & đặt phòng
             </button>
         </div>
+    </div>
+</div>
+
+<!-- MODAL: Chinh sach khach san (dung chung, xem fragments/hotel-policy-modal.html) -->
+<div th:insert="~{fragments/hotel-policy-modal :: hotelPolicyModal}"></div>
+
+<!-- MODAL: Chinh sach huy don - dung chung cho tat ca cac the phong tren trang -->
+<div class="cancel-policy-modal-overlay" id="cancelPolicyModalOverlay">
+    <div class="cancel-policy-modal" role="dialog" aria-modal="true" aria-labelledby="cancelPolicyModalTitle">
+        <h3 id="cancelPolicyModalTitle">
+            <i class="fa-solid fa-file-shield" style="color:var(--brand); margin-right:6px;"></i>
+            Chính sách huỷ đặt phòng
+        </h3>
+        <p class="cp-subtitle">Điều khoản áp dụng cho mọi đặt phòng được thực hiện trực tuyến trên hệ thống.</p>
+
+        <p class="cp-text">
+            Chúng tôi hiểu rằng kế hoạch lưu trú của quý khách đôi khi có thể thay đổi. Vì vậy, quyền huỷ đặt phòng
+            và mức hoàn tiền tương ứng được quy định rõ ràng dưới đây, nhằm đảm bảo quyền lợi công bằng cho cả
+            quý khách và khách sạn. Mức hoàn tiền được tính dựa trên khoảng thời gian còn lại giữa thời điểm
+            quý khách gửi yêu cầu huỷ và ngày nhận phòng dự kiến trên đơn đặt phòng.
+        </p>
+
+        <div class="cp-section-title"><i class="fa-solid fa-circle-check"></i> Trường hợp đơn không áp dụng khuyến mại</div>
+        <p class="cp-text">
+            Đối với các đơn đặt phòng thanh toán theo giá niêm yết (không sử dụng mã khuyến mại/ưu đãi giảm giá),
+            quý khách có thể chủ động huỷ đơn và được hoàn tiền theo các mốc thời gian sau:
+        </p>
+        <table class="cp-table">
+            <thead>
+                <tr>
+                    <th>Thời điểm huỷ (so với ngày nhận phòng)</th>
+                    <th>Mức hoàn tiền</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Từ 5 ngày trở lên</td>
+                    <td class="cp-refund-full">Miễn phí huỷ - hoàn 100%</td>
+                </tr>
+                <tr>
+                    <td>Dưới 5 ngày và từ 3 ngày trở lên</td>
+                    <td class="cp-refund-half">Hoàn 50% giá trị đơn</td>
+                </tr>
+                <tr>
+                    <td>Dưới 3 ngày</td>
+                    <td class="cp-refund-none">Không hoàn tiền (0%)</td>
+                </tr>
+            </tbody>
+        </table>
+        <div class="cp-note-box">
+            <i class="fa-solid fa-circle-info"></i>
+            Mốc thời gian được tính theo số ngày đầy đủ còn lại tính đến 00:00 ngày nhận phòng. Yêu cầu huỷ đơn
+            cần được gửi trước thời điểm nhận phòng để được xét mức hoàn tiền tương ứng.
+        </div>
+
+        <div class="cp-section-title"><i class="fa-solid fa-circle-exclamation"></i> Trường hợp đơn có áp dụng khuyến mại</div>
+        <p class="cp-text">
+            Đối với các đơn đặt phòng đã sử dụng mã khuyến mại hoặc chương trình ưu đãi giảm giá, mức giá ưu đãi
+            được xem là quyền lợi đặc biệt đi kèm điều kiện không huỷ/không hoàn. Do đó, các đơn thuộc trường hợp
+            này sẽ không được huỷ đơn và không được hoàn tiền dưới mọi hình thức, không phân biệt thời điểm gửi
+            yêu cầu.
+        </p>
+        <div class="cp-promo-box">
+            <i class="fa-solid fa-ban"></i>
+            Đơn có khuyến mại = Không huỷ - Không hoàn tiền. Quý khách vui lòng cân nhắc kỹ lịch trình lưu trú
+            trước khi áp dụng mã khuyến mại cho đơn đặt phòng.
+        </div>
+
+        <p class="cp-footer-note">
+            Chính sách này là một phần của điều khoản dịch vụ và có thể được cập nhật theo từng thời kỳ.
+            Mọi thắc mắc liên quan đến việc huỷ đơn, quý khách vui lòng liên hệ trực tiếp bộ phận chăm sóc
+            khách hàng để được hỗ trợ tra soát và xử lý theo đúng chính sách hiện hành.
+        </p>
+
+        <button type="button" class="cp-close-btn js-cancel-policy-close">Đã hiểu</button>
     </div>
 </div>
 
@@ -1507,6 +1723,16 @@
         const form = document.getElementById('bookingForm');
         const hiddenLoaiId = document.getElementById('hiddenLoaiId');
         const hiddenSoLuong = document.getElementById('hiddenSoLuong');
+
+        // Nut "Dat cho" chi duoc mo khoa khi CA HAI dieu kien thoa:
+        // (1) da chon it nhat 1 phong, VA (2) da bam vao trigger "Chinh sach
+        // khach san" (phat CustomEvent 'hotel-policy-agreed' tu fragment
+        // fragments/hotel-policy-modal.html). Xem cta.disabled trong recompute().
+        let policyAgreed = false;
+        document.addEventListener('hotel-policy-agreed', () => {
+            policyAgreed = true;
+            recompute();
+        });
 
         // ===== SPIN BOX "Người lớn" trong tom tat: max = tong suc chua cua
         //       cac phong dang duoc chon (sucChuaToiDa * so luong phong moi loai). =====
@@ -1747,7 +1973,7 @@
             tamTinhEl.textContent = fmt(tong) + ' VND';
             totalEl.textContent = fmt(tong) + ' VND';
 
-            cta.disabled = items.length === 0;
+            cta.disabled = items.length === 0 || !policyAgreed;
             hiddenLoaiId.value = firstSelectedId || '';
             hiddenSoLuong.value = firstSelectedQty || 0;
 
@@ -1862,6 +2088,42 @@
             updateChildToggleLabel(card);
         });
         recompute();
+    })();
+</script>
+
+<!-- JS rieng cho modal "Chinh sach huy don" - dung chung, khong phu thuoc du lieu tung the phong -->
+<script>
+    (function () {
+        const cpOverlay = document.getElementById('cancelPolicyModalOverlay');
+        const cpCloseBtn = document.querySelector('.js-cancel-policy-close');
+        if (!cpOverlay) return;
+
+        function openCancelPolicyModal() {
+            cpOverlay.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeCancelPolicyModal() {
+            cpOverlay.style.display = 'none';
+            document.body.style.overflow = '';
+        }
+
+        document.querySelectorAll('.js-cancel-policy-trigger').forEach(btn => {
+            btn.addEventListener('click', e => {
+                e.preventDefault();
+                openCancelPolicyModal();
+            });
+        });
+
+        if (cpCloseBtn) cpCloseBtn.addEventListener('click', closeCancelPolicyModal);
+
+        cpOverlay.addEventListener('click', e => {
+            if (e.target === cpOverlay) closeCancelPolicyModal();
+        });
+
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape' && cpOverlay.style.display === 'flex') closeCancelPolicyModal();
+        });
     })();
 </script>
 </body>
