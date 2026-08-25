@@ -545,12 +545,12 @@
 <!--                        </span>-->
 <!--                        <span class="cms-nav-text">Trả phòng (Checkout)</span>-->
 <!--                    </a>-->
-<!--                    <a th:href="@{/nhan-su/dat-phong-quay}" class="cms-nav-link">-->
-<!--                        <span class="cms-nav-icon" aria-hidden="true">-->
-<!--                            <svg viewBox="0 0 24 24"><path d="M6 3h12l1 5H5z"/><path d="M5 8h14v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2z"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>-->
-<!--                        </span>-->
-<!--                        <span class="cms-nav-text">Đặt phòng tại quầy</span>-->
-<!--                    </a>-->
+                    <a th:href="@{/nhan-su/dat-phong-quay}" class="cms-nav-link">
+                        <span class="cms-nav-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24"><path d="M6 3h12l1 5H5z"/><path d="M5 8h14v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2z"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
+                        </span>
+                        <span class="cms-nav-text">Đặt phòng tại quầy</span>
+                    </a>
                     <a th:href="@{/nhan-su/admin/hoan-tien}" class="cms-nav-link">
                         <span class="cms-nav-icon" aria-hidden="true">
                             <svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="3"/><line x1="6" y1="9" x2="6" y2="9.01"/><line x1="18" y1="15" x2="18" y2="15.01"/></svg>
@@ -654,7 +654,8 @@
                         </span>
                         <span class="cms-nav-text">Check-in</span>
                     </a>
-                    <a th:unless="${cmsSidebarLeTanRestricted}" th:href="@{/nhan-su/dat-phong-quay}" class="cms-nav-link">
+<!--                    <a th:unless="${cmsSidebarLeTanRestricted}" th:href="@{/nhan-su/dat-phong-quay}" class="cms-nav-link">-->
+                    <a th:href="@{/nhan-su/dat-phong-quay}" class="cms-nav-link">
                         <span class="cms-nav-icon" aria-hidden="true">
                             <svg viewBox="0 0 24 24"><path d="M6 3h12l1 5H5z"/><path d="M5 8h14v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2z"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
                         </span>
