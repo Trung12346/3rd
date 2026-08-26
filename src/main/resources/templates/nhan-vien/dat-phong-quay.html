@@ -10,7 +10,13 @@
         *, *::before, *::after { box-sizing: border-box; }
         body { background: #f0f4f8; font-family: 'Montserrat', sans-serif; }
 
-        .quay-shell { margin: 0 auto; max-width: 1400px; padding: 32px 32px 80px; }
+        /* Không dùng "margin:0 auto + max-width" để canh giữa nữa: layout chung
+           (fragments/cms-sidebar.html) đã ép margin-left qua selector id
+           (#cms-sidebar-shell ~ main), độ ưu tiên cao hơn class .quay-shell,
+           khiến margin-right:auto hút hết khoảng trống còn lại và đẩy nội dung
+           dồn cứng sang trái. Để khung nội dung lấp đầy hết phần còn lại cạnh
+           sidebar (fit full screen), bỏ max-width và không đặt margin ở đây nữa. */
+        .quay-shell { padding: 32px 32px 80px; width: 100%; }
         .quay-header { margin-bottom: 28px; }
         .quay-header h1 { color: var(--sky-dark); font-size: 26px; font-weight: 700; margin-bottom: 4px; display: flex; align-items: center; }
         .quay-header p { color: #6b7280; font-size: 14px; }
@@ -58,10 +64,47 @@
         }
         .form-field textarea { resize: vertical; min-height: 70px; }
 
+        /* ===== Bố cục grid-box theo tầng (giống trang Sơ đồ phòng) ===== */
+        .rq-floor-layout { display: grid; grid-template-columns: 168px 1fr; gap: 16px; align-items: start; }
+        .rq-floor-tabs {
+            background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;
+            padding: 8px; position: sticky; top: 12px;
+            max-height: 460px; overflow-y: auto;
+        }
+        .rq-floor-tab {
+            display: flex; align-items: center; justify-content: space-between;
+            width: 100%; border: none; background: transparent; cursor: pointer;
+            padding: 10px 12px; border-radius: 8px; margin-bottom: 4px;
+            font-size: 13px; font-weight: 600; color: #475569;
+            transition: background .15s, color .15s;
+        }
+        .rq-floor-tab:last-child { margin-bottom: 0; }
+        .rq-floor-tab:hover { background: #f0f9ff; color: var(--sky-dark, #2196c4); }
+        .rq-floor-tab.active {
+            background: linear-gradient(120deg, #2196c4, #1d7fae); color: #fff;
+        }
+        .rq-floor-tab .badge {
+            font-size: 10.5px; font-weight: 700; padding: 1px 7px; border-radius: 10px;
+            background: rgba(0,0,0,0.06); color: inherit;
+        }
+        .rq-floor-tab.active .badge { background: rgba(255,255,255,0.25); }
+
+        .rq-floor-main { max-height: 460px; overflow-y: auto; padding-right: 4px; }
+        .rq-floor-section { margin-bottom: 22px; }
+        .rq-floor-section:last-child { margin-bottom: 0; }
+        .rq-floor-section-title {
+            font-size: 13px; font-weight: 700; color: var(--sky-dark); margin-bottom: 10px;
+        }
+        .rq-floor-section.rq-floor-empty-filtered { display: none; }
+
         /* Room grid — dùng div thay label để tránh double-toggle */
         .room-grid {
-            display: grid; gap: 12px; grid-template-columns: repeat(3, minmax(0, 1fr));
-            max-height: 440px; overflow-y: auto; padding-right: 4px;
+            display: grid; gap: 12px;
+            /* auto-fit (khong phai auto-fill): khi khong du the lap day het hang,
+               cac track "ao" se tu co lai bang 0 thay vi giu 1fr rong, tranh
+               tinh trang the bi don cung sang trai + khoang trang thua o phai. */
+            grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+            padding-right: 2px;
         }
         .room-card {
             border: 2px solid #e2e8f0; border-radius: 8px; padding: 14px;
@@ -223,9 +266,15 @@
         }
         .booking-toast.toast-error .toast-icon { color: #e74c3c; }
 
-        .room-grid::-webkit-scrollbar { width: 5px; }
-        .room-grid::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 3px; }
-        .room-grid::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        .room-grid::-webkit-scrollbar,
+        .rq-floor-main::-webkit-scrollbar,
+        .rq-floor-tabs::-webkit-scrollbar { width: 5px; }
+        .room-grid::-webkit-scrollbar-track,
+        .rq-floor-main::-webkit-scrollbar-track,
+        .rq-floor-tabs::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 3px; }
+        .room-grid::-webkit-scrollbar-thumb,
+        .rq-floor-main::-webkit-scrollbar-thumb,
+        .rq-floor-tabs::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
 
         /* CCCD theo phòng — THÊM MỚI */
         #cccd-tung-phong {
@@ -457,44 +506,73 @@
                         </div>
                     </div>
 
-                    <div class="room-grid" id="roomGrid">
-                        <div th:each="p : ${phongTrongList}"
-                             class="room-card"
-                             th:classappend="${p.trangThai == 'Dang su dung'} ? 'dang-su-dung'"
-                             th:attr="data-ma-phong=${p.maPhong},
-                                      data-so-phong=${p.soPhong},
-                                      data-gia=${p.giaMoiDem},
-                                      data-loai=${p.loaiPhong != null ? p.loaiPhong.tenLoai : ''},
-                                      data-tang=${p.soTang},
-                                      data-suc-chua=${p.loaiPhong.sucChuaToiDa != null ? p.loaiPhong.sucChuaToiDa : ''},
-                                      data-mo-ta=${p.moTa != null ? p.moTa : ''},
-                                      data-trang-thai=${p.trangThai}">
-                            <!-- checkbox ẩn, chỉ để form submit -->
-                            <input type="checkbox" name="maPhongList" th:value="${p.maPhong}">
-                            <div class="room-number">
-                                <span th:text="'Phòng ' + ${p.soPhong}">Phòng 101</span>
-                                <span th:if="${p.trangThai == 'Trong'}" class="room-status-badge trong">Trống</span>
-                                <span th:if="${p.trangThai == 'Dang su dung'}" class="room-status-badge dang-su-dung">Đang sử dụng</span>
-                            </div>
-                            <div class="room-loai"   th:text="${p.loaiPhong != null ? p.loaiPhong.tenLoai : 'Standard'}">Standard</div>
-                            <div class="room-meta">
-                                <span th:text="'Tầng ' + ${p.soTang}">Tầng 1</span>
-                                <span th:if="${p.loaiPhong.sucChuaToiDa != null}" th:text="' · ' + ${p.loaiPhong.sucChuaToiDa} + ' khách'"> · 2 khách</span>
-                            </div>
-                            <div class="room-meta"
-                                 th:if="${p.moTa != null and !p.moTa.isEmpty()}"
-                                 style="margin-top:4px;color:#aaa;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
-                                 th:text="${p.moTa}">Mô tả</div>
-                            <div class="room-price"
-                                 th:text="${#numbers.formatDecimal(p.giaMoiDem,0,'COMMA',0,'POINT') + ' VND/đêm'}">
-                                500.000 VND/đêm
-                            </div>
-                            <!-- Giờ trả dự kiến (nếu phòng đang có khách) hoặc các khoảng đã đặt trước
-                                 (nếu phòng trống nhưng có đơn chờ xác nhận) — điền bằng JS từ roomStatusJson -->
-                            <div class="room-return-info" style="display:none;"></div>
+                    <div class="rq-floor-layout" id="roomGrid">
+                        <!-- Tab lọc theo tầng (giống trang Sơ đồ phòng) -->
+                        <div class="rq-floor-tabs" id="rqFloorTabs">
+                            <button type="button" class="rq-floor-tab active" data-floor="all">
+                                <span>Tất cả tầng</span>
+                                <span class="badge" id="rqTabBadgeAll" th:text="${tongSoPhong}">0</span>
+                            </button>
+                            <button th:each="entry : ${theoTang}"
+                                    type="button" class="rq-floor-tab"
+                                    th:data-floor="${entry.key}">
+                                <span th:text="'Tầng ' + ${entry.key}">Tầng 1</span>
+                                <span class="badge" th:text="${entry.value.size()}">0</span>
+                            </button>
                         </div>
-                        <div th:if="${phongTrongList == null or phongTrongList.isEmpty()}" class="room-empty">
-                            Không có phòng nào.
+
+                        <!-- Grid box các phòng, nhóm theo tầng -->
+                        <div class="rq-floor-main">
+                            <div th:each="entry : ${theoTang}" class="rq-floor-section" th:data-floor-section="${entry.key}">
+                                <div class="rq-floor-section-title"
+                                     th:text="'Tầng ' + ${entry.key} + ' · ' + ${entry.value.size()} + ' phòng'">Tầng 1 · 6 phòng</div>
+
+                                <div class="room-grid">
+                                    <div th:each="p : ${entry.value}"
+                                         class="room-card"
+                                         th:classappend="${p.trangThai == 'Dang su dung'} ? 'dang-su-dung'"
+                                         th:attr="data-ma-phong=${p.maPhong},
+                                                  data-so-phong=${p.soPhong},
+                                                  data-gia=${p.giaMoiDem},
+                                                  data-loai=${p.loaiPhong != null ? p.loaiPhong.tenLoai : ''},
+                                                  data-tang=${p.soTang},
+                                                  data-suc-chua=${p.loaiPhong.sucChuaToiDa != null ? p.loaiPhong.sucChuaToiDa : ''},
+                                                  data-mo-ta=${p.moTa != null ? p.moTa : ''},
+                                                  data-trang-thai=${p.trangThai}">
+                                        <!-- checkbox ẩn, chỉ để form submit -->
+                                        <input type="checkbox" name="maPhongList" th:value="${p.maPhong}">
+                                        <div class="room-number">
+                                            <span th:text="'Phòng ' + ${p.soPhong}">Phòng 101</span>
+                                            <span th:if="${p.trangThai == 'Trong'}" class="room-status-badge trong">Trống</span>
+                                            <span th:if="${p.trangThai == 'Dang su dung'}" class="room-status-badge dang-su-dung">Đang sử dụng</span>
+                                        </div>
+                                        <div class="room-loai"   th:text="${p.loaiPhong != null ? p.loaiPhong.tenLoai : 'Standard'}">Standard</div>
+                                        <div class="room-meta">
+                                            <span th:text="'Tầng ' + ${p.soTang}">Tầng 1</span>
+                                            <span th:if="${p.loaiPhong.sucChuaToiDa != null}" th:text="' · ' + ${p.loaiPhong.sucChuaToiDa} + ' khách'"> · 2 khách</span>
+                                        </div>
+                                        <div class="room-meta"
+                                             th:if="${p.moTa != null and !p.moTa.isEmpty()}"
+                                             style="margin-top:4px;color:#aaa;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
+                                             th:text="${p.moTa}">Mô tả</div>
+                                        <div class="room-price"
+                                             th:text="${#numbers.formatDecimal(p.giaMoiDem,0,'COMMA',0,'POINT') + ' VND/đêm'}">
+                                            500.000 VND/đêm
+                                        </div>
+                                        <!-- Giờ trả dự kiến (nếu phòng đang có khách) hoặc các khoảng đã đặt trước
+                                             (nếu phòng trống nhưng có đơn chờ xác nhận) — điền bằng JS từ roomStatusJson -->
+                                        <div class="room-return-info" style="display:none;"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div th:if="${phongTrongList == null or phongTrongList.isEmpty()}" class="room-empty">
+                                Không có phòng nào.
+                            </div>
+                            <!-- Hiện khi đã lọc theo ngày nhận/trả nhưng không còn phòng trống nào -->
+                            <div class="room-empty" id="rqNoAvailableMsg" style="display:none;">
+                                Không có phòng trống trong khoảng ngày đã chọn.
+                            </div>
                         </div>
                     </div>
 
@@ -1336,73 +1414,76 @@
         kiemTraOverlapPhongDaChonQuay();
     });
 
-    /* ===== TÌM KIẾM / SẮP XẾP PHÒNG THEO GIỜ NHẬN MONG MUỐN ===== */
+    /* ===== TÌM KIẾM / SẮP XẾP PHÒNG THEO GIỜ NHẬN MONG MUỐN (trong TỪNG tầng) ===== */
     function timKiemPhong() {
         const searchVal = document.getElementById('roomSearchTime').value;
-        const grid = document.getElementById('roomGrid');
-        const cards = Array.from(grid.querySelectorAll('.room-card'));
 
-        if (!searchVal) {
-            // Không lọc: về lại thứ tự mặc định (phòng trống trước)
-            cards.sort(function(a, b) {
-                const aTrong = a.dataset.trangThai === 'Trong' ? 0 : 1;
-                const bTrong = b.dataset.trangThai === 'Trong' ? 0 : 1;
-                return aTrong - bTrong;
-            });
+        document.querySelectorAll('.rq-floor-section .room-grid').forEach(function (grid) {
+            const cards = Array.from(grid.querySelectorAll('.room-card'));
+
+            if (!searchVal) {
+                // Không lọc: về lại thứ tự mặc định (phòng trống trước)
+                cards.sort(function(a, b) {
+                    const aTrong = a.dataset.trangThai === 'Trong' ? 0 : 1;
+                    const bTrong = b.dataset.trangThai === 'Trong' ? 0 : 1;
+                    return aTrong - bTrong;
+                });
+                cards.forEach(function(c) {
+                    c.querySelector('.room-match-tag') && c.querySelector('.room-match-tag').remove();
+                });
+                cards.forEach(function(c) { grid.appendChild(c); });
+                return;
+            }
+
+            const gioMongMuon = new Date(searchVal);
+
             cards.forEach(function(c) {
-                c.style.display = '';
-                c.querySelector('.room-match-tag') && c.querySelector('.room-match-tag').remove();
+                const oldTag = c.querySelector('.room-match-tag');
+                if (oldTag) oldTag.remove();
             });
-            cards.forEach(function(c) { grid.appendChild(c); });
-            return;
-        }
 
-        const gioMongMuon = new Date(searchVal);
-
-        cards.forEach(function(c) {
-            const oldTag = c.querySelector('.room-match-tag');
-            if (oldTag) oldTag.remove();
-        });
-
-        // Phân loại: phòng trống (ưu tiên 0) và phòng đang dùng sắp trả (ưu tiên theo độ gần thời điểm mong muốn)
-        cards.forEach(function(c) {
-            const info = ROOM_STATUS_MAP[c.dataset.maPhong];
-            if (c.dataset.trangThai === 'Trong') {
-                c.dataset.matchScore = '0';
-                c.dataset.matchLabel = 'Phòng trống';
-            } else if (info && info.ngayTraDuKien) {
-                const gioTraCongVeSinh = new Date(new Date(info.ngayTraDuKien).getTime() + 60 * 60 * 1000);
-                if (gioTraCongVeSinh <= gioMongMuon) {
-                    // Phòng đã kịp trả + vệ sinh trước giờ khách mong muốn -> đặt được, ưu tiên theo độ gần
-                    const khoangCach = Math.abs(gioMongMuon - gioTraCongVeSinh);
-                    c.dataset.matchScore = String(1000000000 - Math.min(khoangCach, 999999999));
-                    c.dataset.matchLabel = 'Sắp trả · sẵn sàng lúc ' + fmtDateTime(gioTraCongVeSinh.toISOString());
+            // Phân loại: phòng trống (ưu tiên 0) và phòng đang dùng sắp trả (ưu tiên theo độ gần thời điểm mong muốn)
+            cards.forEach(function(c) {
+                const info = ROOM_STATUS_MAP[c.dataset.maPhong];
+                if (c.dataset.trangThai === 'Trong') {
+                    c.dataset.matchScore = '0';
+                    c.dataset.matchLabel = 'Phòng trống';
+                } else if (info && info.ngayTraDuKien) {
+                    const gioTraCongVeSinh = new Date(new Date(info.ngayTraDuKien).getTime() + 60 * 60 * 1000);
+                    if (gioTraCongVeSinh <= gioMongMuon) {
+                        // Phòng đã kịp trả + vệ sinh trước giờ khách mong muốn -> đặt được, ưu tiên theo độ gần
+                        const khoangCach = Math.abs(gioMongMuon - gioTraCongVeSinh);
+                        c.dataset.matchScore = String(1000000000 - Math.min(khoangCach, 999999999));
+                        c.dataset.matchLabel = 'Sắp trả · sẵn sàng lúc ' + fmtDateTime(gioTraCongVeSinh.toISOString());
+                    } else {
+                        // Chưa kịp vệ sinh xong trước giờ khách muốn nhận -> vẫn cho chọn nhưng xếp cuối
+                        c.dataset.matchScore = '-1';
+                        c.dataset.matchLabel = 'Chưa sẵn sàng trước ' + fmtDateTime(gioMongMuon.toISOString());
+                    }
                 } else {
-                    // Chưa kịp vệ sinh xong trước giờ khách muốn nhận -> vẫn cho chọn nhưng xếp cuối
-                    c.dataset.matchScore = '-1';
-                    c.dataset.matchLabel = 'Chưa sẵn sàng trước ' + fmtDateTime(gioMongMuon.toISOString());
+                    c.dataset.matchScore = '-2';
+                    c.dataset.matchLabel = '';
                 }
-            } else {
-                c.dataset.matchScore = '-2';
-                c.dataset.matchLabel = '';
-            }
+            });
+
+            cards.sort(function(a, b) {
+                return parseFloat(b.dataset.matchScore) - parseFloat(a.dataset.matchScore);
+            });
+
+            cards.forEach(function(c) {
+                grid.appendChild(c);
+                if (c.dataset.matchLabel && c.dataset.trangThai !== 'Trong') {
+                    const tag = document.createElement('div');
+                    tag.className = 'room-match-tag';
+                    tag.textContent = c.dataset.matchLabel;
+                    c.style.position = 'relative';
+                    c.appendChild(tag);
+                }
+            });
         });
 
-        cards.sort(function(a, b) {
-            return parseFloat(b.dataset.matchScore) - parseFloat(a.dataset.matchScore);
-        });
-
-        cards.forEach(function(c) {
-            grid.appendChild(c);
-            c.style.display = '';
-            if (c.dataset.matchLabel && c.dataset.trangThai !== 'Trong') {
-                const tag = document.createElement('div');
-                tag.className = 'room-match-tag';
-                tag.textContent = c.dataset.matchLabel;
-                c.style.position = 'relative';
-                c.appendChild(tag);
-            }
-        });
+        // Sắp xếp lại xong thì áp dụng lại bộ lọc hiện hành (tầng + khoảng ngày trống)
+        rqApplyVisibility();
     }
 
     document.getElementById('roomSearchBtn').addEventListener('click', timKiemPhong);
@@ -1410,6 +1491,84 @@
         document.getElementById('roomSearchTime').value = '';
         timKiemPhong();
     });
+
+    /* =========================================================================
+     * ===== TAB LỌC THEO TẦNG + CHỈ HIỂN THỊ PHÒNG TRỐNG THEO KHOẢNG NGÀY =====
+     * =========================================================================
+     * - Tab tầng: giống trang Sơ đồ phòng, bấm 1 tầng chỉ hiện phòng của tầng đó
+     *   (mặc định "Tất cả tầng").
+     * - Khi nhân viên đã nhập đủ Ngày nhận phòng + Ngày trả phòng: CHỈ hiển thị
+     *   những phòng KHÔNG bị trùng (overlap) với bất kỳ khoảng đang giữ chỗ nào
+     *   của phòng đó trong khoảng [ngày nhận, ngày trả) — tức phòng thực sự
+     *   trống trong suốt khoảng ngày khách yêu cầu (tái dùng đúng logic
+     *   layDanhSachKhoaLichPhongQuay / timKhoangOverlapQuay đã có ở trên).
+     * - Nếu chưa nhập đủ 2 ngày: không lọc theo ngày, chỉ lọc theo tầng.
+     */
+    let rqCurrentFloor = 'all';
+
+    function rqPhongTrongKhoangNgay(card) {
+        const ngayNhan = document.getElementById('ngay-nhan').value;
+        const ngayTra  = document.getElementById('ngay-tra').value;
+        if (!ngayNhan || !ngayTra) return true; // chưa nhập đủ ngày -> không lọc theo ngày
+
+        const info = ROOM_STATUS_MAP[card.dataset.maPhong];
+        const ranges = layDanhSachKhoaLichPhongQuay(info);
+        const overlap = timKhoangOverlapQuay(ngayNhan, ngayTra, ranges);
+        return !overlap;
+    }
+
+    function rqApplyVisibility() {
+        let tongHienThi = 0;
+        const demTheoTang = {};
+
+        document.querySelectorAll('.rq-floor-section').forEach(function (sec) {
+            const floor = sec.getAttribute('data-floor-section');
+            const dungTang = (rqCurrentFloor === 'all' || rqCurrentFloor === floor);
+            let soHienThiTrongTang = 0;
+
+            sec.querySelectorAll('.room-card').forEach(function (card) {
+                // Phòng đã được chọn (checkbox) thì luôn giữ hiển thị để nhân viên
+                // không bị "mất" phòng đang chọn khi gõ thêm ngày.
+                const dangDuocChon = card.classList.contains('selected');
+                const trongKhoangNgay = dangDuocChon || rqPhongTrongKhoangNgay(card);
+                const hien = dungTang && trongKhoangNgay;
+                card.style.display = hien ? '' : 'none';
+                if (hien) { soHienThiTrongTang++; tongHienThi++; }
+            });
+
+            demTheoTang[floor] = soHienThiTrongTang;
+            // Ẩn cả section nếu đang xem "tất cả tầng" mà tầng đó không còn phòng trống nào khớp
+            sec.classList.toggle('rq-floor-empty-filtered', dungTang === false || soHienThiTrongTang === 0);
+        });
+
+        // Cập nhật số đếm trên các tab tầng theo đúng số phòng ĐANG hiển thị (đã lọc theo ngày)
+        document.querySelectorAll('.rq-floor-tab').forEach(function (t) {
+            const floor = t.getAttribute('data-floor');
+            const badge = t.querySelector('.badge');
+            if (!badge) return;
+            if (floor === 'all') { badge.textContent = tongHienThi; return; }
+            badge.textContent = demTheoTang[floor] != null ? demTheoTang[floor] : 0;
+        });
+
+        const noMsg = document.getElementById('rqNoAvailableMsg');
+        if (noMsg) noMsg.style.display = (tongHienThi === 0) ? '' : 'none';
+    }
+
+    document.querySelectorAll('.rq-floor-tab').forEach(function (tab) {
+        tab.addEventListener('click', function () {
+            rqCurrentFloor = tab.getAttribute('data-floor');
+            document.querySelectorAll('.rq-floor-tab').forEach(function (t) {
+                t.classList.toggle('active', t === tab);
+            });
+            rqApplyVisibility();
+        });
+    });
+
+    // Lọc lại khi nhân viên nhập/thay đổi ngày nhận - trả phòng (dùng debounce sẵn có).
+    document.getElementById('ngay-nhan').addEventListener('input', rqApplyVisibility);
+    document.getElementById('ngay-tra').addEventListener('input', rqApplyVisibility);
+
+    rqApplyVisibility();
 
     /* ===== TAB DỊCH VỤ THƯỜNG / PHÁT SINH ===== */
     document.querySelectorAll('.dv-tab').forEach(function(btn) {

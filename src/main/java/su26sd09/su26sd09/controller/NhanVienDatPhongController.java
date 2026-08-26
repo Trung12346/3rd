@@ -346,8 +346,8 @@ public class NhanVienDatPhongController {
      */
     @PostMapping("/dat-phong/chi-tiet/{id}/gia-han-checkin")
     public String giaHanCheckIn(@PathVariable Integer id,
-                                 @RequestParam("hanCheckInMoi") @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm") LocalDateTime hanCheckInMoi,
-                                 RedirectAttributes redirectAttributes) {
+                                @RequestParam("hanCheckInMoi") @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm") LocalDateTime hanCheckInMoi,
+                                RedirectAttributes redirectAttributes) {
         DatPhong datPhong = datPhongService.findById(id);
         if (datPhong == null) {
             redirectAttributes.addFlashAttribute("error", "Khong tim thay don dat phong #" + id);
@@ -1240,7 +1240,7 @@ public class NhanVienDatPhongController {
     @PostMapping("/so-do-phong/check-in/{maDatPhong}/giay-to")
     @ResponseBody
     public Map<String, Object> luuGiayToTuSoDoPhong(@PathVariable int maDatPhong,
-            @RequestParam(name = "data") String dataJson) {
+                                                    @RequestParam(name = "data") String dataJson) {
         Map<String, Object> result = new LinkedHashMap<>();
         DatPhong dp = datPhongService.findById(maDatPhong);
         if (dp == null) {
@@ -1311,7 +1311,7 @@ public class NhanVienDatPhongController {
     @PostMapping("/so-do-phong/check-in/{maDatPhong}")
     @ResponseBody
     public Map<String, Object> checkInTuSoDoPhong(@PathVariable int maDatPhong,
-            @RequestParam(name = "xacNhan", defaultValue = "false") boolean xacNhan) {
+                                                  @RequestParam(name = "xacNhan", defaultValue = "false") boolean xacNhan) {
         Map<String, Object> result = new LinkedHashMap<>();
 
         DatPhong dp = datPhongService.findById(maDatPhong);
@@ -1347,7 +1347,7 @@ public class NhanVienDatPhongController {
         boolean viPham = kq.tyLe.compareTo(BigDecimal.ZERO) > 0;
         BigDecimal soTien = viPham
                 ? (phong.getGiaMoiDem() == null ? BigDecimal.ZERO
-                        : phong.getGiaMoiDem().multiply(kq.tyLe).setScale(0, RoundingMode.HALF_UP))
+                   : phong.getGiaMoiDem().multiply(kq.tyLe).setScale(0, RoundingMode.HALF_UP))
                 : BigDecimal.ZERO;
 
         if (viPham && !xacNhan) {
@@ -1402,7 +1402,7 @@ public class NhanVienDatPhongController {
     @PostMapping("/so-do-phong/check-in-nhom/{maDatPhong}")
     @ResponseBody
     public Map<String, Object> checkInNhomTuSoDoPhong(@PathVariable int maDatPhong,
-            @RequestParam(name = "xacNhan", defaultValue = "false") boolean xacNhan) {
+                                                      @RequestParam(name = "xacNhan", defaultValue = "false") boolean xacNhan) {
         Map<String, Object> result = new LinkedHashMap<>();
 
         DatPhong dp = datPhongService.findById(maDatPhong);
@@ -1487,7 +1487,7 @@ public class NhanVienDatPhongController {
         return result;
     }
 
-/**
+    /**
      * - Áp dụng chính sách trả phòng muộn: nếu vi phạm và CHƯA xác nhận (xacNhan=false),
      *   CHỈ trả về thông tin phụ thu để hiển thị modal cảnh báo — KHÔNG lưu chi_tiet_dich_vu
      *   phụ thu, KHÔNG cập nhật trạng thái phòng/đơn (daApDung=false).
@@ -1499,7 +1499,7 @@ public class NhanVienDatPhongController {
     @PostMapping("/so-do-phong/check-out/{maDatPhong}")
     @ResponseBody
     public Map<String, Object> checkOutTuSoDoPhong(@PathVariable int maDatPhong,
-            @RequestParam(name = "xacNhan", defaultValue = "false") boolean xacNhan) {
+                                                   @RequestParam(name = "xacNhan", defaultValue = "false") boolean xacNhan) {
         Map<String, Object> result = new LinkedHashMap<>();
 
         DatPhong dp = datPhongService.findById(maDatPhong);
@@ -1529,7 +1529,7 @@ public class NhanVienDatPhongController {
         boolean viPham = kq.tyLe.compareTo(BigDecimal.ZERO) > 0;
         BigDecimal soTien = viPham
                 ? (phong.getGiaMoiDem() == null ? BigDecimal.ZERO
-                        : phong.getGiaMoiDem().multiply(kq.tyLe).setScale(0, RoundingMode.HALF_UP))
+                   : phong.getGiaMoiDem().multiply(kq.tyLe).setScale(0, RoundingMode.HALF_UP))
                 : BigDecimal.ZERO;
 
         if (viPham && !xacNhan) {
@@ -1582,7 +1582,7 @@ public class NhanVienDatPhongController {
     @PostMapping("/so-do-phong/check-out-nhom/{maDatPhong}")
     @ResponseBody
     public Map<String, Object> checkOutNhomTuSoDoPhong(@PathVariable int maDatPhong,
-            @RequestParam(name = "xacNhan", defaultValue = "false") boolean xacNhan) {
+                                                       @RequestParam(name = "xacNhan", defaultValue = "false") boolean xacNhan) {
         Map<String, Object> result = new LinkedHashMap<>();
 
         DatPhong dp = datPhongService.findById(maDatPhong);
@@ -1912,10 +1912,10 @@ public class NhanVienDatPhongController {
                     .append("\"ngayCapNhat\":\"").append(p.getNgayCapNhat() != null ? p.getNgayCapNhat().format(fmtNgay) : "").append("\",")
                     .append("\"loaiPhong\":").append(lp == null ? "null" : (
                             "{" +
-                                    "\"tenLoai\":\"" + escapeJson(lp.getTenLoai()) + "\"," +
-                                    "\"sucChuaToiDa\":" + lp.getSucChuaToiDa() + "," +
-                                    "\"giaCoBan\":" + (lp.getGiaCoBan() == null ? "0" : lp.getGiaCoBan().toPlainString()) + "," +
-                                    "\"moTa\":\"" + escapeJson(lp.getMota()) + "\"" +
+                            "\"tenLoai\":\"" + escapeJson(lp.getTenLoai()) + "\"," +
+                            "\"sucChuaToiDa\":" + lp.getSucChuaToiDa() + "," +
+                            "\"giaCoBan\":" + (lp.getGiaCoBan() == null ? "0" : lp.getGiaCoBan().toPlainString()) + "," +
+                            "\"moTa\":\"" + escapeJson(lp.getMota()) + "\"" +
                             "}"
                     )).append(",")
                     .append("\"tienNghi\":").append(tnArr)
@@ -1966,6 +1966,42 @@ public class NhanVienDatPhongController {
             }
         }
         model.addAttribute("phongChoXacNhanVeSinh", phongChoXacNhanVeSinh);
+
+        // ===== Panel bên phải: "Khách chờ check-in" =====
+        // Lấy đơn status (Cho xac nhan / Da xac nhan) chưa nhận phòng, có
+        // ngaydatPhong trong khoảng [now - 24h, now + 7 ngày] để bao gồm cả
+        // đơn đã trễ hẹn trong 24h qua. Build JSON cho JS render countdown.
+        LocalDateTime now = LocalDateTime.now();
+        List<DatPhong> dsSapCheckIn = datPhongService.findUpcomingCheckIns(
+                now.minusHours(24), now.plusDays(7));
+        StringBuilder kcJson = new StringBuilder("[");
+        boolean firstKc = true;
+        for (DatPhong dp : dsSapCheckIn) {
+            if (!firstKc) kcJson.append(",");
+            firstKc = false;
+            String ten = dp.getHoten();
+            if ((ten == null || ten.isBlank()) && dp.getN() != null) ten = dp.getN().getHoTen();
+            if (ten == null || ten.isBlank()) ten = "Chưa rõ tên";
+            int soKhach = dp.getSonguoiLon() + dp.getSotreEm();
+
+            // Lấy nhãn phòng kiểu "P101, P102" (gioi han 3 phong de khong vuot card)
+            List<Phong> phongCuaDon = datPhongService.findPhongByDatPhongId(dp.getId());
+            String phongLabel = phongCuaDon.stream()
+                    .map(p -> "P" + p.getSoPhong())
+                    .limit(3)
+                    .collect(Collectors.joining(", "));
+            if (phongCuaDon.size() > 3) phongLabel += ", …";
+
+            kcJson.append("{")
+                    .append("\"id\":").append(dp.getId()).append(",")
+                    .append("\"hoten\":\"").append(escapeJson(ten)).append("\",")
+                    .append("\"checkin\":\"").append(dp.getNgaydatPhong() != null ? dp.getNgaydatPhong() : "").append("\",")
+                    .append("\"soKhach\":").append(soKhach).append(",")
+                    .append("\"phongLabel\":\"").append(escapeJson(phongLabel)).append("\"")
+                    .append("}");
+        }
+        kcJson.append("]");
+        model.addAttribute("khachChoCheckInJson", kcJson.toString());
 
         return "nhan-vien/so-do-phong";
     }
@@ -2208,6 +2244,253 @@ public class NhanVienDatPhongController {
                     "Đặt phòng thành công - Đơn #" + savedDp.getId(),
                     "Đơn đặt phòng #" + savedDp.getId() + " của quý khách đã được lên lịch thành công. "
                             + "Quý khách vui lòng thanh toán phần còn lại để giữ phòng.",
+                    conLai
+            );
+        }
+
+        result.put("ok", true);
+        result.put("maDatPhong", savedDp.getId());
+        result.put("tongTien", tongCong);
+        result.put("daThu", daThu);
+        return result;
+    }
+
+    /**
+     * Xu ly submit sidebar "Dat phong tai quay" o trang So Do Phong (mo tu cung
+     * menu chuot phai voi "Len lich dat phong", tai su dung y het giao dien/JS,
+     * chi khac cho ma nay la khach DANG O QUAY nen duoc NHAN PHONG NGAY LAP TUC
+     * thay vi chi giu cho (khac voi lenLichDatPhongTuSoDoPhong o cho:
+     *  - Bat buoc checkin = HOM NAY (khach dang truoc mat, khong the dat cho
+     *    tuong lai qua luong nay - dung "Len lich dat phong" cho truong hop do).
+     *  - DatPhong.trangThai = "Da nhan phong" va Phong.trangThai = "Dang su dung"
+     *    ngay khi luu thanh cong, giong ket qua cuoi cung cua /dat-phong-quay
+     *    (trang "Dat Phong Tai Quay" rieng) nhung ap dung cho DUNG 1 phong dang
+     *    thao tac tren So Do Phong.
+     */
+    @PostMapping("/so-do-phong/dat-tai-quay")
+    @ResponseBody
+    public Map<String, Object> datPhongTaiQuayTuSoDoPhong(
+            @RequestParam Integer maPhong,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkin,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkout,
+            @RequestParam(required = false) String hoTen,
+            @RequestParam(required = false) String email,
+            @RequestParam("cccd") String cccd,
+            @RequestParam(required = false) String sdt,
+            @RequestParam(required = false) Integer songuoiLon,
+            @RequestParam(required = false) Integer sotreEm,
+            @RequestParam(required = false) String khuyenMaiCode,
+            @RequestParam(required = false) String ghiChu,
+            @RequestParam(value = "dichVuIds", required = false) List<Integer> dichVuIds,
+            @RequestParam(required = false) BigDecimal tienKhachTra,
+            @RequestParam(required = false) String phuongThucThanhToan,
+            Authentication authentication) {
+
+        Map<String, Object> result = new LinkedHashMap<>();
+
+        NhanSu nvCheck = authentication == null ? null : nhanVienService.FindByemail(authentication.getName());
+        boolean isAdmin = authentication != null && authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        NhanSu nhanVienXuLy = nhanVienService.laLeTanDangHoatDong(nvCheck)
+                ? nvCheck
+                : nhanVienService.findLeTanDangHoatDongMacDinh();
+
+        if (!isAdmin && !nhanVienService.laLeTanDangHoatDong(nvCheck)) {
+            result.put("ok", false);
+            result.put("loi", "Tài khoản không có quyền lễ tân để đặt phòng tại quầy.");
+            return result;
+        }
+        if (nhanVienXuLy == null) {
+            result.put("ok", false);
+            result.put("loi", "Không tìm thấy nhân viên Lễ Tân đang hoạt động.");
+            return result;
+        }
+
+        if (cccd == null || cccd.isBlank()) {
+            result.put("ok", false);
+            result.put("loi", "CCCD không được để trống.");
+            return result;
+        }
+        if (!cccd.trim().matches("\\d{9}(\\d{3})?")) {
+            result.put("ok", false);
+            result.put("loi", "Vui lòng nhập 9 hoặc 12 số CCCD/CMND hợp lệ.");
+            return result;
+        }
+
+        if (maPhong == null) {
+            result.put("ok", false);
+            result.put("loi", "Vui lòng chọn phòng.");
+            return result;
+        }
+        Phong phong = phongService.findById(maPhong);
+        if (phong == null) {
+            result.put("ok", false);
+            result.put("loi", "Không tìm thấy phòng #" + maPhong);
+            return result;
+        }
+        if (!"Trong".equalsIgnoreCase(phong.getTrangThai()) && !"Trống".equalsIgnoreCase(phong.getTrangThai())) {
+            result.put("ok", false);
+            result.put("loi", "Phòng hiện không ở trạng thái Trống nên không thể đặt tại quầy (nhận phòng ngay).");
+            return result;
+        }
+
+        if (checkin == null || checkout == null) {
+            result.put("ok", false);
+            result.put("loi", "Vui lòng chọn ngày nhận và ngày trả phòng.");
+            return result;
+        }
+        LocalDate homNay = LocalDate.now();
+        // Khac voi "Len lich dat phong": dat tai quay bat buoc nhan phong NGAY HOM
+        // NAY vi khach dang co mat truc tiep, khong duoc chon ngay trong tuong lai.
+        if (!checkin.isEqual(homNay)) {
+            result.put("ok", false);
+            result.put("loi", "Đặt phòng tại quầy chỉ áp dụng khi khách nhận phòng ngay hôm nay.");
+            return result;
+        }
+        if (!checkout.isAfter(checkin)) {
+            result.put("ok", false);
+            result.put("loi", "Ngày trả phòng phải sau ngày nhận phòng ít nhất 1 ngày.");
+            return result;
+        }
+
+        int slNguoiLon = songuoiLon != null ? songuoiLon : 1;
+        int slTreEm = sotreEm != null ? sotreEm : 0;
+        if (slNguoiLon < 1) {
+            result.put("ok", false);
+            result.put("loi", "Cần ít nhất 1 người lớn.");
+            return result;
+        }
+        if (phong.getLoaiPhong() != null && phong.getLoaiPhong().sucChuaToiDa > 0
+                && (slNguoiLon + slTreEm) > phong.getLoaiPhong().sucChuaToiDa) {
+            result.put("ok", false);
+            result.put("loi", "Số khách (" + (slNguoiLon + slTreEm) + ") vượt quá sức chứa tối đa của phòng ("
+                    + phong.getLoaiPhong().sucChuaToiDa + ").");
+            return result;
+        }
+
+        LocalDateTime ngayNhan = LocalDateTime.now();
+        LocalDateTime ngayTra = checkout.atTime(12, 0);
+
+        java.util.Set<Integer> maPhongDaKhoa = phongService.findMaPhongDaKhoaTrongKhoang(ngayNhan, ngayTra);
+        if (maPhongDaKhoa.contains(maPhong)) {
+            result.put("ok", false);
+            result.put("loi", "Phòng đã có lịch trong khoảng ngày đã chọn.");
+            return result;
+        }
+
+        KhuyenMai km = null;
+        if (khuyenMaiCode != null && !khuyenMaiCode.isBlank()) {
+            List<KhuyenMai> kms = khuyenMaiService.findbyNameVoucher(khuyenMaiCode.trim());
+            km = kms.isEmpty() ? null : kms.get(0);
+            if (km == null) {
+                result.put("ok", false);
+                result.put("loi", "Mã khuyến mại \"" + khuyenMaiCode.trim() + "\" không tồn tại hoặc không còn hoạt động.");
+                return result;
+            }
+        }
+
+        DatPhong dp = new DatPhong();
+        dp.setHoten(hoTen);
+        dp.setEmail(email);
+        dp.setSdt(sdt);
+        dp.setMa_cccd(cccd.trim());
+        dp.setNgaydatPhong(ngayNhan);
+        dp.setNgaytraPhong(ngayTra);
+        dp.setSonguoiLon(slNguoiLon);
+        dp.setSotreEm(slTreEm);
+        dp.setYeuCauThem(ghiChu);
+        // Dat tai quay = khach nhan phong ngay lap tuc, khac voi "Len lich dat
+        // phong" (chi "Da xac nhan", cho check-in sau).
+        dp.setTrangThai("Da nhan phong");
+        dp.setNgayTao(LocalDateTime.now());
+        dp.setKm(km);
+        dp.setNv(nhanVienXuLy);
+
+        DatPhong savedDp = datPhongService.save(dp);
+
+        BigDecimal giaApDung = phong.getGiaMoiDem();
+        if (km != null) {
+            giaApDung = tinhGiaSauGiam(giaApDung, km);
+        }
+        BigDecimal phuPhiNgoaiGio = phongService.calculateExtraFeeFor(maPhong, ngayNhan, ngayTra);
+
+        ChiTietDatPhong ctdp = new ChiTietDatPhong();
+        ctdp.setD(savedDp);
+        ctdp.setP(phong);
+        ctdp.setGiaMoiDem(phong.getGiaMoiDem());
+        ctdp.setGiaKhiDat(giaApDung);
+        ctdp.setPhuPhi(phuPhiNgoaiGio);
+        chiTietDatPhongService.save(ctdp);
+
+        // Phong chuyen thang sang "Dang su dung" (nhan phong tuc thi), khac voi
+        // "Len lich dat phong" chi chuyen sang "Da dat truoc".
+        phong.setTrangThai("Dang su dung");
+        phongService.save1(phong);
+
+        BigDecimal amountPhong = giaApDung;
+        BigDecimal amountDv = BigDecimal.ZERO;
+
+        long tongPhut = java.time.Duration.between(ngayNhan, ngayTra).toMinutes();
+        LocalDateTime ngaySuDungFiller = ngayNhan.plusMinutes(tongPhut / 2);
+
+        if (dichVuIds != null) {
+            for (Integer maDichVu : dichVuIds) {
+                Dich_vu dv = dichVuService.findById(maDichVu);
+                if (dv == null) continue;
+
+                BigDecimal thanhTien = dv.getGia();
+                Chi_tiet_dich_vu ct = new Chi_tiet_dich_vu();
+                ct.setDatPhong(savedDp);
+                ct.setDv(dv);
+                ct.setSoluong(1);
+                ct.setDonGia(thanhTien);
+                ct.setNgay_su_dung(ngaySuDungFiller);
+                ctdvService.save(ct);
+
+                amountDv = amountDv.add(thanhTien);
+            }
+        }
+
+        BigDecimal vatCd = new BigDecimal("0.10");
+        BigDecimal tongTienTruocVat = amountPhong.add(amountDv);
+        BigDecimal tienVat = tongTienTruocVat.multiply(vatCd).setScale(0, RoundingMode.HALF_UP);
+        BigDecimal tongCong = tongTienTruocVat.add(tienVat);
+
+        BigDecimal daThu = tienKhachTra != null ? tienKhachTra : BigDecimal.ZERO;
+        if (daThu.compareTo(BigDecimal.ZERO) < 0) daThu = BigDecimal.ZERO;
+        if (daThu.compareTo(tongCong) > 0) daThu = tongCong;
+
+        HoaDon hd = new HoaDon();
+        hd.setNgayXuat(LocalDateTime.now());
+        hd.setD(savedDp);
+        hd.setTienPhong(amountPhong);
+        hd.setTienDichVu(amountDv);
+        hd.setTienGiam(BigDecimal.ZERO);
+        hd.setTienVat(tienVat);
+        hd.setTongTien(tongCong);
+        hd.setDaThanhToan(daThu);
+        hd.setGhiChu("Dat phong tai quay tu So Do Phong, ma don: " + savedDp.getId());
+        HoaDon hoaDonDaLuu = hoaDonService.saveWithPaymentStatusCheck(hd);
+
+        if (daThu.compareTo(BigDecimal.ZERO) > 0) {
+            ThanhToan tt = new ThanhToan();
+            tt.setH(hd);
+            tt.setPhuongThuc("tien-mat".equals(phuongThucThanhToan) ? "Tien Mat" : "Chuyen Khoan");
+            tt.setSoTien(daThu);
+            tt.setTrangThai("Thanh cong");
+            tt.setNgaythanhToan(LocalDateTime.now());
+            tt.setGichu("Thu tien luc dat phong tai quay tu So Do Phong");
+            tt.setNv(nhanVienXuLy);
+            thanhToanService.save(tt);
+        }
+
+        BigDecimal conLai = defaultMoney(hoaDonDaLuu.getTongTien()).subtract(defaultMoney(hoaDonDaLuu.getDaThanhToan()));
+        if (conLai.compareTo(BigDecimal.ZERO) > 0) {
+            bookingEmailService.guiEmailYeuCauThanhToan(
+                    savedDp.getId(),
+                    "Đặt phòng thành công - Đơn #" + savedDp.getId(),
+                    "Đơn đặt phòng #" + savedDp.getId() + " của quý khách đã được tạo tại quầy và đã nhận phòng. "
+                            + "Quý khách vui lòng thanh toán phần còn lại.",
                     conLai
             );
         }
@@ -2599,9 +2882,9 @@ public class NhanVienDatPhongController {
         String trangThai = datPhong.getTrangThai();
         boolean choPhepDoi =
                 "Yeu cau dat phong".equals(trangThai)
-                || "Cho xac nhan".equals(trangThai)
-                || "Da xac nhan".equals(trangThai)
-                || "Da nhan phong".equals(trangThai);
+                        || "Cho xac nhan".equals(trangThai)
+                        || "Da xac nhan".equals(trangThai)
+                        || "Da nhan phong".equals(trangThai);
         if (!choPhepDoi) {
             redirectAttributes.addFlashAttribute("error",
                     "Trang thai don '" + trangThai + "' khong cho phep doi phong.");
@@ -2748,7 +3031,7 @@ public class NhanVienDatPhongController {
                 : defaultMoney(chenhLechTong).toPlainString() + " VND";
         redirectAttributes.addFlashAttribute("thanhCongCapNhat",
                 "Da doi thanh cong " + soPhongDoi + " phong. Chenh lech: " + chenhLechStr + ". Ly do: " + lyDoDoi.trim());
-        
+
         // Nếu đổi phòng từ trang check-in, redirect về check-in, ngược lại về chi tiết
         if (fromCheckin) {
             return "redirect:/nhan-su/check-in?id=" + id;

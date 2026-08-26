@@ -887,11 +887,11 @@
             <div class="lp-legend">
                 <div class="lp-legend-title">Chú thích trạng thái</div>
                 <div class="lp-legend-row"><span class="lp-legend-dot" style="background:#e37400"></span>Yêu cầu đặt phòng</div>
-                <div class="lp-legend-row"><span class="lp-legend-dot" style="background:#f9ab00"></span>Chờ xác nhận</div>
+                <!--                <div class="lp-legend-row"><span class="lp-legend-dot" style="background:#f9ab00"></span>Chờ xác nhận</div>-->
                 <div class="lp-legend-row"><span class="lp-legend-dot" style="background:#1a73e8"></span>Đã xác nhận</div>
                 <div class="lp-legend-row"><span class="lp-legend-dot" style="background:#188038"></span>Đã nhận phòng</div>
                 <div class="lp-legend-row"><span class="lp-legend-dot" style="background:#80868b"></span>Đã trả phòng</div>
-                <div class="lp-legend-row"><span class="lp-legend-dot" style="background:#9334e6"></span>Chưa thanh toán</div>
+                <!--                <div class="lp-legend-row"><span class="lp-legend-dot" style="background:#9334e6"></span>Chưa thanh toán</div>-->
                 <div class="lp-legend-row"><span class="lp-legend-dot" style="background:#ea4335"></span>Chờ hủy</div>
             </div>
         </aside>
@@ -953,630 +953,630 @@
 </div>
 
 <script th:inline="javascript">
-(function () {
-    'use strict';
+    (function () {
+        'use strict';
 
-    var API_BASE = /*[[@{/nhan-su/lich-phong}]]*/ '/nhan-su/lich-phong';
-    var detailBaseEl = document.getElementById('detail-base-admin') || document.getElementById('detail-base-staff');
-    var DETAIL_BASE = detailBaseEl ? detailBaseEl.getAttribute('data-base') : '/nhan-su/dat-phong/chi-tiet/';
+        var API_BASE = /*[[@{/nhan-su/lich-phong}]]*/ '/nhan-su/lich-phong';
+        var detailBaseEl = document.getElementById('detail-base-admin') || document.getElementById('detail-base-staff');
+        var DETAIL_BASE = detailBaseEl ? detailBaseEl.getAttribute('data-base') : '/nhan-su/dat-phong/chi-tiet/';
 
-    var WEEKDAY_HEADERS = ['T2','T3','T4','T5','T6','T7','CN'];
-    var STATUS_LABEL = {
-        'Chua thanh toan': 'Chưa thanh toán',
-        'Yeu cau dat phong': 'Yêu cầu đặt phòng',
-        'Cho xac nhan': 'Chờ xác nhận',
-        'Da xac nhan': 'Đã xác nhận',
-        'Da nhan phong': 'Đã nhận phòng',
-        'Da tra phong': 'Đã trả phòng',
-        'Cho huy': 'Chờ hủy',
-        'Da huy': 'Đã hủy'
-    };
-    var STATUS_CLASS = {
-        'Chua thanh toan': 'lp-status-chua-thanh-toan',
-        'Yeu cau dat phong': 'lp-status-yeu-cau-dat-phong',
-        'Cho xac nhan': 'lp-status-cho-xac-nhan',
-        'Da xac nhan': 'lp-status-da-xac-nhan',
-        'Da nhan phong': 'lp-status-da-nhan-phong',
-        'Da tra phong': 'lp-status-da-tra-phong',
-        'Cho huy': 'lp-status-cho-huy'
-    };
-    var STATUS_DOT = {
-        'Chua thanh toan': '#9334e6',
-        'Yeu cau dat phong': '#e37400',
-        'Cho xac nhan': '#f9ab00',
-        'Da xac nhan': '#1a73e8',
-        'Da nhan phong': '#188038',
-        'Da tra phong': '#80868b',
-        'Cho huy': '#ea4335'
-    };
+        var WEEKDAY_HEADERS = ['T2','T3','T4','T5','T6','T7','CN'];
+        var STATUS_LABEL = {
+            'Chua thanh toan': 'Chưa thanh toán',
+            'Yeu cau dat phong': 'Yêu cầu đặt phòng',
+            'Cho xac nhan': 'Chờ xác nhận',
+            'Da xac nhan': 'Đã xác nhận',
+            'Da nhan phong': 'Đã nhận phòng',
+            'Da tra phong': 'Đã trả phòng',
+            'Cho huy': 'Chờ hủy',
+            'Da huy': 'Đã hủy'
+        };
+        var STATUS_CLASS = {
+            'Chua thanh toan': 'lp-status-chua-thanh-toan',
+            'Yeu cau dat phong': 'lp-status-yeu-cau-dat-phong',
+            'Cho xac nhan': 'lp-status-cho-xac-nhan',
+            'Da xac nhan': 'lp-status-da-xac-nhan',
+            'Da nhan phong': 'lp-status-da-nhan-phong',
+            'Da tra phong': 'lp-status-da-tra-phong',
+            'Cho huy': 'lp-status-cho-huy'
+        };
+        var STATUS_DOT = {
+            'Chua thanh toan': '#9334e6',
+            'Yeu cau dat phong': '#e37400',
+            'Cho xac nhan': '#f9ab00',
+            'Da xac nhan': '#1a73e8',
+            'Da nhan phong': '#188038',
+            'Da tra phong': '#80868b',
+            'Cho huy': '#ea4335'
+        };
 
-    var MAX_LANES_VISIBLE = 3;
-    var LANE_HEIGHT = 22;
+        var MAX_LANES_VISIBLE = 3;
+        var LANE_HEIGHT = 22;
 
-    var state = {
-        loaiPhongs: [],
-        selectedId: null,
-        selectedName: '',
-        currentMonth: startOfMonth(new Date()),
-        events: [],
-        loadToken: 0,
-        selectedEventKey: null
-    };
+        var state = {
+            loaiPhongs: [],
+            selectedId: null,
+            selectedName: '',
+            currentMonth: startOfMonth(new Date()),
+            events: [],
+            loadToken: 0,
+            selectedEventKey: null
+        };
 
-    // ---------- date helpers ----------
-    function startOfMonth(d){ return new Date(d.getFullYear(), d.getMonth(), 1); }
-    function addDays(d, n){ var r = new Date(d); r.setDate(r.getDate() + n); return r; }
-    function addMonths(d, n){ return new Date(d.getFullYear(), d.getMonth() + n, 1); }
-    function isSameDay(a, b){ return a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate(); }
-    function toIsoDate(d){
-        var y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), dd = String(d.getDate()).padStart(2,'0');
-        return y + '-' + m + '-' + dd;
-    }
-    function dayDiff(a, b){ // a - b in whole days, ignoring time
-        var A = new Date(a.getFullYear(), a.getMonth(), a.getDate());
-        var B = new Date(b.getFullYear(), b.getMonth(), b.getDate());
-        return Math.round((A - B) / 86400000);
-    }
-    // Monday-based grid start/end covering the given month
-    function gridStartFor(monthDate){
-        var first = startOfMonth(monthDate);
-        var dow = first.getDay(); // 0=Sun..6=Sat
-        var offset = (dow === 0) ? 6 : dow - 1; // days since Monday
-        return addDays(first, -offset);
-    }
-    function gridWeeksFor(monthDate){
-        var gridStart = gridStartFor(monthDate);
-        var lastOfMonth = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0);
-        var totalDaysNeeded = dayDiff(lastOfMonth, gridStart) + 1;
-        var weeks = Math.ceil(totalDaysNeeded / 7);
-        return { gridStart: gridStart, weeks: Math.max(weeks, 4) };
-    }
-    function formatMonthLabel(d){
-        return 'Tháng ' + (d.getMonth() + 1) + ', ' + d.getFullYear();
-    }
-    function formatDateTimeVN(dtStr){
-        if (!dtStr) return '--';
-        var d = new Date(dtStr);
-        var dd = String(d.getDate()).padStart(2,'0');
-        var mm = String(d.getMonth()+1).padStart(2,'0');
-        var yyyy = d.getFullYear();
-        var hh = String(d.getHours()).padStart(2,'0');
-        var mi = String(d.getMinutes()).padStart(2,'0');
-        return dd + '/' + mm + '/' + yyyy + ' ' + hh + ':' + mi;
-    }
-    function formatDateVN(dtStr){
-        if (!dtStr) return '--';
-        var d = new Date(dtStr);
-        var dd = String(d.getDate()).padStart(2,'0');
-        var mm = String(d.getMonth()+1).padStart(2,'0');
-        return dd + '/' + mm + '/' + d.getFullYear();
-    }
-    function formatMoney(v){
-        if (v === null || v === undefined || v === '') return '--';
-        var n = Number(v);
-        if (isNaN(n)) return '--';
-        return n.toLocaleString('vi-VN') + ' đ';
-    }
-    function nightsBetween(checkIn, checkOut){
-        var ms = checkOut.getTime() - checkIn.getTime();
-        return Math.max(1, Math.round(ms / 86400000));
-    }
-
-    function statusClass(s){ return STATUS_CLASS[s] || 'lp-status-default'; }
-    function statusLabel(s){ return STATUS_LABEL[s] || s || '--'; }
-
-    // ---------- DOM refs ----------
-    var el = {
-        list: document.getElementById('lpList'),
-        listLoading: document.getElementById('lpListLoading'),
-        searchInput: document.getElementById('lpSearchInput'),
-        toolbar: document.getElementById('lpToolbar'),
-        monthLabel: document.getElementById('lpMonthLabel'),
-        toolbarName: document.getElementById('lpToolbarName'),
-        toolbarSub: document.getElementById('lpToolbarSub'),
-        prevBtn: document.getElementById('lpPrevBtn'),
-        nextBtn: document.getElementById('lpNextBtn'),
-        todayBtn: document.getElementById('lpTodayBtn'),
-        placeholder: document.getElementById('lpPlaceholder'),
-        loading: document.getElementById('lpLoading'),
-        error: document.getElementById('lpError'),
-        errorText: document.getElementById('lpErrorText'),
-        gridWrap: document.getElementById('lpGridWrap'),
-        monthGrid: document.getElementById('lpMonthGrid'),
-        detail: document.getElementById('lpDetail'),
-        detailEmpty: document.getElementById('lpDetailEmpty'),
-        detailBody: document.getElementById('lpDetailBody'),
-        wrapper: document.querySelector('.lp-wrapper'),
-        dayOverlay: document.getElementById('lpDayOverlay'),
-        dayPopover: document.getElementById('lpDayPopover')
-    };
-
-    // ---------- fetch loai phong ----------
-    function loadLoaiPhongList() {
-        fetch(API_BASE + '/api/loai-phong')
-            .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-            .then(function (data) {
-                state.loaiPhongs = data || [];
-                renderList('');
-            })
-            .catch(function () {
-                el.list.innerHTML = '<div class="lp-empty-list">Không thể tải danh sách loại phòng.</div>';
-            });
-    }
-
-    function renderList(filterText) {
-        var q = (filterText || '').trim().toLowerCase();
-        var items = state.loaiPhongs.filter(function (lp) {
-            return !q || lp.tenLoai.toLowerCase().indexOf(q) !== -1;
-        });
-
-        if (items.length === 0) {
-            el.list.innerHTML = '<div class="lp-empty-list">Không tìm thấy loại phòng nào.</div>';
-            return;
+        // ---------- date helpers ----------
+        function startOfMonth(d){ return new Date(d.getFullYear(), d.getMonth(), 1); }
+        function addDays(d, n){ var r = new Date(d); r.setDate(r.getDate() + n); return r; }
+        function addMonths(d, n){ return new Date(d.getFullYear(), d.getMonth() + n, 1); }
+        function isSameDay(a, b){ return a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate(); }
+        function toIsoDate(d){
+            var y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), dd = String(d.getDate()).padStart(2,'0');
+            return y + '-' + m + '-' + dd;
+        }
+        function dayDiff(a, b){ // a - b in whole days, ignoring time
+            var A = new Date(a.getFullYear(), a.getMonth(), a.getDate());
+            var B = new Date(b.getFullYear(), b.getMonth(), b.getDate());
+            return Math.round((A - B) / 86400000);
+        }
+        // Monday-based grid start/end covering the given month
+        function gridStartFor(monthDate){
+            var first = startOfMonth(monthDate);
+            var dow = first.getDay(); // 0=Sun..6=Sat
+            var offset = (dow === 0) ? 6 : dow - 1; // days since Monday
+            return addDays(first, -offset);
+        }
+        function gridWeeksFor(monthDate){
+            var gridStart = gridStartFor(monthDate);
+            var lastOfMonth = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0);
+            var totalDaysNeeded = dayDiff(lastOfMonth, gridStart) + 1;
+            var weeks = Math.ceil(totalDaysNeeded / 7);
+            return { gridStart: gridStart, weeks: Math.max(weeks, 4) };
+        }
+        function formatMonthLabel(d){
+            return 'Tháng ' + (d.getMonth() + 1) + ', ' + d.getFullYear();
+        }
+        function formatDateTimeVN(dtStr){
+            if (!dtStr) return '--';
+            var d = new Date(dtStr);
+            var dd = String(d.getDate()).padStart(2,'0');
+            var mm = String(d.getMonth()+1).padStart(2,'0');
+            var yyyy = d.getFullYear();
+            var hh = String(d.getHours()).padStart(2,'0');
+            var mi = String(d.getMinutes()).padStart(2,'0');
+            return dd + '/' + mm + '/' + yyyy + ' ' + hh + ':' + mi;
+        }
+        function formatDateVN(dtStr){
+            if (!dtStr) return '--';
+            var d = new Date(dtStr);
+            var dd = String(d.getDate()).padStart(2,'0');
+            var mm = String(d.getMonth()+1).padStart(2,'0');
+            return dd + '/' + mm + '/' + d.getFullYear();
+        }
+        function formatMoney(v){
+            if (v === null || v === undefined || v === '') return '--';
+            var n = Number(v);
+            if (isNaN(n)) return '--';
+            return n.toLocaleString('vi-VN') + ' đ';
+        }
+        function nightsBetween(checkIn, checkOut){
+            var ms = checkOut.getTime() - checkIn.getTime();
+            return Math.max(1, Math.round(ms / 86400000));
         }
 
-        var html = items.map(function (lp) {
-            var active = (lp.id === state.selectedId) ? ' is-active' : '';
-            var thumb = lp.anhUrl
-                ? '<div class="lp-card-thumb" style="background-image:url(\'' + lp.anhUrl + '\')"></div>'
-                : '<div class="lp-card-thumb"><i class="ti ti-bed"></i></div>';
-            return '' +
-                '<div class="lp-card' + active + '" data-id="' + lp.id + '" data-name="' + escapeHtml(lp.tenLoai) + '">' +
-                    thumb +
-                    '<div class="lp-card-body">' +
-                        '<div class="lp-card-title">' + escapeHtml(lp.tenLoai) + '</div>' +
-                        '<div class="lp-card-meta">' +
-                            '<span><i class="ti ti-door"></i> ' + lp.soLuongPhong + ' phòng</span>' +
-                            '<span><i class="ti ti-users"></i> ' + lp.sucChuaToiDa + ' khách</span>' +
-                        '</div>' +
-                    '</div>' +
-                '</div>';
-        }).join('');
+        function statusClass(s){ return STATUS_CLASS[s] || 'lp-status-default'; }
+        function statusLabel(s){ return STATUS_LABEL[s] || s || '--'; }
 
-        el.list.innerHTML = html;
+        // ---------- DOM refs ----------
+        var el = {
+            list: document.getElementById('lpList'),
+            listLoading: document.getElementById('lpListLoading'),
+            searchInput: document.getElementById('lpSearchInput'),
+            toolbar: document.getElementById('lpToolbar'),
+            monthLabel: document.getElementById('lpMonthLabel'),
+            toolbarName: document.getElementById('lpToolbarName'),
+            toolbarSub: document.getElementById('lpToolbarSub'),
+            prevBtn: document.getElementById('lpPrevBtn'),
+            nextBtn: document.getElementById('lpNextBtn'),
+            todayBtn: document.getElementById('lpTodayBtn'),
+            placeholder: document.getElementById('lpPlaceholder'),
+            loading: document.getElementById('lpLoading'),
+            error: document.getElementById('lpError'),
+            errorText: document.getElementById('lpErrorText'),
+            gridWrap: document.getElementById('lpGridWrap'),
+            monthGrid: document.getElementById('lpMonthGrid'),
+            detail: document.getElementById('lpDetail'),
+            detailEmpty: document.getElementById('lpDetailEmpty'),
+            detailBody: document.getElementById('lpDetailBody'),
+            wrapper: document.querySelector('.lp-wrapper'),
+            dayOverlay: document.getElementById('lpDayOverlay'),
+            dayPopover: document.getElementById('lpDayPopover')
+        };
 
-        Array.prototype.forEach.call(el.list.querySelectorAll('.lp-card'), function (card) {
-            card.addEventListener('click', function () {
-                var id = parseInt(card.getAttribute('data-id'), 10);
-                var name = card.getAttribute('data-name');
-                selectLoaiPhong(id, name);
-            });
-        });
-    }
-
-    function escapeHtml(s) {
-        if (s === null || s === undefined) return '';
-        return String(s).replace(/[&<>"']/g, function (c) {
-            return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
-        });
-    }
-
-    // ---------- selection ----------
-    function selectLoaiPhong(id, name) {
-        state.selectedId = id;
-        state.selectedName = name;
-        renderList(el.searchInput.value);
-
-        el.placeholder.classList.add('lp-fade-hidden');
-        el.toolbar.style.display = 'flex';
-        el.toolbarName.textContent = name;
-
-        clearDetailPanel();
-        loadEventsAndRender();
-    }
-
-    // ---------- fetch + render calendar ----------
-    function loadEventsAndRender() {
-        if (!state.selectedId) return;
-
-        var g = gridWeeksFor(state.currentMonth);
-        var rangeStart = g.gridStart;
-        var rangeEnd = addDays(g.gridStart, g.weeks * 7); // exclusive
-
-        el.monthLabel.textContent = formatMonthLabel(state.currentMonth);
-        showState('loading');
-
-        var myToken = ++state.loadToken;
-
-        fetch(API_BASE + '/api/loai-phong/' + state.selectedId + '/bookings' +
-            '?start=' + toIsoDate(rangeStart) + '&end=' + toIsoDate(rangeEnd))
-            .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-            .then(function (data) {
-                if (myToken !== state.loadToken) return; // stale response
-                state.events = (data || []).map(function (e) {
-                    return {
-                        chiTietId: e.chiTietId,
-                        datPhongId: e.datPhongId,
-                        maPhong: e.maPhong,
-                        soPhong: e.soPhong,
-                        soTang: e.soTang,
-                        moTaPhong: e.moTaPhong,
-                        checkIn: new Date(e.checkIn),
-                        checkOut: new Date(e.checkOut),
-                        trangThai: e.trangThai,
-                        hoTen: e.hoTen,
-                        sdt: e.sdt,
-                        email: e.email,
-                        maCccd: e.maCccd,
-                        soNguoiLon: e.soNguoiLon,
-                        soTreEm: e.soTreEm,
-                        maTraCuu: e.maTraCuu,
-                        giaMoiDem: e.giaMoiDem,
-                        giaKhiDat: e.giaKhiDat,
-                        phuPhi: e.phuPhi,
-                        ngayTaoDon: e.ngayTaoDon,
-                        yeuCauThem: e.yeuCauThem,
-                        khuyenMaiCode: e.khuyenMaiCode,
-                        khuyenMaiMoTa: e.khuyenMaiMoTa,
-                        khuyenMaiLoaiGiam: e.khuyenMaiLoaiGiam,
-                        khuyenMaiGiaTriGiam: e.khuyenMaiGiaTriGiam,
-                        dichVu: e.dichVu || [],
-                        tongTienDichVu: e.tongTienDichVu
-                    };
+        // ---------- fetch loai phong ----------
+        function loadLoaiPhongList() {
+            fetch(API_BASE + '/api/loai-phong')
+                .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+                .then(function (data) {
+                    state.loaiPhongs = data || [];
+                    renderList('');
+                })
+                .catch(function () {
+                    el.list.innerHTML = '<div class="lp-empty-list">Không thể tải danh sách loại phòng.</div>';
                 });
-                el.toolbarSub.textContent = state.events.length + ' lượt đặt trong tháng này';
-                renderMonthGrid(g);
-                showState('grid');
+        }
 
-                // giu lai lua chon dang xem (VD sau khi doi thang) neu su kien do van con tren luoi
-                if (state.selectedEventKey) {
-                    var stillThere = state.events.find(function (e) { return e.chiTietId === state.selectedEventKey; });
-                    if (stillThere) { renderDetailPanel(stillThere); highlightSelectedBar(); }
-                    else { clearDetailPanel(); }
-                }
-            })
-            .catch(function () {
-                if (myToken !== state.loadToken) return;
-                el.errorText.textContent = 'Không thể tải lịch đặt phòng. Vui lòng thử lại.';
-                showState('error');
+        function renderList(filterText) {
+            var q = (filterText || '').trim().toLowerCase();
+            var items = state.loaiPhongs.filter(function (lp) {
+                return !q || lp.tenLoai.toLowerCase().indexOf(q) !== -1;
             });
-    }
 
-    function showState(which) {
-        el.placeholder.classList.add('lp-fade-hidden');
-        el.loading.classList.add('lp-fade-hidden');
-        el.error.classList.add('lp-fade-hidden');
-        el.gridWrap.classList.add('lp-fade-hidden');
-        if (which === 'placeholder') el.placeholder.classList.remove('lp-fade-hidden');
-        if (which === 'loading') el.loading.classList.remove('lp-fade-hidden');
-        if (which === 'error') el.error.classList.remove('lp-fade-hidden');
-        if (which === 'grid') el.gridWrap.classList.remove('lp-fade-hidden');
-    }
-
-    // ---------- month grid rendering (Google-Calendar style spanning bars) ----------
-    function renderMonthGrid(g) {
-        var today = new Date();
-        el.monthGrid.innerHTML = '';
-
-        for (var w = 0; w < g.weeks; w++) {
-            var weekStart = addDays(g.gridStart, w * 7);
-            var weekEnd = addDays(weekStart, 7); // exclusive
-
-            var weekRow = document.createElement('div');
-            weekRow.className = 'lp-week-row';
-
-            var dayCells = [];
-            for (var d = 0; d < 7; d++) {
-                var dayDate = addDays(weekStart, d);
-                var isOutside = dayDate.getMonth() !== state.currentMonth.getMonth();
-                var isToday = isSameDay(dayDate, today);
-
-                var cell = document.createElement('div');
-                cell.className = 'lp-day-cell' + (isOutside ? ' is-outside' : '') + (isToday ? ' is-today' : '');
-
-                var num = document.createElement('div');
-                num.className = 'lp-day-num';
-                num.textContent = dayDate.getDate();
-                cell.appendChild(num);
-
-                var spacer = document.createElement('div');
-                spacer.className = 'lp-day-events-spacer';
-                cell.appendChild(spacer);
-
-                cell._date = dayDate;
-                dayCells.push(cell);
-                weekRow.appendChild(cell);
+            if (items.length === 0) {
+                el.list.innerHTML = '<div class="lp-empty-list">Không tìm thấy loại phòng nào.</div>';
+                return;
             }
 
-            // events touching this week
-            var weekEvents = state.events.filter(function (ev) {
-                return ev.checkOut > weekStart && ev.checkIn < weekEnd;
-            }).map(function (ev) {
-                var startCol = Math.max(0, dayDiff(ev.checkIn, weekStart));
-                var lastOccupied = addDays(ev.checkOut, -1); // checkout day itself is not occupied
-                var endCol = Math.min(6, dayDiff(lastOccupied, weekStart));
-                if (endCol < startCol) endCol = startCol;
-                return { ev: ev, startCol: startCol, endCol: endCol };
+            var html = items.map(function (lp) {
+                var active = (lp.id === state.selectedId) ? ' is-active' : '';
+                var thumb = lp.anhUrl
+                    ? '<div class="lp-card-thumb" style="background-image:url(\'' + lp.anhUrl + '\')"></div>'
+                    : '<div class="lp-card-thumb"><i class="ti ti-bed"></i></div>';
+                return '' +
+                    '<div class="lp-card' + active + '" data-id="' + lp.id + '" data-name="' + escapeHtml(lp.tenLoai) + '">' +
+                    thumb +
+                    '<div class="lp-card-body">' +
+                    '<div class="lp-card-title">' + escapeHtml(lp.tenLoai) + '</div>' +
+                    '<div class="lp-card-meta">' +
+                    '<span><i class="ti ti-door"></i> ' + lp.soLuongPhong + ' phòng</span>' +
+                    '<span><i class="ti ti-users"></i> ' + lp.sucChuaToiDa + ' khách</span>' +
+                    '</div>' +
+                    '</div>' +
+                    '</div>';
+            }).join('');
+
+            el.list.innerHTML = html;
+
+            Array.prototype.forEach.call(el.list.querySelectorAll('.lp-card'), function (card) {
+                card.addEventListener('click', function () {
+                    var id = parseInt(card.getAttribute('data-id'), 10);
+                    var name = card.getAttribute('data-name');
+                    selectLoaiPhong(id, name);
+                });
             });
+        }
 
-            weekEvents.sort(function (a, b) {
-                if (a.startCol !== b.startCol) return a.startCol - b.startCol;
-                return (b.endCol - b.startCol) - (a.endCol - a.startCol);
+        function escapeHtml(s) {
+            if (s === null || s === undefined) return '';
+            return String(s).replace(/[&<>"']/g, function (c) {
+                return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c];
             });
+        }
 
-            // lane packing
-            var lanesEnd = []; // lanesEnd[i] = last occupied col of lane i
-            var overflowPerDay = [0,0,0,0,0,0,0];
+        // ---------- selection ----------
+        function selectLoaiPhong(id, name) {
+            state.selectedId = id;
+            state.selectedName = name;
+            renderList(el.searchInput.value);
 
-            weekEvents.forEach(function (item) {
-                var lane = -1;
-                for (var i = 0; i < lanesEnd.length; i++) {
-                    if (lanesEnd[i] < item.startCol) { lane = i; break; }
-                }
-                if (lane === -1) { lane = lanesEnd.length; lanesEnd.push(-1); }
-                lanesEnd[lane] = item.endCol;
-                item.lane = lane;
+            el.placeholder.classList.add('lp-fade-hidden');
+            el.toolbar.style.display = 'flex';
+            el.toolbarName.textContent = name;
 
-                if (lane >= MAX_LANES_VISIBLE) {
-                    for (var c = item.startCol; c <= item.endCol; c++) overflowPerDay[c]++;
-                }
-            });
+            clearDetailPanel();
+            loadEventsAndRender();
+        }
 
-            var eventsLayer = document.createElement('div');
-            eventsLayer.className = 'lp-events-layer';
-            weekRow.appendChild(eventsLayer);
+        // ---------- fetch + render calendar ----------
+        function loadEventsAndRender() {
+            if (!state.selectedId) return;
 
-            weekEvents.forEach(function (item) {
-                if (item.lane >= MAX_LANES_VISIBLE) return;
-                var bar = document.createElement('div');
-                bar.className = 'lp-event-bar ' + statusClass(item.ev.trangThai) +
-                    (item.ev.chiTietId === state.selectedEventKey ? ' is-selected' : '');
-                bar.setAttribute('data-cticket', item.ev.chiTietId);
-                bar.style.left = (item.startCol / 7 * 100) + '%';
-                bar.style.width = ((item.endCol - item.startCol + 1) / 7 * 100) + '%';
-                bar.style.top = (item.lane * LANE_HEIGHT) + 'px';
-                bar.style.marginLeft = '2px';
-                bar.style.marginRight = '2px';
-                bar.textContent = 'P.' + item.ev.soPhong + ' · ' + (item.ev.hoTen || 'Khách');
-                bar.title = 'Phòng ' + item.ev.soPhong + ' — ' + (item.ev.hoTen || 'Khách') + ' (' + statusLabel(item.ev.trangThai) + ')';
-                bar.addEventListener('click', (function (evObj) {
-                    return function () { selectEvent(evObj); };
-                })(item.ev));
-                eventsLayer.appendChild(bar);
-            });
+            var g = gridWeeksFor(state.currentMonth);
+            var rangeStart = g.gridStart;
+            var rangeEnd = addDays(g.gridStart, g.weeks * 7); // exclusive
 
-            // "+N more" per day, placed at bottom of the cell, pushed below the lanes area
-            var usedLanes = Math.min(lanesEnd.length, MAX_LANES_VISIBLE + 3);
-            var layerHeight = Math.max(usedLanes, MAX_LANES_VISIBLE) * LANE_HEIGHT;
-            eventsLayer.style.minHeight = layerHeight + 'px';
+            el.monthLabel.textContent = formatMonthLabel(state.currentMonth);
+            showState('loading');
 
-            dayCells.forEach(function (cell, idx) {
-                if (overflowPerDay[idx] > 0) {
-                    var more = document.createElement('div');
-                    more.className = 'lp-more-link';
-                    more.style.marginTop = (layerHeight + 4) + 'px';
-                    more.textContent = '+' + overflowPerDay[idx] + ' khác';
-                    var theDate = cell._date;
-                    more.addEventListener('click', function (e) {
-                        e.stopPropagation();
-                        openDayList(theDate);
+            var myToken = ++state.loadToken;
+
+            fetch(API_BASE + '/api/loai-phong/' + state.selectedId + '/bookings' +
+                '?start=' + toIsoDate(rangeStart) + '&end=' + toIsoDate(rangeEnd))
+                .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+                .then(function (data) {
+                    if (myToken !== state.loadToken) return; // stale response
+                    state.events = (data || []).map(function (e) {
+                        return {
+                            chiTietId: e.chiTietId,
+                            datPhongId: e.datPhongId,
+                            maPhong: e.maPhong,
+                            soPhong: e.soPhong,
+                            soTang: e.soTang,
+                            moTaPhong: e.moTaPhong,
+                            checkIn: new Date(e.checkIn),
+                            checkOut: new Date(e.checkOut),
+                            trangThai: e.trangThai,
+                            hoTen: e.hoTen,
+                            sdt: e.sdt,
+                            email: e.email,
+                            maCccd: e.maCccd,
+                            soNguoiLon: e.soNguoiLon,
+                            soTreEm: e.soTreEm,
+                            maTraCuu: e.maTraCuu,
+                            giaMoiDem: e.giaMoiDem,
+                            giaKhiDat: e.giaKhiDat,
+                            phuPhi: e.phuPhi,
+                            ngayTaoDon: e.ngayTaoDon,
+                            yeuCauThem: e.yeuCauThem,
+                            khuyenMaiCode: e.khuyenMaiCode,
+                            khuyenMaiMoTa: e.khuyenMaiMoTa,
+                            khuyenMaiLoaiGiam: e.khuyenMaiLoaiGiam,
+                            khuyenMaiGiaTriGiam: e.khuyenMaiGiaTriGiam,
+                            dichVu: e.dichVu || [],
+                            tongTienDichVu: e.tongTienDichVu
+                        };
                     });
-                    cell.appendChild(more);
-                } else {
-                    var sp = document.createElement('div');
-                    sp.style.marginTop = layerHeight + 'px';
-                    cell.appendChild(sp);
+                    el.toolbarSub.textContent = state.events.length + ' lượt đặt trong tháng này';
+                    renderMonthGrid(g);
+                    showState('grid');
+
+                    // giu lai lua chon dang xem (VD sau khi doi thang) neu su kien do van con tren luoi
+                    if (state.selectedEventKey) {
+                        var stillThere = state.events.find(function (e) { return e.chiTietId === state.selectedEventKey; });
+                        if (stillThere) { renderDetailPanel(stillThere); highlightSelectedBar(); }
+                        else { clearDetailPanel(); }
+                    }
+                })
+                .catch(function () {
+                    if (myToken !== state.loadToken) return;
+                    el.errorText.textContent = 'Không thể tải lịch đặt phòng. Vui lòng thử lại.';
+                    showState('error');
+                });
+        }
+
+        function showState(which) {
+            el.placeholder.classList.add('lp-fade-hidden');
+            el.loading.classList.add('lp-fade-hidden');
+            el.error.classList.add('lp-fade-hidden');
+            el.gridWrap.classList.add('lp-fade-hidden');
+            if (which === 'placeholder') el.placeholder.classList.remove('lp-fade-hidden');
+            if (which === 'loading') el.loading.classList.remove('lp-fade-hidden');
+            if (which === 'error') el.error.classList.remove('lp-fade-hidden');
+            if (which === 'grid') el.gridWrap.classList.remove('lp-fade-hidden');
+        }
+
+        // ---------- month grid rendering (Google-Calendar style spanning bars) ----------
+        function renderMonthGrid(g) {
+            var today = new Date();
+            el.monthGrid.innerHTML = '';
+
+            for (var w = 0; w < g.weeks; w++) {
+                var weekStart = addDays(g.gridStart, w * 7);
+                var weekEnd = addDays(weekStart, 7); // exclusive
+
+                var weekRow = document.createElement('div');
+                weekRow.className = 'lp-week-row';
+
+                var dayCells = [];
+                for (var d = 0; d < 7; d++) {
+                    var dayDate = addDays(weekStart, d);
+                    var isOutside = dayDate.getMonth() !== state.currentMonth.getMonth();
+                    var isToday = isSameDay(dayDate, today);
+
+                    var cell = document.createElement('div');
+                    cell.className = 'lp-day-cell' + (isOutside ? ' is-outside' : '') + (isToday ? ' is-today' : '');
+
+                    var num = document.createElement('div');
+                    num.className = 'lp-day-num';
+                    num.textContent = dayDate.getDate();
+                    cell.appendChild(num);
+
+                    var spacer = document.createElement('div');
+                    spacer.className = 'lp-day-events-spacer';
+                    cell.appendChild(spacer);
+
+                    cell._date = dayDate;
+                    dayCells.push(cell);
+                    weekRow.appendChild(cell);
                 }
+
+                // events touching this week
+                var weekEvents = state.events.filter(function (ev) {
+                    return ev.checkOut > weekStart && ev.checkIn < weekEnd;
+                }).map(function (ev) {
+                    var startCol = Math.max(0, dayDiff(ev.checkIn, weekStart));
+                    var lastOccupied = addDays(ev.checkOut, -1); // checkout day itself is not occupied
+                    var endCol = Math.min(6, dayDiff(lastOccupied, weekStart));
+                    if (endCol < startCol) endCol = startCol;
+                    return { ev: ev, startCol: startCol, endCol: endCol };
+                });
+
+                weekEvents.sort(function (a, b) {
+                    if (a.startCol !== b.startCol) return a.startCol - b.startCol;
+                    return (b.endCol - b.startCol) - (a.endCol - a.startCol);
+                });
+
+                // lane packing
+                var lanesEnd = []; // lanesEnd[i] = last occupied col of lane i
+                var overflowPerDay = [0,0,0,0,0,0,0];
+
+                weekEvents.forEach(function (item) {
+                    var lane = -1;
+                    for (var i = 0; i < lanesEnd.length; i++) {
+                        if (lanesEnd[i] < item.startCol) { lane = i; break; }
+                    }
+                    if (lane === -1) { lane = lanesEnd.length; lanesEnd.push(-1); }
+                    lanesEnd[lane] = item.endCol;
+                    item.lane = lane;
+
+                    if (lane >= MAX_LANES_VISIBLE) {
+                        for (var c = item.startCol; c <= item.endCol; c++) overflowPerDay[c]++;
+                    }
+                });
+
+                var eventsLayer = document.createElement('div');
+                eventsLayer.className = 'lp-events-layer';
+                weekRow.appendChild(eventsLayer);
+
+                weekEvents.forEach(function (item) {
+                    if (item.lane >= MAX_LANES_VISIBLE) return;
+                    var bar = document.createElement('div');
+                    bar.className = 'lp-event-bar ' + statusClass(item.ev.trangThai) +
+                        (item.ev.chiTietId === state.selectedEventKey ? ' is-selected' : '');
+                    bar.setAttribute('data-cticket', item.ev.chiTietId);
+                    bar.style.left = (item.startCol / 7 * 100) + '%';
+                    bar.style.width = ((item.endCol - item.startCol + 1) / 7 * 100) + '%';
+                    bar.style.top = (item.lane * LANE_HEIGHT) + 'px';
+                    bar.style.marginLeft = '2px';
+                    bar.style.marginRight = '2px';
+                    bar.textContent = 'P.' + item.ev.soPhong + ' · ' + (item.ev.hoTen || 'Khách');
+                    bar.title = 'Phòng ' + item.ev.soPhong + ' — ' + (item.ev.hoTen || 'Khách') + ' (' + statusLabel(item.ev.trangThai) + ')';
+                    bar.addEventListener('click', (function (evObj) {
+                        return function () { selectEvent(evObj); };
+                    })(item.ev));
+                    eventsLayer.appendChild(bar);
+                });
+
+                // "+N more" per day, placed at bottom of the cell, pushed below the lanes area
+                var usedLanes = Math.min(lanesEnd.length, MAX_LANES_VISIBLE + 3);
+                var layerHeight = Math.max(usedLanes, MAX_LANES_VISIBLE) * LANE_HEIGHT;
+                eventsLayer.style.minHeight = layerHeight + 'px';
+
+                dayCells.forEach(function (cell, idx) {
+                    if (overflowPerDay[idx] > 0) {
+                        var more = document.createElement('div');
+                        more.className = 'lp-more-link';
+                        more.style.marginTop = (layerHeight + 4) + 'px';
+                        more.textContent = '+' + overflowPerDay[idx] + ' khác';
+                        var theDate = cell._date;
+                        more.addEventListener('click', function (e) {
+                            e.stopPropagation();
+                            openDayList(theDate);
+                        });
+                        cell.appendChild(more);
+                    } else {
+                        var sp = document.createElement('div');
+                        sp.style.marginTop = layerHeight + 'px';
+                        cell.appendChild(sp);
+                    }
+                });
+
+                el.monthGrid.appendChild(weekRow);
+            }
+        }
+
+        // ---------- right-side booking detail panel ----------
+        function highlightSelectedBar() {
+            Array.prototype.forEach.call(document.querySelectorAll('.lp-event-bar'), function (bar) {
+                var isSel = parseInt(bar.getAttribute('data-cticket'), 10) === state.selectedEventKey;
+                bar.classList.toggle('is-selected', isSel);
             });
-
-            el.monthGrid.appendChild(weekRow);
         }
-    }
 
-    // ---------- right-side booking detail panel ----------
-    function highlightSelectedBar() {
-        Array.prototype.forEach.call(document.querySelectorAll('.lp-event-bar'), function (bar) {
-            var isSel = parseInt(bar.getAttribute('data-cticket'), 10) === state.selectedEventKey;
-            bar.classList.toggle('is-selected', isSel);
-        });
-    }
-
-    function selectEvent(ev) {
-        state.selectedEventKey = ev.chiTietId;
-        renderDetailPanel(ev);
-        highlightSelectedBar();
-        if (window.matchMedia('(max-width: 1000px)').matches) {
-            el.wrapper.classList.add('lp-detail-open');
-            el.detail.classList.add('is-open');
+        function selectEvent(ev) {
+            state.selectedEventKey = ev.chiTietId;
+            renderDetailPanel(ev);
+            highlightSelectedBar();
+            if (window.matchMedia('(max-width: 1000px)').matches) {
+                el.wrapper.classList.add('lp-detail-open');
+                el.detail.classList.add('is-open');
+            }
         }
-    }
 
-    function clearDetailPanel() {
-        state.selectedEventKey = null;
-        el.detailBody.classList.add('lp-fade-hidden');
-        el.detailEmpty.classList.remove('lp-fade-hidden');
-        el.detailBody.innerHTML = '';
-        el.wrapper && el.wrapper.classList.remove('lp-detail-open');
-        el.detail.classList.remove('is-open');
-        highlightSelectedBar();
-    }
+        function clearDetailPanel() {
+            state.selectedEventKey = null;
+            el.detailBody.classList.add('lp-fade-hidden');
+            el.detailEmpty.classList.remove('lp-fade-hidden');
+            el.detailBody.innerHTML = '';
+            el.wrapper && el.wrapper.classList.remove('lp-detail-open');
+            el.detail.classList.remove('is-open');
+            highlightSelectedBar();
+        }
 
-    function renderDetailPanel(ev) {
-        var dot = STATUS_DOT[ev.trangThai] || '#9aa0a6';
-        var nights = nightsBetween(ev.checkIn, ev.checkOut);
-        var giaMoiDem = ev.giaMoiDem != null ? ev.giaMoiDem : ev.giaKhiDat;
-        var tienPhong = (giaMoiDem != null ? Number(giaMoiDem) : 0) * nights;
-        var phuPhi = ev.phuPhi != null ? Number(ev.phuPhi) : 0;
-        var tienDichVu = ev.tongTienDichVu != null ? Number(ev.tongTienDichVu) : 0;
-        var tongCong = tienPhong + phuPhi + tienDichVu;
+        function renderDetailPanel(ev) {
+            var dot = STATUS_DOT[ev.trangThai] || '#9aa0a6';
+            var nights = nightsBetween(ev.checkIn, ev.checkOut);
+            var giaMoiDem = ev.giaMoiDem != null ? ev.giaMoiDem : ev.giaKhiDat;
+            var tienPhong = (giaMoiDem != null ? Number(giaMoiDem) : 0) * nights;
+            var phuPhi = ev.phuPhi != null ? Number(ev.phuPhi) : 0;
+            var tienDichVu = ev.tongTienDichVu != null ? Number(ev.tongTienDichVu) : 0;
+            var tongCong = tienPhong + phuPhi + tienDichVu;
 
-        var svcHtml = (ev.dichVu && ev.dichVu.length) ? ev.dichVu.map(function (s) {
-            return '' +
-                '<div class="lp-detail-svc-item">' +
+            var svcHtml = (ev.dichVu && ev.dichVu.length) ? ev.dichVu.map(function (s) {
+                return '' +
+                    '<div class="lp-detail-svc-item">' +
                     '<div>' +
-                        '<div class="lp-detail-svc-name">' + escapeHtml(s.tenDichVu) + '</div>' +
-                        '<div class="lp-detail-svc-meta">' + s.soLuong + ' ' + escapeHtml(s.donVi || 'x') +
-                            (s.ngaySuDung ? ' · ' + formatDateVN(s.ngaySuDung) : '') +
-                            (s.ghiChu ? ' · ' + escapeHtml(s.ghiChu) : '') +
-                        '</div>' +
+                    '<div class="lp-detail-svc-name">' + escapeHtml(s.tenDichVu) + '</div>' +
+                    '<div class="lp-detail-svc-meta">' + s.soLuong + ' ' + escapeHtml(s.donVi || 'x') +
+                    (s.ngaySuDung ? ' · ' + formatDateVN(s.ngaySuDung) : '') +
+                    (s.ghiChu ? ' · ' + escapeHtml(s.ghiChu) : '') +
+                    '</div>' +
                     '</div>' +
                     '<div class="lp-detail-svc-price">' + formatMoney(s.thanhTien) + '</div>' +
-                '</div>';
-        }).join('') : '<div class="lp-detail-row-value lp-muted-value">Chưa sử dụng dịch vụ nào.</div>';
+                    '</div>';
+            }).join('') : '<div class="lp-detail-row-value lp-muted-value">Chưa sử dụng dịch vụ nào.</div>';
 
-        var promoHtml = ev.khuyenMaiCode ? (
-            '<div class="lp-detail-section">' +
+            var promoHtml = ev.khuyenMaiCode ? (
+                '<div class="lp-detail-section">' +
                 '<div class="lp-detail-section-title"><i class="ti ti-discount-2"></i> Khuyến mãi áp dụng</div>' +
                 '<div class="lp-detail-promo">' +
-                    '<b>' + escapeHtml(ev.khuyenMaiCode) + '</b>' +
-                    (ev.khuyenMaiMoTa ? ' — ' + escapeHtml(ev.khuyenMaiMoTa) : '') + '<br>' +
-                    'Giảm ' + (ev.khuyenMaiLoaiGiam === 'Phan tram' || ev.khuyenMaiLoaiGiam === '%' ?
-                        (ev.khuyenMaiGiaTriGiam + '%') : formatMoney(ev.khuyenMaiGiaTriGiam)) +
+                '<b>' + escapeHtml(ev.khuyenMaiCode) + '</b>' +
+                (ev.khuyenMaiMoTa ? ' — ' + escapeHtml(ev.khuyenMaiMoTa) : '') + '<br>' +
+                'Giảm ' + (ev.khuyenMaiLoaiGiam === 'Phan tram' || ev.khuyenMaiLoaiGiam === '%' ?
+                    (ev.khuyenMaiGiaTriGiam + '%') : formatMoney(ev.khuyenMaiGiaTriGiam)) +
                 '</div>' +
-            '</div>'
-        ) : '';
+                '</div>'
+            ) : '';
 
-        var html = '' +
-            '<div class="lp-detail-head">' +
+            var html = '' +
+                '<div class="lp-detail-head">' +
                 '<div class="lp-detail-head-top">' +
-                    '<div>' +
-                        '<div class="lp-detail-room">Phòng ' + escapeHtml(ev.soPhong) + '</div>' +
-                        '<div class="lp-detail-room-sub">Tầng ' + ev.soTang + (ev.moTaPhong ? ' · ' + escapeHtml(ev.moTaPhong) : '') + '</div>' +
-                    '</div>' +
-                    '<button class="lp-detail-close" id="lpDetailCloseBtn" aria-label="Đóng"><i class="ti ti-x"></i></button>' +
+                '<div>' +
+                '<div class="lp-detail-room">Phòng ' + escapeHtml(ev.soPhong) + '</div>' +
+                '<div class="lp-detail-room-sub">Tầng ' + ev.soTang + (ev.moTaPhong ? ' · ' + escapeHtml(ev.moTaPhong) : '') + '</div>' +
+                '</div>' +
+                '<button class="lp-detail-close" id="lpDetailCloseBtn" aria-label="Đóng"><i class="ti ti-x"></i></button>' +
                 '</div>' +
                 '<div class="lp-detail-status ' + statusClass(ev.trangThai) + '">' +
-                    '<span style="width:8px;height:8px;border-radius:50%;background:' + dot + ';display:inline-block;"></span>' +
-                    statusLabel(ev.trangThai) +
+                '<span style="width:8px;height:8px;border-radius:50%;background:' + dot + ';display:inline-block;"></span>' +
+                statusLabel(ev.trangThai) +
                 '</div>' +
-            '</div>' +
+                '</div>' +
 
-            '<div class="lp-detail-section">' +
+                '<div class="lp-detail-section">' +
                 '<div class="lp-detail-section-title"><i class="ti ti-user"></i> Khách hàng</div>' +
                 '<div class="lp-detail-row"><i class="ti ti-user-circle"></i><div>' +
-                    '<div class="lp-detail-row-value">' + escapeHtml(ev.hoTen || 'Khách chưa rõ tên') + '</div>' +
+                '<div class="lp-detail-row-value">' + escapeHtml(ev.hoTen || 'Khách chưa rõ tên') + '</div>' +
                 '</div></div>' +
                 '<div class="lp-detail-row"><i class="ti ti-phone"></i><div>' +
-                    '<div class="lp-detail-row-value' + (ev.sdt ? '' : ' lp-muted-value') + '">' + escapeHtml(ev.sdt || 'Chưa có') + '</div>' +
+                '<div class="lp-detail-row-value' + (ev.sdt ? '' : ' lp-muted-value') + '">' + escapeHtml(ev.sdt || 'Chưa có') + '</div>' +
                 '</div></div>' +
                 '<div class="lp-detail-row"><i class="ti ti-mail"></i><div>' +
-                    '<div class="lp-detail-row-value' + (ev.email ? '' : ' lp-muted-value') + '">' + escapeHtml(ev.email || 'Chưa có') + '</div>' +
+                '<div class="lp-detail-row-value' + (ev.email ? '' : ' lp-muted-value') + '">' + escapeHtml(ev.email || 'Chưa có') + '</div>' +
                 '</div></div>' +
                 (ev.maCccd ? '<div class="lp-detail-row"><i class="ti ti-id"></i><div>' +
                     '<div class="lp-detail-row-value">CCCD: ' + escapeHtml(ev.maCccd) + '</div>' +
-                '</div></div>' : '') +
-            '</div>' +
+                    '</div></div>' : '') +
+                '</div>' +
 
-            '<div class="lp-detail-section">' +
+                '<div class="lp-detail-section">' +
                 '<div class="lp-detail-section-title"><i class="ti ti-calendar-event"></i> Thời gian lưu trú</div>' +
                 '<div class="lp-detail-grid2">' +
-                    '<div class="lp-detail-stat"><div class="lp-detail-stat-label">Nhận phòng</div><div class="lp-detail-stat-value">' + formatDateTimeVN(ev.checkIn) + '</div></div>' +
-                    '<div class="lp-detail-stat"><div class="lp-detail-stat-label">Trả phòng</div><div class="lp-detail-stat-value">' + formatDateTimeVN(ev.checkOut) + '</div></div>' +
+                '<div class="lp-detail-stat"><div class="lp-detail-stat-label">Nhận phòng</div><div class="lp-detail-stat-value">' + formatDateTimeVN(ev.checkIn) + '</div></div>' +
+                '<div class="lp-detail-stat"><div class="lp-detail-stat-label">Trả phòng</div><div class="lp-detail-stat-value">' + formatDateTimeVN(ev.checkOut) + '</div></div>' +
                 '</div>' +
                 '<div class="lp-detail-row" style="margin-top:12px;"><i class="ti ti-moon"></i><div>' +
-                    '<div class="lp-detail-row-value">' + nights + ' đêm</div>' +
+                '<div class="lp-detail-row-value">' + nights + ' đêm</div>' +
                 '</div></div>' +
                 '<div class="lp-detail-row"><i class="ti ti-users-group"></i><div>' +
-                    '<div class="lp-detail-row-value">' + ev.soNguoiLon + ' người lớn' + (ev.soTreEm ? ', ' + ev.soTreEm + ' trẻ em' : '') + '</div>' +
+                '<div class="lp-detail-row-value">' + ev.soNguoiLon + ' người lớn' + (ev.soTreEm ? ', ' + ev.soTreEm + ' trẻ em' : '') + '</div>' +
                 '</div></div>' +
-            '</div>' +
+                '</div>' +
 
-            '<div class="lp-detail-section">' +
+                '<div class="lp-detail-section">' +
                 '<div class="lp-detail-section-title"><i class="ti ti-file-invoice"></i> Thông tin đặt phòng</div>' +
                 '<div class="lp-detail-row"><i class="ti ti-hash"></i><div>' +
-                    '<div class="lp-detail-row-value">Mã đặt phòng #' + ev.datPhongId + '</div>' +
+                '<div class="lp-detail-row-value">Mã đặt phòng #' + ev.datPhongId + '</div>' +
                 '</div></div>' +
                 (ev.maTraCuu ? '<div class="lp-detail-row"><i class="ti ti-ticket"></i><div>' +
                     '<div class="lp-detail-row-value">Mã tra cứu: ' + escapeHtml(ev.maTraCuu) + '</div>' +
-                '</div></div>' : '') +
+                    '</div></div>' : '') +
                 (ev.ngayTaoDon ? '<div class="lp-detail-row"><i class="ti ti-clock"></i><div>' +
                     '<div class="lp-detail-row-label">Ngày tạo đơn</div>' +
                     '<div class="lp-detail-row-value">' + formatDateTimeVN(ev.ngayTaoDon) + '</div>' +
-                '</div></div>' : '') +
+                    '</div></div>' : '') +
                 (ev.yeuCauThem ? '<div class="lp-detail-note" style="margin-top:8px;"><i class="ti ti-message-2" style="margin-right:6px;"></i>' + escapeHtml(ev.yeuCauThem) + '</div>' : '') +
-            '</div>' +
+                '</div>' +
 
-            promoHtml +
+                promoHtml +
 
-            '<div class="lp-detail-section">' +
+                '<div class="lp-detail-section">' +
                 '<div class="lp-detail-section-title"><i class="ti ti-room-service" ></i> Dịch vụ đã dùng</div>' +
                 '<div class="lp-detail-svc-list">' + svcHtml + '</div>' +
-            '</div>' +
+                '</div>' +
 
-            '<div class="lp-detail-section">' +
+                '<div class="lp-detail-section">' +
                 '<div class="lp-detail-section-title"><i class="ti ti-report-money"></i> Chi phí</div>' +
                 '<div class="lp-detail-total-row"><span>Giá phòng / đêm</span><span>' + formatMoney(giaMoiDem) + '</span></div>' +
                 '<div class="lp-detail-total-row"><span>Tiền phòng (' + nights + ' đêm)</span><span>' + formatMoney(tienPhong) + '</span></div>' +
                 (phuPhi ? '<div class="lp-detail-total-row"><span>Phụ phí ngoài giờ</span><span>' + formatMoney(phuPhi) + '</span></div>' : '') +
                 '<div class="lp-detail-total-row"><span>Tiền dịch vụ</span><span>' + formatMoney(tienDichVu) + '</span></div>' +
                 '<div class="lp-detail-total-row lp-grand-total"><span>Tổng cộng (ước tính)</span><span>' + formatMoney(tongCong) + '</span></div>' +
-            '</div>' +
+                '</div>' +
 
-            '<div class="lp-detail-actions">' +
+                '<div class="lp-detail-actions">' +
                 '<a href="' + DETAIL_BASE + ev.datPhongId + '">Xem chi tiết đơn đầy đủ <i class="ti ti-arrow-right"></i></a>' +
-            '</div>';
+                '</div>';
 
-        el.detailBody.innerHTML = html;
-        el.detailEmpty.classList.add('lp-fade-hidden');
-        el.detailBody.classList.remove('lp-fade-hidden');
-        document.getElementById('lpDetailCloseBtn').addEventListener('click', clearDetailPanel);
-    }
+            el.detailBody.innerHTML = html;
+            el.detailEmpty.classList.add('lp-fade-hidden');
+            el.detailBody.classList.remove('lp-fade-hidden');
+            document.getElementById('lpDetailCloseBtn').addEventListener('click', clearDetailPanel);
+        }
 
-    function openDayList(dayDate) {
-        var dayEvents = state.events.filter(function (ev) {
-            return ev.checkIn < addDays(dayDate, 1) && ev.checkOut > dayDate;
-        }).sort(function (a, b) { return a.checkIn - b.checkIn; });
+        function openDayList(dayDate) {
+            var dayEvents = state.events.filter(function (ev) {
+                return ev.checkIn < addDays(dayDate, 1) && ev.checkOut > dayDate;
+            }).sort(function (a, b) { return a.checkIn - b.checkIn; });
 
-        var itemsHtml = dayEvents.map(function (ev) {
-            var dot = STATUS_DOT[ev.trangThai] || '#9aa0a6';
-            return '' +
-                '<div class="lp-daylist-item" data-cticket="' + ev.chiTietId + '">' +
+            var itemsHtml = dayEvents.map(function (ev) {
+                var dot = STATUS_DOT[ev.trangThai] || '#9aa0a6';
+                return '' +
+                    '<div class="lp-daylist-item" data-cticket="' + ev.chiTietId + '">' +
                     '<span class="lp-daylist-dot" style="background:' + dot + '"></span>' +
                     '<div>' +
-                        '<div class="main">Phòng ' + escapeHtml(ev.soPhong) + ' · ' + escapeHtml(ev.hoTen || 'Khách') + '</div>' +
-                        '<div class="sub">' + formatDateVN(ev.checkIn) + ' → ' + formatDateVN(ev.checkOut) + ' · ' + statusLabel(ev.trangThai) + '</div>' +
+                    '<div class="main">Phòng ' + escapeHtml(ev.soPhong) + ' · ' + escapeHtml(ev.hoTen || 'Khách') + '</div>' +
+                    '<div class="sub">' + formatDateVN(ev.checkIn) + ' → ' + formatDateVN(ev.checkOut) + ' · ' + statusLabel(ev.trangThai) + '</div>' +
                     '</div>' +
-                '</div>';
-        }).join('');
+                    '</div>';
+            }).join('');
 
-        el.dayPopover.innerHTML = '' +
-            '<div class="lp-pop-head">' +
+            el.dayPopover.innerHTML = '' +
+                '<div class="lp-pop-head">' +
                 '<div class="lp-pop-head-title">' + formatDateVN(dayDate) + '</div>' +
                 '<button class="lp-pop-close" id="lpDayCloseBtn"><i class="ti ti-x"></i></button>' +
-            '</div>' +
-            '<div class="lp-daylist">' + (itemsHtml || '<div class="lp-empty-list">Không có đặt phòng.</div>') + '</div>';
+                '</div>' +
+                '<div class="lp-daylist">' + (itemsHtml || '<div class="lp-empty-list">Không có đặt phòng.</div>') + '</div>';
 
-        el.dayOverlay.classList.add('is-open');
-        document.getElementById('lpDayCloseBtn').addEventListener('click', closeDayPopover);
+            el.dayOverlay.classList.add('is-open');
+            document.getElementById('lpDayCloseBtn').addEventListener('click', closeDayPopover);
 
-        Array.prototype.forEach.call(el.dayPopover.querySelectorAll('.lp-daylist-item'), function (row) {
-            row.addEventListener('click', function () {
-                var id = parseInt(row.getAttribute('data-cticket'), 10);
-                var ev = dayEvents.find(function (e) { return e.chiTietId === id; });
-                closeDayPopover();
-                if (ev) selectEvent(ev);
+            Array.prototype.forEach.call(el.dayPopover.querySelectorAll('.lp-daylist-item'), function (row) {
+                row.addEventListener('click', function () {
+                    var id = parseInt(row.getAttribute('data-cticket'), 10);
+                    var ev = dayEvents.find(function (e) { return e.chiTietId === id; });
+                    closeDayPopover();
+                    if (ev) selectEvent(ev);
+                });
             });
+        }
+
+        function closeDayPopover() { el.dayOverlay.classList.remove('is-open'); }
+
+        el.dayOverlay.addEventListener('click', function (e) { if (e.target === el.dayOverlay) closeDayPopover(); });
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') { closeDayPopover(); }
         });
-    }
 
-    function closeDayPopover() { el.dayOverlay.classList.remove('is-open'); }
+        // ---------- toolbar controls ----------
+        el.prevBtn.addEventListener('click', function () {
+            state.currentMonth = addMonths(state.currentMonth, -1);
+            loadEventsAndRender();
+        });
+        el.nextBtn.addEventListener('click', function () {
+            state.currentMonth = addMonths(state.currentMonth, 1);
+            loadEventsAndRender();
+        });
+        el.todayBtn.addEventListener('click', function () {
+            state.currentMonth = startOfMonth(new Date());
+            loadEventsAndRender();
+        });
+        el.searchInput.addEventListener('input', function () {
+            renderList(el.searchInput.value);
+        });
 
-    el.dayOverlay.addEventListener('click', function (e) { if (e.target === el.dayOverlay) closeDayPopover(); });
-    document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape') { closeDayPopover(); }
-    });
-
-    // ---------- toolbar controls ----------
-    el.prevBtn.addEventListener('click', function () {
-        state.currentMonth = addMonths(state.currentMonth, -1);
-        loadEventsAndRender();
-    });
-    el.nextBtn.addEventListener('click', function () {
-        state.currentMonth = addMonths(state.currentMonth, 1);
-        loadEventsAndRender();
-    });
-    el.todayBtn.addEventListener('click', function () {
-        state.currentMonth = startOfMonth(new Date());
-        loadEventsAndRender();
-    });
-    el.searchInput.addEventListener('input', function () {
-        renderList(el.searchInput.value);
-    });
-
-    // ---------- init ----------
-    loadLoaiPhongList();
-    showState('placeholder');
-})();
+        // ---------- init ----------
+        loadLoaiPhongList();
+        showState('placeholder');
+    })();
 </script>
 
 </body>

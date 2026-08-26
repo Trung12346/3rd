@@ -9,9 +9,6 @@
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
     <script src="/js/date-range-picker.js"></script>
     <style>
-        html {
-            overflow-x: hidden;
-        }
         *, *::before, *::after { box-sizing: border-box; }
         body { background: linear-gradient(180deg, #f3f7fb 0%, #eef2f7 100%); font-family: 'Montserrat', sans-serif; }
 
@@ -138,9 +135,9 @@
         }
 
 
-        /* Layout: side floor tabs + room grid */
+        /* Layout: side floor tabs + room grid + khach cho check-in (ben phai) */
         .sdp-layout {
-            display: grid; grid-template-columns: 190px 1fr; gap: 20px; align-items: start;
+            display: grid; grid-template-columns: 190px 1fr 360px; gap: 20px; align-items: start;
         }
 
         .sdp-floor-tabs {
@@ -487,7 +484,7 @@
 
         /* Room info sidebar (for "Xem thông tin phòng") */
         .sdp-info-sidebar {
-            position: absolute; top: 0; right: -400px; width: 380px; height: 100vh;
+            position: fixed; top: 0; right: -400px; width: 380px; height: 100vh;
             background: #fff; border-left: 1px solid #e2e8f0; z-index: 3100;
             box-shadow: -10px 0 30px rgba(15,23,42,0.14);
             transition: right .25s ease; overflow-y: auto;
@@ -588,6 +585,17 @@
         }
         .sdp-lich-date-value { font-size: 14px; font-weight: 700; color: #1f2937; }
         .sdp-lich-date-value.placeholder { color: #9ca3af; font-weight: 600; }
+
+        /* Ngay nhan phong bi khoa cung = "Hom nay" (dung cho mode "Dat phong tai
+           quay": khach dang o quay nen khong the doi ngay nhan phong). */
+        .sdp-lich-date-field.sdp-lich-date-fixed { cursor: default; background: #f1f9fc; }
+        .sdp-lich-date-field.sdp-lich-date-fixed:hover { background: #f1f9fc; }
+        .sdp-lich-date-field.sdp-lich-date-fixed .sdp-lich-date-value { color: #1d7fae; }
+        .sdp-lich-date-field.sdp-lich-date-fixed label::after {
+            content: 'Cố định'; margin-left: 6px; font-size: 9.5px; font-weight: 800;
+            color: #2196c4; background: #dff2fa; border-radius: 999px; padding: 1px 6px;
+            text-transform: none; letter-spacing: 0;
+        }
 
         .sdp-lich-cal-wrap {
             display: none; margin-top: 10px; border: 1px solid #e5e9f0; border-radius: 12px;
@@ -916,6 +924,259 @@
             .sdp-don-sidebar { width: 96vw; max-width: 96vw; right: -98vw; }
             .sdp-room-grid { justify-content: center; }
             .sdp-room-card { width: 150px; flex-basis: 150px; }
+            .kc-panel { position: static; max-height: none; }
+        }
+
+        /* ============ Panel "Khách chờ check-in" (cột phải) ============ */
+        .kc-panel {
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(15, 23, 42, 0.06);
+            padding: 18px 18px 16px;
+            position: sticky;
+            top: 20px;
+            max-height: calc(100vh - 40px);
+            display: flex;
+            flex-direction: column;
+            align-self: start;
+            overflow: hidden;
+        }
+
+        .kc-head {
+            border-bottom: 1px solid #eef2f6;
+            padding-bottom: 12px;
+            margin-bottom: 14px;
+            flex: none;
+        }
+        .kc-head h3 {
+            margin: 0;
+            font-size: 15px;
+            font-weight: 700;
+            color: #1f2937;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .kc-head h3 i {
+            color: #2196c4;
+            font-size: 14px;
+        }
+        .kc-head p {
+            margin: 4px 0 0;
+            font-size: 11.5px;
+            color: #6b7280;
+        }
+
+        .kc-filters {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 14px;
+            flex: none;
+        }
+        .kc-field label {
+            display: block;
+            font-size: 10.5px;
+            font-weight: 700;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            margin-bottom: 6px;
+        }
+        .kc-field-wrap {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .kc-field-wrap i {
+            position: absolute;
+            left: 11px;
+            color: #94a3b8;
+            font-size: 12px;
+            pointer-events: none;
+        }
+        .kc-field-wrap input {
+            width: 100%;
+            padding: 9px 11px 9px 33px;
+            border: 1px solid #dbe3ee;
+            border-radius: 9px;
+            font-size: 13px;
+            color: #1f2937;
+            background: #f8fafc;
+            font-family: inherit;
+            transition: border-color .15s, background .15s;
+        }
+        .kc-field-wrap input[type="date"] { padding-left: 11px; }
+        .kc-field-wrap input[type="date"]::-webkit-calendar-picker-indicator { opacity: .55; cursor: pointer; }
+        .kc-field-wrap input:focus {
+            outline: none;
+            border-color: #2196c4;
+            background: #fff;
+            box-shadow: 0 0 0 3px rgba(33, 150, 196, .12);
+        }
+
+        .kc-list {
+            flex: 1 1 auto;
+            overflow-y: auto;
+            margin: 0 -6px;
+            padding: 0 6px 4px;
+            scrollbar-width: thin;
+            scrollbar-color: #cbd5e1 transparent;
+        }
+        .kc-list::-webkit-scrollbar { width: 6px; }
+        .kc-list::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 999px; }
+        .kc-list::-webkit-scrollbar-track { background: transparent; }
+
+        .kc-empty {
+            text-align: center;
+            padding: 36px 12px;
+            color: #94a3b8;
+            font-size: 12.5px;
+            background: #f8fafc;
+            border: 1px dashed #e2e8f0;
+            border-radius: 10px;
+            line-height: 1.5;
+        }
+
+        /* ==== Card ==== */
+        .kc-card {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-left: 4px solid #cbd5e1;
+            border-radius: 11px;
+            padding: 12px 14px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: box-shadow .18s, transform .18s, border-color .18s;
+        }
+        .kc-card:hover {
+            box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+            transform: translateY(-1px);
+        }
+        .kc-card:active { transform: translateY(0); }
+        .kc-card:last-child { margin-bottom: 0; }
+
+        .kc-card.kc-ready   { border-left-color: #10b981; }
+        .kc-card.kc-soon    { border-left-color: #3b82f6; }
+        .kc-card.kc-urgent  { border-left-color: #f59e0b; }
+        .kc-card.kc-overdue { border-left-color: #ef4444; }
+
+        .kc-card-top {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .kc-card-id {
+            font-size: 10.5px;
+            color: #94a3b8;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+        }
+        .kc-card-name {
+            font-size: 14.5px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-top: 1px;
+            line-height: 1.25;
+        }
+        .kc-card-room {
+            background: #eaf6fb;
+            color: #1d7fae;
+            font-size: 11px;
+            font-weight: 800;
+            padding: 3px 9px;
+            border-radius: 999px;
+            letter-spacing: .02em;
+            flex: none;
+        }
+
+        .kc-card-meta {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px 14px;
+            font-size: 11.5px;
+            color: #6b7280;
+            margin-top: 2px;
+        }
+        .kc-card-meta span {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .kc-card-meta i {
+            color: #94a3b8;
+            font-size: 10.5px;
+        }
+
+        .kc-card-bottom {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-top: 10px;
+            padding-top: 9px;
+            border-top: 1px dashed #e5e7eb;
+        }
+
+        /* Status pill (text + dot) */
+        .kc-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11.5px;
+            font-weight: 700;
+        }
+        .kc-status .dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #94a3b8;
+        }
+        .kc-status.kc-ready   { color: #047857; }
+        .kc-status.kc-ready   .dot { background: #10b981; }
+        .kc-status.kc-soon    { color: #1d4ed8; }
+        .kc-status.kc-soon    .dot { background: #3b82f6; }
+        .kc-status.kc-urgent  { color: #b45309; }
+        .kc-status.kc-urgent  .dot { background: #f59e0b; }
+        .kc-status.kc-overdue { color: #b91c1c; }
+        .kc-status.kc-overdue .dot { background: #ef4444; }
+
+        /* Countdown badge */
+        .kc-countdown {
+            font-size: 11.5px;
+            font-weight: 800;
+            padding: 4px 10px;
+            border-radius: 7px;
+            background: #f1f5f9;
+            color: #475569;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: .02em;
+        }
+        .kc-countdown.kc-ready   { background: #d1fae5; color: #065f46; }
+        .kc-countdown.kc-soon    { background: #dbeafe; color: #1e40af; }
+        .kc-countdown.kc-urgent  { background: #fef3c7; color: #92400e; }
+        .kc-countdown.kc-overdue { background: #fee2e2; color: #991b1b; }
+
+        .kc-card.kc-urgent .kc-countdown,
+        .kc-card.kc-overdue .kc-countdown { animation: kcPulse 1.6s ease-in-out infinite; }
+        @keyframes kcPulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, .25); }
+            50%      { box-shadow: 0 0 0 5px rgba(245, 158, 11, 0); }
+        }
+
+        .kc-note {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #eef2f6;
+            text-align: center;
+            font-size: 11.5px;
+            color: #94a3b8;
+            flex: none;
         }
     </style>
 </head>
@@ -1067,6 +1328,34 @@
                 Chưa có phòng nào trong hệ thống.
             </div>
         </div>
+
+        <!-- Panel bên phải: Khách chờ check-in -->
+        <aside class="kc-panel">
+            <div class="kc-head">
+                <h3><i class="fa-solid fa-door-open"></i>Khách chờ check-in</h3>
+                <p><span id="kcCount">0</span> khách sắp nhận phòng</p>
+            </div>
+
+            <div class="kc-filters">
+                <div class="kc-field">
+                    <label>Lọc theo ngày đến</label>
+                    <div class="kc-field-wrap">
+                        <input type="date" id="kcDate">
+                    </div>
+                </div>
+                <div class="kc-field">
+                    <label>Tìm kiếm theo tên</label>
+                    <div class="kc-field-wrap">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" id="kcSearch" placeholder="Nhập tên khách hàng...">
+                    </div>
+                </div>
+            </div>
+
+            <div class="kc-list" id="kcList"></div>
+
+            <div class="kc-note">Danh sách tự cập nhật mỗi 15 giây</div>
+        </aside>
     </div>
 
     <!-- Chế độ xem: Danh sách đặt phòng (chỉ hiển thị, chưa có thao tác) -->
@@ -1525,7 +1814,7 @@
         function showFloor(floor) {
             sections.forEach(function (sec) {
                 sec.style.display = (floor === 'all' || sec.getAttribute('data-floor-section') === floor)
-                        ? '' : 'none';
+                    ? '' : 'none';
             });
             tabs.forEach(function (t) {
                 t.classList.toggle('active', t.getAttribute('data-floor') === floor);
@@ -1884,7 +2173,7 @@
                 headers['Content-Type'] = 'application/x-www-form-urlencoded';
             }
             return fetch(url, { method: 'POST', headers: headers, body: body })
-                    .then(function (res) { return res.json(); });
+                .then(function (res) { return res.json(); });
         }
 
         var policyBackdrop = document.getElementById('sdpPolicyBackdrop');
@@ -1919,9 +2208,9 @@
             card.setAttribute('data-trang-thai', trangThaiMoi);
             card.classList.remove('sdp-status-empty', 'sdp-status-inuse', 'sdp-status-cleaning', 'sdp-status-maintenance');
             var lopMoi = trangThaiMoi === 'Trống' ? 'sdp-status-empty'
-                    : trangThaiMoi === 'Đang sử dụng' ? 'sdp-status-inuse'
+                : trangThaiMoi === 'Đang sử dụng' ? 'sdp-status-inuse'
                     : trangThaiMoi === 'Đang dọn' ? 'sdp-status-cleaning'
-                    : 'sdp-status-maintenance';
+                        : 'sdp-status-maintenance';
             card.classList.add(lopMoi);
             var pill = card.querySelector('.sdp-status-pill span:last-child');
             if (pill) pill.textContent = trangThaiMoi;
@@ -1954,43 +2243,43 @@
 
         function moModalGiayTo(card, don, laNhom) {
             fetch(CTX_URL_CHECK_IN_API + don.id + CTX_URL_GIAYTO_INFO_SUFFIX, { headers: { 'Accept': 'application/json' } })
-                    .then(function (res) { return res.json(); })
-                    .then(function (kq) {
-                        if (!kq.ok) {
-                            alert(kq.loi || 'Không tải được thông tin phòng của đơn.');
-                            return;
-                        }
-                        giayToState = {
-                            maDatPhong: don.id,
-                            card: card,
-                            don: don,
-                            laNhom: !!laNhom,
-                            soNguoiLon: kq.soNguoiLon || 0,
-                            phongs: (kq.phongs || []).map(function (p) {
-                                return {
-                                    chiTietId: p.chiTietId,
-                                    soPhong: p.soPhong,
-                                    tenLoai: p.tenLoai,
-                                    sucChua: p.sucChua || 0,
-                                    docs: (p.giayTo || []).map(function (g) {
-                                        g.localId = 'd' + (giayToDocSeq++);
-                                        return g;
-                                    })
-                                };
-                            })
-                        };
-                        document.getElementById('sdpGiayToSubtitle').textContent =
-                                (laNhom ? 'Cả đoàn — Đơn #' : 'Đơn #') + don.id + ' — ' + giayToState.phongs.length + ' phòng — cần ' +
-                                giayToState.soNguoiLon + ' người lớn';
-                        document.getElementById('sdpGiayToTiepTucBtn').textContent =
-                                laNhom ? 'Tiếp tục — Cả đoàn nhận phòng' : 'Tiếp tục nhận phòng';
-                        renderGiayToBody();
-                        giayToBackdrop.classList.add('open');
-                        giayToModal.classList.add('open');
-                    })
-                    .catch(function () {
-                        alert('Có lỗi xảy ra khi tải thông tin giấy tờ, vui lòng thử lại.');
-                    });
+                .then(function (res) { return res.json(); })
+                .then(function (kq) {
+                    if (!kq.ok) {
+                        alert(kq.loi || 'Không tải được thông tin phòng của đơn.');
+                        return;
+                    }
+                    giayToState = {
+                        maDatPhong: don.id,
+                        card: card,
+                        don: don,
+                        laNhom: !!laNhom,
+                        soNguoiLon: kq.soNguoiLon || 0,
+                        phongs: (kq.phongs || []).map(function (p) {
+                            return {
+                                chiTietId: p.chiTietId,
+                                soPhong: p.soPhong,
+                                tenLoai: p.tenLoai,
+                                sucChua: p.sucChua || 0,
+                                docs: (p.giayTo || []).map(function (g) {
+                                    g.localId = 'd' + (giayToDocSeq++);
+                                    return g;
+                                })
+                            };
+                        })
+                    };
+                    document.getElementById('sdpGiayToSubtitle').textContent =
+                        (laNhom ? 'Cả đoàn — Đơn #' : 'Đơn #') + don.id + ' — ' + giayToState.phongs.length + ' phòng — cần ' +
+                        giayToState.soNguoiLon + ' người lớn';
+                    document.getElementById('sdpGiayToTiepTucBtn').textContent =
+                        laNhom ? 'Tiếp tục — Cả đoàn nhận phòng' : 'Tiếp tục nhận phòng';
+                    renderGiayToBody();
+                    giayToBackdrop.classList.add('open');
+                    giayToModal.classList.add('open');
+                })
+                .catch(function () {
+                    alert('Có lỗi xảy ra khi tải thông tin giấy tờ, vui lòng thử lại.');
+                });
         }
 
         function dongModalGiayTo() {
@@ -2233,16 +2522,16 @@
             var tt = tinhTrangThaiLoiGiayTo();
 
             var subtitleGoc = (giayToState.laNhom ? 'Cả đoàn — Đơn #' : 'Đơn #') + giayToState.maDatPhong +
-                    ' — ' + giayToState.phongs.length + ' phòng — cần ' + giayToState.soNguoiLon + ' người lớn';
+                ' — ' + giayToState.phongs.length + ' phòng — cần ' + giayToState.soNguoiLon + ' người lớn';
             var tongLabel = tt.soNguoiLon
-                    ? ('Đã nhập ' + tt.tongSoGiayTo + '/' + tt.soNguoiLon + ' giấy tờ (theo số người lớn của đơn)')
-                    : (tt.tongSucChua
-                            ? ('Đã nhập ' + tt.tongSoGiayTo + '/' + tt.tongSucChua + ' giấy tờ (theo tổng sức chứa các phòng đã đặt)')
-                            : ('Đã nhập ' + tt.tongSoGiayTo + ' giấy tờ'));
+                ? ('Đã nhập ' + tt.tongSoGiayTo + '/' + tt.soNguoiLon + ' giấy tờ (theo số người lớn của đơn)')
+                : (tt.tongSucChua
+                    ? ('Đã nhập ' + tt.tongSoGiayTo + '/' + tt.tongSucChua + ' giấy tờ (theo tổng sức chứa các phòng đã đặt)')
+                    : ('Đã nhập ' + tt.tongSoGiayTo + ' giấy tờ'));
             var subtitleEl = document.getElementById('sdpGiayToSubtitle');
             if (subtitleEl) {
                 subtitleEl.innerHTML = subtitleGoc + '<br><span class="' +
-                        (tt.loiTong ? 'sdp-gt-total-error' : 'sdp-gt-total-ok') + '">' + tongLabel + '</span>';
+                    (tt.loiTong ? 'sdp-gt-total-error' : 'sdp-gt-total-ok') + '">' + tongLabel + '</span>';
             }
 
             giayToBody.querySelectorAll('.sdp-giayto-room').forEach(function (roomEl) {
@@ -2271,12 +2560,12 @@
                     var daDuTongFallback = !tt.soNguoiLon && !!(tt.tongSucChua && tt.tongSoGiayTo >= tt.tongSucChua);
                     addBox.classList.toggle('disabled', daDuPhong || daDuNguoiLon || daDuTongFallback);
                     addBox.title = daDuPhong
-                            ? 'Phòng này đã đủ giấy tờ theo sức chứa (' + phongNay.sucChua + ').'
-                            : (daDuNguoiLon
-                                    ? 'Đã đủ tổng số giấy tờ theo số người lớn của đơn (' + tt.soNguoiLon + ').'
-                                    : (daDuTongFallback
-                                            ? 'Đã đủ tổng số giấy tờ theo sức chứa các phòng của đơn.'
-                                            : ''));
+                        ? 'Phòng này đã đủ giấy tờ theo sức chứa (' + phongNay.sucChua + ').'
+                        : (daDuNguoiLon
+                            ? 'Đã đủ tổng số giấy tờ theo số người lớn của đơn (' + tt.soNguoiLon + ').'
+                            : (daDuTongFallback
+                                ? 'Đã đủ tổng số giấy tờ theo sức chứa các phòng của đơn.'
+                                : ''));
                 }
             });
 
@@ -2336,22 +2625,22 @@
                 headers: { 'Accept': 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: body
             }).then(function (res) { return res.json(); })
-                    .then(function (kq) {
-                        if (!kq.ok) {
-                            alert(kq.loi || 'Không thể lưu giấy tờ.');
-                            return;
-                        }
-                        var laNhom = giayToState.laNhom;
-                        dongModalGiayTo();
-                        if (laNhom) {
-                            thucHienNhanPhongNhom(card, don, false);
-                        } else {
-                            thucHienNhanPhong(card, don, false); // tiep tuc flow nhan phong nhu cu
-                        }
-                    })
-                    .catch(function () {
-                        alert('Có lỗi xảy ra khi lưu giấy tờ, vui lòng thử lại.');
-                    });
+                .then(function (kq) {
+                    if (!kq.ok) {
+                        alert(kq.loi || 'Không thể lưu giấy tờ.');
+                        return;
+                    }
+                    var laNhom = giayToState.laNhom;
+                    dongModalGiayTo();
+                    if (laNhom) {
+                        thucHienNhanPhongNhom(card, don, false);
+                    } else {
+                        thucHienNhanPhong(card, don, false); // tiep tuc flow nhan phong nhu cu
+                    }
+                })
+                .catch(function () {
+                    alert('Có lỗi xảy ra khi lưu giấy tờ, vui lòng thử lại.');
+                });
         });
 
         // ---- Panel nhap chi tiet 1 giay to ----
@@ -2369,16 +2658,16 @@
             function f(id, label, type, value) {
                 type = type || 'text';
                 return '<div class="sdp-gt-field"><label>' + label + '</label>' +
-                        '<input type="' + type + '" id="' + id + '" value="' + (value ? String(value).replace(/"/g, '&quot;') : '') + '"></div>';
+                    '<input type="' + type + '" id="' + id + '" value="' + (value ? String(value).replace(/"/g, '&quot;') : '') + '"></div>';
             }
 
             var html = '';
             html += '<div class="sdp-gt-checkbox"><input type="checkbox" id="gtCoDaiDien" ' + (doc.coDaiDien ? 'checked' : '') + '>' +
-                    '<label for="gtCoDaiDien" style="margin:0;text-transform:none;font-weight:600;color:#374151;">Là người đại diện nhận phòng</label></div>';
+                '<label for="gtCoDaiDien" style="margin:0;text-transform:none;font-weight:600;color:#374151;">Là người đại diện nhận phòng</label></div>';
             html += '<div class="sdp-gt-field"><label>Loại giấy tờ</label><select id="gtLoaiGiayTo">' +
-                    '<option value="CCCD"' + (doc.loaiGiayTo === 'CCCD' ? ' selected' : '') + '>CCCD</option>' +
-                    '<option value="Hộ chiếu"' + (doc.loaiGiayTo === 'Hộ chiếu' ? ' selected' : '') + '>Hộ chiếu</option>' +
-                    '</select></div>';
+                '<option value="CCCD"' + (doc.loaiGiayTo === 'CCCD' ? ' selected' : '') + '>CCCD</option>' +
+                '<option value="Hộ chiếu"' + (doc.loaiGiayTo === 'Hộ chiếu' ? ' selected' : '') + '>Hộ chiếu</option>' +
+                '</select></div>';
             html += '<div class="sdp-gt-row2">' + f('gtHoTen', 'Họ tên', 'text', doc.hoTen) + f('gtSoDinhDanh', 'Số định danh', 'text', doc.soDinhDanh) + '</div>';
             html += '<div class="sdp-gt-row2">' + f('gtNgaySinh', 'Ngày sinh', 'date', doc.ngaySinh) + f('gtGioiTinh', 'Giới tính', 'text', doc.gioiTinh) + '</div>';
             html += '<div class="sdp-gt-row2">' + f('gtQuocTich', 'Quốc tịch', 'text', doc.quocTich) + f('gtQueQuan', 'Quê quán', 'text', doc.queQuan) + '</div>';
@@ -2551,38 +2840,38 @@
             sdpRowGiayToPhongs = {};
 
             fetch(CTX_URL_CHECK_IN_API + donId + CTX_URL_GIAYTO_INFO_SUFFIX, { headers: { 'Accept': 'application/json' } })
-                    .then(function (res) { return res.json(); })
-                    .then(function (kq) {
-                        if (!kq.ok) return;
-                        var theoChiTiet = {};
-                        (kq.phongs || []).forEach(function (p) { theoChiTiet[p.chiTietId] = p; });
+                .then(function (res) { return res.json(); })
+                .then(function (kq) {
+                    if (!kq.ok) return;
+                    var theoChiTiet = {};
+                    (kq.phongs || []).forEach(function (p) { theoChiTiet[p.chiTietId] = p; });
 
-                        rows.forEach(function (row) {
-                            var chiTietId = parseInt(row.getAttribute('data-ct-id'), 10);
-                            var p = theoChiTiet[chiTietId];
-                            var phong = {
-                                chiTietId: chiTietId,
-                                sucChua: p ? (p.sucChua || 0) : 0,
-                                docs: (p && p.giayTo ? p.giayTo : []).map(function (g) {
-                                    g.localId = 'd' + (giayToDocSeq++);
-                                    return g;
-                                })
-                            };
-                            sdpRowGiayToPhongs[chiTietId] = phong;
+                    rows.forEach(function (row) {
+                        var chiTietId = parseInt(row.getAttribute('data-ct-id'), 10);
+                        var p = theoChiTiet[chiTietId];
+                        var phong = {
+                            chiTietId: chiTietId,
+                            sucChua: p ? (p.sucChua || 0) : 0,
+                            docs: (p && p.giayTo ? p.giayTo : []).map(function (g) {
+                                g.localId = 'd' + (giayToDocSeq++);
+                                return g;
+                            })
+                        };
+                        sdpRowGiayToPhongs[chiTietId] = phong;
 
-                            var head = row.querySelector('.dp-form-row-head');
-                            if (!head || row.querySelector('[data-sdp-giayto-row]')) return;
-                            var box = document.createElement('div');
-                            box.className = 'sdp-giayto-room sdp-giayto-row-embed';
-                            box.setAttribute('data-sdp-giayto-row', String(chiTietId));
-                            head.insertAdjacentElement('afterend', box);
+                        var head = row.querySelector('.dp-form-row-head');
+                        if (!head || row.querySelector('[data-sdp-giayto-row]')) return;
+                        var box = document.createElement('div');
+                        box.className = 'sdp-giayto-room sdp-giayto-row-embed';
+                        box.setAttribute('data-sdp-giayto-row', String(chiTietId));
+                        head.insertAdjacentElement('afterend', box);
 
-                            renderRowGiayToBox(chiTietId);
-                        });
-                    })
-                    .catch(function () {
-                        // Loi tai giay to thi bo qua khung nay, khong chan phan con lai cua sidebar.
+                        renderRowGiayToBox(chiTietId);
                     });
+                })
+                .catch(function () {
+                    // Loi tai giay to thi bo qua khung nay, khong chan phan con lai cua sidebar.
+                });
         }
 
         function themGiayToMoiChoRow(chiTietId) {
@@ -2687,11 +2976,11 @@
             });
 
             var loiDaiDien = (phong.docs.length > 0 && soDaiDien !== 1)
-                    ? ('Cần đúng 1 "Người đại diện" cho phòng này (hiện có ' + soDaiDien + ').')
-                    : null;
+                ? ('Cần đúng 1 "Người đại diện" cho phòng này (hiện có ' + soDaiDien + ').')
+                : null;
             var loiVuotSucChua = (phong.sucChua && phong.docs.length > phong.sucChua)
-                    ? ('Số giấy tờ (' + phong.docs.length + ') vượt quá sức chứa phòng (' + phong.sucChua + ').')
-                    : null;
+                ? ('Số giấy tờ (' + phong.docs.length + ') vượt quá sức chứa phòng (' + phong.sucChua + ').')
+                : null;
             var coLoiTruong = Object.keys(docThieuTruong).length > 0;
             var hopLe = !loiDaiDien && !loiVuotSucChua && !coLoiTruong;
 
@@ -2783,27 +3072,27 @@
                 headers: { 'Accept': 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: body
             }).then(function (res) { return res.json(); })
-                    .then(function (kq) {
-                        if (statusEl) statusEl.removeAttribute('data-locked');
-                        if (!kq.ok) {
-                            if (statusEl) { statusEl.style.color = '#dc2626'; statusEl.textContent = kq.loi || 'Không thể lưu giấy tờ.'; }
-                            capNhatTrangThaiLoiGiayToRow(chiTietId);
-                            return;
-                        }
-                        if (statusEl) {
-                            statusEl.style.color = '#16a34a';
-                            statusEl.textContent = 'Đã lưu lúc ' + new Date().toLocaleTimeString('vi-VN');
-                        }
+                .then(function (kq) {
+                    if (statusEl) statusEl.removeAttribute('data-locked');
+                    if (!kq.ok) {
+                        if (statusEl) { statusEl.style.color = '#dc2626'; statusEl.textContent = kq.loi || 'Không thể lưu giấy tờ.'; }
                         capNhatTrangThaiLoiGiayToRow(chiTietId);
-                    })
-                    .catch(function () {
-                        if (statusEl) {
-                            statusEl.removeAttribute('data-locked');
-                            statusEl.style.color = '#dc2626';
-                            statusEl.textContent = 'Có lỗi khi lưu, vui lòng thử lại.';
-                        }
-                        capNhatTrangThaiLoiGiayToRow(chiTietId);
-                    });
+                        return;
+                    }
+                    if (statusEl) {
+                        statusEl.style.color = '#16a34a';
+                        statusEl.textContent = 'Đã lưu lúc ' + new Date().toLocaleTimeString('vi-VN');
+                    }
+                    capNhatTrangThaiLoiGiayToRow(chiTietId);
+                })
+                .catch(function () {
+                    if (statusEl) {
+                        statusEl.removeAttribute('data-locked');
+                        statusEl.style.color = '#dc2626';
+                        statusEl.textContent = 'Có lỗi khi lưu, vui lòng thử lại.';
+                    }
+                    capNhatTrangThaiLoiGiayToRow(chiTietId);
+                });
         }
 
         // xacNhan = false: chi kiem tra/xem truoc (chua dung phia server).
@@ -2820,11 +3109,11 @@
                     // Vi pham chinh sach: CHUA goi cap nhat trang thai phong/don o day.
                     // Chi thuc su cap nhat sau khi nguoi dung bam "Da hieu" trong modal.
                     moModalPhuThu(
-                            'Vi phạm chính sách nhận phòng sớm',
-                            kq.moTaChinhSach,
-                            kq.soTien,
-                            'Nhấn "Đã hiểu" để xác nhận nhận phòng và ghi khoản phụ thu vào chi tiết dịch vụ của đơn #' + don.id + '.',
-                            function () { thucHienNhanPhong(card, don, true); }
+                        'Vi phạm chính sách nhận phòng sớm',
+                        kq.moTaChinhSach,
+                        kq.soTien,
+                        'Nhấn "Đã hiểu" để xác nhận nhận phòng và ghi khoản phụ thu vào chi tiết dịch vụ của đơn #' + don.id + '.',
+                        function () { thucHienNhanPhong(card, don, true); }
                     );
                     return;
                 }
@@ -2847,11 +3136,11 @@
                 }
                 if (kq.viPham && !kq.daApDung) {
                     moModalPhuThu(
-                            'Vi phạm chính sách nhận phòng sớm (cả đoàn)',
-                            kq.moTaChinhSach,
-                            kq.soTien,
-                            'Nhấn "Đã hiểu" để xác nhận nhận phòng cho cả đoàn và ghi khoản phụ thu vào chi tiết dịch vụ của đơn #' + don.id + '.',
-                            function () { thucHienNhanPhongNhom(card, don, true); }
+                        'Vi phạm chính sách nhận phòng sớm (cả đoàn)',
+                        kq.moTaChinhSach,
+                        kq.soTien,
+                        'Nhấn "Đã hiểu" để xác nhận nhận phòng cho cả đoàn và ghi khoản phụ thu vào chi tiết dịch vụ của đơn #' + don.id + '.',
+                        function () { thucHienNhanPhongNhom(card, don, true); }
                     );
                     return;
                 }
@@ -2884,11 +3173,11 @@
                 }
                 if (kq.viPham && !kq.daApDung) {
                     moModalPhuThu(
-                            'Vi phạm chính sách trả phòng muộn',
-                            kq.moTaChinhSach,
-                            kq.soTien,
-                            'Nhấn "Đã hiểu" để xác nhận trả phòng và ghi khoản phụ thu vào chi tiết dịch vụ của đơn #' + don.id + '.',
-                            function () { thucHienTraPhong(card, don, true); }
+                        'Vi phạm chính sách trả phòng muộn',
+                        kq.moTaChinhSach,
+                        kq.soTien,
+                        'Nhấn "Đã hiểu" để xác nhận trả phòng và ghi khoản phụ thu vào chi tiết dịch vụ của đơn #' + don.id + '.',
+                        function () { thucHienTraPhong(card, don, true); }
                     );
                     return;
                 }
@@ -2920,11 +3209,11 @@
                 }
                 if (kq.viPham && !kq.daApDung) {
                     moModalPhuThu(
-                            'Vi phạm chính sách trả phòng muộn (cả đoàn)',
-                            kq.moTaChinhSach,
-                            kq.soTien,
-                            'Nhấn "Đã hiểu" để xác nhận trả phòng cho cả đoàn và ghi khoản phụ thu vào chi tiết dịch vụ của đơn #' + don.id + '.',
-                            function () { thucHienTraPhongNhom(card, don, true); }
+                        'Vi phạm chính sách trả phòng muộn (cả đoàn)',
+                        kq.moTaChinhSach,
+                        kq.soTien,
+                        'Nhấn "Đã hiểu" để xác nhận trả phòng cho cả đoàn và ghi khoản phụ thu vào chi tiết dịch vụ của đơn #' + don.id + '.',
+                        function () { thucHienTraPhongNhom(card, don, true); }
                     );
                     return;
                 }
@@ -2946,6 +3235,12 @@
 
             items.push({ label: 'Xem thông tin phòng', icon: 'fa-solid fa-circle-info', action: function () { moXemThongTinPhong(card); } });
             items.push({ label: 'Lên lịch đặt phòng', icon: 'fa-solid fa-calendar-plus', action: function () { moLenLichDatPhong(card); } });
+
+            // Chi cho "Dat phong tai quay" (nhan phong ngay) khi phong dang Trong -
+            // khac voi "Len lich dat phong" (giu cho tuong lai) co the ap dung moi luc.
+            if (trangThai === 'Trống') {
+                items.push({ label: 'Đặt phòng tại quầy', icon: 'fa-solid fa-cash-register', action: function () { moDatPhongTaiQuay(card); } });
+            }
 
             var donHienTai = tinDonHienTai(maPhong);
             if (donHienTai) {
@@ -2999,8 +3294,8 @@
 
             document.getElementById('sdpInfoTitle').textContent = info ? ('Phòng P' + info.soPhong) : card.getAttribute('data-so-phong');
             document.getElementById('sdpInfoSubtitle').textContent = info && info.loaiPhong
-                    ? info.loaiPhong.tenLoai + ' · Tầng ' + info.tang
-                    : ('Tầng ' + card.getAttribute('data-tang'));
+                ? info.loaiPhong.tenLoai + ' · Tầng ' + info.tang
+                : ('Tầng ' + card.getAttribute('data-tang'));
 
             var body = document.getElementById('sdpInfoBody');
             body.innerHTML = '';
@@ -3025,19 +3320,19 @@
 
             // Thông tin chung
             section('Thông tin chung',
-                    row('Số phòng', 'P' + info.soPhong) +
-                    row('Tầng', info.tang) +
-                    row('Trạng thái', info.trangThai) +
-                    row('Hoạt động', info.hoatDong ? 'Đang hoạt động' : 'Ngừng hoạt động') +
-                    row('Giá / đêm', fmtTien(info.gia))
+                row('Số phòng', 'P' + info.soPhong) +
+                row('Tầng', info.tang) +
+                row('Trạng thái', info.trangThai) +
+                row('Hoạt động', info.hoatDong ? 'Đang hoạt động' : 'Ngừng hoạt động') +
+                row('Giá / đêm', fmtTien(info.gia))
             );
 
             // Loại phòng
             if (info.loaiPhong) {
                 section('Loại phòng',
-                        row('Tên loại', info.loaiPhong.tenLoai) +
-                        row('Sức chứa tối đa', info.loaiPhong.sucChuaToiDa + ' khách') +
-                        row('Giá cơ bản', fmtTien(info.loaiPhong.giaCoBan))
+                    row('Tên loại', info.loaiPhong.tenLoai) +
+                    row('Sức chứa tối đa', info.loaiPhong.sucChuaToiDa + ' khách') +
+                    row('Giá cơ bản', fmtTien(info.loaiPhong.giaCoBan))
                 );
                 if (info.loaiPhong.moTa) {
                     var descLp = document.createElement('div');
@@ -3074,8 +3369,8 @@
 
             // Lịch sử tạo / cập nhật
             section('Hệ thống',
-                    row('Ngày tạo', info.ngayTao || '—') +
-                    row('Cập nhật gần nhất', info.ngayCapNhat || '—')
+                row('Ngày tạo', info.ngayTao || '—') +
+                row('Cập nhật gần nhất', info.ngayCapNhat || '—')
             );
 
             // Các đơn liên quan (gần nhất) của phòng
@@ -3461,8 +3756,140 @@
         donBackdrop.addEventListener('click', dongDonSidebar);
         document.addEventListener('keydown', function (e) { if (e.key === 'Escape') dongDonSidebar(); });
 
+        // Nhieu file nhung, dung "window." de expose ra global cho panel
+        // "Khach cho check-in" ben canh co the goi lai duoc.
+        window.moDonHienTai = moDonHienTai;
+
         capNhatTatCaBadgeCheckIn();
         setInterval(capNhatTatCaBadgeCheckIn, 15000);
+    })();
+</script>
+
+<!-- ==================== PANEL "KHÁCH CHỜ CHECK-IN" (cột phải) - JS ==================== -->
+<script th:inline="javascript">
+    var KC_UPCOMING = [(${khachChoCheckInJson})];
+</script>
+<script>
+    (function () {
+        var listEl = document.getElementById('kcList');
+        var countEl = document.getElementById('kcCount');
+        var dateInput = document.getElementById('kcDate');
+        var searchInput = document.getElementById('kcSearch');
+
+        if (!listEl) return; // an toan neu panel chua duoc chen vao trang
+
+        function todayIso() {
+            var d = new Date();
+            var m = String(d.getMonth() + 1).padStart(2, '0');
+            var day = String(d.getDate()).padStart(2, '0');
+            return d.getFullYear() + '-' + m + '-' + day;
+        }
+        if (dateInput) dateInput.value = todayIso();
+
+        function fmtHHMMSS(ms) {
+            if (ms < 0) ms = 0;
+            var totalSec = Math.floor(ms / 1000);
+            var h = Math.floor(totalSec / 3600);
+            var m = Math.floor((totalSec % 3600) / 60);
+            var s = totalSec % 60;
+            function pad(n) { return n < 10 ? '0' + n : n; }
+            return pad(h) + ':' + pad(m) + ':' + pad(s);
+        }
+
+        function trangThaiTheoDiffMs(diffMs) {
+            // Qua 30 phut sau gio check-in (chua nhan phong) -> tre nhan phong.
+            if (diffMs < -1800000) return 'kc-overdue';
+            if (diffMs <= 0) return 'kc-ready';      // den gio hoac tre < 30 phut
+            if (diffMs < 3600000) return 'kc-urgent'; // duoi 1 gio nua
+            return 'kc-soon';
+        }
+
+        function nhanTheoTrangThai(cls) {
+            if (cls === 'kc-overdue') return 'Trễ nhận phòng';
+            if (cls === 'kc-urgent') return 'Sắp đến giờ';
+            if (cls === 'kc-ready') return 'Có thể check-in';
+            return 'Chưa đến giờ';
+        }
+
+        function escapeHtml(s) {
+            var div = document.createElement('div');
+            div.textContent = s || '';
+            return div.innerHTML;
+        }
+
+        function render() {
+            var now = new Date();
+            var ngayLoc = dateInput ? dateInput.value : ''; // yyyy-MM-dd hoac rong
+            var tuKhoa = (searchInput ? (searchInput.value || '') : '').trim().toLowerCase();
+
+            var ds = (KC_UPCOMING || []).filter(function (item) {
+                if (ngayLoc) {
+                    var ngayCheckin = (item.checkin || '').slice(0, 10);
+                    if (ngayCheckin !== ngayLoc) return false;
+                }
+                if (tuKhoa && (item.hoten || '').toLowerCase().indexOf(tuKhoa) === -1) return false;
+                return true;
+            });
+
+            if (countEl) countEl.textContent = ds.length;
+
+            if (ds.length === 0) {
+                listEl.innerHTML = '<div class="kc-empty">Không có khách nào sắp check-in.</div>';
+                return;
+            }
+
+            listEl.innerHTML = ds.map(function (item) {
+                var ci = item.checkin ? new Date(item.checkin) : null;
+                var diffMs = ci ? (ci.getTime() - now.getTime()) : 0;
+                var cls = ci ? trangThaiTheoDiffMs(diffMs) : 'kc-soon';
+                var nhan = nhanTheoTrangThai(cls);
+                var gio = ci ? (String(ci.getHours()).padStart(2, '0') + ':' + String(ci.getMinutes()).padStart(2, '0')) : '--:--';
+                var ngay = ci ? (String(ci.getDate()).padStart(2, '0') + '/' + String(ci.getMonth() + 1).padStart(2, '0') + '/' + ci.getFullYear()) : '';
+
+                // Countdown: tre nhan phong -> hien thi thoi gian tre (duong); nguoc lai dem nguoc toi 0.
+                var cdText = '';
+                if (ci) {
+                    cdText = (cls === 'kc-overdue')
+                        ? fmtHHMMSS(Math.abs(diffMs))
+                        : fmtHHMMSS(Math.max(0, diffMs));
+                }
+
+                return '' +
+                    '<div class="kc-card ' + cls + '" data-id="' + item.id + '">' +
+                    '  <div class="kc-card-top">' +
+                    '    <div>' +
+                    '      <div class="kc-card-id">Đơn #' + item.id + '</div>' +
+                    '      <div class="kc-card-name">' + escapeHtml(item.hoten || 'Chưa rõ tên') + '</div>' +
+                    '    </div>' +
+                    '    <span class="kc-card-room">' + escapeHtml(item.phongLabel || '') + '</span>' +
+                    '  </div>' +
+                    '  <div class="kc-card-meta">' +
+                    '    <span><i class="fa-regular fa-clock"></i>' + gio + ' · ' + ngay + '</span>' +
+                    '    <span><i class="fa-solid fa-user-group"></i>' + (item.soKhach || 0) + ' khách</span>' +
+                    '  </div>' +
+                    '  <div class="kc-card-bottom">' +
+                    '    <span class="kc-status ' + cls + '"><span class="dot"></span>' + nhan + '</span>' +
+                    '    <span class="kc-countdown ' + cls + '">' + cdText + '</span>' +
+                    '  </div>' +
+                    '</div>';
+            }).join('');
+        }
+
+        // Bam vao card -> mo sidebar "Xem don hien tai" da co san tren trang
+        listEl.addEventListener('click', function (e) {
+            var card = e.target.closest('.kc-card');
+            if (!card) return;
+            var id = card.getAttribute('data-id');
+            if (typeof window.moDonHienTai === 'function') {
+                window.moDonHienTai(parseInt(id, 10), null);
+            }
+        });
+
+        if (dateInput) dateInput.addEventListener('change', render);
+        if (searchInput) searchInput.addEventListener('input', render);
+
+        render();
+        setInterval(render, 1000);   // cap nhat dong ho dem nguoc moi giay
     })();
 </script>
 
@@ -3536,6 +3963,9 @@
             this.lockedRanges = options.lockedRanges || [];
             this.startDate = null;
             this.endDate = null;
+            // Khi true: ngay NHAN phong da co dinh (vd "Dat phong tai quay" luon la
+            // hom nay), click tren calendar chi duoc phep chon ngay TRA phong.
+            this.lockStart = false;
             this.calendar = null;
             this._init();
         }
@@ -3580,6 +4010,17 @@
             if (clicked < this.minDate) return;
             if (this._isDisabled(clicked)) return; // phong da co lich ngay nay
 
+            // Che do khoa ngay nhan phong: startDate luon giu nguyen, click chi
+            // dung de chon/doi ngay TRA phong.
+            if (this.lockStart && this.startDate) {
+                if (clicked <= this.startDate) return;
+                if (this._coKhoangBiKhoaGiua(this.startDate, clicked)) return;
+                this.endDate = clicked;
+                if (this.calendar) this.calendar.render();
+                this.onChange(this.startDate, this.endDate);
+                return;
+            }
+
             if (!this.startDate || (this.startDate && this.endDate)) {
                 this.startDate = clicked;
                 this.endDate = null;
@@ -3618,9 +4059,24 @@
             if (this.calendar) this.calendar.render();
         };
 
+        // Khoa cung ngay NHAN phong (dung cho "Dat phong tai quay") va bao onChange
+        // ngay lap tuc de cac o hien thi/tinh tien duoc cap nhat theo.
+        RoomAvailabilityCalendar.prototype.setFixedStart = function (date) {
+            this.lockStart = true;
+            this.startDate = startOfDay(date);
+            this.endDate = null;
+            if (this.calendar) this.calendar.render();
+            this.onChange(this.startDate, this.endDate);
+        };
+
+        RoomAvailabilityCalendar.prototype.clearFixedStart = function () {
+            this.lockStart = false;
+        };
+
         RoomAvailabilityCalendar.prototype.reset = function () {
             this.startDate = null;
             this.endDate = null;
+            this.lockStart = false;
             if (this.calendar) this.calendar.render();
             this.onChange(null, null);
         };
@@ -3657,6 +4113,10 @@
         var currentMaPhong = null;
         var currentGiaMoiDem = 0;
         var picker = null;
+        // 'lich' = Len lich dat phong (giu cho tuong lai) | 'quay' = Dat phong tai
+        // quay (nhan phong ngay hom nay). Dieu khien: tieu de, nhan nut Luu, ngay
+        // nhan phong co bi khoa hay khong, va endpoint submit.
+        var currentMode = 'lich';
 
         function ensurePicker() {
             if (picker) return picker;
@@ -3772,8 +4232,8 @@
             var trung = timOverlapVoiPhong(d1, d2, ranges);
             if (trung) {
                 showError(datesRow, ngayError,
-                        'Phòng này đã có lịch đặt từ ' + formatDisplay(trung.start) + ' đến ' + formatDisplay(trung.end) +
-                        '. Vui lòng chọn khoảng ngày khác cho phòng này.');
+                    'Phòng này đã có lịch đặt từ ' + formatDisplay(trung.start) + ' đến ' + formatDisplay(trung.end) +
+                    '. Vui lòng chọn khoảng ngày khác cho phòng này.');
                 return { ok: false };
             }
 
@@ -3807,6 +4267,7 @@
             calWrap.classList.remove('open');
             checkinField.classList.remove('active');
             checkoutField.classList.remove('active');
+            checkinField.classList.remove('sdp-lich-date-fixed');
             checkinDisplay.textContent = 'Chọn ngày';
             checkinDisplay.classList.add('placeholder');
             checkoutDisplay.textContent = 'Chọn ngày';
@@ -3823,6 +4284,7 @@
         }
 
         window.moLenLichDatPhong = function (card) {
+            currentMode = 'lich';
             resetForm();
             currentMaPhong = card.getAttribute('data-ma-phong');
             var soPhong = card.getAttribute('data-so-phong') || '';
@@ -3848,6 +4310,53 @@
             ensurePicker().setLockedRanges(buildLockedRanges(currentMaPhong));
             currentGiaMoiDem = infoPhong ? (parseFloat(infoPhong.gia) || 0) : 0;
             tinhTongTienLenLich();
+
+            luuBtn.textContent = 'Lưu lịch đặt phòng';
+
+            sidebar.classList.add('open');
+            backdrop.classList.add('open');
+        };
+
+        // "Dat phong tai quay": khach dang dung o quay le tan nen nhan phong luon
+        // hom nay - dung lai giao dien sidebar "Len lich dat phong" (tiet kiem cong
+        // suc, dam bao dong bo UI) nhung khoa cung ngay nhan phong = hom nay va khi
+        // Luu se goi API khac de nhan phong NGAY thay vi chi giu cho.
+        window.moDatPhongTaiQuay = function (card) {
+            currentMode = 'quay';
+            resetForm();
+            currentMaPhong = card.getAttribute('data-ma-phong');
+            var soPhong = card.getAttribute('data-so-phong') || '';
+            var tang = card.getAttribute('data-tang') || '';
+            var loaiPhong = card.getAttribute('data-loai-phong') || '';
+            title.textContent = 'Đặt phòng tại quầy · ' + soPhong;
+            subtitle.textContent = (loaiPhong ? loaiPhong + ' · ' : '') + 'Tầng ' + tang + ' · Khách nhận phòng ngay hôm nay';
+
+            var infoPhong = (window.SDP_ROOM_INFO && window.SDP_ROOM_INFO[currentMaPhong]) || null;
+            var sucChua = infoPhong && infoPhong.loaiPhong ? infoPhong.loaiPhong.sucChuaToiDa : null;
+            var soNguoiLonEl = document.getElementById('sdpLichSoNguoiLon');
+            var soTreEmEl = document.getElementById('sdpLichSoTreEm');
+            if (sucChua != null && sucChua > 0) {
+                soNguoiLonEl.max = sucChua;
+                soTreEmEl.max = sucChua;
+            } else {
+                soNguoiLonEl.removeAttribute('max');
+                soTreEmEl.removeAttribute('max');
+            }
+
+            ensurePicker().setLockedRanges(buildLockedRanges(currentMaPhong));
+
+            // Khoa ngay nhan phong = hom nay, chi cho chon ngay tra phong.
+            var homNay = ngayBatDauCuaHomNay();
+            picker.setFixedStart(homNay);
+            checkinDisplay.textContent = 'Hôm nay, ' + formatDisplay(homNay);
+            checkinDisplay.classList.remove('placeholder');
+            checkinInput.value = toISO(homNay);
+            checkinField.classList.add('sdp-lich-date-fixed');
+
+            currentGiaMoiDem = infoPhong ? (parseFloat(infoPhong.gia) || 0) : 0;
+            tinhTongTienLenLich();
+
+            luuBtn.textContent = 'Đặt phòng tại quầy';
 
             sidebar.classList.add('open');
             backdrop.classList.add('open');
@@ -3906,7 +4415,7 @@
 
             var tienDv = 0;
             Array.prototype.slice.call(form.querySelectorAll('.sdp-lich-service-chip input:checked'))
-                    .forEach(function (el) { tienDv += parseFloat(el.getAttribute('data-gia')) || 0; });
+                .forEach(function (el) { tienDv += parseFloat(el.getAttribute('data-gia')) || 0; });
 
             var vat = Math.round((tienPhong + tienDv) * 0.10);
             var tongCong = tienPhong + tienDv + vat;
@@ -3933,6 +4442,7 @@
         document.addEventListener('keydown', function (e) { if (e.key === 'Escape') dongLichSidebar(); });
 
         var CTX_URL_LEN_LICH_API = /*[[@{/nhan-su/so-do-phong/len-lich}]]*/ '/nhan-su/so-do-phong/len-lich';
+        var CTX_URL_DAT_TAI_QUAY_API = /*[[@{/nhan-su/so-do-phong/dat-tai-quay}]]*/ '/nhan-su/so-do-phong/dat-tai-quay';
         var submitErrorEl = document.getElementById('sdpLichSubmitError');
         // Khai bao rieng trong scope nay (khong dung chung voi bien cung ten o IIFE
         // khac phia tren - moi IIFE co scope var doc lap).
@@ -3968,7 +4478,7 @@
             }
 
             var dichVuIds = Array.prototype.slice.call(form.querySelectorAll('.sdp-lich-service-chip input:checked'))
-                    .map(function (el) { return el.value; });
+                .map(function (el) { return el.value; });
             var phuongThuc = form.querySelector('input[name="sdpLichPhuongThuc"]:checked');
 
             var body = new URLSearchParams();
@@ -3988,10 +4498,15 @@
             body.append('phuongThucThanhToan', phuongThuc ? phuongThuc.value : 'tien-mat');
             if (sdpCsrfParamEl && sdpCsrfTokenEl) body.append(sdpCsrfParamEl.value, sdpCsrfTokenEl.value);
 
-            luuBtn.disabled = true;
-            luuBtn.textContent = 'Đang lưu...';
+            var laModeQuay = currentMode === 'quay';
+            var urlSubmit = laModeQuay ? CTX_URL_DAT_TAI_QUAY_API : CTX_URL_LEN_LICH_API;
+            var nhanDangLuu = laModeQuay ? 'Đang đặt phòng...' : 'Đang lưu...';
+            var nhanMacDinh = laModeQuay ? 'Đặt phòng tại quầy' : 'Lưu lịch đặt phòng';
 
-            fetch(CTX_URL_LEN_LICH_API, {
+            luuBtn.disabled = true;
+            luuBtn.textContent = nhanDangLuu;
+
+            fetch(urlSubmit, {
                 method: 'POST',
                 headers: { 'Accept': 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: body
@@ -3999,7 +4514,7 @@
                 .then(function (res) { return res.json(); })
                 .then(function (kq) {
                     if (!kq.ok) {
-                        dienLoiSubmit(kq.loi || 'Không thể lên lịch đặt phòng.');
+                        dienLoiSubmit(kq.loi || (laModeQuay ? 'Không thể đặt phòng tại quầy.' : 'Không thể lên lịch đặt phòng.'));
                         return;
                     }
                     dongLichSidebar();
@@ -4008,11 +4523,11 @@
                     window.location.reload();
                 })
                 .catch(function () {
-                    dienLoiSubmit('Có lỗi xảy ra khi lên lịch đặt phòng, vui lòng thử lại.');
+                    dienLoiSubmit(laModeQuay ? 'Có lỗi xảy ra khi đặt phòng tại quầy, vui lòng thử lại.' : 'Có lỗi xảy ra khi lên lịch đặt phòng, vui lòng thử lại.');
                 })
                 .finally(function () {
                     luuBtn.disabled = false;
-                    luuBtn.textContent = 'Lưu lịch đặt phòng';
+                    luuBtn.textContent = nhanMacDinh;
                 });
         });
     })();

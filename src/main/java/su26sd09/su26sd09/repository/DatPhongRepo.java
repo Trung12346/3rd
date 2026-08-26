@@ -197,4 +197,24 @@ order by d.ngaytraPhong desc
             @Param("tuNgay") LocalDateTime tuNgay,
             @Param("denNgay") LocalDateTime denNgay);
 
+    /**
+     * Danh sách đơn "sắp check-in" cho panel bên phải trang Sơ đồ phòng:
+     *   - trạng thái đã được xác nhận (Cho xac nhan / Da xac nhan) nhưng CHƯA nhận phòng
+     *   - ngày nhận phòng nằm trong khoảng [tuLuc, denLuc]
+     *     (bao gồm cả đơn đã trễ hẹn trong 24h qua: tuLuc = now - 24h)
+     *
+     * Trả về distinct để 1 đơn (có nhiều ChiTietDatPhong) không bị lặp.
+     */
+    @Query("""
+        select distinct d
+        from DatPhong d
+        where d.trangThai in ('Cho xac nhan','Da xac nhan')
+          and d.ngaydatPhong is not null
+          and d.ngaydatPhong >= :tuLuc
+          and d.ngaydatPhong <= :denLuc
+        order by d.ngaydatPhong asc
+    """)
+    List<DatPhong> findUpcomingCheckIns(@Param("tuLuc") LocalDateTime tuLuc,
+                                         @Param("denLuc") LocalDateTime denLuc);
+
 }

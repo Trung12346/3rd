@@ -279,6 +279,17 @@ public class DatPhongService {
     }
 
     /**
+     * Don sap check-in phuc vu panel ben phai trang So do phong.
+     * Loc theo trang thai (Cho xac nhan / Da xac nhan) + khoang ngay nhan phong.
+     * tuLuc = now - 24h de bao gom ca don da tre hen trong vong 1 ngay.
+     * denLuc = now + 7 ngay de gioi han hien thi tren panel.
+     */
+    public List<DatPhong> findUpcomingCheckIns(java.time.LocalDateTime tuLuc,
+                                                java.time.LocalDateTime denLuc) {
+        return repo.findUpcomingCheckIns(tuLuc, denLuc);
+    }
+
+    /**
      * BOOKING ENGINE (luong dat nhanh tu /loai-phong/tim-kiem): tao 1 don
      * DatPhong + cac ChiTietDatPhong tuong ung cho danh sach phong DA duoc
      * PhongService.assignRoomsForType() chon san. Gia/phu phi tinh giong het
