@@ -1716,6 +1716,18 @@
                     <input type="text" id="sdpLichCccd" placeholder="9 hoặc 12 số CCCD/CMND" autocomplete="off" maxlength="12">
                     <div class="sdp-lich-field-error" id="sdpLichCccdError"></div>
                 </div>
+                <!-- Chi hien khi "Dat phong tai quay" (currentMode === 'quay'): tai su
+                     dung khung quan ly giay to (sdp-giayto-*) da co san cho luong
+                     check-in, de nhan vien nhap giay to khach ngay luc dat tai quay.
+                     ma_cccd cua DatPhong (bat buoc) se duoc dien tu so dinh danh cua
+                     nguoi duoc tick "dai dien" trong khung nay thay vi go tay. -->
+                <div class="sdp-lich-field" id="sdpLichGiayToGroup" style="display:none; grid-column:1/-1;">
+                    <label>Giấy tờ khách (số slot = số người lớn, 1 người đại diện)</label>
+                    <div class="sdp-giayto-room sdp-giayto-row-embed" style="margin:0; padding:12px;">
+                        <div id="sdpLichGiayToBox"></div>
+                    </div>
+                    <div class="sdp-lich-field-error" id="sdpLichGiayToError"></div>
+                </div>
                 <div class="sdp-lich-field">
                     <label for="sdpLichSdt">Số điện thoại</label>
                     <input type="tel" id="sdpLichSdt" placeholder="09xxxxxxxx" autocomplete="off">
@@ -4056,6 +4068,18 @@
         // "Khach cho check-in" ben canh co the goi lai duoc.
         window.moDonHienTai = moDonHienTai;
 
+        // Expose lai cac ham/dung chung cua khung "giay to" de sidebar "Dat
+        // phong tai quay" (nam trong 1 IIFE khac o duoi trang) co the tai su
+        // dung Y HET panel nhap chi tiet 1 giay to (sdpGiayToFieldsPanel) va
+        // cac quy tac validate, thay vi phai viet lai tu dau.
+        window.__sdpGiayToShared = {
+            moPanelGiayToFields: moPanelGiayToFields,
+            xoaGiayTo: xoaGiayTo,
+            truongThieuCuaGiayTo: truongThieuCuaGiayTo,
+            nextDocSeq: function () { return giayToDocSeq++; },
+            setActive: function (active, onChange) { giayToActive = active; giayToActiveOnChange = onChange; }
+        };
+
         capNhatTatCaBadgeCheckIn();
         setInterval(capNhatTatCaBadgeCheckIn, 15000);
     })();
@@ -4404,6 +4428,14 @@
         var cccdInput = document.getElementById('sdpLichCccd');
         var cccdError = document.getElementById('sdpLichCccdError');
 
+        // Khung "giay to" tai su dung cho mode "quay" - xem window.__sdpGiayToShared
+        // (dinh nghia o IIFE modal "Them giay to", phia tren trong file nay).
+        var giayToShared = window.__sdpGiayToShared || null;
+        var quayGiayToGroup = document.getElementById('sdpLichGiayToGroup');
+        var quayGiayToBox = document.getElementById('sdpLichGiayToBox');
+        var quayGiayToError = document.getElementById('sdpLichGiayToError');
+        var quayGiayToPhong = null; // { chiTietId: 'quay', sucChua, docs: [...] }
+
         var luuBtn = document.getElementById('sdpLichLuuBtn');
 
         // Khuyen mai: danh sach ma dang hoat dong (kmList) + cac o hien thi
@@ -4633,6 +4665,111 @@
             return { ok: true };
         }
 
+        // ===== Khung "giay to" cho "Dat phong tai quay" (tai su dung khung
+        // sdp-giayto-* va panel nhap chi tiet dung chung voi luong check-in,
+        // thong qua window.__sdpGiayToShared). Khac voi khung nhung o sidebar
+        // "Xem don hien tai" (co san chiTietId/donId), o day CHUA co don nao
+        // duoc tao (dang dien form de tao moi) nen dung 1 "phong" ao voi
+        // chiTietId = 'quay', khong goi API luu/tai giay to tu server o buoc
+        // nay - chi luu tam trong bo nho, se gui len that su sau khi API
+        // dat-tai-quay tao don thanh cong (xem luuGiayToSauKhiDatTaiQuay).
+        //
+        // KHONG cho nhan vien tu them/bot slot giay to bang tay (bo nut "Them
+        // giay to") - so slot LUON KHOP voi o "So nguoi lon" (moi nguoi lon =
+        // 1 giay to bat buoc), dong bo qua syncQuayGiayToSlots() moi khi o do
+        // thay doi (xem listener cua #sdpLichSoNguoiLon ben duoi).
+        function renderQuayGiayToBox() {
+            if (!quayGiayToPhong || !giayToShared) return;
+            giayToShared.setActive({ phongs: [quayGiayToPhong] }, renderQuayGiayToBox);
+
+            var html = '<div class="sdp-giayto-boxes">';
+            quayGiayToPhong.docs.forEach(function (doc) {
+                html += '<div class="sdp-giayto-doc-box" data-local-id="' + doc.localId + '">';
+                html += '  <span class="sdp-giayto-remove" title="Xóa"><i class="fa-solid fa-xmark"></i></span>';
+                html += '  <i class="fa-solid fa-id-card doc-icon"></i>';
+                html += '  <div><div class="doc-name">' + (doc.hoTen || 'Chưa nhập tên') + '</div>';
+                html += '  <span class="doc-type">' + (doc.loaiGiayTo || 'CCCD') + (doc.coDaiDien ? ' · ĐD' : '') + '</span></div>';
+                html += '</div>';
+            });
+            html += '</div>';
+            quayGiayToBox.innerHTML = html;
+
+            quayGiayToBox.querySelectorAll('.sdp-giayto-doc-box').forEach(function (el) {
+                el.addEventListener('click', function (ev) {
+                    if (ev.target.closest('.sdp-giayto-remove')) return;
+                    giayToShared.setActive({ phongs: [quayGiayToPhong] }, renderQuayGiayToBox);
+                    giayToShared.moPanelGiayToFields(el.getAttribute('data-local-id'));
+                });
+            });
+            // Nut "Xóa" tren tung box CHI xoa NOI DUNG da nhap cua slot do (dua
+            // slot ve trong), KHONG xoa han slot - vi so slot phai luon khop so
+            // nguoi lon. Muon giam slot thi giam o "So nguoi lon".
+            quayGiayToBox.querySelectorAll('.sdp-giayto-remove').forEach(function (el) {
+                el.addEventListener('click', function (ev) {
+                    ev.stopPropagation();
+                    var localId = el.closest('.sdp-giayto-doc-box').getAttribute('data-local-id');
+                    var doc = quayGiayToPhong.docs.find(function (d) { return d.localId === localId; });
+                    if (!doc) return;
+                    var coDaiDienCu = doc.coDaiDien;
+                    Object.keys(doc).forEach(function (k) { if (k !== 'localId') delete doc[k]; });
+                    doc.loaiGiayTo = 'CCCD';
+                    doc.coDaiDien = coDaiDienCu; // giu nguyen vai tro dai dien cua slot, chi xoa noi dung
+                    renderQuayGiayToBox();
+                });
+            });
+        }
+
+        /**
+         * Dong bo so luong slot giay to trong quayGiayToPhong.docs theo dung so
+         * "nguoi lon" hien tai cua form (toi thieu 1 slot). Them slot moi vao
+         * cuoi (giu nguyen du lieu cac slot cu); bot slot thi bo tu cuoi len -
+         * neu slot bi bo la nguoi dai dien thi chuyen vai tro dai dien sang
+         * slot dau tien con lai de luon co dung 1 dai dien.
+         */
+        function syncQuayGiayToSlots() {
+            if (!quayGiayToPhong || !giayToShared) return;
+            var soNguoiLon = parseInt(document.getElementById('sdpLichSoNguoiLon').value, 10) || 1;
+            if (soNguoiLon < 1) soNguoiLon = 1;
+
+            while (quayGiayToPhong.docs.length < soNguoiLon) {
+                quayGiayToPhong.docs.push({
+                    localId: 'q' + giayToShared.nextDocSeq(),
+                    coDaiDien: quayGiayToPhong.docs.length === 0, // slot dau tien mac dinh la dai dien
+                    loaiGiayTo: 'CCCD'
+                });
+            }
+            while (quayGiayToPhong.docs.length > soNguoiLon) {
+                var bi = quayGiayToPhong.docs.pop();
+                if (bi.coDaiDien && quayGiayToPhong.docs.length > 0) {
+                    quayGiayToPhong.docs[0].coDaiDien = true;
+                }
+            }
+            renderQuayGiayToBox();
+        }
+
+        function kiemTraGiayToQuay() {
+            clearError(quayGiayToGroup, quayGiayToError);
+            if (!quayGiayToPhong || quayGiayToPhong.docs.length === 0) {
+                showError(quayGiayToGroup, quayGiayToError, 'Vui lòng thêm giấy tờ của khách (ít nhất 1 người đại diện).');
+                return { ok: false };
+            }
+            var daiDien = quayGiayToPhong.docs.find(function (d) { return d.coDaiDien; });
+            if (!daiDien) {
+                showError(quayGiayToGroup, quayGiayToError, 'Vui lòng chọn 1 người đại diện trong danh sách giấy tờ.');
+                return { ok: false };
+            }
+            if (giayToShared && Object.keys(giayToShared.truongThieuCuaGiayTo(daiDien)).length > 0) {
+                showError(quayGiayToGroup, quayGiayToError, 'Người đại diện chưa nhập đủ thông tin bắt buộc (bấm vào ô giấy tờ để nhập).');
+                return { ok: false };
+            }
+            var soDinhDanh = (daiDien.soDinhDanh || '').trim();
+            if (!/^\d{9}(\d{3})?$/.test(soDinhDanh)) {
+                showError(quayGiayToGroup, quayGiayToError, 'Số định danh của người đại diện phải là 9 hoặc 12 chữ số.');
+                return { ok: false };
+            }
+            return { ok: true, cccd: soDinhDanh };
+        }
+
         function kiemTraCccd() {
             clearError(cccdGroup, cccdError);
             var cccd = (cccdInput.value || '').trim();
@@ -4649,8 +4786,20 @@
 
         function kiemTraHopLe() {
             var ngay = kiemTraNgay();
-            var cccd = kiemTraCccd();
-            return ngay.ok && cccd.ok;
+            // Mode "quay": dung khung giay to thay cho o CCCD go tay.
+            var giayToOk = currentMode === 'quay' ? kiemTraGiayToQuay().ok : kiemTraCccd().ok;
+            return ngay.ok && giayToOk;
+        }
+
+        /** Lay CCCD se gui len server: mode "quay" lay tu so dinh danh cua nguoi
+         *  duoc tick "dai dien" trong khung giay to; cac mode khac lay tu o CCCD
+         *  go tay nhu cu. */
+        function layCccdHienTai() {
+            if (currentMode === 'quay' && quayGiayToPhong) {
+                var dd = quayGiayToPhong.docs.find(function (d) { return d.coDaiDien; });
+                return dd ? (dd.soDinhDanh || '').trim() : '';
+            }
+            return (cccdInput.value || '').trim();
         }
 
         cccdInput.addEventListener('change', kiemTraCccd);
@@ -4669,7 +4818,10 @@
             checkoutInput.value = '';
             clearError(datesRow, ngayError);
             clearError(cccdGroup, cccdError);
+            clearError(quayGiayToGroup, quayGiayToError);
             clearError(null, document.getElementById('sdpLichSoNguoiError'));
+            quayGiayToPhong = null;
+            if (quayGiayToBox) quayGiayToBox.innerHTML = '';
             dienLoiSubmit('');
             if (picker) picker.reset();
             currentGiaMoiDem = 0;
@@ -4687,6 +4839,8 @@
         window.moLenLichDatPhong = function (card) {
             currentMode = 'lich';
             resetForm();
+            cccdGroup.style.display = '';
+            quayGiayToGroup.style.display = 'none';
             currentMaPhong = card.getAttribute('data-ma-phong');
             var soPhong = card.getAttribute('data-so-phong') || '';
             var tang = card.getAttribute('data-tang') || '';
@@ -4725,6 +4879,8 @@
         window.moDatPhongTaiQuay = function (card) {
             currentMode = 'quay';
             resetForm();
+            cccdGroup.style.display = 'none';
+            quayGiayToGroup.style.display = '';
             currentMaPhong = card.getAttribute('data-ma-phong');
             var soPhong = card.getAttribute('data-so-phong') || '';
             var tang = card.getAttribute('data-tang') || '';
@@ -4745,6 +4901,12 @@
             }
 
             ensurePicker().setLockedRanges(buildLockedRanges(currentMaPhong));
+
+            // Khoi tao khung "giay to" (thay cho o CCCD go tay) voi 1 "phong" ao,
+            // so slot dong bo theo "So nguoi lon" hien tai (mac dinh 1) - xem
+            // syncQuayGiayToSlots.
+            quayGiayToPhong = { chiTietId: 'quay', sucChua: sucChua || null, docs: [] };
+            syncQuayGiayToSlots();
 
             // Khoa ngay nhan phong = hom nay, chi cho chon ngay tra phong.
             var homNay = ngayBatDauCuaHomNay();
@@ -4787,7 +4949,11 @@
                 }
             }
         }
-        document.getElementById('sdpLichSoNguoiLon').addEventListener('input', kepSoNguoiTheoSucChua);
+        document.getElementById('sdpLichSoNguoiLon').addEventListener('input', function () {
+            kepSoNguoiTheoSucChua();
+            // Mode "quay": so slot giay to phai luon khop so nguoi lon vua doi.
+            if (currentMode === 'quay') syncQuayGiayToSlots();
+        });
         document.getElementById('sdpLichSoTreEm').addEventListener('input', kepSoNguoiTheoSucChua);
 
         /**
@@ -4903,6 +5069,53 @@
 
         var CTX_URL_LEN_LICH_API = /*[[@{/nhan-su/so-do-phong/len-lich}]]*/ '/nhan-su/so-do-phong/len-lich';
         var CTX_URL_DAT_TAI_QUAY_API = /*[[@{/nhan-su/so-do-phong/dat-tai-quay}]]*/ '/nhan-su/so-do-phong/dat-tai-quay';
+        var CTX_URL_CHECK_IN_API = /*[[@{/nhan-su/so-do-phong/check-in/}]]*/ '/nhan-su/so-do-phong/check-in/';
+
+        /**
+         * Sau khi "Dat phong tai quay" tao don thanh cong, gui tiep danh sach
+         * giay to da nhap trong quayGiayToPhong len server - TAI SU DUNG dung 2
+         * API /giay-to-info (de lay chiTietId cua phong vua tao) va /giay-to
+         * (de luu) dang dung cho luong check-in binh thuong. Best-effort: neu
+         * loi thi khong chan luong dat phong (don + thanh toan da tao xong).
+         */
+        function luuGiayToSauKhiDatTaiQuay(maDatPhong) {
+            if (!quayGiayToPhong || quayGiayToPhong.docs.length === 0) return Promise.resolve();
+            return fetch(CTX_URL_CHECK_IN_API + maDatPhong + '/giay-to-info', { headers: { 'Accept': 'application/json' } })
+                .then(function (res) { return res.json(); })
+                .then(function (info) {
+                    if (!info || !info.ok || !info.phongs || !info.phongs.length) return null;
+                    var chiTietId = info.phongs[0].chiTietId;
+                    var payload = quayGiayToPhong.docs.map(function (doc) {
+                        return {
+                            chiTietId: chiTietId,
+                            coDaiDien: !!doc.coDaiDien,
+                            loaiGiayTo: doc.loaiGiayTo,
+                            hoTen: doc.hoTen,
+                            soDinhDanh: doc.soDinhDanh,
+                            ngaySinh: doc.ngaySinh || null,
+                            gioiTinh: doc.gioiTinh,
+                            quocTich: doc.quocTich,
+                            queQuan: doc.queQuan,
+                            noiThuongTru: doc.noiThuongTru,
+                            noiCuTru: doc.noiCuTru,
+                            noiTamTru: doc.noiTamTru,
+                            noiLuuTru: doc.noiLuuTru,
+                            giaTriDen: doc.giaTriDen || null,
+                            ngayCap: doc.ngayCap || null,
+                            quocGiaCapPhat: doc.quocGiaCapPhat
+                        };
+                    });
+                    var saveBody = new URLSearchParams();
+                    if (sdpCsrfParamEl && sdpCsrfTokenEl) saveBody.append(sdpCsrfParamEl.value, sdpCsrfTokenEl.value);
+                    saveBody.append('data', JSON.stringify(payload));
+                    return fetch(CTX_URL_CHECK_IN_API + maDatPhong + '/giay-to', {
+                        method: 'POST',
+                        headers: { 'Accept': 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: saveBody
+                    });
+                })
+                .catch(function () { /* best-effort, bo qua loi */ });
+        }
         var submitErrorEl = document.getElementById('sdpLichSubmitError');
         // Khai bao rieng trong scope nay (khong dung chung voi bien cung ten o IIFE
         // khac phia tren - moi IIFE co scope var doc lap).
@@ -4947,7 +5160,7 @@
             body.append('checkout', checkoutInput.value);
             body.append('hoTen', document.getElementById('sdpLichTen').value || '');
             body.append('email', document.getElementById('sdpLichEmail').value || '');
-            body.append('cccd', cccdInput.value || '');
+            body.append('cccd', layCccdHienTai());
             body.append('sdt', document.getElementById('sdpLichSdt').value || '');
             body.append('songuoiLon', soNguoiLon);
             body.append('sotreEm', soTreEm);
@@ -4978,9 +5191,14 @@
                         return;
                     }
                     dongLichSidebar();
-                    // Tai lai trang de cap nhat trang thai/mau phong va lich vua tao
-                    // (giong cach cac hanh dong khac tren So Do Phong dang lam).
-                    window.location.reload();
+                    // Neu la "Dat phong tai quay" va co nhap giay to: luu tiep giay to
+                    // cho don vua tao TRUOC KHI tai lai trang (best-effort).
+                    var choLuuGiayTo = laModeQuay ? luuGiayToSauKhiDatTaiQuay(kq.maDatPhong) : Promise.resolve();
+                    choLuuGiayTo.then(function () {
+                        // Tai lai trang de cap nhat trang thai/mau phong va lich vua tao
+                        // (giong cach cac hanh dong khac tren So Do Phong dang lam).
+                        window.location.reload();
+                    });
                 })
                 .catch(function () {
                     dienLoiSubmit(laModeQuay ? 'Có lỗi xảy ra khi đặt phòng tại quầy, vui lòng thử lại.' : 'Có lỗi xảy ra khi lên lịch đặt phòng, vui lòng thử lại.');

@@ -1,1 +1,12 @@
-{ }
+{
+  "4" : {
+    "maPhong" : 4,
+    "soPhong" : "202",
+    "maNhanVien" : 3,
+    "tenNhanVien" : "Pham Ve Sinh",
+    "trangThai" : "DA_GAN",
+    "duongDanAnh" : null,
+    "thoiGianGan" : "2026-08-27T13:27:06.462309300",
+    "thoiGianUpload" : null
+  }
+}
