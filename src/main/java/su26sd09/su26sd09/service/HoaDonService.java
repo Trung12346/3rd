@@ -3,13 +3,17 @@ package su26sd09.su26sd09.service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import su26sd09.su26sd09.constants.HuyDonConstants;
+import su26sd09.su26sd09.entity.Chi_tiet_dich_vu;
 import su26sd09.su26sd09.entity.DatPhong;
 import su26sd09.su26sd09.entity.HoaDon;
+import su26sd09.su26sd09.repository.ChiTietDichvuRepo;
 import su26sd09.su26sd09.repository.HoaDonRepo;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 public class HoaDonService {
@@ -19,6 +23,13 @@ public class HoaDonService {
 
     @Autowired
     DatPhongService datPhongService;
+
+    @Autowired
+    ChiTietDichvuRepo chiTietDichvuRepo;
+
+    /** VAT dung chung cho moi lan dong bo lai tien_dich_vu, khop voi cong thuc
+     *  tinhFolio() ben NhanVienCheckoutController (10%, lam tron ve so nguyen). */
+    private static final BigDecimal VAT_DONG_BO = new BigDecimal("0.10");
 
     public static final String TT_DA_THANH_TOAN = "Da thanh toan";
     public static final String TT_DA_XUAT = "Da xuat";
@@ -126,5 +137,56 @@ public class HoaDonService {
         }
         HoaDon hd = findByDatPhongId(maDatPhong);
         return hd != null && TT_DA_XUAT.equals(hd.getTrangThai());
+    }
+
+    /**
+     * Dong bo lai hoa_don.tien_dich_vu theo TONG so don_gia hien co trong
+     * chi_tiet_dich_vu cua don dat phong (bao gom ca dich vu chon luc dat
+     * phong LAN cac khoan phu thu nhan phong som / tra phong muon phat sinh
+     * sau nay). tien_vat va tong_tien cung duoc tinh lai theo cung 1 cong
+     * thuc de hoa don khong bao gio bi lech so voi thuc te trong
+     * chi_tiet_dich_vu.
+     * <p>
+     * PHAI goi ham nay sau MOI su kien them / sua / xoa chi_tiet_dich_vu cua
+     * mot don DA CO hoa don (vd: them dich vu phat sinh luc tra phong, phu
+     * thu nhan som / tra muon...). Truoc day cac noi nay chi cong don thu
+     * cong vao tongTien ma quen dong bo tienDichVu, lam hoa don hien thi sai
+     * so voi tong don_gia thuc te trong chi_tiet_dich_vu.
+     * <p>
+     * Khong dung cho luong TAO hoa don lan dau (luc do tienPhong/tienDichVu/
+     * tienGiam da duoc tinh truc tiep tu du lieu form) - ham nay chi de DONG
+     * BO LAI mot hoa don da ton tai khi chi_tiet_dich_vu thay doi sau do.
+     *
+     * @return hoa don sau khi dong bo, hoac null neu don chua co hoa don
+     *         (truong hop nay se duoc tinh dung ngay luc tao hoa don sau).
+     */
+    public HoaDon dongBoTienDichVuTuChiTiet(Integer maDatPhong) {
+        if (maDatPhong == null) {
+            return null;
+        }
+        HoaDon hoaDon = findByDatPhongId(maDatPhong);
+        if (hoaDon == null) {
+            return null; // chua co hoa don, se duoc tinh dung ngay luc tao hoa don
+        }
+
+        BigDecimal tongTienDichVuMoi = chiTietDichvuRepo.findByDatPhongId(maDatPhong).stream()
+                .map(Chi_tiet_dich_vu::getDonGia)
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal tienPhong = hoaDon.getTienPhong() == null ? BigDecimal.ZERO : hoaDon.getTienPhong();
+        BigDecimal tienGiam = hoaDon.getTienGiam() == null ? BigDecimal.ZERO : hoaDon.getTienGiam();
+
+        BigDecimal tienVatMoi = tienPhong.add(tongTienDichVuMoi)
+                .multiply(VAT_DONG_BO)
+                .setScale(0, RoundingMode.HALF_UP);
+        BigDecimal tongTienMoi = tienPhong.add(tongTienDichVuMoi).add(tienVatMoi).subtract(tienGiam);
+
+        hoaDon.setTienDichVu(tongTienDichVuMoi);
+        hoaDon.setTienVat(tienVatMoi);
+        hoaDon.setTongTien(tongTienMoi);
+        hoaDon.setNgayCapNhat(LocalDateTime.now());
+
+        return saveWithPaymentStatusCheck(hoaDon);
     }
 }

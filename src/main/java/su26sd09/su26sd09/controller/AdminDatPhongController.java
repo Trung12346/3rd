@@ -1662,6 +1662,11 @@ public class AdminDatPhongController {
         ct.setGhichu("Phát sinh lúc trả phòng (admin)");
         chiTietDichVuService.save(ct);
 
+        // Dong bo lai tienDichVu/tienVat/tongTien cua hoa don theo tong don_gia
+        // moi nhat trong chi_tiet_dich_vu (bao gom dich vu vua them o tren),
+        // tranh hoa don bi lech - thieu khoan dich vu vua phat sinh nay.
+        hoaDonService.dongBoTienDichVuTuChiTiet(id);
+
         redirectAttributes.addFlashAttribute("success",
                 "Đã thêm dịch vụ \"" + dv.getTen_dich_vu() + "\" vào đơn #" + id);
         return "redirect:/nhan-su/admin/dat-phong/checkout/" + id;

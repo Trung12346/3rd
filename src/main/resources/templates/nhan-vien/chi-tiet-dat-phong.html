@@ -1627,13 +1627,14 @@
             }
         });
 
-        vat = Math.round((tienPhong + tienDv) * 0.10);
-
         // ===== Ap dung khuyen mai (neu co) =====
+        // (Doi thu tu: tinh tienGiam TRUOC, VAT tinh SAU tren phan da giam -
+        // dung cong thuc voi sidebar "Len lich dat phong" o trang So Do Phong,
+        // tranh tinh VAT tren tong truoc khi giam lam sai lech tong cong khi co KM.)
         let tienGiam = 0;
+        const tongTruocVat = tienPhong + tienDv;
         if (currentKM) {
             const dieuKien = Number(currentKM.dieuKien || 0);
-            const tongTruocVat = tienPhong + tienDv;
             if (dieuKien <= 0 || tongTruocVat >= dieuKien) {
                 const gtri = Number(currentKM.giatriGiam || 0);
                 const isPercent = (currentKM.loaiGiam || '').toUpperCase() === 'PERCENT';
@@ -1646,10 +1647,10 @@
             }
         }
         // Gioi han so tien giam khong vuot qua tong truoc VAT
-        const tongTruocVat = tienPhong + tienDv;
         if (tienGiam > tongTruocVat) {
             tienGiam = Math.round(tongTruocVat);
         }
+        vat = Math.round((tongTruocVat - tienGiam) * 0.10);
         tongCong = tongTruocVat - tienGiam + vat;
 
         document.getElementById('sumSoDem').textContent = ketQuaNgay.hopLe ? (soDem + ' đêm') : '--';

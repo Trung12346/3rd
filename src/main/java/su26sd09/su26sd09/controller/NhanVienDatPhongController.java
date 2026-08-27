@@ -68,6 +68,7 @@ public class NhanVienDatPhongController {
     @Autowired private su26sd09.su26sd09.repository.TienNghiPhongRepository tienNghiPhongRepository;
     @Autowired private su26sd09.su26sd09.repository.GiayToRepo giayToRepo;
     @Autowired private CheckInExpirationCacheService checkInExpirationCacheService;
+    @Autowired private su26sd09.su26sd09.service.LichSuHoatDongService lichSuHoatDongService;
     @Autowired private JanitorCacheService janitorCacheService;
 
     /**
@@ -1045,7 +1046,7 @@ public class NhanVienDatPhongController {
      * Validate CCCD phai co (neu khong co thi khong cho xac nhan).
      */
     @PostMapping("/dat-phong/xac-nhan-yeu-cau/{id}")
-    public String xacNhanYeuCau(@PathVariable Integer id, RedirectAttributes redirectAttributes) {
+    public String xacNhanYeuCau(@PathVariable Integer id, Authentication authentication, RedirectAttributes redirectAttributes) {
         DatPhong dp = datPhongService.findById(id);
         if (dp == null) {
             redirectAttributes.addFlashAttribute("error", "Khong tim thay don #" + id);
@@ -1077,6 +1078,12 @@ public class NhanVienDatPhongController {
             ex.printStackTrace();
         }
 
+        lichSuHoatDongService.ghiLogAn(authentication,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.HD_XAC_NHAN_YEU_CAU,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.DT_DAT_PHONG,
+                id,
+                "Xác nhận yêu cầu đặt phòng #" + id);
+
         redirectAttributes.addFlashAttribute("success",
                 "Da xac nhan yeu cau dat phong #" + id + ". Don da chuyen sang trang thai 'Cho xac nhan'.");
         return "redirect:/nhan-su/dat-phong/chi-tiet/" + id;
@@ -1087,7 +1094,7 @@ public class NhanVienDatPhongController {
      * Set trangThai = "Da huy" (gia lap "cancel" vi chua qua luong thanh toan).
      */
     @PostMapping("/dat-phong/huy-yeu-cau/{id}")
-    public String huyYeuCau(@PathVariable Integer id, RedirectAttributes redirectAttributes) {
+    public String huyYeuCau(@PathVariable Integer id, Authentication authentication, RedirectAttributes redirectAttributes) {
         DatPhong dp = datPhongService.findById(id);
         if (dp == null) {
             redirectAttributes.addFlashAttribute("error", "Khong tim thay don #" + id);
@@ -1112,6 +1119,12 @@ public class NhanVienDatPhongController {
         dp.setTrangThai("Da huy");
         dp.setNgayCapNhat(LocalDateTime.now());
         datPhongService.save(dp);
+
+        lichSuHoatDongService.ghiLogAn(authentication,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.HD_HUY_DAT_PHONG,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.DT_DAT_PHONG,
+                id,
+                "Từ chối/hủy yêu cầu đặt phòng #" + id + " và giải phóng phòng");
 
         redirectAttributes.addFlashAttribute("success",
                 "Da huy yeu cau dat phong #" + id + " va giai phong phong.");
@@ -1311,7 +1324,8 @@ public class NhanVienDatPhongController {
     @PostMapping("/so-do-phong/check-in/{maDatPhong}")
     @ResponseBody
     public Map<String, Object> checkInTuSoDoPhong(@PathVariable int maDatPhong,
-                                                  @RequestParam(name = "xacNhan", defaultValue = "false") boolean xacNhan) {
+                                                  @RequestParam(name = "xacNhan", defaultValue = "false") boolean xacNhan,
+                                                  Authentication authentication) {
         Map<String, Object> result = new LinkedHashMap<>();
 
         DatPhong dp = datPhongService.findById(maDatPhong);
@@ -1375,6 +1389,13 @@ public class NhanVienDatPhongController {
         phong.setTrangThai("Dang su dung");
         phong.setNgayCapNhat(now);
         phongService.save1(phong);
+
+        lichSuHoatDongService.ghiLogAn(authentication,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.HD_CHECK_IN,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.DT_DAT_PHONG,
+                maDatPhong,
+                "Check-in phòng " + phong.getSoPhong() + " cho đơn #" + maDatPhong
+                        + (viPham ? (" (phụ thu nhận sớm " + soTien.toPlainString() + " VND)") : ""));
 
         result.put("ok", true);
         result.put("viPham", viPham);
@@ -1499,7 +1520,8 @@ public class NhanVienDatPhongController {
     @PostMapping("/so-do-phong/check-out/{maDatPhong}")
     @ResponseBody
     public Map<String, Object> checkOutTuSoDoPhong(@PathVariable int maDatPhong,
-                                                   @RequestParam(name = "xacNhan", defaultValue = "false") boolean xacNhan) {
+                                                   @RequestParam(name = "xacNhan", defaultValue = "false") boolean xacNhan,
+                                                   @RequestParam(required = false) BigDecimal tienKhachTra) {
         Map<String, Object> result = new LinkedHashMap<>();
 
         DatPhong dp = datPhongService.findById(maDatPhong);
@@ -1532,19 +1554,55 @@ public class NhanVienDatPhongController {
                    : phong.getGiaMoiDem().multiply(kq.tyLe).setScale(0, RoundingMode.HALF_UP))
                 : BigDecimal.ZERO;
 
-        if (viPham && !xacNhan) {
-            // Chi xem truoc: chua dung backend de cap nhat trang thai phong/don.
+        // Khoan con no CU (hoa don da co truoc do nhung chua thanh toan het, vd:
+        // dich vu phat sinh trong luc luu tru) CONG voi khoan phu thu tra phong
+        // muon SAP phat sinh (neu vi pham) -> day la tong so tien nhan vien PHAI
+        // thu du truoc khi duoc phep tra phong. Neu > 0, khong duoc tra phong
+        // ngay ma phai hien modal yeu cau nhap dung so tien nay truoc.
+        BigDecimal conLaiCu = tinhConLaiHienTai(maDatPhong);
+        BigDecimal tongPhaiThu = conLaiCu.add(soTien);
+        boolean canThuTien = tongPhaiThu.compareTo(BigDecimal.ZERO) > 0;
+
+        if ((viPham || canThuTien) && !xacNhan) {
+            // Chi xem truoc: chua dung backend de cap nhat trang thai phong/don,
+            // CHUA tao chi_tiet_dich_vu phu thu (viec nay chi thuc hien SAU khi
+            // nhan vien nhap DUNG tong so tien phai thu va xac nhan - xem khoi
+            // ben duoi). Tra ve du du lieu de FE hien thi khung tom tat + o nhap
+            // tien (giong het co che cua "Đặt phòng tại quầy").
             result.put("ok", true);
-            result.put("viPham", true);
+            result.put("viPham", viPham);
+            result.put("canThuTien", canThuTien);
             result.put("daApDung", false);
             result.put("soTien", soTien);
+            result.put("soTienConLai", conLaiCu);
+            result.put("tongPhaiThu", tongPhaiThu);
             result.put("moTaChinhSach", kq.moTa);
             return result;
+        }
+
+        if (canThuTien) {
+            // Bat buoc nhan vien nhap DUNG so tien con phai thu - CUNG co che voi
+            // "Đặt phòng tại quầy" (xem datPhongTaiQuayTuSoDoPhong): khong cho
+            // phep trả phòng nếu khách chưa thanh toán đủ 100% khoản còn lại.
+            if (tienKhachTra == null || tienKhachTra.compareTo(tongPhaiThu) != 0) {
+                result.put("ok", false);
+                result.put("loi", "Số tiền nhập (" + (tienKhachTra == null ? "trống" : tienKhachTra)
+                        + ") không khớp với số tiền còn phải thu (" + tongPhaiThu + "). Vui lòng thu đủ trước khi trả phòng.");
+                result.put("tongPhaiThu", tongPhaiThu);
+                return result;
+            }
         }
 
         if (viPham) {
             luuChiTietDichVuPhuThu(dp, "check-out muon", soTien);
             result.put("soTien", soTien);
+        }
+
+        if (canThuTien) {
+            // Ghi nhan khoan thu (con lai cu + phu thu tra phong muon vua tao o
+            // tren, neu co) vao hoa_don TRUOC KHI phat sinh su kien check-out
+            // that su (doi trang thai phong/don ben duoi).
+            ghiNhanThanhToanTraPhong(maDatPhong, tongPhaiThu);
         }
 
         dp.setTrangThai("Da tra phong");
@@ -1582,7 +1640,8 @@ public class NhanVienDatPhongController {
     @PostMapping("/so-do-phong/check-out-nhom/{maDatPhong}")
     @ResponseBody
     public Map<String, Object> checkOutNhomTuSoDoPhong(@PathVariable int maDatPhong,
-                                                       @RequestParam(name = "xacNhan", defaultValue = "false") boolean xacNhan) {
+                                                       @RequestParam(name = "xacNhan", defaultValue = "false") boolean xacNhan,
+                                                       @RequestParam(required = false) BigDecimal tienKhachTra) {
         Map<String, Object> result = new LinkedHashMap<>();
 
         DatPhong dp = datPhongService.findById(maDatPhong);
@@ -1631,18 +1690,42 @@ public class NhanVienDatPhongController {
             }
         }
 
-        if (viPham && !xacNhan) {
+        // Xem giai thich tuong tu o checkOutTuSoDoPhong (ban le 1 phong): cong
+        // don no cu (neu co) voi phu thu tra phong muon SAP phat sinh cho ca
+        // doan de ra tong so tien PHAI thu du truoc khi duoc phep tra phong.
+        BigDecimal conLaiCu = tinhConLaiHienTai(maDatPhong);
+        BigDecimal tongPhaiThu = conLaiCu.add(tongPhuThu);
+        boolean canThuTien = tongPhaiThu.compareTo(BigDecimal.ZERO) > 0;
+
+        if ((viPham || canThuTien) && !xacNhan) {
             result.put("ok", true);
-            result.put("viPham", true);
+            result.put("viPham", viPham);
+            result.put("canThuTien", canThuTien);
             result.put("daApDung", false);
             result.put("soTien", tongPhuThu);
+            result.put("soTienConLai", conLaiCu);
+            result.put("tongPhaiThu", tongPhaiThu);
             result.put("moTaChinhSach", kq.moTa + " (áp dụng cho cả " + dsPhong.size() + " phòng của đoàn)");
             return result;
+        }
+
+        if (canThuTien) {
+            if (tienKhachTra == null || tienKhachTra.compareTo(tongPhaiThu) != 0) {
+                result.put("ok", false);
+                result.put("loi", "Số tiền nhập (" + (tienKhachTra == null ? "trống" : tienKhachTra)
+                        + ") không khớp với số tiền còn phải thu (" + tongPhaiThu + "). Vui lòng thu đủ trước khi trả phòng.");
+                result.put("tongPhaiThu", tongPhaiThu);
+                return result;
+            }
         }
 
         if (viPham) {
             luuChiTietDichVuPhuThu(dp, "check-out muon", tongPhuThu);
             result.put("soTien", tongPhuThu);
+        }
+
+        if (canThuTien) {
+            ghiNhanThanhToanTraPhong(maDatPhong, tongPhaiThu);
         }
 
         dp.setTrangThai("Da tra phong");
@@ -1747,27 +1830,24 @@ public class NhanVienDatPhongController {
         capNhatHoaDonSauKhiThemPhuThu(dp.getId(), donGia);
     }
 
-    /** Cong them mot khoan phu thu (vua tao chi_tiet_dich_vu) vao hoa_don cua don dat phong,
-     *  neu don da co hoa don. Dung saveWithPaymentStatusCheck de tu dong dong bo lai
-     *  trangThai (vd: tu "Da thanh toan" chuyen ve "Cho thanh toan" khi tong tien tang len).
-     *
-     *  Phu thu duoc luu trong chi_tiet_dich_vu (dv.loaiDv = "Phu thu"). View se doc
-     *  lai tu chi_tiet_dich_vu de tach rieng dong "Phu thu" tren hoa don, khong can
-     *  cot rieng trong HoaDon. */
+    /** Dong bo lai hoa_don cua don dat phong sau khi vua them 1 dong chi_tiet_dich_vu
+     *  phu thu (nhan phong som / tra phong muon), neu don da co hoa don.
+     *  <p>
+     *  Uy quyen toan bo viec tinh lai cho {@link HoaDonService#dongBoTienDichVuTuChiTiet}
+     *  - ham do doc LAI tu chi_tiet_dich_vu (tong don_gia) roi ghi de tienDichVu/tienVat/
+     *  tongTien cua hoa don, thay vi chi cong don thu cong vao tongTien nhu truoc day
+     *  (cach cu bo sot tienDichVu, lam hoa don hien thi it hon tong don_gia thuc te
+     *  trong chi_tiet_dich_vu). Dung saveWithPaymentStatusCheck ben trong de tu dong
+     *  dong bo lai trangThai (vd: tu "Da thanh toan" chuyen ve "Cho thanh toan" khi
+     *  tong tien tang len). */
     private void capNhatHoaDonSauKhiThemPhuThu(Integer maDatPhong, BigDecimal soTienPhuThu) {
         if (soTienPhuThu == null || soTienPhuThu.compareTo(BigDecimal.ZERO) <= 0) {
             return;
         }
-        HoaDon hoaDon = hoaDonService.findByDatPhongId(maDatPhong);
-        if (hoaDon == null) {
+        HoaDon hoaDonDaLuu = hoaDonService.dongBoTienDichVuTuChiTiet(maDatPhong);
+        if (hoaDonDaLuu == null) {
             return; // chua co hoa don thi thoi, se duoc tinh o buoc thanh toan/chot so sau
         }
-        // Phu thu: chi tang tongTien (gia dinh tienDichVu da tinh tu chi_tiet_dich_vu o
-        // luot update form sau, hoac se duoc tinh o luot render hoa don tiep theo).
-        // De tranh duplicate, KHONG add vao tienDichVu o day.
-        hoaDon.setTongTien(defaultMoney(hoaDon.getTongTien()).add(soTienPhuThu));
-        hoaDon.setNgayCapNhat(LocalDateTime.now());
-        HoaDon hoaDonDaLuu = hoaDonService.saveWithPaymentStatusCheck(hoaDon);
 
         // Phu thu vua cong lam tang cong no -> gui email kem QR de khach thanh
         // toan ngay phan con lai, khong can doi den luc tra phong moi biet.
@@ -1781,6 +1861,56 @@ public class NhanVienDatPhongController {
                     conLai
             );
         }
+    }
+
+    /**
+     * So tien con no CU cua don dat phong (tong_tien - da_thanh_toan cua hoa_don
+     * hien tai, neu da co hoa don) - dung de bat buoc nhan vien thu du TRUOC khi
+     * cho phep tra phong (xem checkOutTuSoDoPhong / checkOutNhomTuSoDoPhong).
+     * Tra ve 0 neu chua co hoa don hoac da thanh toan du/du.
+     */
+    private BigDecimal tinhConLaiHienTai(Integer maDatPhong) {
+        if (maDatPhong == null) {
+            return BigDecimal.ZERO;
+        }
+        HoaDon hd = hoaDonService.findByDatPhongId(maDatPhong);
+        if (hd == null) {
+            return BigDecimal.ZERO;
+        }
+        BigDecimal conLai = defaultMoney(hd.getTongTien()).subtract(defaultMoney(hd.getDaThanhToan()));
+        return conLai.compareTo(BigDecimal.ZERO) > 0 ? conLai : BigDecimal.ZERO;
+    }
+
+    /**
+     * Ghi nhan 1 khoan thu tien mat luc tra phong (Sơ đồ phòng) - dung khi nhan
+     * vien vua nhap DUNG so tien con phai thu (con no cu + phu thu tra phong
+     * muon, neu co) va bam xac nhan trong modal chinh sach. PHAI goi SAU KHI da
+     * luuChiTietDichVuPhuThu (neu co vi pham) de hoa_don da duoc dong bo tong
+     * tien moi nhat truoc khi cong khoan da thu vao daThanhToan - tranh sai lech.
+     * Khong lam gi neu don chua co hoa don (khong the xay ra thuc te vi
+     * canThuTien chi > 0 khi da co hoa don voi conLai > 0, hoac vua duoc dong bo
+     * boi luuChiTietDichVuPhuThu ben tren).
+     */
+    private void ghiNhanThanhToanTraPhong(Integer maDatPhong, BigDecimal soTienThu) {
+        if (soTienThu == null || soTienThu.compareTo(BigDecimal.ZERO) <= 0) {
+            return;
+        }
+        HoaDon hd = hoaDonService.findByDatPhongId(maDatPhong);
+        if (hd == null) {
+            return;
+        }
+        ThanhToan tt = new ThanhToan();
+        tt.setH(hd);
+        tt.setPhuongThuc("Tien Mat");
+        tt.setSoTien(soTienThu);
+        tt.setTrangThai("Thanh cong");
+        tt.setNgaythanhToan(LocalDateTime.now());
+        tt.setGichu("Thu tien luc tra phong tai So Do Phong (gom con lai truoc do + phu thu tra phong muon neu co), ma don: " + maDatPhong);
+        thanhToanService.save(tt);
+
+        hd.setDaThanhToan(defaultMoney(hd.getDaThanhToan()).add(soTienThu));
+        hd.setNgayCapNhat(LocalDateTime.now());
+        hoaDonService.saveWithPaymentStatusCheck(hd);
     }
 
     private String formatTienPhuThu(BigDecimal tien) {
@@ -1925,6 +2055,11 @@ public class NhanVienDatPhongController {
 
         model.addAttribute("roomInfoJson", infoJson.toString());
 
+        // Danh sach khuyen mai dang hoat dong (JSON), dung cho JS xem truoc gia
+        // ngay tren sidebar "Dat phong tai quay" / "Len lich dat phong" khi nhan
+        // vien nhap ma khuyen mai — cung 1 helper voi trang "Chi tiet dat phong".
+        model.addAttribute("kmJson", buildKhuyenMaiJson());
+
         model.addAttribute("theoTang", theoTang);
         model.addAttribute("nhanTrangThai", nhanTrangThai);
         model.addAttribute("lopTrangThai", lopTrangThai);
@@ -1960,12 +2095,17 @@ public class NhanVienDatPhongController {
         // upload anh, chua duoc xac nhan) - dung de hien text "Xac nhan phong
         // sach" tren the phong o so do phong.
         Map<Integer, Boolean> phongChoXacNhanVeSinh = new HashMap<>();
+        // Phong dang duoc phan cong cho nhan vien ve sinh (DA_GAN hoac DA_UPLOAD)
+        // - dung de hien ten nhan vien phu trach ngay tren the phong o so do phong.
+        Map<Integer, String> phongVeSinhTenNhanVien = new HashMap<>();
         for (su26sd09.su26sd09.dto.PhongVeSinhAssignment a : janitorCacheService.getAll()) {
             if (su26sd09.su26sd09.dto.PhongVeSinhAssignment.DA_UPLOAD.equals(a.getTrangThai())) {
                 phongChoXacNhanVeSinh.put(a.getMaPhong(), true);
             }
+            phongVeSinhTenNhanVien.put(a.getMaPhong(), a.getTenNhanVien());
         }
         model.addAttribute("phongChoXacNhanVeSinh", phongChoXacNhanVeSinh);
+        model.addAttribute("phongVeSinhTenNhanVien", phongVeSinhTenNhanVien);
 
         // ===== Panel bên phải: "Khách chờ check-in" =====
         // Lấy đơn status (Cho xac nhan / Da xac nhan) chưa nhận phòng, có
@@ -2009,7 +2149,12 @@ public class NhanVienDatPhongController {
     /**
      * Xu ly submit sidebar "Len lich dat phong" o trang So Do Phong (dat truoc/tai
      * cho 1 phong cu the, khac voi /dat-phong-quay/submit vi khong gioi han chi
-     * "dang o quay" va khong ep thanh toan du 100%).
+     * "dang o quay").
+     * <p>
+     * Thanh toan: chi chap nhan DUNG 1 trong 2 truong hop - tra du 100% tongCong
+     * hoac khong tra dong nao (0); KHONG chap nhan tra mot phan/dat coc lung
+     * chung. Tra du 100% -> DatPhong.trangThai = "Da xac nhan"; khong tra gi ->
+     * DatPhong.trangThai = "Yeu cau dat phong".
      * <p>
      * Ve dich vu them (checkbox trong sidebar): UI hien tai KHONG co truong chon
      * "ngay su dung" rieng cho tung dich vu (chi co 1 khoang [checkin, checkout]
@@ -2135,6 +2280,64 @@ public class NhanVienDatPhongController {
             }
         }
 
+        // ===== Tinh truoc TOAN BO gia tien (khong luu gi ca) de doi chieu voi
+        // so tien nhan vien nhap (tienKhachTra) TRUOC KHI tao don. Neu khong
+        // khop, phai bao loi va KHONG duoc tao DatPhong/ChiTietDatPhong/HoaDon
+        // nao het (xem yeu cau: chi duoc tien hanh tao don khi so tien nhap
+        // dung bang gia phai thu).
+        //
+        // Cach tinh gia phai GIONG HET luong khach tu dat (xem ThanhToanController
+        // / PhongController#tinhTienGiam): ChiTietDatPhong.giaKhiDat luon la gia
+        // GOC (chua giam gia) = giaMoiDem * soDem + phu phi ngoai gio; KM duoc ap
+        // dung tren TONG (phong + dich vu) NHU MOT KHOAN TIEN GIAM RIENG (co kiem
+        // tra gia toi thieu duoc giam), ROI moi tinh VAT 10% tren phan da giam -
+        // KHONG duoc bake giam gia thang vao don gia phong nhu truoc (se lam
+        // hoaDon.tienGiam bi sai/luon = 0 va giaKhiDat khong con dung nghia goc
+        // nhu moi noi khac trong he thong).
+        long soDem = Math.max(1, ChronoUnit.DAYS.between(ngayNhan.toLocalDate(), ngayTra.toLocalDate()));
+        BigDecimal giaApDung = phong.getGiaMoiDem().multiply(BigDecimal.valueOf(soDem));
+        BigDecimal phuPhiNgoaiGio = phongService.calculateExtraFeeFor(maPhong, ngayNhan, ngayTra);
+        BigDecimal amountPhong = giaApDung.add(phuPhiNgoaiGio);
+
+        // Gom danh sach dich vu hop le (+ tong tien dich vu) TRUOC, chua luu DB.
+        List<Dich_vu> dsDichVuHopLe = new ArrayList<>();
+        BigDecimal amountDv = BigDecimal.ZERO;
+        if (dichVuIds != null) {
+            for (Integer maDichVu : dichVuIds) {
+                Dich_vu dv = dichVuService.findById(maDichVu);
+                if (dv == null) continue;
+                dsDichVuHopLe.add(dv);
+                amountDv = amountDv.add(dv.getGia());
+            }
+        }
+
+        // KM ap dung tren TONG (phong + dich vu) NHU MOT KHOAN GIAM RIENG, kem
+        // kiem tra gia toi thieu duoc giam - giong het cach ThanhToanController /
+        // PhongController dang tinh cho khach tu dat, thay vi bake vao don gia.
+        BigDecimal tienGiam = tinhTienGiam(amountPhong.add(amountDv), km);
+        BigDecimal vatCd = new BigDecimal("0.10");
+        BigDecimal tongTienTruocVat = amountPhong.add(amountDv).subtract(tienGiam);
+        BigDecimal tienVat = tongTienTruocVat.multiply(vatCd).setScale(0, RoundingMode.HALF_UP);
+        BigDecimal tongCong = tongTienTruocVat.add(tienVat);
+
+        // Day la lich dat truoc (chua nhan phong ngay): chi chap nhan DUNG 1
+        // trong 2 truong hop - tra du 100% (tongCong) hoac khong tra dong nao
+        // (0) - khong cho tra mot phan/dat coc lung chung o giua. Trang thai don
+        // duoc quyet dinh dua vao viec da tra du hay chua:
+        //  - Tra du 100% ngay -> "Da xac nhan" (coi nhu da chac chan giu phong).
+        //  - Chua tra gi (0)  -> "Yeu cau dat phong" (moi la yeu cau, cho khach
+        //    thanh toan sau thi moi chinh thuc xac nhan).
+        BigDecimal daThu = tienKhachTra != null ? tienKhachTra : BigDecimal.ZERO;
+        boolean laDaTraDu = daThu.compareTo(tongCong) == 0;
+        boolean laChuaTraGi = daThu.compareTo(BigDecimal.ZERO) == 0;
+        if (!laDaTraDu && !laChuaTraGi) {
+            result.put("ok", false);
+            result.put("loi", "Số tiền nhập (" + daThu + ") không hợp lệ. Lên lịch đặt phòng chỉ chấp nhận "
+                    + "thanh toán đủ toàn bộ (" + tongCong + ") hoặc không thanh toán (0), không chấp nhận trả một phần.");
+            result.put("tongTien", tongCong);
+            return result;
+        }
+
         DatPhong dp = new DatPhong();
         dp.setHoten(hoTen);
         dp.setEmail(email);
@@ -2145,78 +2348,55 @@ public class NhanVienDatPhongController {
         dp.setSonguoiLon(slNguoiLon);
         dp.setSotreEm(slTreEm);
         dp.setYeuCauThem(ghiChu);
-        // Don duoc nhan vien tao truc tiep tu So Do Phong nen coi nhu da xac nhan
-        // ngay (khac voi luong khach tu dat online phai qua "Cho xac nhan").
-        dp.setTrangThai("Da xac nhan");
+        // Da tra du 100% -> coi nhu da chac chan, danh dau "Da xac nhan" ngay
+        // (khac voi luong khach tu dat online phai qua "Cho xac nhan"). Chua tra
+        // gi -> chi la mot yeu cau giu cho, danh dau "Yeu cau dat phong".
+        dp.setTrangThai(laDaTraDu ? "Da xac nhan" : "Yeu cau dat phong");
         dp.setNgayTao(LocalDateTime.now());
         dp.setKm(km);
         dp.setNv(nhanVienXuLy);
 
         DatPhong savedDp = datPhongService.save(dp);
 
-        BigDecimal giaApDung = phong.getGiaMoiDem();
-        if (km != null) {
-            giaApDung = tinhGiaSauGiam(giaApDung, km);
-        }
-        BigDecimal phuPhiNgoaiGio = phongService.calculateExtraFeeFor(maPhong, ngayNhan, ngayTra);
-
         ChiTietDatPhong ctdp = new ChiTietDatPhong();
         ctdp.setD(savedDp);
         ctdp.setP(phong);
         ctdp.setGiaMoiDem(phong.getGiaMoiDem());
-        ctdp.setGiaKhiDat(giaApDung);
+        ctdp.setGiaKhiDat(giaApDung.add(phuPhiNgoaiGio));
         ctdp.setPhuPhi(phuPhiNgoaiGio);
         chiTietDatPhongService.save(ctdp);
 
-        // Don duoc len lich (dat truoc) tu So Do Phong -> phong chi o trang thai
-        // "Da dat truoc" (giu cho), GIONG KET QUA cua 1 don khach dat online binh
-        // thuong. Phong chi chuyen sang "Dang su dung" khi nhan vien thuc su
-        // CHECK-IN cho khach (xem updateTrangThai/"Da nhan phong" o tren), khac
-        // voi "Dat phong ngay" (/dat-phong-quay) la luong nhan phong tuc thi.
-        phong.setTrangThai("Da dat truoc");
-        phongService.save1(phong);
-
-        BigDecimal amountPhong = giaApDung;
-        BigDecimal amountDv = BigDecimal.ZERO;
+        // Don duoc len lich (dat truoc) tu So Do Phong -> KHONG thay doi
+        // Phong.trangThai o day. O model hien tai, kha dung cua phong duoc xet
+        // theo chong lan khoang ngay thuc su (findMaPhongDaKhoaTrongKhoang), chu
+        // khong con dua vao trangThai tuc thoi cua phong nua - vi vay khong con
+        // trang thai "Da dat truoc" cho phong trong model moi. Phong chi chuyen
+        // sang "Dang su dung" khi nhan vien thuc su CHECK-IN cho khach (xem
+        // updateTrangThai/"Da nhan phong" o tren), khac voi "Dat phong ngay"
+        // (/dat-phong-quay) la luong nhan phong tuc thi.
 
         // Filler cho ngay_su_dung: chinh giua khoang [ngayNhan, ngayTra] - xem javadoc
         // dau ham. KHONG dai dien cho ngay khach thuc su dung dich vu.
         long tongPhut = java.time.Duration.between(ngayNhan, ngayTra).toMinutes();
         LocalDateTime ngaySuDungFiller = ngayNhan.plusMinutes(tongPhut / 2);
 
-        if (dichVuIds != null) {
-            for (Integer maDichVu : dichVuIds) {
-                Dich_vu dv = dichVuService.findById(maDichVu);
-                if (dv == null) continue;
-
-                BigDecimal thanhTien = dv.getGia();
-                Chi_tiet_dich_vu ct = new Chi_tiet_dich_vu();
-                ct.setDatPhong(savedDp);
-                ct.setDv(dv);
-                ct.setSoluong(1);
-                ct.setDonGia(thanhTien);
-                ct.setNgay_su_dung(ngaySuDungFiller);
-                ctdvService.save(ct);
-
-                amountDv = amountDv.add(thanhTien);
-            }
+        for (Dich_vu dv : dsDichVuHopLe) {
+            Chi_tiet_dich_vu ct = new Chi_tiet_dich_vu();
+            ct.setDatPhong(savedDp);
+            ct.setDv(dv);
+            ct.setSoluong(1);
+            ct.setDonGia(dv.getGia());
+            ct.setNgay_su_dung(ngaySuDungFiller);
+            ctdvService.save(ct);
         }
-
-        BigDecimal vatCd = new BigDecimal("0.10");
-        BigDecimal tongTienTruocVat = amountPhong.add(amountDv);
-        BigDecimal tienVat = tongTienTruocVat.multiply(vatCd).setScale(0, RoundingMode.HALF_UP);
-        BigDecimal tongCong = tongTienTruocVat.add(tienVat);
-
-        BigDecimal daThu = tienKhachTra != null ? tienKhachTra : BigDecimal.ZERO;
-        if (daThu.compareTo(BigDecimal.ZERO) < 0) daThu = BigDecimal.ZERO;
-        if (daThu.compareTo(tongCong) > 0) daThu = tongCong; // khong nhan qua so tien phai thu
 
         HoaDon hd = new HoaDon();
         hd.setNgayXuat(LocalDateTime.now());
         hd.setD(savedDp);
+        hd.setK(km);
         hd.setTienPhong(amountPhong);
         hd.setTienDichVu(amountDv);
-        hd.setTienGiam(BigDecimal.ZERO);
+        hd.setTienGiam(tienGiam);
         hd.setTienVat(tienVat);
         hd.setTongTien(tongCong);
         hd.setDaThanhToan(daThu);
@@ -2266,6 +2446,10 @@ public class NhanVienDatPhongController {
      *    ngay khi luu thanh cong, giong ket qua cuoi cung cua /dat-phong-quay
      *    (trang "Dat Phong Tai Quay" rieng) nhung ap dung cho DUNG 1 phong dang
      *    thao tac tren So Do Phong.
+     *  - BAT BUOC thu du 100% tongCong truoc khi tao don/cho nhan phong (khac
+     *    voi "Len lich dat phong" chi chap nhan tra du 100% hoac 0, khong bat
+     *    buoc phai co tien ngay) - vi khach dang o
+     *    ngay truoc mat va duoc nhan phong ngay lap tuc, khong hop ly de con no.
      */
     @PostMapping("/so-do-phong/dat-tai-quay")
     @ResponseBody
@@ -2368,8 +2552,28 @@ public class NhanVienDatPhongController {
             return result;
         }
 
-        LocalDateTime ngayNhan = LocalDateTime.now();
+        // "Dat phong tai quay" = khach nhan phong NGAY LAP TUC, nhung ngay_nhan_phong
+        // van phai luu GIO CHUAN (14:00, giong het "Len lich dat phong") de dong bo
+        // voi cach he thong dinh nghia "gio nhan phong theo hop dong" o moi noi khac
+        // (tinh so dem, khoa lich phong so-do-phong...). Gio THUC TE khach nhan
+        // phong (bay gio) phai luu rieng vao ngay_nhan_phong_thuc - truoc day bi bo
+        // sot hoan toan (khong set), lam mat dau vet thoi diem check-in thuc te.
+        LocalDateTime ngayNhan = checkin.atTime(14, 0);
+        LocalDateTime ngayNhanThuc = LocalDateTime.now();
         LocalDateTime ngayTra = checkout.atTime(12, 0);
+
+        // Ap dung CUNG chinh sach phu thu nhan phong som nhu tinh nang "Khach nhan
+        // phong" o So Do Phong: khach dang co mat truc tiep tai quay va nhan phong
+        // NGAY, neu thoi diem hien tai truoc gio nhan phong chuan (14:00 hom nay)
+        // qua muc quy dinh thi tinh phu thu, cong luon vao hoa don tao ra ngay luc
+        // dat phong (khac voi luong check-in binh thuong phai xac nhan rieng vi o
+        // day khach da thanh toan du 100% ngay tai quay, khong con buoc xac nhan
+        // rieng nua).
+        KetQuaPhuThu kqPhuThuSom = tinhPhuThuNhanSom(ngayNhanThuc, ngayNhan);
+        boolean viPhamNhanSom = kqPhuThuSom.tyLe.compareTo(BigDecimal.ZERO) > 0;
+        BigDecimal soTienPhuThuSom = viPhamNhanSom
+                ? phong.getGiaMoiDem().multiply(kqPhuThuSom.tyLe).setScale(0, RoundingMode.HALF_UP)
+                : BigDecimal.ZERO;
 
         java.util.Set<Integer> maPhongDaKhoa = phongService.findMaPhongDaKhoaTrongKhoang(ngayNhan, ngayTra);
         if (maPhongDaKhoa.contains(maPhong)) {
@@ -2389,12 +2593,54 @@ public class NhanVienDatPhongController {
             }
         }
 
+        // ===== Tinh truoc TOAN BO gia tien (khong luu gi ca) de doi chieu voi so
+        // tien nhan vien nhap (tienKhachTra) TRUOC KHI tao don - CUNG CONG THUC
+        // voi luong khach tu dat (ThanhToanController/PhongController#tinhTienGiam):
+        // ChiTietDatPhong.giaKhiDat la gia GOC (chua giam), KM la mot khoan giam
+        // rieng tren TONG (phong + dich vu) co kiem tra gia toi thieu duoc giam,
+        // VAT 10% tinh tren phan da giam. Khac biet duy nhat voi "Len lich dat
+        // phong" la o day BAT BUOC thu du 100% ngay luc nay (khach dang dung
+        // ngay tai quay va duoc nhan phong tuc thi), khong duoc de no lai roi
+        // moi cho check-in.
+        long soDemTruoc = Math.max(1, ChronoUnit.DAYS.between(ngayNhan.toLocalDate(), ngayTra.toLocalDate()));
+        BigDecimal giaApDungTruoc = phong.getGiaMoiDem().multiply(BigDecimal.valueOf(soDemTruoc));
+        BigDecimal phuPhiNgoaiGioTruoc = phongService.calculateExtraFeeFor(maPhong, ngayNhan, ngayTra);
+        BigDecimal amountPhongTruoc = giaApDungTruoc.add(phuPhiNgoaiGioTruoc);
+
+        BigDecimal amountDvTruoc = BigDecimal.ZERO;
+        if (dichVuIds != null) {
+            for (Integer maDichVu : dichVuIds) {
+                Dich_vu dv = dichVuService.findById(maDichVu);
+                if (dv == null) continue;
+                amountDvTruoc = amountDvTruoc.add(dv.getGia());
+            }
+        }
+        // Phu thu nhan phong som (neu vi pham chinh sach) duoc tinh nhu 1 khoan
+        // "dich vu" phat sinh, giong het cach luuChiTietDichVuPhuThu dang lam o
+        // luong check-in tu So Do Phong, de dong bo cong thuc tinh tong tien.
+        amountDvTruoc = amountDvTruoc.add(soTienPhuThuSom);
+
+        BigDecimal tienGiamTruoc = tinhTienGiam(amountPhongTruoc.add(amountDvTruoc), km);
+        BigDecimal vatCdTruoc = new BigDecimal("0.10");
+        BigDecimal tongTienTruocVatTruoc = amountPhongTruoc.add(amountDvTruoc).subtract(tienGiamTruoc);
+        BigDecimal tienVatTruoc = tongTienTruocVatTruoc.multiply(vatCdTruoc).setScale(0, RoundingMode.HALF_UP);
+        BigDecimal tongCongTruoc = tongTienTruocVatTruoc.add(tienVatTruoc);
+
+        if (tienKhachTra == null || tienKhachTra.compareTo(tongCongTruoc) != 0) {
+            result.put("ok", false);
+            result.put("loi", "Số tiền nhập (" + (tienKhachTra == null ? "trống" : tienKhachTra)
+                    + ") không khớp với giá phòng phải thu (" + tongCongTruoc + "). Đặt phòng tại quầy yêu cầu thanh toán đủ 100% trước khi nhận phòng.");
+            result.put("tongTien", tongCongTruoc);
+            return result;
+        }
+
         DatPhong dp = new DatPhong();
         dp.setHoten(hoTen);
         dp.setEmail(email);
         dp.setSdt(sdt);
         dp.setMa_cccd(cccd.trim());
         dp.setNgaydatPhong(ngayNhan);
+        dp.setNgaydatPhongThuc(ngayNhanThuc);
         dp.setNgaytraPhong(ngayTra);
         dp.setSonguoiLon(slNguoiLon);
         dp.setSotreEm(slTreEm);
@@ -2408,17 +2654,19 @@ public class NhanVienDatPhongController {
 
         DatPhong savedDp = datPhongService.save(dp);
 
-        BigDecimal giaApDung = phong.getGiaMoiDem();
-        if (km != null) {
-            giaApDung = tinhGiaSauGiam(giaApDung, km);
-        }
+        // Gia phong GOC (chua giam) X so dem + phu phi ngoai gio - giong het cach
+        // tinh o buoc kiem tra ben tren va cach ChiTietDatPhong.giaKhiDat duoc
+        // luu o moi noi khac trong he thong (luon la gia GOC, KHONG bake giam
+        // gia vao don gia).
+        long soDem = Math.max(1, ChronoUnit.DAYS.between(ngayNhan.toLocalDate(), ngayTra.toLocalDate()));
+        BigDecimal giaApDung = phong.getGiaMoiDem().multiply(BigDecimal.valueOf(soDem));
         BigDecimal phuPhiNgoaiGio = phongService.calculateExtraFeeFor(maPhong, ngayNhan, ngayTra);
 
         ChiTietDatPhong ctdp = new ChiTietDatPhong();
         ctdp.setD(savedDp);
         ctdp.setP(phong);
         ctdp.setGiaMoiDem(phong.getGiaMoiDem());
-        ctdp.setGiaKhiDat(giaApDung);
+        ctdp.setGiaKhiDat(giaApDung.add(phuPhiNgoaiGio));
         ctdp.setPhuPhi(phuPhiNgoaiGio);
         chiTietDatPhongService.save(ctdp);
 
@@ -2427,7 +2675,7 @@ public class NhanVienDatPhongController {
         phong.setTrangThai("Dang su dung");
         phongService.save1(phong);
 
-        BigDecimal amountPhong = giaApDung;
+        BigDecimal amountPhong = giaApDung.add(phuPhiNgoaiGio);
         BigDecimal amountDv = BigDecimal.ZERO;
 
         long tongPhut = java.time.Duration.between(ngayNhan, ngayTra).toMinutes();
@@ -2451,26 +2699,50 @@ public class NhanVienDatPhongController {
             }
         }
 
+        // Ghi nhan khoan phu thu nhan phong som (neu vi pham) thanh 1 dong
+        // chi_tiet_dich_vu gan vao dich vu "Phụ thu nhận phòng sớm" (tu tao neu
+        // chua co) - CUNG mot cach lam voi luuChiTietDichVuPhuThu o luong check-in
+        // binh thuong, de khoan phu thu nay hien thi dong bo o moi noi khac trong
+        // he thong (chi tiet dat phong, hoa don...).
+        if (viPhamNhanSom) {
+            Dich_vu dvPhuThuSom = timHoacTaoDichVuPhuThu("Phụ thu nhận phòng sớm");
+            Chi_tiet_dich_vu ctPhuThuSom = new Chi_tiet_dich_vu();
+            ctPhuThuSom.setDatPhong(savedDp);
+            ctPhuThuSom.setDv(dvPhuThuSom);
+            ctPhuThuSom.setSoluong(1);
+            ctPhuThuSom.setDonGia(soTienPhuThuSom);
+            ctPhuThuSom.setNgay_su_dung(ngayNhanThuc);
+            ctPhuThuSom.setGhichu("check-in som");
+            ctdvService.save(ctPhuThuSom);
+
+            amountDv = amountDv.add(soTienPhuThuSom);
+        }
+
+        // KM la mot khoan giam rieng tren TONG (phong + dich vu), giong het cach
+        // tinh o buoc kiem tra ben tren va o luong khach tu dat.
+        BigDecimal tienGiam = tinhTienGiam(amountPhong.add(amountDv), km);
         BigDecimal vatCd = new BigDecimal("0.10");
-        BigDecimal tongTienTruocVat = amountPhong.add(amountDv);
+        BigDecimal tongTienTruocVat = amountPhong.add(amountDv).subtract(tienGiam);
         BigDecimal tienVat = tongTienTruocVat.multiply(vatCd).setScale(0, RoundingMode.HALF_UP);
         BigDecimal tongCong = tongTienTruocVat.add(tienVat);
 
-        BigDecimal daThu = tienKhachTra != null ? tienKhachTra : BigDecimal.ZERO;
-        if (daThu.compareTo(BigDecimal.ZERO) < 0) daThu = BigDecimal.ZERO;
-        if (daThu.compareTo(tongCong) > 0) daThu = tongCong;
+        // Da xac nhan tienKhachTra == tongCongTruoc o buoc kiem tra ben tren (va
+        // cach tinh o day giong het, tongCong phai bang tongCongTruoc), nen
+        // khach da tra du 100% - khong con truong hop no lai nhu truoc.
+        BigDecimal daThu = tienKhachTra;
 
         HoaDon hd = new HoaDon();
         hd.setNgayXuat(LocalDateTime.now());
         hd.setD(savedDp);
+        hd.setK(km);
         hd.setTienPhong(amountPhong);
         hd.setTienDichVu(amountDv);
-        hd.setTienGiam(BigDecimal.ZERO);
+        hd.setTienGiam(tienGiam);
         hd.setTienVat(tienVat);
         hd.setTongTien(tongCong);
         hd.setDaThanhToan(daThu);
         hd.setGhiChu("Dat phong tai quay tu So Do Phong, ma don: " + savedDp.getId());
-        HoaDon hoaDonDaLuu = hoaDonService.saveWithPaymentStatusCheck(hd);
+        hoaDonService.saveWithPaymentStatusCheck(hd);
 
         if (daThu.compareTo(BigDecimal.ZERO) > 0) {
             ThanhToan tt = new ThanhToan();
@@ -2484,21 +2756,53 @@ public class NhanVienDatPhongController {
             thanhToanService.save(tt);
         }
 
-        BigDecimal conLai = defaultMoney(hoaDonDaLuu.getTongTien()).subtract(defaultMoney(hoaDonDaLuu.getDaThanhToan()));
-        if (conLai.compareTo(BigDecimal.ZERO) > 0) {
-            bookingEmailService.guiEmailYeuCauThanhToan(
-                    savedDp.getId(),
-                    "Đặt phòng thành công - Đơn #" + savedDp.getId(),
-                    "Đơn đặt phòng #" + savedDp.getId() + " của quý khách đã được tạo tại quầy và đã nhận phòng. "
-                            + "Quý khách vui lòng thanh toán phần còn lại.",
-                    conLai
-            );
-        }
+        // Khong con truong hop no lai o luong nay nua (da bat buoc thu du 100%
+        // truoc khi tao don o buoc kiem tra ben tren), nen khong can gui email
+        // nhac thanh toan phan con lai nhu truoc.
 
         result.put("ok", true);
         result.put("maDatPhong", savedDp.getId());
         result.put("tongTien", tongCong);
         result.put("daThu", daThu);
+        result.put("viPhamNhanSom", viPhamNhanSom);
+        result.put("soTienPhuThuSom", soTienPhuThuSom);
+        if (viPhamNhanSom) {
+            result.put("moTaChinhSachPhuThuSom", kqPhuThuSom.moTa);
+        }
+        return result;
+    }
+
+    /**
+     * Xem truoc khoan phu thu nhan phong som (neu co) cho tinh nang "Đặt phòng
+     * tại quầy" o So Do Phong, dung CUNG cong thuc voi tinh nang "Khách nhận
+     * phòng" (tinhPhuThuNhanSom): so sanh thoi diem hien tai voi gio nhan phong
+     * chuan 14:00 hom nay. Dung de FE hien thi dong "Phụ thu" trong phan Tom tat
+     * gia TRUOC khi nhan vien bam Dat phong tai quay (khong ghi gi vao DB).
+     */
+    @GetMapping("/so-do-phong/dat-tai-quay/phu-thu-som")
+    @ResponseBody
+    public Map<String, Object> xemTruocPhuThuNhanSomTaiQuay(@RequestParam Integer maPhong) {
+        Map<String, Object> result = new LinkedHashMap<>();
+
+        Phong phong = maPhong == null ? null : phongService.findById(maPhong);
+        if (phong == null || phong.getGiaMoiDem() == null) {
+            result.put("ok", false);
+            result.put("loi", "Không tìm thấy phòng #" + maPhong);
+            return result;
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime ngayNhanChuan = LocalDate.now().atTime(14, 0);
+        KetQuaPhuThu kq = tinhPhuThuNhanSom(now, ngayNhanChuan);
+        boolean viPham = kq.tyLe.compareTo(BigDecimal.ZERO) > 0;
+        BigDecimal soTien = viPham
+                ? phong.getGiaMoiDem().multiply(kq.tyLe).setScale(0, RoundingMode.HALF_UP)
+                : BigDecimal.ZERO;
+
+        result.put("ok", true);
+        result.put("viPham", viPham);
+        result.put("soTien", soTien);
+        result.put("moTaChinhSach", kq.moTa);
         return result;
     }
 
@@ -2835,6 +3139,13 @@ public class NhanVienDatPhongController {
 
         tt.setNv(nhanVienXuLy);
         thanhToanService.save(tt);
+
+        lichSuHoatDongService.ghiLog(nhanVienXuLy,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.HD_DAT_PHONG_TAI_QUAY,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.DT_DAT_PHONG,
+                savedDp.getId(),
+                "Tạo đơn đặt phòng tại quầy #" + savedDp.getId() + ", thu " + tongCong.toPlainString() + " VND tiền mặt");
+
         redirectAttributes.addFlashAttribute("success",
                 "Tao don thanh cong, ma don: " + savedDp.getId() + ", tong tien da thu: " + tongCong + " VND");
         return "redirect:/nhan-su/dat-phong";
@@ -2851,6 +3162,34 @@ public class NhanVienDatPhongController {
         }
         return giaGoc;
     }
+
+    /**
+     * Tinh SO TIEN duoc giam (khong phai gia sau giam) tren TONG (phong + dich
+     * vu) - dung CHINH XAC cung cong thuc voi PhongController#tinhTienGiam /
+     * ThanhToanController#tinhTienGiam (luong khach tu dat), bao gom ca kiem tra
+     * "gia toi thieu duoc giam". Dung cho cac luong tao don tu phia nhan vien
+     * (So Do Phong) de dam bao thong nhat cach tinh KM + VAT + ghi nhan
+     * hoaDon.tienGiam voi luong khach tu dat, thay vi bake giam gia thang vao
+     * don gia phong nhu tinhGiaSauGiam() o tren.
+     */
+    private BigDecimal tinhTienGiam(BigDecimal tongTruocGiam, KhuyenMai km) {
+        if (km == null || !km.isHoatDong() || km.getGiatriGiam() == null) {
+            return BigDecimal.ZERO;
+        }
+        BigDecimal dieuKien = km.getGiaToiThieuDuocGiam() == null ? BigDecimal.ZERO : km.getGiaToiThieuDuocGiam();
+        if (tongTruocGiam.compareTo(dieuKien) < 0) {
+            return BigDecimal.ZERO;
+        }
+        if ("PERCENT".equalsIgnoreCase(km.getLoaiGiam())) {
+            return tongTruocGiam.multiply(km.getGiatriGiam())
+                    .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+        }
+        if ("AMOUNT".equalsIgnoreCase(km.getLoaiGiam()) || "FIXED".equalsIgnoreCase(km.getLoaiGiam())) {
+            return km.getGiatriGiam().min(tongTruocGiam);
+        }
+        return BigDecimal.ZERO;
+    }
+
     /**
      * Xử lý đổi phòng từ form trong trang chi tiết đơn đặt phòng (nhân viên).
      * Mirror đầy đủ logic với AdminDatPhongController.doPhong — cùng validate,

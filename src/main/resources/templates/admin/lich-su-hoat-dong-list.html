@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nhật Ký Hoạt Động | Hotel</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<div th:replace="~{fragments/cms-sidebar :: cmsSidebar}"></div>
+<div th:replace="~{fragments/headers/cms-header :: cmsHeader}"></div>
+<main class="admin-wrapper">
+    <div class="admin-header">
+        <h1>Nhật Ký Hoạt Động Nhân Sự</h1>
+        <a th:href="@{/nhan-su/admin/lich-su-hoat-dong}" class="admin-btn outline">Làm Mới</a>
+    </div>
+
+    <section class="admin-panel">
+        <h2>Bộ Lọc</h2>
+
+        <form th:action="@{/nhan-su/admin/lich-su-hoat-dong}" method="get" class="admin-grid" style="margin-bottom:16px;">
+            <div class="admin-field">
+                <label>Nhân viên</label>
+                <input type="text" name="hoTenNv" th:value="${hoTenNv}" placeholder="Tìm theo họ tên nhân viên">
+            </div>
+
+            <div class="admin-field">
+                <label>Loại hành động</label>
+                <select name="loaiHanhDong">
+                    <option value="">-- Tất cả --</option>
+                    <option th:each="lhd : ${danhSachLoaiHanhDong}"
+                            th:value="${lhd}"
+                            th:text="${lhd}"
+                            th:selected="${lhd == loaiHanhDong}"></option>
+                </select>
+            </div>
+
+            <div class="admin-field">
+                <label>Đối tượng</label>
+                <select name="doiTuong">
+                    <option value="">-- Tất cả --</option>
+                    <option th:each="dt : ${danhSachDoiTuong}"
+                            th:value="${dt}"
+                            th:text="${dt}"
+                            th:selected="${dt == doiTuong}"></option>
+                </select>
+            </div>
+
+            <div class="admin-field">
+                <label>Mã đối tượng</label>
+                <input type="number" name="maDoiTuong" th:value="${maDoiTuong}" placeholder="VD: mã đơn đặt phòng">
+            </div>
+
+            <div class="admin-field">
+                <label>Từ ngày</label>
+                <input type="date" name="tuNgay" th:value="${tuNgay}">
+            </div>
+
+            <div class="admin-field">
+                <label>Đến ngày</label>
+                <input type="date" name="denNgay" th:value="${denNgay}">
+            </div>
+
+            <div class="admin-actions">
+                <button type="submit" class="admin-btn outline">Tìm Kiếm</button>
+                <a th:href="@{/nhan-su/admin/lich-su-hoat-dong}" class="admin-btn outline">Xóa Lọc</a>
+            </div>
+        </form>
+
+        <div class="admin-table-wrap">
+            <table class="admin-table">
+                <thead>
+                <tr>
+                    <th>Mã</th>
+                    <th>Thời gian</th>
+                    <th>Nhân viên</th>
+                    <th>Bộ phận</th>
+                    <th>Hành động</th>
+                    <th>Đối tượng</th>
+                    <th>Mã đối tượng</th>
+                    <th>Ghi chú</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="log : ${logs}">
+                    <td th:text="${log.id}"></td>
+                    <td th:text="${#temporals.format(log.thoiGian, 'dd/MM/yyyy HH:mm:ss')}"></td>
+                    <td>
+                        <strong th:text="${log.nhanSu != null ? log.nhanSu.hoten : 'N/A'}"></strong>
+                        <div style="font-size:12px;color:var(--cms-muted,#8a94a3);"
+                             th:text="${log.nhanSu != null ? log.nhanSu.email : ''}"></div>
+                    </td>
+                    <td th:text="${log.nhanSu != null ? log.nhanSu.boPhan : ''}"></td>
+                    <td th:text="${log.loaiHanhDong}"></td>
+                    <td th:text="${log.doiTuong}"></td>
+                    <td th:text="${log.maDoiTuong}"></td>
+                    <td th:text="${log.ghiChu}"></td>
+                </tr>
+                <tr th:if="${logs.isEmpty()}">
+                    <td colspan="8"><div class="empty-state">Không tìm thấy nhật ký hoạt động phù hợp.</div></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="admin-actions" th:if="${logPage.totalPages > 1}" style="justify-content:center; gap:6px;">
+            <a th:if="${logPage.hasPrevious()}"
+               class="admin-btn small outline"
+               th:href="@{/nhan-su/admin/lich-su-hoat-dong(page=${logPage.number - 1}, hoTenNv=${hoTenNv}, loaiHanhDong=${loaiHanhDong}, doiTuong=${doiTuong}, maDoiTuong=${maDoiTuong}, tuNgay=${tuNgay}, denNgay=${denNgay})}">« Trước</a>
+
+            <span th:each="i : ${#numbers.sequence(0, logPage.totalPages - 1)}">
+                <a th:href="@{/nhan-su/admin/lich-su-hoat-dong(page=${i}, hoTenNv=${hoTenNv}, loaiHanhDong=${loaiHanhDong}, doiTuong=${doiTuong}, maDoiTuong=${maDoiTuong}, tuNgay=${tuNgay}, denNgay=${denNgay})}"
+                   th:text="${i + 1}"
+                   th:classappend="${i == logPage.number} ? ' active'"
+                   class="admin-btn small outline">
+                </a>
+            </span>
+
+            <a th:if="${logPage.hasNext()}"
+               class="admin-btn small outline"
+               th:href="@{/nhan-su/admin/lich-su-hoat-dong(page=${logPage.number + 1}, hoTenNv=${hoTenNv}, loaiHanhDong=${loaiHanhDong}, doiTuong=${doiTuong}, maDoiTuong=${maDoiTuong}, tuNgay=${tuNgay}, denNgay=${denNgay})}">Sau »</a>
+        </div>
+    </section>
+</main>
+
+<footer>
+    <p>&copy; 2026 Hotel. All rights reserved.</p>
+</footer>
+
+</body>
+</html>

@@ -25,6 +25,7 @@ public class NhanVienHoanTienController {
     @Autowired ThanhToanService thanhToanService;
     @Autowired NhanVienService nhanSuService;
     @Autowired VnpayService vnpayService;
+    @Autowired su26sd09.su26sd09.service.LichSuHoatDongService lichSuHoatDongService;
 
     @GetMapping
     public String danhSach(@RequestParam(required = false) String trangThaiHoanTien,
@@ -171,6 +172,12 @@ public class NhanVienHoanTienController {
         huyDonService.xacNhanHoanTien(id, phuongThucHoan, maGiaoDichHoan,
                 stkNhanHoan, tenNganHang, ghiChu, soTienHoanNhap, nvXuLy);
 
+        lichSuHoatDongService.ghiLogAn(auth,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.HD_XAC_NHAN_HOAN_TIEN,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.DT_HOA_DON,
+                id,
+                "Xác nhận hoàn tiền (" + phuongThucHoan + ") cho hóa đơn #" + id);
+
         ra.addFlashAttribute("success", "Da xac nhan hoan tien cho hoa don #" + id);
         return "redirect:/nhan-su/hoan-tien/chi-tiet/" + id;
     }
@@ -178,6 +185,7 @@ public class NhanVienHoanTienController {
     @PostMapping("/{id}/tu-choi")
     public String tuChoi(@PathVariable Integer id,
                          @RequestParam String lyDo,
+                         Authentication auth,
                          RedirectAttributes ra) {
 
         HoaDon hd = hoaDonService.findById(id);
@@ -192,6 +200,13 @@ public class NhanVienHoanTienController {
         }
 
         huyDonService.tuChoiHoanTien(id, lyDo);
+
+        lichSuHoatDongService.ghiLogAn(auth,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.HD_TU_CHOI_HOAN_TIEN,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.DT_HOA_DON,
+                id,
+                "Từ chối yêu cầu hoàn tiền cho hóa đơn #" + id + ". Lý do: " + lyDo);
+
         ra.addFlashAttribute("success", "Da tu choi yeu cau hoan tien");
         return "redirect:/nhan-su/hoan-tien/chi-tiet/" + id;
     }
@@ -221,6 +236,12 @@ public class NhanVienHoanTienController {
 
         NhanSu nvXuLy = nhanSuService.FindByemail(auth.getName());
         huyDonService.xacNhanHuyKhongHoan(id, lyDo, nvXuLy);
+
+        lichSuHoatDongService.ghiLogAn(auth,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.HD_HUY_KHONG_HOAN,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.DT_HOA_DON,
+                id,
+                "Hủy đơn không hoàn tiền cho hóa đơn #" + id + (lyDo != null && !lyDo.isBlank() ? (". Lý do: " + lyDo) : ""));
 
         ra.addFlashAttribute("success", "Da huy don khong hoan tien. Hoa don van duoc phep xuat PDF de khach can minh bach.");
         return "redirect:/nhan-su/hoan-tien/chi-tiet/" + id;

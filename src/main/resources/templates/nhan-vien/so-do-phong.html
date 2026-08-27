@@ -248,6 +248,14 @@
             50% { box-shadow: 0 0 0 5px rgba(185,28,28,0.03); }
         }
 
+        /* Ghi chu ten nhan vien ve sinh dang duoc phan cong don phong nay
+           (hien thi ngay khi engine gan phong, khong can cho upload anh). */
+        .sdp-ve-sinh-note {
+            display: flex; align-items: center; gap: 6px; margin-top: 10px;
+            padding: 6px 9px; border-radius: 8px; background: #f1f5f9; color: #475569;
+            font-size: 11.5px; font-weight: 600; width: fit-content;
+        }
+
         /* Text nho "Xac nhan phong sach" tren the phong khi nhan vien ve sinh
            da upload anh, cho le tan bam vao de mo modal xac nhan. */
         .sdp-xac-nhan-ve-sinh {
@@ -304,6 +312,30 @@
         .sdp-ctx-item.danger:hover { background: #fef2f2; color: #b91c1c; }
         .sdp-ctx-item.danger:hover i { color: #b91c1c; }
         .sdp-ctx-sep { height: 1px; background: #eef1f5; margin: 5px 4px; }
+
+        /* Context menu: muc co submenu (vd "Yeu cau don dep" -> danh sach nhan vien) */
+        .sdp-ctx-item.has-sub { justify-content: space-between; position: relative; }
+        .sdp-ctx-item .sdp-ctx-item-left { display: flex; align-items: center; gap: 10px; }
+        .sdp-ctx-item .sdp-ctx-caret { color: #9ca3af; font-size: 11px; }
+        .sdp-ctx-submenu {
+            position: fixed; z-index: 3001; min-width: 220px; max-height: 320px; overflow-y: auto;
+            background: #fff; border: 1px solid #e2e8f0; border-radius: 10px;
+            box-shadow: 0 10px 32px rgba(15, 23, 42, 0.18);
+            padding: 6px; display: none; font-family: 'Montserrat', sans-serif;
+        }
+        .sdp-ctx-submenu.open { display: block; }
+        .sdp-ctx-sub-item {
+            display: flex; align-items: center; justify-content: space-between; gap: 10px;
+            width: 100%; text-align: left; border: none; background: transparent;
+            padding: 9px 12px; border-radius: 7px; font-size: 13.5px; font-weight: 600;
+            color: #374151; cursor: pointer; white-space: nowrap;
+        }
+        .sdp-ctx-sub-item:hover { background: #f0f9ff; color: var(--sky-dark, #2196c4); }
+        .sdp-ctx-sub-item .sdp-ctx-sub-tag {
+            font-size: 10.5px; font-weight: 700; color: #d97706; background: #fef3c7;
+            border-radius: 999px; padding: 2px 8px; white-space: nowrap;
+        }
+        .sdp-ctx-sub-empty { padding: 10px 12px; font-size: 12.5px; color: #9ca3af; }
 
         /* Modal phu thu nhan phong som / tra phong muon */
         .sdp-policy-backdrop {
@@ -1313,6 +1345,12 @@
                                 </span>
                             </div>
 
+                            <div class="sdp-ve-sinh-note"
+                                 th:if="${phongVeSinhTenNhanVien[phong.maPhong]}"
+                                 th:text="'NV dọn phòng: ' + ${phongVeSinhTenNhanVien[phong.maPhong]}">
+                                NV dọn phòng: Nguyễn Văn A
+                            </div>
+
                             <div class="sdp-xac-nhan-ve-sinh"
                                  th:if="${phongChoXacNhanVeSinh[phong.maPhong]}"
                                  th:data-ma-phong="${phong.maPhong}"
@@ -1521,6 +1559,7 @@
 <!-- Context menu cho ô phòng -->
 <div class="sdp-ctx-backdrop" id="sdpCtxBackdrop"></div>
 <div class="sdp-ctx-menu" id="sdpCtxMenu" role="menu"></div>
+<div class="sdp-ctx-submenu" id="sdpCtxSubmenu" role="menu"></div>
 
 
 <!-- Modal thông báo phụ thu nhận phòng sớm / trả phòng muộn -->
@@ -1536,7 +1575,23 @@
             <span>Phụ thu</span>
             <strong id="sdpPolicyAmount">0đ</strong>
         </div>
+        <div class="sdp-policy-amount" id="sdpPolicyConLaiRow" style="display:none;">
+            <span>Còn lại (trước đó)</span>
+            <strong id="sdpPolicyConLai">0đ</strong>
+        </div>
+        <div class="sdp-policy-amount" id="sdpPolicyTongRow" style="display:none; background:#fff7ed; border-color:#fed7aa;">
+            <span style="color:#c2410c;">Tổng phải thu</span>
+            <strong id="sdpPolicyTong" style="color:#c2410c;">0đ</strong>
+        </div>
         <p class="sdp-policy-note" id="sdpPolicyNote"></p>
+        <!-- O nhap tien - dung LAI dung field/style voi "Tien khach tra" cua tinh
+             nang "Đặt phòng tại quầy" (sdpLichTienTra): khong tu dien san, bat
+             buoc nhan vien tu go DUNG so tien can thu truoc khi duoc xac nhan. -->
+        <div class="sdp-lich-field" id="sdpPolicyPayField" style="display:none; margin-top:2px;">
+            <label for="sdpPolicyTienThu">Tiền khách trả</label>
+            <input type="number" id="sdpPolicyTienThu" placeholder="0" min="0" step="1000">
+            <div class="sdp-lich-field-error" id="sdpPolicyPayError" style="display:none;"></div>
+        </div>
     </div>
     <div class="sdp-policy-actions">
         <button type="button" class="admin-btn outline" id="sdpPolicyQuayLaiBtn">Quay lại</button>
@@ -1683,6 +1738,12 @@
                 <div class="sdp-lich-field">
                     <label for="sdpLichKhuyenMai">Mã khuyến mại</label>
                     <input type="text" id="sdpLichKhuyenMai" placeholder="Nhập mã khuyến mại (nếu có)" autocomplete="off">
+                    <div class="sdp-lich-summary-row" id="sdpLichPromoInfoRow" style="display:none; padding:4px 0 0; color:#0f9d58; font-size:12px;">
+                        <span id="sdpLichPromoInfo">--</span>
+                    </div>
+                    <div class="sdp-lich-field-error" id="sdpLichPromoErrorRow" style="display:none;">
+                        <span id="sdpLichPromoError">--</span>
+                    </div>
                 </div>
                 <div class="sdp-lich-field">
                     <label for="sdpLichGhiChu">Ghi chú</label>
@@ -1749,6 +1810,16 @@
             <span>Tiền dịch vụ</span>
             <span id="sdpLichSumTienDv">đ 0</span>
         </div>
+        <div class="sdp-lich-summary-row" id="sdpLichSumPhuThuRow" style="display:none; color:#dc2626;">
+            <span>Phụ thu</span>
+            <span id="sdpLichSumTienPhuThu">đ 0</span>
+        </div>
+        <div class="sdp-lich-summary-hint" id="sdpLichSumPhuThuNote" style="display:none; color:#dc2626;"></div>
+        <div class="sdp-lich-summary-row" id="sdpLichSumGiamRow" style="display:none; color:#0f9d58;">
+            <span>Giảm giá</span>
+            <span id="sdpLichSumTienGiam">- đ 0</span>
+        </div>
+
         <div class="sdp-lich-summary-row">
             <span>VAT (10%)</span>
             <span id="sdpLichSumVat">đ 0</span>
@@ -1757,7 +1828,7 @@
             <span>Tổng cộng</span>
             <span id="sdpLichSumTongCong">đ 0</span>
         </div>
-        <div class="sdp-lich-summary-hint">Chưa gồm khuyến mại (áp dụng khi lưu, nếu mã hợp lệ).</div>
+        <div class="sdp-lich-summary-hint" id="sdpLichSumHint">Nhập mã khuyến mại hợp lệ để xem giá đã giảm.</div>
     </div>
 
     <div class="sdp-lich-footer">
@@ -1804,6 +1875,9 @@
     var SDP_BOOKINGS = [(${bookingsByRoomJson})];
     var SDP_ROOM_INFO = [(${roomInfoJson})];
     var SDP_NOW = /*[[${svrNowIso}]]*/ null;
+    // Danh sach khuyen mai dang hoat dong, dung cho xem truoc gia ngay tren
+    // sidebar "Dat phong tai quay" / "Len lich dat phong" (xem tinhTongTienLenLich).
+    var SDP_KM_LIST = JSON.parse(/*[[${kmJson}]]*/ '[]');
 </script>
 
 <script>
@@ -2060,6 +2134,9 @@
         }
 
         // Đơn chưa nhận phòng (còn hiệu lực) gần nhất theo thời điểm check-in
+        //  - CHỈ xét các đơn có check-in RƠI VÀO HÔM NAY (todayStart -> todayEnd,
+        //    cùng khung giờ với tinCheckInHomNay, bao gồm cả qua đêm tới 12h trưa
+        //    hôm sau) để tránh báo cảnh báo cho đơn còn rất xa ngày nhận phòng.
         function tinChoNhanPhongGanNhat(maPhong, t) {
             var list = getBookings(maPhong).filter(function (b) {
                 return b.trangThai === 'Yeu cau dat phong' || b.trangThai === 'Cho xac nhan' || b.trangThai === 'Da xac nhan';
@@ -2070,6 +2147,7 @@
                 if (!co || co <= t) return;
                 var ci = parseDt(b.checkin);
                 if (!ci) return;
+                if (ci < todayStart || ci >= todayEnd) return; // bo qua don khong check-in hom nay
                 if (!target || ci < parseDt(target.checkin)) target = b;
             });
             return target;
@@ -2079,6 +2157,15 @@
             var maPhong = card.getAttribute('data-ma-phong');
             var badge = card.querySelector('[data-checkin-badge]');
             if (!badge) return;
+
+            // Neu phong dang co don chiem giu hien tai (dang o / da nhan phong thuc te
+            // hoac da qua gio nhan phong du kien ma chua tra phong) thi khong hien thi
+            // canh bao check-in sap toi cho phong nay nua.
+            if (tinDonHienTai(maPhong)) {
+                badge.classList.remove('show', 'cd-soon', 'cd-urgent', 'cd-overdue');
+                return;
+            }
+
             var t = nowTick();
             var target = tinChoNhanPhongGanNhat(maPhong, t);
 
@@ -2165,12 +2252,23 @@
         var sdpCsrfParamEl = document.getElementById('sdpCsrfParam');
         var sdpCsrfTokenEl = document.getElementById('sdpCsrfToken');
 
-        function goiApi(url) {
+        function goiApi(url, extraParams) {
             var body = null, headers = { 'Accept': 'application/json' };
             if (sdpCsrfParamEl && sdpCsrfTokenEl) {
                 body = new URLSearchParams();
                 body.append(sdpCsrfParamEl.value, sdpCsrfTokenEl.value);
                 headers['Content-Type'] = 'application/x-www-form-urlencoded';
+            }
+            if (extraParams) {
+                if (!body) {
+                    body = new URLSearchParams();
+                    headers['Content-Type'] = 'application/x-www-form-urlencoded';
+                }
+                Object.keys(extraParams).forEach(function (k) {
+                    if (extraParams[k] !== null && extraParams[k] !== undefined) {
+                        body.append(k, extraParams[k]);
+                    }
+                });
             }
             return fetch(url, { method: 'POST', headers: headers, body: body })
                 .then(function (res) { return res.json(); });
@@ -2178,28 +2276,87 @@
 
         var policyBackdrop = document.getElementById('sdpPolicyBackdrop');
         var policyModal = document.getElementById('sdpPolicyModal');
-        var policyOnXacNhan = null; // callback chi chay khi bam "Da hieu"
+        var policyOnXacNhan = null; // callback chi chay khi bam "Da hieu"/xac nhan thu tien
+
+        // ===== Phan nhap tien (dung khi can bat buoc thu du tien truoc khi xac
+        // nhan - vd: check-out con no / vi pham tra phong muon). Tai su dung dung
+        // 1 o input duy nhat cho MOI truong hop can thu tien qua modal nay. =====
+        var policyConLaiRow = document.getElementById('sdpPolicyConLaiRow');
+        var policyConLaiEl = document.getElementById('sdpPolicyConLai');
+        var policyTongRow = document.getElementById('sdpPolicyTongRow');
+        var policyTongEl = document.getElementById('sdpPolicyTong');
+        var policyPayField = document.getElementById('sdpPolicyPayField');
+        var policyTienThuInput = document.getElementById('sdpPolicyTienThu');
+        var policyPayError = document.getElementById('sdpPolicyPayError');
+        var policyOkBtn = document.getElementById('sdpPolicyOkBtn');
+        var policyRequiredAmount = null; // != null => bat buoc nhap DUNG so tien nay moi cho xac nhan
 
         document.getElementById('sdpPolicyOkBtn').addEventListener('click', function () {
+            var soTienNhap = null;
+            if (policyRequiredAmount !== null) {
+                var nhap = policyTienThuInput.value === '' ? NaN : Number(policyTienThuInput.value);
+                if (isNaN(nhap) || Math.round(nhap) !== Math.round(policyRequiredAmount)) {
+                    policyPayError.textContent = 'Vui lòng nhập đúng số tiền cần thu: ' + fmtTien(policyRequiredAmount) + '.';
+                    policyPayError.style.display = 'block';
+                    return; // chan xac nhan cho toi khi nhap dung so tien
+                }
+                soTienNhap = nhap;
+            }
             var cb = policyOnXacNhan;
             dongModalPhuThu();
-            if (cb) cb(); // chi luc nay moi tien hanh goi API cap nhat that su
+            if (cb) cb(soTienNhap); // chi luc nay moi tien hanh goi API cap nhat that su
         });
         document.getElementById('sdpPolicyQuayLaiBtn').addEventListener('click', dongModalPhuThu);
         policyBackdrop.addEventListener('click', dongModalPhuThu);
+        policyTienThuInput.addEventListener('input', function () { policyPayError.style.display = 'none'; });
 
         function dongModalPhuThu() {
             policyBackdrop.classList.remove('open');
             policyModal.classList.remove('open');
             policyOnXacNhan = null; // "Quay lai" / dong ngoai modal = huy, khong lam gi them
+            policyRequiredAmount = null;
+            policyPayError.style.display = 'none';
+            policyTienThuInput.value = '';
         }
 
-        function moModalPhuThu(tieuDe, moTaChinhSach, soTien, ghiChu, onXacNhan) {
+        /**
+         * thongTinThuTien (tuy chon): { conLai, tongPhaiThu } - khi tongPhaiThu > 0,
+         * hien them khung tom tat "Con lai" / "Tong phai thu" + o nhap "Tien khach
+         * trả" (GIONG HET field cua "Đặt phòng tại quầy" - khong tu dien san),
+         * bat buoc nhan vien go DUNG tongPhaiThu moi cho bam xac nhan. Khong
+         * truyen (hoac tongPhaiThu <= 0) => giu nguyen hanh vi modal thong bao
+         * don thuan nhu truoc (vd: vi pham nhan phong som, khong can thu tien
+         * ngay tai buoc nay).
+         */
+        function moModalPhuThu(tieuDe, moTaChinhSach, soTien, ghiChu, onXacNhan, thongTinThuTien) {
             document.getElementById('sdpPolicyTitle').textContent = tieuDe;
-            document.getElementById('sdpPolicyRule').textContent = moTaChinhSach;
+            document.getElementById('sdpPolicyRule').textContent = moTaChinhSach || '';
             document.getElementById('sdpPolicyAmount').textContent = fmtTien(soTien);
             document.getElementById('sdpPolicyNote').textContent = ghiChu;
             policyOnXacNhan = typeof onXacNhan === 'function' ? onXacNhan : null;
+
+            policyPayError.style.display = 'none';
+            policyTienThuInput.value = '';
+
+            var tongPhaiThu = thongTinThuTien && Number(thongTinThuTien.tongPhaiThu) > 0
+                ? Number(thongTinThuTien.tongPhaiThu) : 0;
+            if (tongPhaiThu > 0) {
+                policyRequiredAmount = tongPhaiThu;
+                var conLai = Number((thongTinThuTien && thongTinThuTien.conLai) || 0);
+                policyConLaiEl.textContent = fmtTien(conLai);
+                policyConLaiRow.style.display = conLai > 0 ? 'flex' : 'none';
+                policyTongEl.textContent = fmtTien(tongPhaiThu);
+                policyTongRow.style.display = 'flex';
+                policyPayField.style.display = 'block';
+                policyOkBtn.textContent = 'Xác nhận thu tiền & trả phòng';
+            } else {
+                policyRequiredAmount = null;
+                policyConLaiRow.style.display = 'none';
+                policyTongRow.style.display = 'none';
+                policyPayField.style.display = 'none';
+                policyOkBtn.textContent = 'Đã hiểu';
+            }
+
             policyBackdrop.classList.add('open');
             policyModal.classList.add('open');
         }
@@ -3162,22 +3319,32 @@
             thucHienTraPhong(card, don, false);
         }
 
-        // Tuong tu thucHienNhanPhong: xacNhan=false chi de xem truoc phu thu (neu co),
-        // xacNhan=true (sau khi bam "Da hieu") moi thuc su luu phu thu + doi trang thai phong.
-        function thucHienTraPhong(card, don, xacNhan) {
+        // Tuong tu thucHienNhanPhong: xacNhan=false chi de xem truoc phu thu/con no
+        // (neu co), xacNhan=true (sau khi nhan vien nhap dung tien va bam xac nhan
+        // trong modal) moi thuc su luu phu thu + ghi nhan thanh toan + doi trang
+        // thai phong. tienKhachTra chi duoc gui kem khi xacNhan=true VA modal yeu
+        // cau thu tien (canThuTien) - xem callback truyen vao moModalPhuThu.
+        function thucHienTraPhong(card, don, xacNhan, tienKhachTra) {
             var url = CTX_URL_CHECK_OUT_API + don.id + (xacNhan ? '?xacNhan=true' : '');
-            goiApi(url).then(function (kq) {
+            var extra = (xacNhan && tienKhachTra !== null && tienKhachTra !== undefined)
+                ? { tienKhachTra: tienKhachTra } : null;
+            goiApi(url, extra).then(function (kq) {
                 if (!kq.ok) {
                     alert(kq.loi || 'Không thể trả phòng.');
                     return;
                 }
-                if (kq.viPham && !kq.daApDung) {
+                if ((kq.viPham || kq.canThuTien) && !kq.daApDung) {
+                    var tieuDe = kq.viPham ? 'Vi phạm chính sách trả phòng muộn' : 'Đơn còn khoản chưa thanh toán';
+                    var ghiChu = kq.canThuTien
+                        ? 'Nhập đúng số tiền còn phải thu để xác nhận thu tiền và trả phòng cho đơn #' + don.id + '.'
+                        : 'Nhấn "Đã hiểu" để xác nhận trả phòng và ghi khoản phụ thu vào chi tiết dịch vụ của đơn #' + don.id + '.';
                     moModalPhuThu(
-                        'Vi phạm chính sách trả phòng muộn',
+                        tieuDe,
                         kq.moTaChinhSach,
                         kq.soTien,
-                        'Nhấn "Đã hiểu" để xác nhận trả phòng và ghi khoản phụ thu vào chi tiết dịch vụ của đơn #' + don.id + '.',
-                        function () { thucHienTraPhong(card, don, true); }
+                        ghiChu,
+                        function (soTienNhap) { thucHienTraPhong(card, don, true, soTienNhap); },
+                        { conLai: kq.soTienConLai, tongPhaiThu: kq.tongPhaiThu }
                     );
                     return;
                 }
@@ -3200,20 +3367,27 @@
         // Nhu thucHienTraPhong nhung ap dung cho CA DOAN (nhieu phong cung 1 don):
         // sau khi tra phong thanh cong, phai cap nhat trang thai TAT CA the phong
         // duoc gan cho don nay, khong chi rieng the phong vua bam chuot phai vao.
-        function thucHienTraPhongNhom(card, don, xacNhan) {
+        function thucHienTraPhongNhom(card, don, xacNhan, tienKhachTra) {
             var url = CTX_URL_CHECK_OUT_NHOM_API + don.id + (xacNhan ? '?xacNhan=true' : '');
-            goiApi(url).then(function (kq) {
+            var extra = (xacNhan && tienKhachTra !== null && tienKhachTra !== undefined)
+                ? { tienKhachTra: tienKhachTra } : null;
+            goiApi(url, extra).then(function (kq) {
                 if (!kq.ok) {
                     alert(kq.loi || 'Không thể trả phòng cả đoàn.');
                     return;
                 }
-                if (kq.viPham && !kq.daApDung) {
+                if ((kq.viPham || kq.canThuTien) && !kq.daApDung) {
+                    var tieuDe = kq.viPham ? 'Vi phạm chính sách trả phòng muộn (cả đoàn)' : 'Đơn còn khoản chưa thanh toán (cả đoàn)';
+                    var ghiChu = kq.canThuTien
+                        ? 'Nhập đúng số tiền còn phải thu để xác nhận thu tiền và trả phòng cho cả đoàn của đơn #' + don.id + '.'
+                        : 'Nhấn "Đã hiểu" để xác nhận trả phòng cho cả đoàn và ghi khoản phụ thu vào chi tiết dịch vụ của đơn #' + don.id + '.';
                     moModalPhuThu(
-                        'Vi phạm chính sách trả phòng muộn (cả đoàn)',
+                        tieuDe,
                         kq.moTaChinhSach,
                         kq.soTien,
-                        'Nhấn "Đã hiểu" để xác nhận trả phòng cho cả đoàn và ghi khoản phụ thu vào chi tiết dịch vụ của đơn #' + don.id + '.',
-                        function () { thucHienTraPhongNhom(card, don, true); }
+                        ghiChu,
+                        function (soTienNhap) { thucHienTraPhongNhom(card, don, true, soTienNhap); },
+                        { conLai: kq.soTienConLai, tongPhaiThu: kq.tongPhaiThu }
                     );
                     return;
                 }
@@ -3263,6 +3437,10 @@
                 } else {
                     items.push({ label: 'Khách trả phòng', icon: 'fa-solid fa-right-from-bracket', action: function () { xuLyKhachTraPhong(card, donDangO); } });
                 }
+            }
+
+            if (trangThai === 'Đang dọn') {
+                items.push({ label: 'Yêu cầu dọn dẹp', icon: 'fa-solid fa-broom', submenu: 'janitor', maPhong: maPhong });
             }
 
             if (trangThai === 'Trống' || trangThai === 'Đang dọn') {
@@ -3411,24 +3589,139 @@
 
         var ctxMenu = document.getElementById('sdpCtxMenu');
         var ctxBackdrop = document.getElementById('sdpCtxBackdrop');
+        var ctxSubmenu = document.getElementById('sdpCtxSubmenu');
+
+        var CTX_URL_VS_DANH_SACH_NV = /*[[@{/nhan-su/ve-sinh/danh-sach-nhan-vien}]]*/ '/nhan-su/ve-sinh/danh-sach-nhan-vien';
+        var CTX_URL_VS_GAN_THU_CONG = /*[[@{/nhan-su/ve-sinh/gan-thu-cong/}]]*/ '/nhan-su/ve-sinh/gan-thu-cong/';
+        var ctxSubHideTimer = null;
 
         function dongContextMenu() {
             ctxMenu.classList.remove('open');
             ctxBackdrop.classList.remove('open');
+            dongCtxSubmenu();
+        }
+
+        function dongCtxSubmenu() {
+            ctxSubmenu.classList.remove('open');
+            ctxSubmenu.innerHTML = '';
+        }
+
+        function huyDongCtxSubmenu() {
+            if (ctxSubHideTimer) { clearTimeout(ctxSubHideTimer); ctxSubHideTimer = null; }
+        }
+
+        function lenLichDongCtxSubmenu() {
+            huyDongCtxSubmenu();
+            ctxSubHideTimer = setTimeout(dongCtxSubmenu, 250);
+        }
+
+        // Gan 1 nhan vien ve sinh cho 1 phong (thu cong, tu menu chuot phai).
+        // Backend tu dong go nhan vien nay khoi phong cu (neu co) truoc khi gan
+        // phong moi, dam bao 1 nhan vien chi phu trach 1 phong.
+        function ganNhanVienVeSinh(maPhong, maNhanVien, card) {
+            var body = new URLSearchParams();
+            body.append('maNhanVien', maNhanVien);
+            if (sdpCsrfParamEl && sdpCsrfTokenEl) body.append(sdpCsrfParamEl.value, sdpCsrfTokenEl.value);
+
+            return fetch(CTX_URL_VS_GAN_THU_CONG + maPhong, {
+                method: 'POST',
+                headers: { 'Accept': 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: body
+            })
+                .then(function (res) { return res.json(); })
+                .then(function (kq) {
+                    if (!kq.success) {
+                        alert(kq.message || 'Không thể gán nhân viên vệ sinh cho phòng này.');
+                        return;
+                    }
+                    var note = card.querySelector('.sdp-ve-sinh-note');
+                    if (!note) {
+                        note = document.createElement('div');
+                        note.className = 'sdp-ve-sinh-note';
+                        var badge = card.querySelector('[data-checkin-badge]');
+                        if (badge && badge.parentNode) {
+                            badge.parentNode.insertBefore(note, badge.nextSibling);
+                        } else {
+                            card.querySelector('.sdp-room-card__body').appendChild(note);
+                        }
+                    }
+                    note.textContent = 'NV dọn phòng: ' + kq.tenNhanVien;
+                })
+                .catch(function () {
+                    alert('Có lỗi xảy ra khi gán nhân viên vệ sinh, vui lòng thử lại.');
+                });
+        }
+
+        function moCtxSubmenuJanitor(anchorBtn, maPhong, card) {
+            huyDongCtxSubmenu();
+            ctxSubmenu.innerHTML = '<div class="sdp-ctx-sub-empty">Đang tải danh sách...</div>';
+            ctxSubmenu.classList.add('open');
+            dinhViCtxSubmenu(anchorBtn);
+
+            fetch(CTX_URL_VS_DANH_SACH_NV, { headers: { 'Accept': 'application/json' } })
+                .then(function (res) { return res.json(); })
+                .then(function (ds) {
+                    ctxSubmenu.innerHTML = '';
+                    if (!ds || ds.length === 0) {
+                        ctxSubmenu.innerHTML = '<div class="sdp-ctx-sub-empty">Không có nhân viên vệ sinh nào.</div>';
+                        return;
+                    }
+                    ds.forEach(function (nv) {
+                        var btn = document.createElement('button');
+                        btn.type = 'button';
+                        btn.className = 'sdp-ctx-sub-item';
+                        btn.innerHTML = '<span>' + escapeHtml(nv.tenNhanVien) + '</span>' +
+                            (nv.dangBan ? '<span class="sdp-ctx-sub-tag">Đang bận P' + escapeHtml(String(nv.phongDangGan)) + '</span>' : '');
+                        btn.addEventListener('click', function () {
+                            dongContextMenu();
+                            ganNhanVienVeSinh(maPhong, nv.maNhanVien, card);
+                        });
+                        ctxSubmenu.appendChild(btn);
+                    });
+                    dinhViCtxSubmenu(anchorBtn);
+                })
+                .catch(function () {
+                    ctxSubmenu.innerHTML = '<div class="sdp-ctx-sub-empty">Không tải được danh sách nhân viên.</div>';
+                });
+        }
+
+        function dinhViCtxSubmenu(anchorBtn) {
+            var rect = anchorBtn.getBoundingClientRect();
+            ctxSubmenu.style.left = '0px';
+            ctxSubmenu.style.top = '0px';
+            var mw = ctxSubmenu.offsetWidth, mh = ctxSubmenu.offsetHeight;
+            var vw = window.innerWidth, vh = window.innerHeight;
+            var left = rect.right + 4;
+            if (left + mw > vw - 8) left = rect.left - mw - 4;
+            var top = Math.min(rect.top, vh - mh - 8);
+            ctxSubmenu.style.left = Math.max(8, left) + 'px';
+            ctxSubmenu.style.top = Math.max(8, top) + 'px';
         }
 
         function moContextMenu(card, x, y) {
             var items = buildMenuItems(card);
             ctxMenu.innerHTML = '';
+            dongCtxSubmenu();
             items.forEach(function (it) {
                 var btn = document.createElement('button');
                 btn.type = 'button';
-                btn.className = 'sdp-ctx-item' + (it.danger ? ' danger' : '');
-                btn.innerHTML = '<i class="' + it.icon + '"></i>' + it.label;
-                btn.addEventListener('click', function () {
-                    dongContextMenu();
-                    it.action();
-                });
+                btn.className = 'sdp-ctx-item' + (it.danger ? ' danger' : '') + (it.submenu ? ' has-sub' : '');
+
+                if (it.submenu) {
+                    btn.innerHTML = '<span class="sdp-ctx-item-left"><i class="' + it.icon + '"></i>' + it.label + '</span>' +
+                        '<i class="fa-solid fa-chevron-right sdp-ctx-caret"></i>';
+                    btn.addEventListener('mouseenter', function () {
+                        huyDongCtxSubmenu();
+                        moCtxSubmenuJanitor(btn, it.maPhong, card);
+                    });
+                    btn.addEventListener('mouseleave', lenLichDongCtxSubmenu);
+                } else {
+                    btn.innerHTML = '<i class="' + it.icon + '"></i>' + it.label;
+                    btn.addEventListener('click', function () {
+                        dongContextMenu();
+                        it.action();
+                    });
+                }
                 ctxMenu.appendChild(btn);
             });
 
@@ -3444,6 +3737,9 @@
             ctxMenu.style.left = Math.max(8, left) + 'px';
             ctxMenu.style.top = Math.max(8, top) + 'px';
         }
+
+        ctxSubmenu.addEventListener('mouseenter', huyDongCtxSubmenu);
+        ctxSubmenu.addEventListener('mouseleave', lenLichDongCtxSubmenu);
 
         document.querySelectorAll('.sdp-room-cell').forEach(function (card) {
             card.addEventListener('contextmenu', function (e) {
@@ -4110,6 +4406,58 @@
 
         var luuBtn = document.getElementById('sdpLichLuuBtn');
 
+        // Khuyen mai: danh sach ma dang hoat dong (kmList) + cac o hien thi
+        // trang thai/uu dai, tai su dung dung logic voi trang "Chi tiet dat
+        // phong" (apDungKhuyenMai / tinhTongTien) de gia xem truoc luon khop
+        // voi gia backend se tinh that su luc Luu.
+        var kmList = (window.SDP_KM_LIST || []);
+        var promoInput = document.getElementById('sdpLichKhuyenMai');
+        var promoInfoRow = document.getElementById('sdpLichPromoInfoRow');
+        var promoInfo = document.getElementById('sdpLichPromoInfo');
+        var promoErrorRow = document.getElementById('sdpLichPromoErrorRow');
+        var promoError = document.getElementById('sdpLichPromoError');
+        var sumGiamRow = document.getElementById('sdpLichSumGiamRow');
+        var sumTienGiamEl = document.getElementById('sdpLichSumTienGiam');
+        var sumHintEl = document.getElementById('sdpLichSumHint');
+        var sumPhuThuRow = document.getElementById('sdpLichSumPhuThuRow');
+        var sumTienPhuThuEl = document.getElementById('sdpLichSumTienPhuThu');
+        var sumPhuThuNoteEl = document.getElementById('sdpLichSumPhuThuNote');
+        var currentKM = null;
+
+        function formatVND(n) {
+            return Math.round(n || 0).toLocaleString('vi-VN');
+        }
+
+        /** Tra ma khuyen mai (khong phan biet hoa/thuong) trong kmList va cap
+         *  nhat currentKM + cac o thong bao. Khong tu tinh lai tong tien - goi
+         *  tinhTongTienLenLich() sau khi goi ham nay. */
+        function apDungKhuyenMaiLenLich() {
+            var codeRaw = (promoInput.value || '').trim();
+            if (!codeRaw) {
+                currentKM = null;
+                promoInfoRow.style.display = 'none';
+                promoErrorRow.style.display = 'none';
+                return;
+            }
+            var code = codeRaw.toUpperCase();
+            var km = kmList.find(function (k) { return String(k.code || '').toUpperCase() === code; });
+            if (!km) {
+                currentKM = null;
+                promoInfoRow.style.display = 'none';
+                promoError.textContent = 'Mã khuyến mại không hợp lệ hoặc đã hết hạn.';
+                promoErrorRow.style.display = 'flex';
+                return;
+            }
+            currentKM = km;
+            promoErrorRow.style.display = 'none';
+            var gtri = Number(km.giatriGiam || 0);
+            var isPercent = (km.loaiGiam || '').toUpperCase() === 'PERCENT';
+            var moTaGiam = isPercent ? ('Giảm ' + gtri + '%') : ('Giảm ' + formatVND(gtri) + ' đ');
+            promoInfo.textContent = (km.code || '') + ' - ' + moTaGiam +
+                (Number(km.dieuKien || 0) > 0 ? ' (áp dụng cho đơn từ ' + formatVND(km.dieuKien) + ' đ)' : '');
+            promoInfoRow.style.display = 'flex';
+        }
+
         var currentMaPhong = null;
         var currentGiaMoiDem = 0;
         var picker = null;
@@ -4117,6 +4465,51 @@
         // quay (nhan phong ngay hom nay). Dieu khien: tieu de, nhan nut Luu, ngay
         // nhan phong co bi khoa hay khong, va endpoint submit.
         var currentMode = 'lich';
+
+        // Xem truoc phu thu nhan phong som cho "Dat phong tai quay" (xem them
+        // xemTruocPhuThuNhanSomTaiQuay o NhanVienDatPhongController). Chi co y
+        // nghia khi currentMode === 'quay'; duoc dua vao Tom tat gia nhu 1 dong
+        // "Phụ thu" giong het cach tinh o tinh nang "Khách nhận phòng".
+        var currentPhuThuSom = { viPham: false, soTien: 0, moTa: '' };
+        var sdpPhuThuSomInterval = null;
+        var CTX_URL_PHU_THU_SOM_API = /*[[@{/nhan-su/so-do-phong/dat-tai-quay/phu-thu-som}]]*/ '/nhan-su/so-do-phong/dat-tai-quay/phu-thu-som';
+
+        function dungTheoDoiPhuThuSom() {
+            if (sdpPhuThuSomInterval) {
+                clearInterval(sdpPhuThuSomInterval);
+                sdpPhuThuSomInterval = null;
+            }
+        }
+
+        // Goi API xem truoc phu thu nhan phong som cho phong dang thao tac (chi
+        // dung o mode "quay"), roi ve lai Tom tat gia. Duoc goi lai dinh ky vi
+        // muc phu thu phu thuoc thoi gian thuc te trong ngay (co the doi muc khi
+        // nhan vien dang mo sidebar lau).
+        function lamMoiPhuThuSom() {
+            if (currentMode !== 'quay' || !currentMaPhong) return;
+            fetch(CTX_URL_PHU_THU_SOM_API + '?maPhong=' + encodeURIComponent(currentMaPhong))
+                .then(function (res) { return res.json(); })
+                .then(function (kq) {
+                    if (currentMode !== 'quay') return; // sidebar co the da doi mode/dong trong luc cho response
+                    if (!kq.ok) {
+                        currentPhuThuSom = { viPham: false, soTien: 0, moTa: '' };
+                    } else {
+                        currentPhuThuSom = {
+                            viPham: !!kq.viPham,
+                            soTien: Number(kq.soTien || 0),
+                            moTa: kq.moTaChinhSach || ''
+                        };
+                    }
+                    tinhTongTienLenLich();
+                })
+                .catch(function () { /* giu nguyen gia tri phu thu cu, thu lai o lan sau */ });
+        }
+
+        function batDauTheoDoiPhuThuSom() {
+            dungTheoDoiPhuThuSom();
+            lamMoiPhuThuSom();
+            sdpPhuThuSomInterval = setInterval(lamMoiPhuThuSom, 30000);
+        }
 
         function ensurePicker() {
             if (picker) return picker;
@@ -4280,6 +4673,14 @@
             dienLoiSubmit('');
             if (picker) picker.reset();
             currentGiaMoiDem = 0;
+            promoInput.value = '';
+            currentKM = null;
+            promoInfoRow.style.display = 'none';
+            promoErrorRow.style.display = 'none';
+            // Phu thu nhan phong som chi ap dung cho mode "quay" - reset ve
+            // trang thai khong vi pham moi khi mo lai sidebar (dung/moi phong).
+            currentPhuThuSom = { viPham: false, soTien: 0, moTa: '' };
+            dungTheoDoiPhuThuSom();
             tinhTongTienLenLich();
         }
 
@@ -4355,6 +4756,7 @@
 
             currentGiaMoiDem = infoPhong ? (parseFloat(infoPhong.gia) || 0) : 0;
             tinhTongTienLenLich();
+            batDauTheoDoiPhuThuSom();
 
             luuBtn.textContent = 'Đặt phòng tại quầy';
 
@@ -4389,17 +4791,25 @@
         document.getElementById('sdpLichSoTreEm').addEventListener('input', kepSoNguoiTheoSucChua);
 
         /**
-         * Tom tat gia du kien cho "Len lich dat phong": TAI SU DUNG dung cong thuc
-         * tien phong (gia/dem * so dem) + tien dich vu + VAT 10% da co san o trang
-         * "Chi tiet dat phong" (ham tinhTongTien / BookingValidate). Khong tinh phu
-         * thu gio (backend PhongService#calculateExtraFeeFor luon tra 0 cho luong
-         * nay) va khong ap khuyen mai (khong co du lieu ma khuyen mai o trang nay,
-         * se duoc backend ap dung that su luc Luu).
+         * Tom tat gia du kien cho "Len lich dat phong" / "Dat phong tai quay":
+         * TAI SU DUNG dung cong thuc tien phong (gia/dem * so dem) + tien dich vu +
+         * VAT 10% da co san o trang "Chi tiet dat phong" (ham tinhTongTien /
+         * BookingValidate). Khong tinh phu thu gio (backend
+         * PhongService#calculateExtraFeeFor luon tra 0 cho luong nay).
+         * Khuyen mai: ap dung xem truoc ngay khi nhap dung ma (kmList lay tu
+         * DB, dieu kien don toi thieu = km.dieuKien, cong thuc giam dung
+         * apDungKhuyenMai() o trang "Chi tiet dat phong" — % tinh tren
+         * (tien phong + tien dich vu) hoac so tien co dinh). Gia tri that su
+         * van do BACKEND tinh lai luc Luu (khuyenMaiCode duoc gui kem trong
+         * body); day chi la xem truoc de nhan vien thay ngay tren UI.
          */
         function tinhTongTienLenLich() {
             var soDemEl = document.getElementById('sdpLichSumSoDem');
             var tienPhongEl = document.getElementById('sdpLichSumTienPhong');
             var tienDvEl = document.getElementById('sdpLichSumTienDv');
+            var phuThuRowEl = sumPhuThuRow;
+            var tienPhuThuEl = sumTienPhuThuEl;
+            var phuThuNoteEl = sumPhuThuNoteEl;
             var vatEl = document.getElementById('sdpLichSumVat');
             var tongCongEl = document.getElementById('sdpLichSumTongCong');
 
@@ -4417,23 +4827,73 @@
             Array.prototype.slice.call(form.querySelectorAll('.sdp-lich-service-chip input:checked'))
                 .forEach(function (el) { tienDv += parseFloat(el.getAttribute('data-gia')) || 0; });
 
-            var vat = Math.round((tienPhong + tienDv) * 0.10);
-            var tongCong = tienPhong + tienDv + vat;
+            // Phu thu nhan phong som: chi ap dung o mode "quay" (Dat phong tai
+            // quay), lay tu currentPhuThuSom (xem lamMoiPhuThuSom). Cong vao truoc
+            // khi tinh khuyen mai/VAT - GIONG HET cong thuc phia server (backend
+            // cong khoan nay vao amountDvTruoc truoc khi tinh tienGiamTruoc/VAT),
+            // de so tien hien thi luon khop voi so tien backend se yeu cau
+            // (tienKhachTra) khi bam Dat phong tai quay.
+            var phuThu = (currentMode === 'quay' && currentPhuThuSom && currentPhuThuSom.viPham)
+                ? (Number(currentPhuThuSom.soTien) || 0) : 0;
+
+            var tongTruocVat = tienPhong + tienDv + phuThu;
+
+            // ===== Ap dung khuyen mai (neu co ma hop le + du dieu kien) =====
+            var tienGiam = 0;
+            if (currentKM) {
+                var dieuKien = Number(currentKM.dieuKien || 0);
+                if (dieuKien <= 0 || tongTruocVat >= dieuKien) {
+                    var gtri = Number(currentKM.giatriGiam || 0);
+                    var isPercent = (currentKM.loaiGiam || '').toUpperCase() === 'PERCENT';
+                    tienGiam = isPercent
+                        ? Math.round(tongTruocVat * gtri / 100)
+                        : Math.round(gtri);
+                    if (tienGiam > tongTruocVat) tienGiam = Math.round(tongTruocVat);
+                    promoErrorRow.style.display = 'none';
+                } else {
+                    promoError.textContent = 'Đơn phải đạt tối thiểu ' + formatVND(dieuKien) + ' đ để áp dụng mã này.';
+                    promoErrorRow.style.display = 'flex';
+                }
+            }
+
+            var vat = Math.round((tongTruocVat - tienGiam) * 0.10);
+            var tongCong = tongTruocVat - tienGiam + vat;
 
             soDemEl.textContent = soDem > 0 ? (soDem + ' đêm') : '--';
             tienPhongEl.textContent = 'đ ' + Math.round(tienPhong).toLocaleString('vi-VN');
             tienDvEl.textContent = 'đ ' + Math.round(tienDv).toLocaleString('vi-VN');
+            if (phuThu > 0) {
+                tienPhuThuEl.textContent = 'đ ' + Math.round(phuThu).toLocaleString('vi-VN');
+                phuThuRowEl.style.display = 'flex';
+                phuThuNoteEl.textContent = currentPhuThuSom.moTa || 'Phát hiện vi phạm chính sách nhận phòng sớm — đã tự động cộng khoản phụ thu vào tổng tiền.';
+                phuThuNoteEl.style.display = 'block';
+            } else {
+                phuThuRowEl.style.display = 'none';
+                phuThuNoteEl.style.display = 'none';
+            }
+            if (tienGiam > 0) {
+                sumTienGiamEl.textContent = '- đ ' + Math.round(tienGiam).toLocaleString('vi-VN');
+                sumGiamRow.style.display = 'flex';
+                sumHintEl.textContent = 'Đã áp dụng mã khuyến mại.';
+            } else {
+                sumGiamRow.style.display = 'none';
+                sumHintEl.textContent = 'Nhập mã khuyến mại hợp lệ để xem giá đã giảm.';
+            }
             vatEl.textContent = 'đ ' + Math.round(vat).toLocaleString('vi-VN');
             tongCongEl.textContent = 'đ ' + Math.round(tongCong).toLocaleString('vi-VN');
         }
         form.querySelectorAll('.sdp-lich-service-chip input').forEach(function (el) {
             el.addEventListener('change', tinhTongTienLenLich);
         });
+        promoInput.addEventListener('input', function () { apDungKhuyenMaiLenLich(); tinhTongTienLenLich(); });
+        promoInput.addEventListener('change', function () { apDungKhuyenMaiLenLich(); tinhTongTienLenLich(); });
+        promoInput.addEventListener('blur', function () { apDungKhuyenMaiLenLich(); tinhTongTienLenLich(); });
 
         function dongLichSidebar() {
             sidebar.classList.remove('open');
             backdrop.classList.remove('open');
             calWrap.classList.remove('open');
+            dungTheoDoiPhuThuSom();
         }
 
         document.getElementById('sdpLichCloseBtn').addEventListener('click', dongLichSidebar);

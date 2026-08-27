@@ -16,16 +16,21 @@ import su26sd09.su26sd09.entity.Phong;
 import su26sd09.su26sd09.repository.NhanVienRepo;
 import su26sd09.su26sd09.repository.PhongRepository;
 import su26sd09.su26sd09.service.JanitorCacheService;
+import su26sd09.su26sd09.service.NhanVienService;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * Trang dành cho nhân viên vệ sinh (tài khoản STAFF, bộ phận "Vệ Sinh"):
@@ -47,6 +52,99 @@ public class NhanVienVeSinhController {
 
     @Autowired
     private JanitorCacheService cacheService;
+
+    @Autowired
+    private NhanVienService nhanVienService;
+
+    private static final Set<String> TRANG_THAI_CAN_DON = Set.of("Dang don", "Đang dọn");
+
+    /**
+     * Danh sach nhan vien bo phan "Ve Sinh" (dang hoat dong), kem trang thai
+     * ban/ranh hien tai - dung cho submenu "Yeu cau don dep" o So Do Phong
+     * (le tan chon thu cong 1 nhan vien de gan cho phong dang can don).
+     */
+    @GetMapping("/danh-sach-nhan-vien")
+    @ResponseBody
+    public List<Map<String, Object>> danhSachNhanVienVeSinh() {
+        Map<Integer, PhongVeSinhAssignment> dangGanTheoNhanVien = cacheService.getAll().stream()
+                .collect(Collectors.toMap(PhongVeSinhAssignment::getMaNhanVien, a -> a, (a, b) -> a));
+
+        List<Map<String, Object>> ds = new ArrayList<>();
+        List<NhanSu> tatCa = nhanVienRepo.findAll().stream()
+                .filter(NhanSu::isTrang_thai)
+                .filter(n -> nhanVienService.laBoPhanVeSinh(n.getBoPhan()))
+                .sorted((a, b) -> {
+                    String ta = a.getHoten() == null ? "" : a.getHoten();
+                    String tb = b.getHoten() == null ? "" : b.getHoten();
+                    return ta.compareToIgnoreCase(tb);
+                })
+                .collect(Collectors.toList());
+
+        for (NhanSu n : tatCa) {
+            Map<String, Object> item = new HashMap<>();
+            item.put("maNhanVien", n.getId());
+            item.put("tenNhanVien", n.getHoten());
+            PhongVeSinhAssignment dangGan = dangGanTheoNhanVien.get(n.getId());
+            item.put("dangBan", dangGan != null);
+            item.put("phongDangGan", dangGan != null ? dangGan.getSoPhong() : null);
+            ds.add(item);
+        }
+        return ds;
+    }
+
+    /**
+     * Le tan gan thu cong 1 nhan vien ve sinh cho 1 phong dang o trang thai
+     * "Dang don" (nut "Yeu cau don dep" tren menu chuot phai So Do Phong).
+     * Ap dung dung quy tac "1 nhan vien chi phu trach 1 phong": neu nhan
+     * vien nay dang duoc gan cho phong khac thi go gan khoi phong do truoc.
+     */
+    @PostMapping("/gan-thu-cong/{maPhong}")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> ganThuCong(@PathVariable int maPhong,
+                                                            @RequestParam int maNhanVien) {
+        Map<String, Object> result = new HashMap<>();
+
+        Optional<Phong> maybePhong = phongRepository.findById(maPhong);
+        if (maybePhong.isEmpty()) {
+            result.put("success", false);
+            result.put("message", "Không tìm thấy phòng.");
+            return ResponseEntity.badRequest().body(result);
+        }
+        Phong phong = maybePhong.get();
+        if (!TRANG_THAI_CAN_DON.contains(phong.getTrangThai())) {
+            result.put("success", false);
+            result.put("message", "Phòng này hiện không ở trạng thái \"Đang dọn\".");
+            return ResponseEntity.badRequest().body(result);
+        }
+
+        Optional<NhanSu> maybeNv = nhanVienRepo.findById(maNhanVien);
+        if (maybeNv.isEmpty() || !maybeNv.get().isTrang_thai()
+                || !nhanVienService.laBoPhanVeSinh(maybeNv.get().getBoPhan())) {
+            result.put("success", false);
+            result.put("message", "Không tìm thấy nhân viên vệ sinh phù hợp.");
+            return ResponseEntity.badRequest().body(result);
+        }
+        NhanSu nv = maybeNv.get();
+
+        // 1 nhan vien chi phu trach 1 phong: neu dang gan phong khac thi go ra truoc.
+        cacheService.findByNhanVien(maNhanVien)
+                .filter(a -> a.getMaPhong() != maPhong)
+                .ifPresent(a -> cacheService.remove(a.getMaPhong()));
+
+        PhongVeSinhAssignment assignment = new PhongVeSinhAssignment();
+        assignment.setMaPhong(phong.getMaPhong());
+        assignment.setSoPhong(phong.getSoPhong());
+        assignment.setMaNhanVien(nv.getId());
+        assignment.setTenNhanVien(nv.getHoten());
+        assignment.setTrangThai(PhongVeSinhAssignment.DA_GAN);
+        assignment.setThoiGianGan(LocalDateTime.now().toString());
+        cacheService.upsert(assignment);
+
+        result.put("success", true);
+        result.put("maPhong", maPhong);
+        result.put("tenNhanVien", nv.getHoten());
+        return ResponseEntity.ok(result);
+    }
 
     @GetMapping
     public String trangVeSinh(Model model, Authentication authentication, HttpServletRequest request) {

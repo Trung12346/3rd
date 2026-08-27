@@ -59,6 +59,7 @@ public class NhanVienCheckoutController {
     @Autowired private su26sd09.su26sd09.repository.ThanhToanRepo thanhToanRepo;
     @Autowired private NhanVienService nhanVienService;
     @Autowired private TemplateEngine templateEngine;
+    @Autowired private su26sd09.su26sd09.service.LichSuHoatDongService lichSuHoatDongService;
 
     private static final BigDecimal VAT = new BigDecimal("0.10");
 
@@ -449,6 +450,11 @@ public class NhanVienCheckoutController {
         ct.setGhichu("Phát sinh lúc trả phòng");
         ctdvService.save(ct);
 
+        // Dong bo lai tienDichVu/tienVat/tongTien cua hoa don theo tong don_gia
+        // moi nhat trong chi_tiet_dich_vu (bao gom dich vu vua them o tren),
+        // tranh hoa don bi lech - thieu khoan dich vu vua phat sinh nay.
+        hoaDonService.dongBoTienDichVuTuChiTiet(id);
+
         redirectAttributes.addFlashAttribute("success", "Đã thêm dịch vụ \"" + dv.getTen_dich_vu() + "\" vào đơn #" + id);
         return "redirect:/nhan-su/checkout/" + id;
     }
@@ -535,6 +541,12 @@ public class NhanVienCheckoutController {
         hoaDon.setDaThanhToan(daThanhToan.add(canThu));
         hoaDonService.saveWithPaymentStatusCheck(hoaDon);
 
+        lichSuHoatDongService.ghiLogAn(authentication,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.HD_THU_TIEN,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.DT_HOA_DON,
+                hoaDon.getId(),
+                "Thu " + canThu.toPlainString() + " VND (" + phuongThuc + ") cho đơn #" + id);
+
         redirectAttributes.addFlashAttribute("success",
                 "Đã thu " + canThu.toPlainString() + " VND cho đơn #" + id + ".");
         return "redirect:/nhan-su/checkout/" + id;
@@ -609,6 +621,12 @@ public class NhanVienCheckoutController {
         // Khong goi saveWithPaymentStatusCheck: trangThai hoa don van giu nguyen (Da thanh toan hoac Cho thanh toan),
         // vi ban than no da phan anh tong tien - daThanhToan, khong lien quan den daHoanTra.
         hoaDonService.save(hoaDon);
+
+        lichSuHoatDongService.ghiLogAn(authentication,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.HD_HOAN_TIEN,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.DT_HOA_DON,
+                hoaDon.getId(),
+                "Ghi nhận hoàn " + canHoan.toPlainString() + " VND (" + hinhThuc + ") cho đơn #" + id);
 
         redirectAttributes.addFlashAttribute("success",
                 "Đã ghi nhận hoàn " + canHoan.toPlainString() + " VND cho đơn #" + id +
@@ -736,6 +754,14 @@ public class NhanVienCheckoutController {
         String phuPhiInfo = phuPhiTraMuon.signum() > 0
                 ? " Đã tính phụ phí trả muộn: " + phuPhiTraMuon.toPlainString() + " VND."
                 : "";
+
+        lichSuHoatDongService.ghiLogAn(authentication,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.HD_CHECK_OUT,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.DT_DAT_PHONG,
+                id,
+                "Trả phòng cho đơn #" + id + ". Tổng tiền: " + tongTien.toPlainString() + " VND."
+                        + (phuPhiTraMuon.signum() > 0 ? (" Phụ phí trả muộn: " + phuPhiTraMuon.toPlainString() + " VND.") : ""));
+
         redirectAttributes.addFlashAttribute("success",
                 "Trả phòng thành công cho đơn #" + id + "." + phuPhiInfo + hoaDonInfo);
         return "redirect:/nhan-su/checkout/" + id;

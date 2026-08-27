@@ -442,8 +442,14 @@ public class VnpayService {
         // xac nhan yeu cau va kiem tra phong, phong moi chinh thuc duoc danh dau.
         // Phong chi chuyen sang "Da dat truoc" qua createAutoAssignedBooking() luc tao don.
 
-        HoaDon hd = new HoaDon();
-        hd.setNgayXuat(LocalDateTime.now());
+        // FIX: hoa_don.ma_dat_phong la UNIQUE (1 don chi co 1 hoa don). _hd o tren
+        // da kiem tra xem hoa don cho don nay da ton tai chua (vd duoc tao truoc
+        // do o buoc "Xac nhan thong tin khach" hoac 1 lan goi callback truoc), nen
+        // o day PHAI cap nhat lai _hd neu no da ton tai thay vi luon insert HoaDon
+        // moi - insert moi trong khi da co san se vi pham UNIQUE KEY constraint
+        // (loi 500 "Cannot insert duplicate key... object 'dbo.hoa_don'").
+        HoaDon hd = _hd != null ? _hd : new HoaDon();
+        hd.setNgayXuat(hd.getNgayXuat() != null ? hd.getNgayXuat() : LocalDateTime.now());
         hd.setD(dp);
         hd.setK(dp.getKm());
         hd.setTienDichVu(amountDv);
@@ -452,15 +458,22 @@ public class VnpayService {
         hd.setTongTien(amountTongTien);
         hd.setTienGiam(tienGiam);
         hd.setTienVat(tienVat);
-        hd.setDaThanhToan(amountVnpay);
+        // Cong don voi so da thu truoc do (vd da tra coc tien mat truoc, gio tra
+        // not phan con lai qua VNPay) thay vi ghi de chi bang so tien cua giao
+        // dich VNPay lan nay - tranh lam "mat" tien da thu truoc do trong so sach.
+        hd.setDaThanhToan(tongDaThanhToan);
         hd.setGhiChu("So Phong Dat: " + chiTietDatPhong.size() + " Ma Dat Phong: " + maDatPhong);
-        hd.setNgayCapNhat(null);
+        hd.setNgayCapNhat(_hd != null ? LocalDateTime.now() : null);
         hoaDonService.saveWithPaymentStatusCheck(hd);
 
         ThanhToan thanhToan = new ThanhToan();
         thanhToan.setPhuongThuc("Chuyen Khoan");
         thanhToan.setH(hd);
-        thanhToan.setSoTien(amountTongTien);
+        // FIX: ghi dung so tien CUA GIAO DICH VNPAY NAY (amountVnpay), khong phai
+        // amountTongTien (tong ca don) - neu truoc do da co thanh toan mot phan
+        // (vd tien mat), dung amountTongTien o day se lam tong cac dong ThanhToan
+        // bi cong trung/vuot qua tong tien thuc su da thu.
+        thanhToan.setSoTien(amountVnpay);
         thanhToan.setTrangThai("Thanh cong");
         thanhToan.setMagiaodich(vnp_TransactionNo);
         thanhToan.setNv(nvGan);
