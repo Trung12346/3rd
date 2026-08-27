@@ -88,6 +88,9 @@ public class AdminDatPhongController {
     @Autowired
     private su26sd09.su26sd09.repository.GiayToRepo giayToRepo;
 
+    @Autowired
+    private su26sd09.su26sd09.service.LichSuHoatDongService lichSuHoatDongService;
+
     /**
      * Lay so giay to (CCCD/Ho chieu) cua khach dai dien cho 1 phong cu the
      * (chi_tiet_dat_phong), thu thap luc check-in tai "So do phong" — KHONG
@@ -259,6 +262,7 @@ public class AdminDatPhongController {
                           @RequestParam(value = "newCccds", required = false) List<String> newCccds,
                           @RequestParam("lyDoDoi") String lyDoDoi,
                           @RequestParam(value = "fromCheckin", required = false, defaultValue = "false") boolean fromCheckin,
+                          Authentication authentication,
                           RedirectAttributes redirectAttributes) {
         DatPhong datPhong = datPhongService.findById(id);
         if (datPhong == null) {
@@ -431,7 +435,13 @@ public class AdminDatPhongController {
                 : defaultMoney(chenhLechTong).toPlainString() + " VND";
         redirectAttributes.addFlashAttribute("thanhCongCapNhat",
                 "Da doi thanh cong " + soPhongDoi + " phong. Chenh lech: " + chenhLechStr + ". Ly do: " + lyDoDoi.trim());
-        
+
+        lichSuHoatDongService.ghiLogAn(authentication,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.HD_CAP_NHAT_DAT_PHONG,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.DT_DAT_PHONG,
+                id,
+                "Doi " + soPhongDoi + " phong cho don #" + id + ", chenh lech " + chenhLechStr + ", ly do: " + lyDoDoi.trim());
+
         // Nếu đổi phòng từ trang check-in, redirect về check-in, ngược lại về chi tiết
         if (fromCheckin) {
             return "redirect:/nhan-su/admin/dat-phong/check-in?id=" + id;
@@ -502,6 +512,7 @@ public class AdminDatPhongController {
                                         @RequestParam(value = "phatSinhNgay", required = false) List<String> phatSinhNgayList,
                                         @RequestParam(value = "phatSinhGhiChu", required = false) List<String> phatSinhGhiChuList,
                                         @RequestParam Map<String, String> allParams,
+                                        Authentication authentication,
                                         RedirectAttributes redirectAttributes) {
         DatPhong datPhong = datPhongService.findById(id);
         if (datPhong == null) {
@@ -540,6 +551,12 @@ public class AdminDatPhongController {
                 phatSinhTenList, phatSinhDonGiaList, phatSinhSoLuongList, phatSinhNgayList, phatSinhGhiChuList,
                 allParams);
         capNhatHoaDonNeuCo(id, tongTienPhong, tongTienDichVu, tongTienGiam, tongTienVat, tongCong, km);
+
+        lichSuHoatDongService.ghiLogAn(authentication,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.HD_CAP_NHAT_DAT_PHONG,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.DT_DAT_PHONG,
+                id,
+                "Cap nhat chi tiet don dat phong #" + id);
 
         redirectAttributes.addFlashAttribute("thanhCongCapNhat", "Cap nhat chi tiet dat phong #" + id + " thanh cong.");
         return "redirect:/nhan-su/admin/dat-phong/chi-tiet/" + id;
@@ -775,10 +792,17 @@ public class AdminDatPhongController {
     public String huyDonAdmin(@RequestParam Integer id,
                               @RequestParam(defaultValue = "0") int page,
                               @RequestParam(defaultValue = "10") int size,
+                              Authentication authentication,
                               RedirectAttributes redirectAttributes) {
 
         KetQuaHuyDonDTO ketQua = huyDonService.huyDon(id);
         redirectAttributes.addFlashAttribute("thongBao", ketQua.getThongBao());
+
+        lichSuHoatDongService.ghiLogAn(authentication,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.HD_HUY_DAT_PHONG,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.DT_DAT_PHONG,
+                id,
+                "Huy don dat phong #" + id + ": " + ketQua.getThongBao());
 
         if (ketQua.isCanHoanTien()) {
             // Có tiền cần hoàn -> đi thẳng sang trang xử lý hoàn tiền (AdminHoanTienController)
@@ -910,6 +934,7 @@ public class AdminDatPhongController {
                                   // Dung HttpServletRequest de doc tat ca param, tranh xung dot
                                   // voi @RequestParam rieng tu cac field khac.
                                   jakarta.servlet.http.HttpServletRequest request,
+                                  Authentication authentication,
                                   RedirectAttributes redirectAttributes) {
 
         DatPhong dp = datPhongService.findById(id);
@@ -932,6 +957,14 @@ public class AdminDatPhongController {
 
         dp.setTrangThai(trangThai);
         datPhongService.save(dp);
+
+        lichSuHoatDongService.ghiLogAn(authentication,
+                "Da nhan phong".equals(trangThai)
+                        ? su26sd09.su26sd09.constants.LichSuHoatDongConstants.HD_CHECK_IN
+                        : su26sd09.su26sd09.constants.LichSuHoatDongConstants.HD_CAP_NHAT_DAT_PHONG,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.DT_DAT_PHONG,
+                id,
+                "Chuyen trang thai don #" + id + " sang \"" + trangThai + "\"");
 
         List<ChiTietDatPhong> chiTietDatPhongs =
                 chiTietDatPhongService.findByDatPhongId(id);
@@ -1027,6 +1060,7 @@ public class AdminDatPhongController {
             @RequestParam("sotreEm") int sotreEm,
             @RequestParam(value = "yeuCauThem", required = false) String yeuCauThem,
             @RequestParam("trangThai") String trangThai,
+            Authentication authentication,
             RedirectAttributes redirectAttributes) {
 
         DatPhong dp = datPhongService.findById(id);
@@ -1052,6 +1086,12 @@ public class AdminDatPhongController {
 
         datPhongService.save(dp);
 
+        lichSuHoatDongService.ghiLogAn(authentication,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.HD_CAP_NHAT_DAT_PHONG,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.DT_DAT_PHONG,
+                id,
+                "Cap nhat don dat phong #" + id + " (admin)");
+
         redirectAttributes.addFlashAttribute("success", "Cập nhật đơn đặt phòng #" + id + " thành công");
         return "redirect:/nhan-su/admin/dat-phong";
     }
@@ -1061,6 +1101,7 @@ public class AdminDatPhongController {
                                    @RequestParam(required = false) String email,
                                    @RequestParam(required = false) String sdt,
                                    @RequestParam(required = false) String maCccd,
+                                   Authentication authentication,
                                    RedirectAttributes redirectAttributes) {
         DatPhong dp = datPhongService.findById(id);
         if (dp == null) {
@@ -1090,12 +1131,19 @@ public class AdminDatPhongController {
         dp.setNgayCapNhat(LocalDateTime.now());
         datPhongService.save(dp);
 
+        lichSuHoatDongService.ghiLogAn(authentication,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.HD_CAP_NHAT_DAT_PHONG,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.DT_DAT_PHONG,
+                id,
+                "Cap nhat thong tin khach hang cho don #" + id);
+
         redirectAttributes.addFlashAttribute("thanhCongCapNhat", "Cap nhat thong tin khach hang thanh cong.");
         return "redirect:/nhan-su/dat-phong/chi-tiet/" + id;
     }
     @PostMapping("/dat-phong/chi-tiet/{id}/thu-tien")
     public String thuTien(@PathVariable Integer id, @RequestParam BigDecimal soTien,
-                          @RequestParam String phuongthuc, HttpServletRequest request, RedirectAttributes redirectAttributes){
+                          @RequestParam String phuongthuc, HttpServletRequest request,
+                          Authentication authentication, RedirectAttributes redirectAttributes){
         HoaDon hd = hoaDonService.findByDatPhongId(id);
         DatPhong dp = datPhongService.findById(id);
         if(hd == null&&dp==null){
@@ -1131,6 +1179,12 @@ public class AdminDatPhongController {
         hd.setDaThanhToan(daThanhToan.add(soTien));
         hd.setNgayCapNhat(LocalDateTime.now());
         hoaDonService.saveWithPaymentStatusCheck(hd);
+
+        lichSuHoatDongService.ghiLogAn(authentication,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.HD_THU_TIEN,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.DT_HOA_DON,
+                id,
+                "Thu " + soTien.toPlainString() + " VND tien mat dich vu phat sinh, don #" + id);
 
         redirectAttributes.addFlashAttribute("success", "Đã thu " + soTien + " VND tiền mặt.");
         return "redirect:/nhan-su/dat-phong/chi-tiet/" + id;
@@ -1495,7 +1549,7 @@ public class AdminDatPhongController {
                 .filter(dp -> tuKhoa.isEmpty()
                         || (dp.getHoten() != null && dp.getHoten().toLowerCase().contains(tuKhoa))
                         || (dp.getN() != null && dp.getN().getHoTen() != null
-                                && dp.getN().getHoTen().toLowerCase().contains(tuKhoa))
+                        && dp.getN().getHoTen().toLowerCase().contains(tuKhoa))
                         || (dp.getSdt() != null && dp.getSdt().contains(tuKhoa))
                         || String.valueOf(dp.getId()).contains(tuKhoa))
                 .sorted(comparing(DatPhong::getNgaytraPhong))
@@ -1633,9 +1687,9 @@ public class AdminDatPhongController {
 
     @PostMapping("/checkout/{id}/them-dich-vu")
     public String adminCheckoutThemDichVu(@PathVariable Integer id,
-                                           @RequestParam Integer maDichVu,
-                                           @RequestParam(defaultValue = "1") Integer soLuong,
-                                           RedirectAttributes redirectAttributes) {
+                                          @RequestParam Integer maDichVu,
+                                          @RequestParam(defaultValue = "1") Integer soLuong,
+                                          RedirectAttributes redirectAttributes) {
         DatPhong dp = datPhongService.findById(id);
         if (dp == null) {
             redirectAttributes.addFlashAttribute("error", "Không tìm thấy đơn đặt phòng #" + id);
@@ -1744,6 +1798,12 @@ public class AdminDatPhongController {
         hoaDon.setDaThanhToan(daThanhToan.add(canThu));
         hoaDonService.saveWithPaymentStatusCheck(hoaDon);
 
+        lichSuHoatDongService.ghiLogAn(authentication,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.HD_THU_TIEN,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.DT_HOA_DON,
+                id,
+                "Thu " + canThu.toPlainString() + " VND khi tra phong (admin), don #" + id);
+
         redirectAttributes.addFlashAttribute("success",
                 "Đã thu " + canThu.toPlainString() + " VND cho đơn #" + id + ".");
         return "redirect:/nhan-su/admin/dat-phong/checkout/" + id;
@@ -1811,6 +1871,12 @@ public class AdminDatPhongController {
         hoaDon.setNgayCapNhat(LocalDateTime.now());
         hoaDonService.save(hoaDon);
 
+        lichSuHoatDongService.ghiLogAn(authentication,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.HD_HOAN_TIEN,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.DT_HOA_DON,
+                id,
+                "Ghi nhan hoan " + canHoan.toPlainString() + " VND khi tra phong (admin), don #" + id);
+
         redirectAttributes.addFlashAttribute("success",
                 "Đã ghi nhận hoàn " + canHoan.toPlainString() + " VND cho đơn #" + id
                         + ". Yêu cầu đang chờ xử lý.");
@@ -1821,6 +1887,7 @@ public class AdminDatPhongController {
 
     @PostMapping("/checkout/{id}/xac-nhan")
     public String adminCheckoutXacNhan(@PathVariable Integer id,
+                                       Authentication authentication,
                                        RedirectAttributes redirectAttributes) {
         DatPhong dp = datPhongService.findById(id);
         if (dp == null) {
@@ -1876,6 +1943,13 @@ public class AdminDatPhongController {
         String hoaDonInfo = (hoaDon != null)
                 ? " Hóa đơn #" + hoaDon.getId() + " - Tổng tiền: " + tongTien.toPlainString() + " VND."
                 : "";
+
+        lichSuHoatDongService.ghiLogAn(authentication,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.HD_CHECK_OUT,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.DT_DAT_PHONG,
+                id,
+                "Tra phong (admin) cho don #" + id + "." + hoaDonInfo);
+
         redirectAttributes.addFlashAttribute("success",
                 "Trả phòng thành công cho đơn #" + id + "." + hoaDonInfo);
         return "redirect:/nhan-su/admin/dat-phong/checkout/" + id;
@@ -1962,5 +2036,3 @@ public class AdminDatPhongController {
         renderer.createPDF(response.getOutputStream());
     }
 }
-
-
