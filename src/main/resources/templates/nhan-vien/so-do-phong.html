@@ -2145,10 +2145,12 @@
             return totalMin + ' phút';
         }
 
-        // Đơn chưa nhận phòng (còn hiệu lực) gần nhất theo thời điểm check-in
+        // Đơn CHƯA đến giờ check-in (còn hiệu lực), gần nhất theo thời điểm check-in.
         //  - CHỈ xét các đơn có check-in RƠI VÀO HÔM NAY (todayStart -> todayEnd,
         //    cùng khung giờ với tinCheckInHomNay, bao gồm cả qua đêm tới 12h trưa
         //    hôm sau) để tránh báo cảnh báo cho đơn còn rất xa ngày nhận phòng.
+        //  - Dùng riêng cho trạng thái "sắp đến / còn hạn" của badge — KHÔNG áp
+        //    dụng giới hạn "hôm nay" này cho đơn đã trễ (xem tinDonTreNhanPhong).
         function tinChoNhanPhongGanNhat(maPhong, t) {
             var list = getBookings(maPhong).filter(function (b) {
                 return b.trangThai === 'Yeu cau dat phong' || b.trangThai === 'Cho xac nhan' || b.trangThai === 'Da xac nhan';
@@ -2159,8 +2161,28 @@
                 if (!co || co <= t) return;
                 var ci = parseDt(b.checkin);
                 if (!ci) return;
+                if (ci <= t) return; // da qua gio nhan phong -> thuoc ve tinDonTreNhanPhong, khong xet o day
                 if (ci < todayStart || ci >= todayEnd) return; // bo qua don khong check-in hom nay
                 if (!target || ci < parseDt(target.checkin)) target = b;
+            });
+            return target;
+        }
+
+        // Đơn ĐÃ QUA giờ check-in dự kiến nhưng khách chưa nhận phòng thực tế —
+        // dùng cho trạng thái "Trễ nhận phòng" của badge. KHÔNG giới hạn theo
+        // ngày check-in (khác tinChoNhanPhongGanNhat ở trên): một đơn trễ vẫn
+        // phải tiếp tục cảnh báo dù đã trễ từ hôm qua hay lâu hơn.
+        function tinDonTreNhanPhong(maPhong, t) {
+            var list = getBookings(maPhong).filter(function (b) {
+                return b.trangThai === 'Yeu cau dat phong' || b.trangThai === 'Cho xac nhan' || b.trangThai === 'Da xac nhan';
+            });
+            var target = null;
+            list.forEach(function (b) {
+                var co = parseDt(b.checkout);
+                if (!co || co <= t) return;
+                var ci = parseDt(b.checkin);
+                if (!ci || ci > t) return; // chua den gio nhan phong -> khong phai "tre"
+                if (!target || ci < parseDt(target.checkin)) target = b; // tre lau nhat truoc
             });
             return target;
         }
@@ -2170,17 +2192,25 @@
             var badge = card.querySelector('[data-checkin-badge]');
             if (!badge) return;
 
-            // Neu phong dang co don chiem giu hien tai (dang o / da nhan phong thuc te
-            // hoac da qua gio nhan phong du kien ma chua tra phong) thi khong hien thi
-            // canh bao check-in sap toi cho phong nay nua.
-            if (tinDonHienTai(maPhong)) {
-                badge.classList.remove('show', 'cd-soon', 'cd-urgent', 'cd-overdue');
+            var t = nowTick();
+            var labelEl = badge.querySelector('[data-cd-label]');
+            var timeEl = badge.querySelector('[data-cd-time]');
+
+            // Uu tien canh bao "Tre nhan phong" (khong gioi han theo ngay) truoc,
+            // vi day la truong hop khan cap hon so voi countdown sap toi.
+            var treTarget = tinDonTreNhanPhong(maPhong, t);
+            if (treTarget) {
+                var ciTre = parseDt(treTarget.checkin);
+                badge.classList.add('show');
+                badge.classList.remove('cd-soon', 'cd-urgent', 'cd-overdue');
+                labelEl.textContent = 'Trễ nhận phòng ';
+                timeEl.textContent = fmtCountdown(t - ciTre);
+                badge.classList.add('cd-overdue');
                 return;
             }
 
-            var t = nowTick();
+            // Khong tre -> chi hien canh bao "sap toi" neu check-in la HOM NAY.
             var target = tinChoNhanPhongGanNhat(maPhong, t);
-
             if (!target) {
                 badge.classList.remove('show', 'cd-soon', 'cd-urgent', 'cd-overdue');
                 return;
@@ -2188,21 +2218,12 @@
 
             var ci = parseDt(target.checkin);
             var diffMs = ci - t;
-            var labelEl = badge.querySelector('[data-cd-label]');
-            var timeEl = badge.querySelector('[data-cd-time]');
 
             badge.classList.add('show');
             badge.classList.remove('cd-soon', 'cd-urgent', 'cd-overdue');
-
-            if (diffMs <= 0) {
-                labelEl.textContent = 'Trễ nhận phòng ';
-                timeEl.textContent = fmtCountdown(-diffMs);
-                badge.classList.add('cd-overdue');
-            } else {
-                labelEl.textContent = 'Nhận phòng sau ';
-                timeEl.textContent = fmtCountdown(diffMs);
-                badge.classList.add(diffMs < 3600000 ? 'cd-urgent' : 'cd-soon');
-            }
+            labelEl.textContent = 'Nhận phòng sau ';
+            timeEl.textContent = fmtCountdown(diffMs);
+            badge.classList.add(diffMs < 3600000 ? 'cd-urgent' : 'cd-soon');
         }
 
         function capNhatTatCaBadgeCheckIn() {
