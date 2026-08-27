@@ -50,62 +50,70 @@ public class ThanhToanController {
     @Autowired
     BookingEmailService bookingEmailService;
 
-        @GetMapping("/dat-phong/{id}")
-        public String submitTransaction(@PathVariable Integer id,Model model,
-                                        RedirectAttributes redirectAttributes){
-            DatPhong dp = datPhongService.findById(id);
-            if(dp == null){
-                return "redirect:/home";
-            }
-            if(dp.getTrangThai().equals("Da xac nhan") || dp.getTrangThai().equalsIgnoreCase("Da thanh toan")){
-                return "redirect:/home";
-            }
-
-            // ===== Backup thông minh cho khách vãng lai =====
-            // Kiểm tra xem khách đã điền đủ thông tin chưa. Nếu thiếu -> redirect
-            // về trang điền thông tin (KHÔNG hiện trang chọn PTTT VNPay).
-            // Dịch vụ bổ sung là optional, nên KHÔNG ép khách quay lại chọn DV.
-            if (dp.getN() == null) {
-                boolean thieuThongTin = dp.getHoten() == null || dp.getHoten().isBlank()
-                        || dp.getEmail() == null || dp.getEmail().isBlank()
-                        || dp.getSdt() == null || dp.getSdt().isBlank();
-                if (thieuThongTin) {
-                    redirectAttributes.addFlashAttribute("thongBao",
-                            "Vui lòng hoàn tất thông tin khách trước khi thanh toán.");
-                    return "redirect:/phong/dat-phong/thong-tin-khach/" + id;
-                }
-            }
-
-            BigDecimal Totalamount = BigDecimal.ZERO;
-            BigDecimal amountDv = BigDecimal.ZERO;
-            BigDecimal amountPhong = BigDecimal.ZERO;
-            BigDecimal ThueVat = new BigDecimal("0.10");
-
-            List<ChiTietDatPhong> chiTietDatPhongs = chiTietDatPhongService.findByDatPhongId(id);
-            List<Chi_tiet_dich_vu> chiTietDichVus = ctdvService.findByDatPhongId(id);
-
-            for(ChiTietDatPhong ctdp : chiTietDatPhongs){
-                Totalamount = Totalamount.add(ctdp.getGiaKhiDat());
-                amountPhong = amountPhong.add(ctdp.getGiaKhiDat());
-            }
-
-            for(Chi_tiet_dich_vu ctdv: chiTietDichVus){
-                amountDv = amountDv.add(ctdv.getDonGia());
-            }
-
-            // KM: ap dung tren TONG (phong + dich vu), VAT 10% tinh tren gia SAU GIAM
-            BigDecimal tienGiam = tinhTienGiam(amountPhong.add(amountDv), dp.getKm());
-            BigDecimal tongSauGiam = amountPhong.add(amountDv).subtract(tienGiam);
-            BigDecimal tienVat = tongSauGiam.multiply(ThueVat).setScale(2,RoundingMode.HALF_UP);
-            Totalamount = tongSauGiam.add(tienVat);
-            model.addAttribute("datPhong",dp);
-            model.addAttribute("TongTien",amountPhong);
-            model.addAttribute("TienDv",amountDv);
-            model.addAttribute("TienGiam",tienGiam);
-            model.addAttribute("TienVat",tienVat);
-            model.addAttribute("TongCong",Totalamount);
-            return "Thanh-Toan";
+    @GetMapping("/dat-phong/{id}")
+    public String submitTransaction(@PathVariable Integer id,Model model,
+                                    RedirectAttributes redirectAttributes){
+        DatPhong dp = datPhongService.findById(id);
+        if(dp == null){
+            return "redirect:/home";
         }
+        if(dp.getTrangThai().equals("Da xac nhan") || dp.getTrangThai().equalsIgnoreCase("Da thanh toan")){
+            return "redirect:/home";
+        }
+
+        // ===== Backup thông minh cho khách vãng lai =====
+        // Kiểm tra xem khách đã điền đủ thông tin chưa. Nếu thiếu -> redirect
+        // về trang điền thông tin (KHÔNG hiện trang chọn PTTT VNPay).
+        // Dịch vụ bổ sung là optional, nên KHÔNG ép khách quay lại chọn DV.
+        if (dp.getN() == null) {
+            boolean thieuThongTin = dp.getHoten() == null || dp.getHoten().isBlank()
+                    || dp.getEmail() == null || dp.getEmail().isBlank()
+                    || dp.getSdt() == null || dp.getSdt().isBlank();
+            if (thieuThongTin) {
+                redirectAttributes.addFlashAttribute("thongBao",
+                        "Vui lòng hoàn tất thông tin khách trước khi thanh toán.");
+                return "redirect:/phong/dat-phong/thong-tin-khach/" + id;
+            }
+        }
+
+        BigDecimal Totalamount = BigDecimal.ZERO;
+        BigDecimal amountDv = BigDecimal.ZERO;
+        BigDecimal amountPhong = BigDecimal.ZERO;
+        BigDecimal ThueVat = new BigDecimal("0.10");
+
+        List<ChiTietDatPhong> chiTietDatPhongs = chiTietDatPhongService.findByDatPhongId(id);
+        List<Chi_tiet_dich_vu> chiTietDichVus = ctdvService.findByDatPhongId(id);
+
+        for(ChiTietDatPhong ctdp : chiTietDatPhongs){
+            Totalamount = Totalamount.add(ctdp.getGiaKhiDat());
+            amountPhong = amountPhong.add(ctdp.getGiaKhiDat());
+        }
+
+        for(Chi_tiet_dich_vu ctdv: chiTietDichVus){
+            amountDv = amountDv.add(ctdv.getDonGia());
+        }
+
+        // KM: ap dung tren TONG (phong + dich vu), VAT 10% tinh tren gia SAU GIAM
+        BigDecimal tienGiam = tinhTienGiam(amountPhong.add(amountDv), dp.getKm());
+        BigDecimal tongSauGiam = amountPhong.add(amountDv).subtract(tienGiam);
+        BigDecimal tienVat = tongSauGiam.multiply(ThueVat).setScale(2,RoundingMode.HALF_UP);
+        Totalamount = tongSauGiam.add(tienVat);
+
+        long nightCount = java.time.temporal.ChronoUnit.DAYS.between(
+                dp.getNgaydatPhong().toLocalDate(), dp.getNgaytraPhong().toLocalDate());
+
+        model.addAttribute("datPhong",dp);
+        model.addAttribute("TongTien",amountPhong);
+        model.addAttribute("TienDv",amountDv);
+        model.addAttribute("TienGiam",tienGiam);
+        model.addAttribute("TienVat",tienVat);
+        model.addAttribute("TongCong",Totalamount);
+        // Chi tiet phong va dich vu de khach kiem duyet lai truoc khi thanh toan
+        model.addAttribute("chiTietDatPhongList", chiTietDatPhongs);
+        model.addAttribute("chiTietDichVuList", chiTietDichVus);
+        model.addAttribute("nightCount", Math.max(1, nightCount));
+        return "Thanh-Toan";
+    }
 
     @PostMapping("/vnpay/{id}")
     public String submitVnpay(@PathVariable Integer id, HttpServletRequest request) {
@@ -155,10 +163,10 @@ public class ThanhToanController {
         HoaDon hd = hoaDonService.findByDatPhongId(id);
         if(
                 hd == null ||
-                // Yoda-style + "Cho thanh toan".equals(...) thay vi hd.getTrangThai().equals(...):
-                // tranh NullPointerException neu mot luong tao HoaDon nao khac quen gan
-                // trangThai (vd: bug da fix o submitTienMat phia tren).
-                (hd.getTongTien().subtract(hd.getDaThanhToan()).compareTo(BigDecimal.ZERO) > 0 && "Cho thanh toan".equals(hd.getTrangThai()))
+                        // Yoda-style + "Cho thanh toan".equals(...) thay vi hd.getTrangThai().equals(...):
+                        // tranh NullPointerException neu mot luong tao HoaDon nao khac quen gan
+                        // trangThai (vd: bug da fix o submitTienMat phia tren).
+                        (hd.getTongTien().subtract(hd.getDaThanhToan()).compareTo(BigDecimal.ZERO) > 0 && "Cho thanh toan".equals(hd.getTrangThai()))
         )
         {
             String url = VNPayRequests.get(id);

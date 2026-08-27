@@ -1,6 +1,8 @@
 package su26sd09.su26sd09.service;
 
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.stereotype.Service;
 import su26sd09.su26sd09.dto.PendingBookingDraft;
@@ -28,7 +30,53 @@ public class PendingBookingService {
 
     private static final String SESSION_DRAFTS = "PENDING_BOOKING_DRAFTS";
     private static final String SESSION_SEQ = "PENDING_BOOKING_SEQ";
+    public static final String COOKIE_NAME = "GUEST_PENDING_BOOKING";
+    private static final int COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24;
 
+    public void remember(HttpServletResponse response, int id) {
+        response.addHeader(
+                "Set-Cookie",
+                COOKIE_NAME + "=" + id
+                        + "; Path=/"
+                        + "; Max-Age=" + COOKIE_MAX_AGE_SECONDS
+                        + "; HttpOnly"
+                        + "; SameSite=Lax"
+        );
+    }
+    public Integer peekId(HttpServletRequest request) {
+        if (request.getCookies() == null) {
+            return null;
+        }
+
+        for (Cookie cookie : request.getCookies()) {
+            if (COOKIE_NAME.equals(cookie.getName())) {
+                try {
+                    return Integer.parseInt(cookie.getValue());
+                } catch (NumberFormatException e) {
+                    return null;
+                }
+            }
+        }
+
+        return null;
+    }
+    public void consume(HttpServletResponse response) {
+
+        Cookie cookie = new Cookie(COOKIE_NAME, "");
+        cookie.setPath("/");
+        cookie.setMaxAge(0);
+
+        response.addCookie(cookie);
+    }
+    public PendingBookingDraft peek(HttpServletRequest request) {
+        Integer id = peekId(request);
+
+        if (id == null || id >= 0) {
+            return null;
+        }
+
+        return get(request, id);
+    }
     @SuppressWarnings("unchecked")
     private Map<Integer, PendingBookingDraft> drafts(HttpSession session) {
         Object o = session.getAttribute(SESSION_DRAFTS);

@@ -9,6 +9,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import su26sd09.su26sd09.dto.PendingBookingDraft;
 import su26sd09.su26sd09.dto.RoomBookingGuardDTO;
 import su26sd09.su26sd09.entity.*;
 import jakarta.servlet.http.HttpServletRequest;
@@ -324,7 +325,9 @@ public class PhongController {
                 Chi_tiet_dich_vu ct = new Chi_tiet_dich_vu();
                 ct.setSoluong(sl);
                 ct.setDv(dv);
-                ct.setDonGia(dv.getGia().multiply(BigDecimal.valueOf(sl)));
+                // Tong tien dich vu = gia * soLuong * nightCount (moi ngay luu tru deu su dung)
+                ct.setDonGia(dv.getGia().multiply(BigDecimal.valueOf(sl)).multiply(BigDecimal.valueOf(soDemVal)));
+                ct.setNgay_su_dung(draft.getNgayNhan());
                 dichVuDaChonMap.put(maDichVu, ct);
                 dichVuDaChonIds.add(maDichVu);
                 amountDv = amountDv.add(ct.getDonGia());
@@ -367,6 +370,39 @@ public class PhongController {
         return "dat-phong-xac-nhan";
     }
 
+    @GetMapping("/dat-phong/tiep-tuc-pending/{id}")
+    public String tiepTucPending(
+            @PathVariable int id,
+            HttpServletRequest request,
+            RedirectAttributes redirectAttributes
+    ) {
+        // Chỉ xử lý pending id (số âm)
+        if (!pendingBookingService.isPending(id)) {
+            return "redirect:/phong/dat-phong/xac-nhan/" + id;
+        }
+
+        PendingBookingDraft draft = pendingBookingService.get(request, id);
+
+        // Draft không còn tồn tại
+        if (draft == null) {
+            redirectAttributes.addFlashAttribute(
+                    "bookingError",
+                    "Phiên đặt phòng của bạn đã hết hạn. Vui lòng đặt lại."
+            );
+            return "redirect:/";
+        }
+
+        String currentStep = draft.getCurrentStep();
+
+        // Nếu đang dừng ở bước thông tin khách
+        if ("thong-tin-khach".equals(currentStep)) {
+            return "redirect:/phong/dat-phong/thong-tin-khach/" + id;
+        }
+
+        // Mặc định quay về bước xác nhận dịch vụ
+        return "redirect:/phong/dat-phong/xac-nhan/" + id;
+    }
+
     /** Doi tuong DatPhong CHUA LUU (transient) chi de hien thi template, dung id am cua ban nhap. */
     private DatPhong buildTransientDatPhong(int pendingId, su26sd09.su26sd09.dto.PendingBookingDraft draft) {
         DatPhong dp = new DatPhong();
@@ -402,40 +438,7 @@ public class PhongController {
             return "redirect:/home";
         }
 
-        // ===== B1: Validate TOÀN BỘ dịch vụ trước khi đụng vào DB =====
-        if (dichvuid != null) {
-            for (Integer maDichVu : dichvuid) {
-                Dich_vu dv = dichVuService.findById(maDichVu);
-                if (dv == null) continue;
-
-                String ngayStr = allParams.get("ngaySuDung_" + maDichVu);
-                LocalDateTime ngaySuDung = (ngayStr != null && !ngayStr.isBlank())
-                        ? LocalDateTime.parse(ngayStr)
-                        : LocalDateTime.now();
-
-                // Ngày phải nằm trong khoảng lưu trú
-                if (ngaySuDung.isBefore(dp.getNgaydatPhong()) || ngaySuDung.isAfter(dp.getNgaytraPhong())) {
-                    redirectAttributes.addFlashAttribute("bookingError",
-                            dv.getTen_dich_vu() + ": ngày sử dụng phải nằm trong thời gian lưu trú.");
-                    return "redirect:/phong/dat-phong/xac-nhan/" + id;
-                }
-
-                // Giờ phải nằm trong khung giờ phục vụ (nếu dịch vụ có giới hạn giờ)
-                if (dv.getGioBatDau() != null || dv.getGioKetThuc() != null) {
-                    LocalTime gio = ngaySuDung.toLocalTime();
-                    boolean hopLe = (dv.getGioBatDau() == null || !gio.isBefore(dv.getGioBatDau()))
-                            && (dv.getGioKetThuc() == null || !gio.isAfter(dv.getGioKetThuc()));
-                    if (!hopLe) {
-                        redirectAttributes.addFlashAttribute("bookingError",
-                                dv.getTen_dich_vu() + " chỉ phục vụ từ " + dv.getGioBatDau()
-                                        + " đến " + dv.getGioKetThuc() + " mỗi ngày.");
-                        return "redirect:/phong/dat-phong/xac-nhan/" + id;
-                    }
-                }
-            }
-        }
-
-        // ===== B2: Qua được validate rồi mới lưu khuyến mãi + dịch vụ như cũ =====
+        // ===== Lưu khuyến mãi + dịch vụ (đã bỏ input "Ngày sử dụng" - số lần dùng = nightCount) =====
         dp.setKm(null);
         if (maKhuyenMai != null) {
             KhuyenMai km = khuyenMaiService.findbyId(maKhuyenMai);
@@ -447,6 +450,9 @@ public class PhongController {
 
         ctdvService.deleteByDatPhongId(id);
 
+        // nightCount = so dem luu tru (it nhat 1), dung de nhan gia dich vu
+        long nightCount = soDem(dp.getNgaydatPhong(), dp.getNgaytraPhong());
+
         if (dichvuid != null) {
             for (Integer maDichVu : dichvuid) {
                 Dich_vu dv = dichVuService.findById(maDichVu);
@@ -455,17 +461,14 @@ public class PhongController {
                 String slStr = allParams.get("soLuong_" + maDichVu);
                 int sl = (slStr != null && !slStr.isBlank()) ? Integer.parseInt(slStr) : 1;
 
-                String ngayStr = allParams.get("ngaySuDung_" + maDichVu);
-                LocalDateTime ngaySuDung = (ngayStr != null && !ngayStr.isBlank())
-                        ? LocalDateTime.parse(ngayStr)
-                        : LocalDateTime.now();
-
                 Chi_tiet_dich_vu ct = new Chi_tiet_dich_vu();
                 ct.setSoluong(sl);
                 ct.setDatPhong(dp);
                 ct.setDv(dv);
-                ct.setDonGia(dv.getGia().multiply(BigDecimal.valueOf(sl)));
-                ct.setNgay_su_dung(ngaySuDung);
+                // Tong tien dich vu = gia * soLuong * nightCount
+                ct.setDonGia(dv.getGia().multiply(BigDecimal.valueOf(sl)).multiply(BigDecimal.valueOf(nightCount)));
+                // Filler: ngay su dung = ngay nhan phong (schema cot NOT NULL, nguoi dung khong chon nua)
+                ct.setNgay_su_dung(dp.getNgaydatPhong());
                 ctdvService.save(ct);
             }
         }
@@ -503,45 +506,21 @@ public class PhongController {
         }
 
         Map<Integer, String> soLuongMap = new HashMap<>();
-        Map<Integer, String> ngaySuDungMap = new HashMap<>();
         if (dichvuid != null) {
             for (Integer maDichVu : dichvuid) {
                 Dich_vu dv = dichVuService.findById(maDichVu);
                 if (dv == null) continue;
-
-                String ngayStr = allParams.get("ngaySuDung_" + maDichVu);
-                LocalDateTime ngaySuDung = (ngayStr != null && !ngayStr.isBlank())
-                        ? LocalDateTime.parse(ngayStr)
-                        : LocalDateTime.now();
-
-                if (ngaySuDung.isBefore(draft.getNgayNhan()) || ngaySuDung.isAfter(draft.getNgayTra())) {
-                    redirectAttributes.addFlashAttribute("bookingError",
-                            dv.getTen_dich_vu() + ": ngày sử dụng phải nằm trong thời gian lưu trú.");
-                    return "redirect:/phong/dat-phong/xac-nhan/" + id;
-                }
-
-                if (dv.getGioBatDau() != null || dv.getGioKetThuc() != null) {
-                    LocalTime gio = ngaySuDung.toLocalTime();
-                    boolean hopLe = (dv.getGioBatDau() == null || !gio.isBefore(dv.getGioBatDau()))
-                            && (dv.getGioKetThuc() == null || !gio.isAfter(dv.getGioKetThuc()));
-                    if (!hopLe) {
-                        redirectAttributes.addFlashAttribute("bookingError",
-                                dv.getTen_dich_vu() + " chỉ phục vụ từ " + dv.getGioBatDau()
-                                        + " đến " + dv.getGioKetThuc() + " mỗi ngày.");
-                        return "redirect:/phong/dat-phong/xac-nhan/" + id;
-                    }
-                }
-
                 String slStr = allParams.get("soLuong_" + maDichVu);
                 soLuongMap.put(maDichVu, slStr);
-                ngaySuDungMap.put(maDichVu, ngayStr);
             }
         }
 
         draft.setDichVuIds(dichvuid);
         draft.setSoLuongDichVu(soLuongMap);
-        draft.setNgaySuDungDichVu(ngaySuDungMap);
+        draft.setNgaySuDungDichVu(new HashMap<>()); // khong con input ngay su dung
         draft.setMaKhuyenMai(maKhuyenMai);
+        draft.setCurrentStep("thong-tin-khach");
+
         pendingBookingService.update(request, id, draft);
 
         return "redirect:/phong/dat-phong/thong-tin-khach/" + id;
@@ -953,11 +932,20 @@ public class PhongController {
                 dpThat.setYeuCauThem(yeucauthem);
                 datphongservice.save(dpThat);
 
+            // Xóa PendingBookingDraft khỏi Session
                 pendingBookingService.remove(request, id);
 
-                // Ghi nho vao COOKIE cho khach vang lai (giu nguyen hanh vi cu tu day tro di).
+            // Xóa cookie backup Pending
+                pendingBookingService.consume(response);
+
+            // Tạo cookie backup DatPhong thật
                 if (dpThat.getN() == null) {
-                    bookingDraftService.remember(request, response, dpThat.getId());
+
+                    bookingDraftService.remember(
+                            request,
+                            response,
+                            dpThat.getId()
+                    );
                 }
 
                 return "redirect:/thanh-toan/dat-phong/" + dpThat.getId();

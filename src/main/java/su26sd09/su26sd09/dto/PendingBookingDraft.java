@@ -48,6 +48,15 @@ public class PendingBookingDraft implements Serializable {
     private String email;
     private String sdt;
     private String yeuCauThem;
+    private String currentStep = "xac-nhan";
+
+    public String getCurrentStep() {
+        return currentStep;
+    }
+
+    public void setCurrentStep(String currentStep) {
+        this.currentStep = currentStep;
+    }
 
     public int getLoaiPhongId() { return loaiPhongId; }
     public void setLoaiPhongId(int loaiPhongId) { this.loaiPhongId = loaiPhongId; }

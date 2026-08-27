@@ -5,92 +5,179 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Thông tin đặt phòng</title>
   <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    body { background: #fafafa; }
-    .booking-shell { margin: 0 auto; max-width: 1120px; padding: 42px 5% 70px; }
+    :root {
+      --bx-blue: #3498DB;
+      --bx-blue-dark: #2980B9;
+      --bx-ink: #1f2937;
+      --bx-muted: #6b7280;
+      --bx-line: #e7eaf0;
+      --bx-tint: #f2f8fd;
+      --bx-bg: #f5f7fa;
+      --bx-green: #15803d;
+      --bx-red: #c0392b;
+      --bx-radius: 12px;
+    }
+    * { box-sizing: border-box; }
+    body { background: var(--bx-bg); }
+    .booking-shell { margin: 0 auto; max-width: 1120px; padding: 36px 5% 80px; }
+
+    /* ===== Stepper: hành trình 3 bước ===== */
     .booking-stepper {
-        align-items: center;
-        background: #fff;
-        border: 1px solid #e5e7eb;
-        display: grid;
-        gap: 14px;
-        grid-template-columns: max-content 1fr max-content 1fr max-content;
-        margin-bottom: 24px;
-        padding: 14px 18px;
+      align-items: center;
+      background: #fff;
+      border: 1px solid var(--bx-line);
+      border-radius: var(--bx-radius);
+      display: grid;
+      gap: 10px;
+      grid-template-columns: max-content 1fr max-content 1fr max-content;
+      margin-bottom: 26px;
+      padding: 16px 20px;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
     }
-    .step-item { color: #6b7280; font-size: 13px; font-weight: 700; text-transform: uppercase; }
-    .step-item.active, .step-item.done { color: var(--sky-primary); }
-    .step-line { background: #e5e7eb; height: 2px; }
-    .booking-layout { display: grid; gap: 24px; grid-template-columns: minmax(0, 1fr) 330px; }
+    .step-item {
+      display: flex; align-items: center; gap: 9px;
+      color: #9ca3af; font-size: 13px; font-weight: 700;
+    }
+    .step-item .step-num {
+      display: flex; align-items: center; justify-content: center;
+      width: 24px; height: 24px; border-radius: 50%; flex: none;
+      background: #f1f3f6; color: #9ca3af; font-size: 12px; font-weight: 800;
+      transition: background .15s, color .15s;
+    }
+    .step-item.active .step-num { background: var(--bx-blue); color: #fff; }
+    .step-item.done .step-num { background: #dcfce7; color: var(--bx-green); }
+    .step-item.active { color: var(--bx-ink); }
+    .step-item.done { color: var(--bx-muted); }
+    .step-line { background: var(--bx-line); height: 2px; border-radius: 2px; }
+
+    /* ===== Layout chính ===== */
+    .booking-layout { display: grid; gap: 24px; grid-template-columns: minmax(0, 1fr) 340px; align-items: start; }
     .guest-panel, .summary-panel {
-        background: #fff;
-        border: 1px solid #e5e7eb;
-        border-radius: 4px;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.05);
-        padding: 24px;
+      background: #fff;
+      border: 1px solid var(--bx-line);
+      border-radius: var(--bx-radius);
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+      padding: 26px;
     }
-    .guest-panel h1, .summary-panel h2 { color: var(--sky-dark); margin-bottom: 18px; }
+    .guest-panel h1, .summary-panel h2 {
+      color: var(--bx-ink); margin: 0 0 18px; font-size: 19px; font-weight: 800;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .guest-panel h1 i, .summary-panel h2 i { color: var(--bx-blue); font-size: 17px; }
+
+    /* ===== Form nhập thông tin khách ===== */
     .guest-grid { display: grid; gap: 16px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .guest-field.full { grid-column: 1 / -1; }
-    .guest-field label { color: var(--text-gray); display: block; font-size: 12px; font-weight: 700; margin-bottom: 6px; text-transform: uppercase; }
+    .guest-field label {
+      color: var(--bx-muted); display: block; font-size: 11.5px; font-weight: 700;
+      margin-bottom: 7px; text-transform: uppercase; letter-spacing: .02em;
+    }
     .guest-field input, .guest-field textarea {
-        border: 1px solid #d1d5db;
-        border-radius: 2px;
-        font-family: inherit;
-        font-size: 14px;
-        padding: 11px 12px;
-        width: 100%;
+      border: 1px solid #d1d5db;
+      border-radius: 9px;
+      font-family: inherit;
+      font-size: 14px;
+      padding: 11px 12px;
+      width: 100%;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .guest-field input:focus, .guest-field textarea:focus {
+      border-color: var(--bx-blue); outline: none; box-shadow: 0 0 0 3px rgba(52,152,219,0.12);
     }
     .guest-field textarea { min-height: 82px; resize: vertical; }
-    .required { color: #d22630; }
-    .summary-line, .summary-total { display: flex; justify-content: space-between; margin-bottom: 12px; }
-    .summary-total { border-top: 1px solid #e5e7eb; color: var(--sky-primary); font-size: 18px; font-weight: 700; padding-top: 14px; }
-    .booking-actions { display: grid; gap: 10px; grid-template-columns: 120px 1fr; margin-top: 22px; }
-    .back-btn, .continue-btn {
-        align-items: center;
-        border-radius: 2px;
-        display: inline-flex;
-        font-weight: 700;
-        justify-content: center;
-        min-height: 42px;
-        padding: 10px 14px;
-        text-decoration: none;
-        text-transform: uppercase;
-    }
-    .back-btn { background: #fff; border: 1px solid var(--sky-primary); color: var(--sky-primary); }
-    .continue-btn { background: var(--sky-primary); border: 1px solid var(--sky-primary); color: #fff; cursor: pointer; }
-    .booking-message.error { background: #fff1f1; color: #b42318; font-weight: 600; margin-bottom: 18px; padding: 12px 14px; }
+    .required { color: var(--bx-red); }
 
-    /* Tóm tắt - đồng bộ style với trang xác nhận dịch vụ */
+    /* ===== Tóm tắt ===== */
+    .summary-panel { position: sticky; top: 20px; }
+    .summary-panel h2 { margin-bottom: 6px; }
+    .summary-dates {
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      background: var(--bx-tint); border-radius: 9px; padding: 10px 12px;
+      font-size: 13px; font-weight: 700; color: var(--bx-ink); margin-bottom: 6px;
+    }
+    .summary-dates i { color: var(--bx-blue); font-size: 11px; }
+    .summary-meta { color: var(--bx-muted); font-size: 12.5px; margin-bottom: 16px; padding-left: 2px; }
+
+    .summary-section-label {
+      font-size: 11px; color: var(--bx-muted); font-weight: 800;
+      text-transform: uppercase; letter-spacing: .04em; margin-bottom: 10px;
+    }
+
+    .summary-line, .summary-total {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      gap: 12px; margin-bottom: 11px;
+    }
+    .summary-line > span:first-child { flex: 1 1 auto; min-width: 0; color: #475569; font-size: 13.5px; }
+    .summary-line > strong { flex: none; white-space: nowrap; color: var(--bx-ink); font-weight: 700; font-size: 13.5px; }
+    .summary-total {
+      border-top: 1.5px solid var(--bx-line); color: var(--bx-blue-dark); font-size: 19px;
+      font-weight: 800; padding-top: 16px; margin-top: 8px; align-items: center;
+    }
+
     .summary-roomlist {
-        background: #f5fbfe;
-        border-radius: 4px;
-        margin: 12px 0;
-        padding: 12px 14px;
+      background: var(--bx-tint);
+      border-radius: 9px;
+      margin: 4px 0 12px;
+      padding: 12px 14px;
     }
-    .summary-roomlist .room-line { font-size: 13px; color: var(--text-dark); font-weight: 600; }
-    .summary-roomlist .room-sub { font-size: 12px; color: #6b7280; margin-bottom: 8px; }
+    .summary-roomlist .room-line { font-size: 13px; color: var(--bx-ink); font-weight: 700; }
+    .summary-roomlist .room-sub { font-size: 12px; color: var(--bx-muted); margin-bottom: 8px; }
+    .summary-roomlist > div:last-child .room-sub { margin-bottom: 0; }
 
-    .summary-dv-list { margin-top: 10px; }
+    .summary-dv-list { margin: 4px 0 12px; }
+    .summary-dv-title {
+      font-size: 12px; color: var(--bx-muted); font-weight: 700; text-transform: uppercase;
+      letter-spacing: .04em; margin-bottom: 8px;
+    }
     .summary-dv-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        font-size: 13px;
-        padding: 4px 0;
-        border-bottom: 1px dashed #e5e7eb;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      font-size: 12.5px;
+      padding: 6px 0;
+      border-bottom: 1px dashed var(--bx-line);
     }
     .summary-dv-item:last-child { border-bottom: none; }
-    .summary-dv-item .dv-name { color: var(--text-dark); }
-    .summary-dv-item .dv-price { color: var(--sky-primary); font-weight: 600; white-space: nowrap; }
-    .summary-dv-title {
-        font-size: 11px; color: #6b7280; font-weight: 700;
-        text-transform: uppercase; letter-spacing: .05em; margin-bottom: 8px;
+    .summary-dv-item .dv-name { color: #475569; }
+    .summary-dv-item .dv-price { color: var(--bx-blue-dark); font-weight: 700; white-space: nowrap; }
+
+    .booking-actions { display: grid; gap: 12px; grid-template-columns: 130px 1fr; margin-top: 24px; }
+    .back-btn, .continue-btn {
+      align-items: center;
+      border-radius: 9px;
+      display: inline-flex;
+      font-weight: 700;
+      font-size: 13.5px;
+      justify-content: center;
+      min-height: 46px;
+      padding: 10px 16px;
+      text-decoration: none;
+      letter-spacing: .02em;
+      transition: background .15s, box-shadow .15s, transform .05s;
+    }
+    .back-btn { background: #fff; border: 1.5px solid #d1d5db; color: #475569; }
+    .back-btn:hover { border-color: var(--bx-blue); color: var(--bx-blue-dark); }
+    .continue-btn {
+      background: linear-gradient(120deg, var(--bx-blue), var(--bx-blue-dark));
+      border: none; color: #fff; cursor: pointer; box-shadow: 0 4px 14px rgba(52,152,219,0.32);
+    }
+    .continue-btn:hover { box-shadow: 0 6px 18px rgba(52,152,219,0.4); }
+    .continue-btn:active { transform: translateY(1px); }
+
+    .booking-message.error {
+      background: #fef2f2; border: 1px solid #fecaca; color: var(--bx-red); font-weight: 600;
+      margin-bottom: 18px; padding: 12px 14px; border-radius: 9px;
+      display: flex; align-items: center; gap: 10px;
     }
 
     @media (max-width: 900px) {
-        .booking-stepper, .booking-layout, .guest-grid, .booking-actions { grid-template-columns: 1fr; }
-        .step-line { display: none; }
+      .booking-stepper { grid-template-columns: 1fr; justify-items: start; gap: 8px; }
+      .booking-layout, .booking-actions, .guest-grid { grid-template-columns: 1fr; }
+      .step-line { display: none; }
+      .summary-panel { position: static; }
     }
   </style>
 </head>
@@ -101,14 +188,14 @@
 <main class="booking-shell">
 
   <div class="booking-stepper">
-    <div class="step-item done">1. Xác nhận phòng</div>
+    <div class="step-item done"><span class="step-num"><i class="fa-solid fa-check"></i></span> Xác nhận dịch vụ</div>
     <div class="step-line"></div>
-    <div class="step-item active">2. Thông tin khách</div>
+    <div class="step-item active"><span class="step-num">2</span> Thông tin khách</div>
     <div class="step-line"></div>
-    <div class="step-item">3. Hoàn tất</div>
+    <div class="step-item"><span class="step-num">3</span> Hoàn tất</div>
   </div>
 
-  <div th:if="${bookingError}" class="booking-message error" th:text="${bookingError}"></div>
+  <div th:if="${bookingError}" class="booking-message error"><i class="fa-solid fa-circle-exclamation"></i> <span th:text="${bookingError}"></span></div>
 
   <form th:action="@{/phong/dat-phong/thong-tin-khach/{id}(id=${datPhong.id})}" method="post">
     <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
@@ -118,7 +205,7 @@
 
       <!-- ===== PANEL TRÁI: Form nhập thông tin khách ===== -->
       <section class="guest-panel">
-        <h1>Xác Nhận Thông tin khách đặt phòng</h1>
+        <h1><i class="fa-solid fa-user"></i> Xác Nhận Thông Tin Khách Đặt Phòng</h1>
         <div class="guest-grid">
 
           <div class="guest-field full">
@@ -142,8 +229,6 @@
                    th:value="${guestInfo != null ? guestInfo.sdt : ''}">
           </div>
 
-
-
           <div class="guest-field full">
             <label>Yêu cầu thêm</label>
             <textarea name="yeuCauThem"
@@ -154,24 +239,24 @@
         </div>
       </section>
 
-      <!-- ===== PANEL PHẢI: Tóm tắt đặt phòng (đồng bộ với trang xác nhận dịch vụ) ===== -->
+      <!-- ===== PANEL PHẢI: Tóm tắt đặt phòng ===== -->
       <aside class="summary-panel">
-        <h2>Tóm Tắt Đặt Phòng</h2>
+        <h2><i class="fa-solid fa-receipt"></i> Tóm Tắt Đặt Phòng</h2>
 
-        <!-- Ngày nhận / trả -->
-        <div class="summary-line">
-          <span th:text="${datPhong.ngaydatPhong != null ? #temporals.format(datPhong.ngaydatPhong, 'EEEE, dd MMM yyyy') : '--'}">--</span>
-          <span>→</span>
-          <span th:text="${datPhong.ngaytraPhong != null ? #temporals.format(datPhong.ngaytraPhong, 'EEEE, dd MMM yyyy') : '--'}">--</span>
+        <div class="summary-dates">
+          <span th:text="${datPhong.ngaydatPhong != null ? #temporals.format(datPhong.ngaydatPhong, 'dd MMM') : '--'}">27 thg 8</span>
+          <i class="fa-solid fa-arrow-right-long"></i>
+          <span th:text="${datPhong.ngaytraPhong != null ? #temporals.format(datPhong.ngaytraPhong, 'dd MMM yyyy') : '--'}">28 thg 8 2026</span>
         </div>
-        <div class="summary-line" style="color:#6b7280; font-size:13px;">
-          <span th:text="${nightCount + ' đêm | ' + #lists.size(chiTietDatPhongList) + ' phòng | ' + datPhong.songuoiLon + ' người lớn'}">
-              1 đêm | 1 phòng | 2 người lớn
-          </span>
+        <div class="summary-meta"
+             th:text="${nightCount + ' đêm · ' + #lists.size(chiTietDatPhongList) + ' phòng · ' + datPhong.songuoiLon + ' người lớn'}">
+          1 đêm · 1 phòng · 2 người lớn
         </div>
+
+        <div class="summary-section-label">Chi phí</div>
 
         <!-- Tiền phòng (giá cơ bản = TienPhong - TongPhuPhi nếu có phụ phí) -->
-        <div class="summary-line" style="margin-top:14px;">
+        <div class="summary-line">
           <span>Phòng</span>
           <strong id="summary-tien-phong"
                   th:text="${'đ ' + #numbers.formatDecimal((TienPhong != null ? TienPhong : 0) - (TongPhuPhi != null ? TongPhuPhi : 0), 0, 'COMMA', 0, 'POINT')}">đ 0</strong>
@@ -191,14 +276,17 @@
           <strong id="summary-tien-dich-vu"
                   th:text="${'đ ' + (TienDv != null ? #numbers.formatDecimal(TienDv, 0, 'COMMA', 0, 'POINT') : '0')}">đ 0</strong>
         </div>
-        <div class="summary-line">
-          <span>Tiền VAT:</span>
-          <strong
-                  th:text="${'đ ' + (TienVat != null ? #numbers.formatDecimal(TienVat, 0, 'COMMA', 0, 'POINT') : '0')}">đ 0</strong>
-        </div>
+
+        <!-- Giảm giá -->
         <div class="summary-line" th:if="${TienGiam != null and TienGiam.compareTo(T(java.math.BigDecimal).ZERO) > 0}">
           <span>Giảm giá</span>
-          <strong th:text="${'- đ ' + #numbers.formatDecimal(TienGiam, 0, 'COMMA', 0, 'POINT')}">- đ 0</strong>
+          <strong th:text="${'− đ ' + #numbers.formatDecimal(TienGiam, 0, 'COMMA', 0, 'POINT')}">− đ 0</strong>
+        </div>
+
+        <!-- VAT -->
+        <div class="summary-line">
+          <span>Tiền VAT</span>
+          <strong th:text="${'đ ' + (TienVat != null ? #numbers.formatDecimal(TienVat, 0, 'COMMA', 0, 'POINT') : '0')}">đ 0</strong>
         </div>
 
         <!-- Danh sách phòng đã chọn -->
@@ -217,14 +305,14 @@
         <div class="summary-dv-list" th:if="${chiTietDichVuList != null and not #lists.isEmpty(chiTietDichVuList)}">
           <div class="summary-dv-title">Dịch vụ đã chọn</div>
           <div th:each="dv : ${chiTietDichVuList}" class="summary-dv-item">
-            <span class="dv-name"
-                  th:text="${dv.dv.ten_dich_vu + ' × ' + dv.soluong + ' ' + dv.dv.donVi}">
-              Tên dịch vụ × 1 đơn vị
-            </span>
+                        <span class="dv-name"
+                              th:text="${dv.dv.ten_dich_vu + ' × ' + dv.soluong + ' ' + dv.dv.donVi}">
+                            Tên dịch vụ × 1 đơn vị
+                        </span>
             <span class="dv-price"
                   th:text="${'đ ' + #numbers.formatDecimal(dv.donGia, 0, 'COMMA', 0, 'POINT')}">
-              đ 0
-            </span>
+                            đ 0
+                        </span>
           </div>
         </div>
 

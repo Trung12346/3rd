@@ -3,10 +3,12 @@ package su26sd09.su26sd09.config;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import su26sd09.su26sd09.dto.PendingBookingDraft;
 import su26sd09.su26sd09.entity.DatPhong;
 import su26sd09.su26sd09.service.BookingDraftService;
 
 import jakarta.servlet.http.HttpServletRequest;
+import su26sd09.su26sd09.service.PendingBookingService;
 
 /**
  * Tự động gắn biến "bookingDraft" + "bookingDraftStep" vào Model của MỌI
@@ -29,6 +31,8 @@ public class BookingDraftModelAdvice {
     @Autowired
     BookingDraftService bookingDraftService;
 
+    @Autowired
+    private PendingBookingService pendingBookingService;
     /**
      * Luôn có mặt trong model; null nếu không có cookie / đơn không hợp lệ.
      * Template dùng th:if="${bookingDraft != null}" để tránh NPE.
@@ -37,11 +41,22 @@ public class BookingDraftModelAdvice {
     public DatPhong bookingDraft(HttpServletRequest request) {
         return bookingDraftService.peek(request);
     }
-
+    @ModelAttribute("pendingBookingDraft")
+    public PendingBookingDraft pendingBookingDraft(
+            HttpServletRequest request
+    ) {
+        return pendingBookingService.peek(request);
+    }
     @ModelAttribute("bookingDraftStep")
     public String bookingDraftStep(HttpServletRequest request) {
         DatPhong dp = bookingDraftService.peek(request);
         return bookingDraftService.currentStep(dp);
+    }
+    @ModelAttribute("pendingBookingId")
+    public Integer pendingBookingId(
+            HttpServletRequest request
+    ) {
+        return pendingBookingService.peekId(request);
     }
 
     /** pending | draft | approved | success — phân loại trạng thái để popup chuông hiển thị. */

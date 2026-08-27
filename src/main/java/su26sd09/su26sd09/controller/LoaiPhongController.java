@@ -377,6 +377,9 @@ public class LoaiPhongController {
 
             int pendingId = pendingBookingService.create(request, draft);
 
+// Backup PendingBooking ngay sau khi nhập CCCD
+            pendingBookingService.remember(response, pendingId);
+
             return "redirect:/phong/dat-phong/xac-nhan/" + pendingId;
         } catch (IllegalStateException | IllegalArgumentException e) {
             redirectAttributes.addFlashAttribute("timKiemError", e.getMessage());
