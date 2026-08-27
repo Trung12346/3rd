@@ -348,6 +348,7 @@ public class NhanVienDatPhongController {
     @PostMapping("/dat-phong/chi-tiet/{id}/gia-han-checkin")
     public String giaHanCheckIn(@PathVariable Integer id,
                                 @RequestParam("hanCheckInMoi") @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm") LocalDateTime hanCheckInMoi,
+                                Authentication authentication,
                                 RedirectAttributes redirectAttributes) {
         DatPhong datPhong = datPhongService.findById(id);
         if (datPhong == null) {
@@ -364,6 +365,13 @@ public class NhanVienDatPhongController {
         }
 
         checkInExpirationCacheService.giaHan(id, hanCheckInMoi);
+
+        lichSuHoatDongService.ghiLogAn(authentication,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.HD_CAP_NHAT_DAT_PHONG,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.DT_DAT_PHONG,
+                id,
+                "Gia han check-in cho don #" + id + " den " + hanCheckInMoi);
+
         redirectAttributes.addFlashAttribute("thanhCongCapNhat",
                 "Da gia han check-in cho don #" + id + " den " + hanCheckInMoi);
         return "redirect:/nhan-su/dat-phong/chi-tiet/" + id;
@@ -434,6 +442,7 @@ public class NhanVienDatPhongController {
                                         @RequestParam(value = "phatSinhNgay", required = false) List<String> phatSinhNgayList,
                                         @RequestParam(value = "phatSinhGhiChu", required = false) List<String> phatSinhGhiChuList,
                                         @RequestParam Map<String, String> allParams,
+                                        Authentication authentication,
                                         RedirectAttributes redirectAttributes) {
         DatPhong datPhong = datPhongService.findById(id);
         if (datPhong == null) {
@@ -472,6 +481,12 @@ public class NhanVienDatPhongController {
                 phatSinhTenList, phatSinhDonGiaList, phatSinhSoLuongList, phatSinhNgayList, phatSinhGhiChuList,
                 allParams);
         capNhatHoaDonNeuCo(id, tongTienPhong, tongTienDichVu, tongTienGiam, tongTienVat, tongCong, km);
+
+        lichSuHoatDongService.ghiLogAn(authentication,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.HD_CAP_NHAT_DAT_PHONG,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.DT_DAT_PHONG,
+                id,
+                "Cap nhat chi tiet don dat phong #" + id);
 
         redirectAttributes.addFlashAttribute("thanhCongCapNhat", "Cap nhat chi tiet dat phong #" + id + " thanh cong.");
         return "redirect:/nhan-su/dat-phong/chi-tiet/" + id;
@@ -793,6 +808,7 @@ public class NhanVienDatPhongController {
             @RequestParam(required = false, defaultValue = "1") Integer soLuongDichVuThem,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
+            Authentication authentication,
             RedirectAttributes redirectAttributes) {
 
         DatPhong dp = datPhongService.findById(id);
@@ -815,6 +831,14 @@ public class NhanVienDatPhongController {
         dp.setTrangThai(trangThai);
         dp.setNgayCapNhat(LocalDateTime.now());
         datPhongService.save(dp);
+
+        lichSuHoatDongService.ghiLogAn(authentication,
+                "Da nhan phong".equals(trangThai)
+                        ? su26sd09.su26sd09.constants.LichSuHoatDongConstants.HD_CHECK_IN
+                        : su26sd09.su26sd09.constants.LichSuHoatDongConstants.HD_CAP_NHAT_DAT_PHONG,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.DT_DAT_PHONG,
+                id,
+                "Chuyen trang thai don #" + id + " sang \"" + trangThai + "\"");
 
         // Đồng bộ trạng thái TẤT CẢ phòng trong đơn theo trạng thái đơn mới
         List<ChiTietDatPhong> ctdpList = chiTietDatPhongService.findByDatPhongId(id);
@@ -1143,6 +1167,12 @@ public class NhanVienDatPhongController {
         // Bước 1: dùng chung luồng với admin: tạo yêu cầu hủy + set "Cho xu ly"
         KetQuaHuyDonDTO ketQua = huyDonService.huyDon(id);
 
+        lichSuHoatDongService.ghiLogAn(auth,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.HD_HUY_DAT_PHONG,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.DT_DAT_PHONG,
+                id,
+                "Huy don dat phong #" + id + ": " + ketQua.getThongBao());
+
         if (ketQua.isCanHoanTien()) {
             // Bước 2: NV chọn sẵn phương thức hoàn (Tien Mat / Chuyen Khoan) ngay trong modal
             // Huỷ phòng => tự động xác nhận hoàn tiền luôn (tái sử dụng HuyDonService.xacNhanHoanTien),
@@ -1423,7 +1453,8 @@ public class NhanVienDatPhongController {
     @PostMapping("/so-do-phong/check-in-nhom/{maDatPhong}")
     @ResponseBody
     public Map<String, Object> checkInNhomTuSoDoPhong(@PathVariable int maDatPhong,
-                                                      @RequestParam(name = "xacNhan", defaultValue = "false") boolean xacNhan) {
+                                                      @RequestParam(name = "xacNhan", defaultValue = "false") boolean xacNhan,
+                                                      Authentication authentication) {
         Map<String, Object> result = new LinkedHashMap<>();
 
         DatPhong dp = datPhongService.findById(maDatPhong);
@@ -1499,6 +1530,13 @@ public class NhanVienDatPhongController {
             maPhongDaNhan.add(p.getMaPhong());
         }
 
+        lichSuHoatDongService.ghiLogAn(authentication,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.HD_CHECK_IN,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.DT_DAT_PHONG,
+                maDatPhong,
+                "Check-in ca doan (" + dsPhong.size() + " phong) cho don #" + maDatPhong
+                        + (viPham ? (" (phu thu nhan som " + tongPhuThu.toPlainString() + " VND)") : ""));
+
         result.put("ok", true);
         result.put("viPham", viPham);
         result.put("daApDung", true);
@@ -1521,7 +1559,8 @@ public class NhanVienDatPhongController {
     @ResponseBody
     public Map<String, Object> checkOutTuSoDoPhong(@PathVariable int maDatPhong,
                                                    @RequestParam(name = "xacNhan", defaultValue = "false") boolean xacNhan,
-                                                   @RequestParam(required = false) BigDecimal tienKhachTra) {
+                                                   @RequestParam(required = false) BigDecimal tienKhachTra,
+                                                   Authentication authentication) {
         Map<String, Object> result = new LinkedHashMap<>();
 
         DatPhong dp = datPhongService.findById(maDatPhong);
@@ -1613,6 +1652,13 @@ public class NhanVienDatPhongController {
         phong.setNgayCapNhat(now);
         phongService.save1(phong);
 
+        lichSuHoatDongService.ghiLogAn(authentication,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.HD_CHECK_OUT,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.DT_DAT_PHONG,
+                maDatPhong,
+                "Tra phong " + phong.getSoPhong() + " cho don #" + maDatPhong
+                        + (viPham ? (" (phu thu tra muon " + soTien.toPlainString() + " VND)") : ""));
+
         result.put("ok", true);
         result.put("viPham", viPham);
         result.put("daApDung", true);
@@ -1641,7 +1687,8 @@ public class NhanVienDatPhongController {
     @ResponseBody
     public Map<String, Object> checkOutNhomTuSoDoPhong(@PathVariable int maDatPhong,
                                                        @RequestParam(name = "xacNhan", defaultValue = "false") boolean xacNhan,
-                                                       @RequestParam(required = false) BigDecimal tienKhachTra) {
+                                                       @RequestParam(required = false) BigDecimal tienKhachTra,
+                                                       Authentication authentication) {
         Map<String, Object> result = new LinkedHashMap<>();
 
         DatPhong dp = datPhongService.findById(maDatPhong);
@@ -1739,6 +1786,13 @@ public class NhanVienDatPhongController {
             phongService.save1(p);
             maPhongDaTra.add(p.getMaPhong());
         }
+
+        lichSuHoatDongService.ghiLogAn(authentication,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.HD_CHECK_OUT,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.DT_DAT_PHONG,
+                maDatPhong,
+                "Tra phong ca doan (" + dsPhong.size() + " phong) cho don #" + maDatPhong
+                        + (viPham ? (" (phu thu tra muon " + tongPhuThu.toPlainString() + " VND)") : ""));
 
         result.put("ok", true);
         result.put("viPham", viPham);
@@ -2428,6 +2482,12 @@ public class NhanVienDatPhongController {
             );
         }
 
+        lichSuHoatDongService.ghiLog(nhanVienXuLy,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.HD_TAO_DAT_PHONG,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.DT_DAT_PHONG,
+                savedDp.getId(),
+                "Len lich dat phong tu So Do Phong, ma don: " + savedDp.getId() + ", tong tien: " + tongCong.toPlainString() + " VND");
+
         result.put("ok", true);
         result.put("maDatPhong", savedDp.getId());
         result.put("tongTien", tongCong);
@@ -2759,6 +2819,12 @@ public class NhanVienDatPhongController {
         // Khong con truong hop no lai o luong nay nua (da bat buoc thu du 100%
         // truoc khi tao don o buoc kiem tra ben tren), nen khong can gui email
         // nhac thanh toan phan con lai nhu truoc.
+
+        lichSuHoatDongService.ghiLog(nhanVienXuLy,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.HD_DAT_PHONG_TAI_QUAY,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.DT_DAT_PHONG,
+                savedDp.getId(),
+                "Dat phong tai quay tu So Do Phong, ma don: " + savedDp.getId() + ", thu " + daThu.toPlainString() + " VND");
 
         result.put("ok", true);
         result.put("maDatPhong", savedDp.getId());
@@ -3209,6 +3275,7 @@ public class NhanVienDatPhongController {
                           @RequestParam(value = "newCccds", required = false) List<String> newCccds,
                           @RequestParam("lyDoDoi") String lyDoDoi,
                           @RequestParam(value = "fromCheckin", required = false, defaultValue = "false") boolean fromCheckin,
+                          Authentication authentication,
                           RedirectAttributes redirectAttributes) {
         DatPhong datPhong = datPhongService.findById(id);
         if (datPhong == null) {
@@ -3365,6 +3432,12 @@ public class NhanVienDatPhongController {
         datPhong.setNgayCapNhat(LocalDateTime.now());
         datPhongService.save(datPhong);
 
+        lichSuHoatDongService.ghiLogAn(authentication,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.HD_CAP_NHAT_DAT_PHONG,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.DT_DAT_PHONG,
+                id,
+                "Doi " + soPhongDoi + " phong cho don #" + id + ", ly do: " + lyDoDoi.trim());
+
         String chenhLechStr = chenhLechTong.signum() > 0
                 ? "+ " + defaultMoney(chenhLechTong).toPlainString() + " VND"
                 : defaultMoney(chenhLechTong).toPlainString() + " VND";
@@ -3429,6 +3502,7 @@ public class NhanVienDatPhongController {
                                    @RequestParam(required = false) String email,
                                    @RequestParam(required = false) String sdt,
                                    @RequestParam(required = false) String maCccd,
+                                   Authentication authentication,
                                    RedirectAttributes redirectAttributes) {
         DatPhong dp = datPhongService.findById(id);
         if (dp == null) {
@@ -3458,12 +3532,19 @@ public class NhanVienDatPhongController {
         dp.setNgayCapNhat(LocalDateTime.now());
         datPhongService.save(dp);
 
+        lichSuHoatDongService.ghiLogAn(authentication,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.HD_CAP_NHAT_DAT_PHONG,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.DT_DAT_PHONG,
+                id,
+                "Cap nhat thong tin khach hang cho don #" + id);
+
         redirectAttributes.addFlashAttribute("thanhCongCapNhat", "Cap nhat thong tin khach hang thanh cong.");
         return "redirect:/nhan-su/dat-phong/chi-tiet/" + id;
     }
     @PostMapping("/dat-phong/chi-tiet/{id}/thu-tien")
     public String thuTien(@PathVariable Integer id, @RequestParam BigDecimal soTien,
-                          @RequestParam("phuongThuc") String phuongthuc, HttpServletRequest request, RedirectAttributes redirectAttributes){
+                          @RequestParam("phuongThuc") String phuongthuc, HttpServletRequest request,
+                          Authentication authentication, RedirectAttributes redirectAttributes){
         HoaDon hd = hoaDonService.findByDatPhongId(id);
         DatPhong dp = datPhongService.findById(id);
         if(hd == null&&dp==null){
@@ -3513,6 +3594,12 @@ public class NhanVienDatPhongController {
         hd.setDaThanhToan(daThanhToan.add(soTien));
         hd.setNgayCapNhat(LocalDateTime.now());
         hoaDonService.saveWithPaymentStatusCheck(hd);
+
+        lichSuHoatDongService.ghiLogAn(authentication,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.HD_THU_TIEN,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.DT_HOA_DON,
+                id,
+                "Thu " + soTien.toPlainString() + " VND tien mat dich vu phat sinh, don #" + id);
 
         redirectAttributes.addFlashAttribute("success", "Đã thu " + soTien + " VND tiền mặt.");
         return "redirect:/nhan-su/dat-phong/chi-tiet/" + id;

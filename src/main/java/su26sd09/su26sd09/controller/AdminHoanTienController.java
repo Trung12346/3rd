@@ -26,6 +26,7 @@ public class AdminHoanTienController {
     @Autowired ThanhToanService thanhToanService;
     @Autowired NhanVienService nhanSuService;
     @Autowired VnpayService vnpayService;
+    @Autowired LichSuHoatDongService lichSuHoatDongService;
 
     private static final String SESSION_KEY_REFUND_DRAFT = "refundDraft_";
 
@@ -168,6 +169,12 @@ public class AdminHoanTienController {
         huyDonService.xacNhanHoanTien(id, phuongThucHoan, maGiaoDichHoan,
                 stkNhanHoan, tenNganHang, ghiChu, soTienHoanNhap, nvXuLy);
 
+        lichSuHoatDongService.ghiLogAn(auth,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.HD_XAC_NHAN_HOAN_TIEN,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.DT_HOA_DON,
+                id,
+                "Xac nhan hoan " + soTienHoanNhap.toPlainString() + " VND (" + phuongThucHoan + ") cho hoa don #" + id);
+
         ra.addFlashAttribute("success", "Da xac nhan hoan tien cho hoa don #" + id);
         return "redirect:/nhan-su/admin/hoan-tien/chi-tiet/" + id;
     }
@@ -175,6 +182,7 @@ public class AdminHoanTienController {
     @PostMapping("/{id}/tu-choi")
     public String tuChoi(@PathVariable Integer id,
                          @RequestParam String lyDo,
+                         Authentication auth,
                          RedirectAttributes ra) {
 
         HoaDon hd = hoaDonService.findById(id);
@@ -189,6 +197,13 @@ public class AdminHoanTienController {
         }
 
         huyDonService.tuChoiHoanTien(id, lyDo);
+
+        lichSuHoatDongService.ghiLogAn(auth,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.HD_TU_CHOI_HOAN_TIEN,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.DT_HOA_DON,
+                id,
+                "Tu choi yeu cau hoan tien cho hoa don #" + id + ", ly do: " + lyDo);
+
         ra.addFlashAttribute("success", "Da tu choi yeu cau hoan tien");
         return "redirect:/nhan-su/admin/hoan-tien/chi-tiet/" + id;
     }
@@ -218,6 +233,12 @@ public class AdminHoanTienController {
 
         NhanSu nvXuLy = nhanSuService.FindByemail(auth.getName());
         huyDonService.xacNhanHuyKhongHoan(id, lyDo, nvXuLy);
+
+        lichSuHoatDongService.ghiLog(nvXuLy,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.HD_HUY_KHONG_HOAN,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.DT_HOA_DON,
+                id,
+                "Huy don khong hoan tien cho hoa don #" + id + ", ly do: " + lyDo);
 
         ra.addFlashAttribute("success", "Da huy don khong hoan tien. Hoa don van duoc phep xuat PDF de khach can minh bach.");
         return "redirect:/nhan-su/admin/hoan-tien/chi-tiet/" + id;
