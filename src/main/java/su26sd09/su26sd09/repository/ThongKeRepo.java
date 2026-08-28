@@ -12,8 +12,14 @@ import java.util.List;
 @Repository
 public interface ThongKeRepo extends JpaRepository<HoaDon, Integer> {
 
+    /**
+     * Doanh thu GHI NHAN (projected/accrual, VAT-excluded): tinh theo hoa_don, dua tren
+     * ngay_xuat, KHONG loc theo trang thai thanh toan hay hoan tien -> bao gom ca don
+     * "Chua thanh toan"/"Cho thanh toan" (unpaid) va don da bi hoan tien (refunded).
+     * Cong thuc: tong_tien - tien_vat (tuc tien_phong + tien_dich_vu - tien_giam).
+     */
     @Query(value = """
-            SELECT SUM(tong_tien) FROM hoa_don 
+            SELECT SUM(tong_tien - tien_vat) FROM hoa_don 
             WHERE (:start IS NULL OR ngay_xuat >= :start) 
             AND (:end IS NULL OR ngay_xuat <= :end)
             """, nativeQuery = true)
@@ -26,8 +32,9 @@ public interface ThongKeRepo extends JpaRepository<HoaDon, Integer> {
             """, nativeQuery = true)
     public Integer getTotalInvoice(@Param("start") LocalDate start, @Param("end") LocalDate end);
 
+    /** Doanh thu trung binh moi hoa don, VAT-excluded (xem {@link #getTotalRevenue}). */
     @Query(value = """
-            SELECT AVG(tong_tien) FROM hoa_don 
+            SELECT AVG(tong_tien - tien_vat) FROM hoa_don 
             WHERE (:start IS NULL OR ngay_xuat >= :start) 
             AND (:end IS NULL OR ngay_xuat <= :end)
             """, nativeQuery = true)
@@ -49,12 +56,16 @@ public interface ThongKeRepo extends JpaRepository<HoaDon, Integer> {
     @Query(value = "SELECT COUNT(ma_phong) * DATEDIFF(DAY, :start, :end) FROM phong", nativeQuery = true)
     public Double getTotalRoom(@Param("start") LocalDate start, @Param("end") LocalDate end);
 
+    /**
+     * Doanh thu ghi nhan theo thoi gian (projected/accrual, VAT-excluded), bao gom ca
+     * don unpaid va don da hoan tien - xem {@link #getTotalRevenue}.
+     */
     @Query(value = """
         SELECT label,
                    SUM(tong_tien) AS revenue
             FROM (
                 SELECT FORMAT(ngay_xuat, :pattern, 'en-US') AS label,
-                       tong_tien
+                       (tong_tien - tien_vat) AS tong_tien
                 FROM hoa_don
                 WHERE ngay_xuat >= :start
                   AND ngay_xuat <= :end
@@ -131,11 +142,19 @@ public interface ThongKeRepo extends JpaRepository<HoaDon, Integer> {
         """, nativeQuery = true)
     public List<Object[]> getRepeatGuestStats(@Param("start") LocalDate start, @Param("end") LocalDate end);
 
+    /**
+     * Ty trong theo phuong thuc thanh toan, tinh tren tien THUC THU (da tru VAT theo ty le
+     * VAT/tong_tien cua tung hoa don) - chi tinh giao dich THU TIEN thanh cong, khong tinh
+     * giao dich hoan tien.
+     */
     @Query(value = """
-        SELECT tt.phuong_thuc, SUM(tt.so_tien) AS tong_tien
+        SELECT tt.phuong_thuc,
+               SUM(tt.so_tien * CASE WHEN hd.tong_tien = 0 THEN 0
+                                      ELSE (hd.tong_tien - hd.tien_vat) / hd.tong_tien END) AS tong_tien
         FROM thanh_toan tt
         JOIN hoa_don hd ON tt.ma_hoa_don = hd.ma_hoa_don
         WHERE tt.trang_thai = N'Thanh cong'
+          AND tt.loai_giao_dich = N'Thu tien'
           AND hd.ngay_xuat >= :start AND hd.ngay_xuat < DATEADD(day, 1, :end)
         GROUP BY tt.phuong_thuc
         ORDER BY SUM(tt.so_tien) DESC
@@ -198,39 +217,60 @@ public interface ThongKeRepo extends JpaRepository<HoaDon, Integer> {
         """, nativeQuery = true)
     public Double getTongDoanhThuDichVuChiTiet(@Param("start") LocalDate start, @Param("end") LocalDate end);
 
+    /** Top khach hang theo chi tieu ghi nhan (hoa don, VAT-excluded) - xem {@link #getTotalRevenue}. */
     @Query(value = """
         SELECT TOP 10
             nd.ho_ten,
             nd.email,
             COUNT(DISTINCT hd.ma_hoa_don) AS so_lan_dat,
-            SUM(hd.tong_tien)             AS tong_chi_tieu
+            SUM(hd.tong_tien - hd.tien_vat) AS tong_chi_tieu
         FROM hoa_don hd
         JOIN dat_phong d  ON hd.ma_dat_phong = d.ma_dat_phong
         JOIN khach_hang nd ON d.ma_khach = nd.ma_khach_hang
         WHERE hd.ngay_xuat >= :start AND hd.ngay_xuat < DATEADD(day, 1, :end)
         GROUP BY nd.ho_ten, nd.email
-        ORDER BY SUM(hd.tong_tien) DESC
+        ORDER BY SUM(hd.tong_tien - hd.tien_vat) DESC
         """, nativeQuery = true)
     public List<Object[]> getTopKhachHang(@Param("start") LocalDate start, @Param("end") LocalDate end);
 
     /**
-     * Doanh thu THUC THU (cash-basis): tien thuc te da thu qua thanh_toan, tinh theo
-     * ngay_thanh_toan - khac voi doanh thu ghi nhan tren hoa_don (accrual, tinh theo ngay_xuat).
-     * Chi tinh cac giao dich trang_thai = 'Thanh cong'.
+     * Doanh thu THUC THU (cash-basis, VAT-excluded): tien thuc te da thu qua thanh_toan
+     * (loai_giao_dich = 'Thu tien', trang_thai = 'Thanh cong'), tinh theo ngay_thanh_toan -
+     * khac voi doanh thu ghi nhan tren hoa_don (accrual, tinh theo ngay_xuat, xem
+     * {@link #getTotalRevenue}). Moi hoa don co the co nhieu lan thanh toan voi so_tien
+     * bao gom ca VAT, nen tung khoan thanh toan duoc quy doi ve phan truoc-VAT theo ty le
+     * (tong_tien - tien_vat) / tong_tien cua hoa don tuong ung, thay vi tru VAT mot lan
+     * tren tong hoa don (vi hoa don co the chua duoc thu du).
+     * KHONG bao gom cac don "Chua thanh toan"/"Cho thanh toan" (chua co giao dich thanh cong)
+     * va se duoc tru phan da hoan tien qua {@link #getRefundedAmount}.
      */
     @Query(value = """
-        SELECT COALESCE(SUM(so_tien), 0)
-        FROM thanh_toan
-        WHERE trang_thai = N'Thanh cong'
-          AND ngay_thanh_toan >= :start AND ngay_thanh_toan < DATEADD(day, 1, :end)
+        SELECT COALESCE(SUM(
+            tt.so_tien * CASE WHEN hd.tong_tien = 0 THEN 0
+                               ELSE (hd.tong_tien - hd.tien_vat) / hd.tong_tien END
+        ), 0)
+        FROM thanh_toan tt
+        JOIN hoa_don hd ON tt.ma_hoa_don = hd.ma_hoa_don
+        WHERE tt.trang_thai = N'Thanh cong'
+          AND tt.loai_giao_dich = N'Thu tien'
+          AND tt.ngay_thanh_toan >= :start AND tt.ngay_thanh_toan < DATEADD(day, 1, :end)
         """, nativeQuery = true)
     public Double getActualRevenueCollected(@Param("start") LocalDate start, @Param("end") LocalDate end);
 
+    /**
+     * Tien da hoan tra (VAT-excluded, cung ty le quy doi nhu {@link #getActualRevenueCollected}),
+     * de tru khoi doanh thu thuc thu - dam bao don da huy/hoan tien KHONG con duoc tinh
+     * la doanh thu thuc te, du van con duoc tinh trong doanh thu ghi nhan/du kien.
+     */
     @Query(value = """
-        SELECT COALESCE(SUM(so_tien), 0)
-        FROM thanh_toan
-        WHERE loai_giao_dich = N'Hoan tien'
-          AND ngay_thanh_toan >= :start AND ngay_thanh_toan < DATEADD(day, 1, :end)
+        SELECT COALESCE(SUM(
+            tt.so_tien * CASE WHEN hd.tong_tien = 0 THEN 0
+                               ELSE (hd.tong_tien - hd.tien_vat) / hd.tong_tien END
+        ), 0)
+        FROM thanh_toan tt
+        JOIN hoa_don hd ON tt.ma_hoa_don = hd.ma_hoa_don
+        WHERE tt.loai_giao_dich = N'Hoan tien'
+          AND tt.ngay_thanh_toan >= :start AND tt.ngay_thanh_toan < DATEADD(day, 1, :end)
         """, nativeQuery = true)
     public Double getRefundedAmount(@Param("start") LocalDate start, @Param("end") LocalDate end);
 
@@ -238,6 +278,7 @@ public interface ThongKeRepo extends JpaRepository<HoaDon, Integer> {
         SELECT COUNT(*)
         FROM thanh_toan
         WHERE trang_thai = N'Thanh cong'
+          AND loai_giao_dich = N'Thu tien'
           AND ngay_thanh_toan >= :start AND ngay_thanh_toan < DATEADD(day, 1, :end)
         """, nativeQuery = true)
     public Integer getSoGiaoDichThanhCong(@Param("start") LocalDate start, @Param("end") LocalDate end);

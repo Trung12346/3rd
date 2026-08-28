@@ -72,11 +72,16 @@ public class ThongKeService {
             statusValues.add(toInt(row[1]));
         }
 
-        // Doanh thu ghi nhan (accrual, hoa_don.tong_tien) vs doanh thu thuc thu (cash-basis, thanh_toan)
+        // Doanh thu ghi nhan (projected/accrual, VAT-excluded, tinh tren hoa_don): bao gom
+        // ca don unpaid ("Chua thanh toan"/"Cho thanh toan") va don da hoan tien/huy.
         Double doanhThuGhiNhanRaw = tkr.getTotalRevenue(tuNgay, denNgay);
         double doanhThuGhiNhan = doanhThuGhiNhanRaw == null ? 0d : doanhThuGhiNhanRaw;
-        Double doanhThuThucThuRaw = tkr.getActualRevenueCollected(tuNgay, denNgay) - tkr.getRefundedAmount(tuNgay, denNgay);
-        double doanhThuThucThu = doanhThuThucThuRaw == null ? 0d : doanhThuThucThuRaw;
+
+        // Doanh thu thuc thu (actual, cash-basis, VAT-excluded): CHI tien da thu thanh cong,
+        // tru di phan da hoan tra - khong bao gio am (khong the hoan nhieu hon da thu).
+        double daThu = toDouble(tkr.getActualRevenueCollected(tuNgay, denNgay));
+        double daHoan = toDouble(tkr.getRefundedAmount(tuNgay, denNgay));
+        double doanhThuThucThu = Math.max(0d, daThu - daHoan);
         Integer soGiaoDichThanhCong = tkr.getSoGiaoDichThanhCong(tuNgay, denNgay);
         double tyLeThuTien = safeDivPercent(doanhThuThucThu, doanhThuGhiNhan);
 
