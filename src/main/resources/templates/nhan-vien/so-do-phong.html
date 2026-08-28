@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
     <script src="/js/date-range-picker.js"></script>
+    <script src="/js/money-format.js"></script>
     <style>
         *, *::before, *::after { box-sizing: border-box; }
         body { background: linear-gradient(180deg, #f3f7fb 0%, #eef2f7 100%); font-family: 'Montserrat', sans-serif; }
@@ -737,9 +738,9 @@
         .sdp-lich-service-chip input:checked + span i { color: #2196c4; }
 
         /* Tiền khách trả + phương thức */
-        .sdp-lich-pay-row { display: flex; gap: 10px; }
+        .sdp-lich-pay-row { display: flex; gap: 10px; align-items: flex-end; }
         .sdp-lich-pay-amount { flex: 1; }
-        .sdp-lich-pay-methods { display: flex; gap: 8px; flex: none; }
+        .sdp-lich-pay-methods { display: flex; gap: 8px; flex: none; align-items: center; }
         .sdp-lich-pay-method input { position: absolute; opacity: 0; width: 0; height: 0; }
         .sdp-lich-pay-method label {
             display: flex; align-items: center; gap: 7px; cursor: pointer;
@@ -1522,8 +1523,8 @@
                     <label for="sdpCancelConfirmAmountInput" style="font-size:13px; font-weight:600; color:#334155; display:block; margin-bottom:6px;">
                         Nhập số tiền cần hoàn cho khách để xác nhận <span style="color:#e74c3c;">*</span>
                     </label>
-                    <input type="text" inputmode="numeric" id="sdpCancelConfirmAmountInput"
-                           class="admin-input" style="width:100%;"
+                    <input type="text" inputmode="numeric" class="admin-input money-input" id="sdpCancelConfirmAmountInput"
+                           style="width:100%;"
                            placeholder="Nhập lại số tiền dự kiến được hoàn ở trên (VD: 500000)"
                            oninput="sdpValidateCancelConfirmAmount()" autocomplete="off">
                     <p id="sdpCancelConfirmAmountHint" style="font-size:12px; color:#94a3b8; margin:6px 0 0;">
@@ -1589,7 +1590,7 @@
              buoc nhan vien tu go DUNG so tien can thu truoc khi duoc xac nhan. -->
         <div class="sdp-lich-field" id="sdpPolicyPayField" style="display:none; margin-top:2px;">
             <label for="sdpPolicyTienThu">Tiền khách trả</label>
-            <input type="number" id="sdpPolicyTienThu" placeholder="0" min="0" step="1000">
+            <input type="text" inputmode="numeric" class="money-input" id="sdpPolicyTienThu" placeholder="0">
             <div class="sdp-lich-field-error" id="sdpPolicyPayError" style="display:none;"></div>
         </div>
     </div>
@@ -1788,15 +1789,15 @@
             <div class="sdp-lich-pay-row">
                 <div class="sdp-lich-field sdp-lich-pay-amount">
                     <label for="sdpLichTienTra">Tiền khách trả</label>
-                    <input type="number" id="sdpLichTienTra" placeholder="0" min="0" step="1000">
+                    <input type="text" inputmode="numeric" class="money-input" id="sdpLichTienTra" placeholder="0">
                 </div>
                 <div class="sdp-lich-pay-methods">
                     <div class="sdp-lich-pay-method">
-                        <input type="radio" name="sdpLichPhuongThuc" id="sdpLichPtThe" value="chuyen-khoan" checked>
+                        <input type="radio" name="sdpLichPhuongThuc" id="sdpLichPtThe" value="chuyen-khoan">
                         <label for="sdpLichPtThe"><i class="fa-solid fa-credit-card"></i>Chuyển khoản</label>
                     </div>
                     <div class="sdp-lich-pay-method">
-                        <input type="radio" name="sdpLichPhuongThuc" id="sdpLichPtTienMat" value="tien-mat">
+                        <input type="radio" name="sdpLichPhuongThuc" id="sdpLichPtTienMat" value="tien-mat" checked>
                         <label for="sdpLichPtTienMat"><i class="fa-solid fa-money-bill-wave"></i>Tiền mặt</label>
                     </div>
                 </div>
@@ -2040,8 +2041,8 @@
             return;
         }
 
-        var raw = amountInputEl.value.replace(/[.,\s]/g, '').trim();
-        var entered = raw === '' ? NaN : Number(raw);
+        var raw = amountInputEl.value.replace(/[^\d]/g, '').trim();
+        var entered = raw === '' ? NaN : MoneyFormat.parse(raw);
 
         if (raw === '') {
             btn.disabled = true;
@@ -2081,8 +2082,8 @@
 
         // Chốt chặn thứ 2: dù nút có bị enable bằng cách nào đó, vẫn phải đúng số tiền xác nhận.
         var amountInputEl = document.getElementById('sdpCancelConfirmAmountInput');
-        var enteredRaw = amountInputEl ? amountInputEl.value.replace(/[.,\s]/g, '').trim() : '';
-        var entered = enteredRaw === '' ? NaN : Number(enteredRaw);
+        var enteredRaw = amountInputEl ? amountInputEl.value.replace(/[^\d]/g, '').trim() : '';
+        var entered = enteredRaw === '' ? NaN : MoneyFormat.parse(enteredRaw);
         if (sdpCancelExpectedRefundAmount === null || isNaN(entered) || entered !== sdpCancelExpectedRefundAmount) {
             sdpValidateCancelConfirmAmount();
             return;
@@ -2327,7 +2328,7 @@
         document.getElementById('sdpPolicyOkBtn').addEventListener('click', function () {
             var soTienNhap = null;
             if (policyRequiredAmount !== null) {
-                var nhap = policyTienThuInput.value === '' ? NaN : Number(policyTienThuInput.value);
+                var nhap = policyTienThuInput.value === '' ? NaN : MoneyFormat.parse(policyTienThuInput);
                 if (isNaN(nhap) || Math.round(nhap) !== Math.round(policyRequiredAmount)) {
                     policyPayError.textContent = 'Vui lòng nhập đúng số tiền cần thu: ' + fmtTien(policyRequiredAmount) + '.';
                     policyPayError.style.display = 'block';
@@ -5188,7 +5189,7 @@
             body.append('khuyenMaiCode', document.getElementById('sdpLichKhuyenMai').value || '');
             body.append('ghiChu', document.getElementById('sdpLichGhiChu').value || '');
             dichVuIds.forEach(function (id) { body.append('dichVuIds', id); });
-            body.append('tienKhachTra', document.getElementById('sdpLichTienTra').value || '0');
+            body.append('tienKhachTra', MoneyFormat.parse(document.getElementById('sdpLichTienTra')) || '0');
             body.append('phuongThucThanhToan', phuongThuc ? phuongThuc.value : 'tien-mat');
             if (sdpCsrfParamEl && sdpCsrfTokenEl) body.append(sdpCsrfParamEl.value, sdpCsrfTokenEl.value);
 

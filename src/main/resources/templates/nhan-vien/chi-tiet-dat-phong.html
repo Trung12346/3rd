@@ -11,6 +11,7 @@
          san o trang cha nen script src trong <head> nay se khong duoc "nhung" lai
          (nhungNoiDungDon() chi lay <style>, khong lay <script> trong <head>). -->
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+    <script src="/js/money-format.js"></script>
     <style>
         *, *::before, *::after { box-sizing: border-box; }
         body { background: #f4f7fa; }
@@ -866,7 +867,7 @@
 
             <div class="ff">
                 <label>Số tiền thu</label>
-                <input type="number" name="soTien" min="0" step="1000" required
+                <input type="text" inputmode="numeric" class="money-input" name="soTien" required
                        th:readonly="${hoaDonDaXuat}"
                        th:value="${conNoThucTe != null and conNoThucTe.signum() > 0} ? ${conNoThucTe} : ''">
             </div>
@@ -1044,7 +1045,7 @@
                         </div>
                         <div class="ff">
                             <label>Đơn giá (VND) <span style="color:#dc2626;">*</span></label>
-                            <input type="number" id="psDonGia" placeholder="VD: 150000">
+                            <input type="text" inputmode="numeric" class="money-input" id="psDonGia" placeholder="VD: 150000">
                         </div>
                         <div class="ff">
                             <label>Số lượng <span style="color:#dc2626;">*</span></label>
@@ -1357,7 +1358,7 @@
 
         const ten = tenEl.value.trim();
         const giaRaw = giaEl.value.trim();
-        const gia = parseFloat(giaRaw);
+        const gia = MoneyFormat.parse(giaRaw);
         const soLuongRaw = soLuongEl.value.trim();
         const soLuong = parseInt(soLuongRaw);
         const ngay = ngayEl.value;

@@ -439,7 +439,7 @@
 
         <div class="admin-field">
           <label>Giá (VND)</label>
-          <input type="number" th:field="*{gia}" min="0" step="1000" placeholder="VD: 50000" required>
+          <input type="text" inputmode="numeric" class="money-input" th:field="*{gia}" placeholder="VD: 50000" required>
         </div>
 
         <div class="admin-field">
@@ -575,5 +575,6 @@
   <p>&copy; 2026 Hotel. All rights reserved.</p>
 </footer>
 
+<script src="/js/money-format.js"></script>
 </body>
 </html>
