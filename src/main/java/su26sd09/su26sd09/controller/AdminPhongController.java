@@ -24,16 +24,22 @@ public class AdminPhongController {
     @Autowired
     private PhongService phongService;
 
+    private static final int PAGE_SIZE = 10;
+
     @GetMapping
     public String index(
-            @RequestParam(name = "keyword", defaultValue = "") String keyword,
+            @RequestParam(name = "soPhong", required = false, defaultValue = "") String soPhong,
+            @RequestParam(name = "loaiPhongId", required = false) Integer loaiPhongId,
+            @RequestParam(name = "soTang", required = false) Integer soTang,
+            @RequestParam(name = "trangThai", required = false, defaultValue = "") String trangThai,
+            @RequestParam(name = "page", required = false, defaultValue = "0") int page,
             Model model
     ) {
         Phong phong = new Phong();
         phong.setHoatDong(true);
         phong.setTrangThai("Trong");
 
-        loadFormAndList(model, phong, List.of(), keyword, "Thêm phòng");
+        loadFormAndList(model, phong, List.of(), soPhong, loaiPhongId, soTang, trangThai, page, "Thêm phòng");
         return "admin/phong-list";
     }
 
@@ -45,7 +51,11 @@ public class AdminPhongController {
     @GetMapping("/edit/{id}")
     public String edit(
             @PathVariable("id") int id,
-            @RequestParam(name = "keyword", defaultValue = "") String keyword,
+            @RequestParam(name = "soPhong", required = false, defaultValue = "") String soPhong,
+            @RequestParam(name = "loaiPhongId", required = false) Integer loaiPhongId,
+            @RequestParam(name = "soTang", required = false) Integer soTang,
+            @RequestParam(name = "trangThai", required = false, defaultValue = "") String trangThai,
+            @RequestParam(name = "page", required = false, defaultValue = "0") int page,
             Model model,
             RedirectAttributes redirectAttributes
     ) {
@@ -56,7 +66,14 @@ public class AdminPhongController {
             return "redirect:/nhan-su/admin/phong";
         }
 
-        loadFormAndList(model, phong, phongService.findTienNghiIdsByPhong(id), keyword, "Cập nhật phòng");
+        if (phongService.countGiaoDichChuaHoanTatByPhong(id) > 0) {
+            redirectAttributes.addFlashAttribute("error",
+                    "Không thể sửa: phòng đang có giao dịch (đặt phòng/đang ở) chưa hoàn tất");
+            return "redirect:/nhan-su/admin/phong";
+        }
+
+        loadFormAndList(model, phong, phongService.findTienNghiIdsByPhong(id),
+                soPhong, loaiPhongId, soTang, trangThai, page, "Cập nhật phòng");
         return "admin/phong-list";
     }
 
@@ -67,7 +84,13 @@ public class AdminPhongController {
             @RequestParam(name = "tienNghiIds", required = false) List<Integer> tienNghiIds,
             RedirectAttributes redirectAttributes
     ) {
-        for (Phong p : phongService.findAllPhong()){
+        // Trang thai & Hoat dong khong con cho chinh sua tren form (an di) ->
+        // luon ep ve mac dinh "Trong" / "Co" o phia server, khong phu thuoc
+        // vao gia tri client gui len.
+        phong.setTrangThai("Trong");
+        phong.setHoatDong(true);
+
+        for (Phong p : phongService.findAllPhongIncludingInactive()){
             if (p.getSoPhong().equals(phong.getSoPhong()) && p.getMaPhong() != phong.getMaPhong()){
                 redirectAttributes.addFlashAttribute("error","số phòng này đã tồn tại ");
                 return "redirect:/nhan-su/admin/phong";
@@ -80,8 +103,21 @@ public class AdminPhongController {
 
     @PostMapping("/delete/{id}")
     public String delete(@PathVariable("id") int id, RedirectAttributes redirectAttributes) {
+        long soGiaoDichChuaHoanTat = phongService.countGiaoDichChuaHoanTatByPhong(id);
+        if (soGiaoDichChuaHoanTat > 0) {
+            redirectAttributes.addFlashAttribute("error",
+                    "Không thể xóa: phòng đang có giao dịch (đặt phòng/đang ở) chưa hoàn tất");
+            return "redirect:/nhan-su/admin/phong";
+        }
         phongService.delete(id);
         redirectAttributes.addFlashAttribute("success", "Xóa phòng thành công");
+        return "redirect:/nhan-su/admin/phong";
+    }
+
+    @PostMapping("/activate/{id}")
+    public String activate(@PathVariable("id") int id, RedirectAttributes redirectAttributes) {
+        phongService.activate(id);
+        redirectAttributes.addFlashAttribute("success", "Kích hoạt phòng thành công");
         return "redirect:/nhan-su/admin/phong";
     }
 
@@ -89,14 +125,23 @@ public class AdminPhongController {
             Model model,
             Phong phong,
             List<Integer> selectedTienNghiIds,
-            String keyword,
+            String soPhong,
+            Integer loaiPhongId,
+            Integer soTang,
+            String trangThai,
+            int page,
             String title
     ) {
-        List<Phong> phongs = phongService.search(keyword);
+        org.springframework.data.domain.Page<Phong> phongPage =
+                phongService.searchFiltered(soPhong, loaiPhongId, soTang, trangThai, page, PAGE_SIZE);
+        List<Phong> phongs = phongPage.getContent();
 
         Map<Integer, List<String>> tienNghiTheoPhong = new HashMap<>();
+        Map<Integer, Boolean> coGiaoDichChuaHoanTat = new HashMap<>();
         for (Phong item : phongs) {
             tienNghiTheoPhong.put(item.getMaPhong(), phongService.findTenTienNghiByPhong(item.getMaPhong()));
+            coGiaoDichChuaHoanTat.put(item.getMaPhong(),
+                    phongService.countGiaoDichChuaHoanTatByPhong(item.getMaPhong()) > 0);
         }
 
         model.addAttribute("phong", phong);
@@ -105,7 +150,17 @@ public class AdminPhongController {
         model.addAttribute("tienNghis", phongService.findAllTienNghi());
         model.addAttribute("selectedTienNghiIds", selectedTienNghiIds);
         model.addAttribute("tienNghiTheoPhong", tienNghiTheoPhong);
-        model.addAttribute("keyword", keyword);
+        model.addAttribute("coGiaoDichChuaHoanTat", coGiaoDichChuaHoanTat);
+
+        model.addAttribute("soPhongFilter", soPhong);
+        model.addAttribute("loaiPhongIdFilter", loaiPhongId);
+        model.addAttribute("soTangFilter", soTang);
+        model.addAttribute("trangThaiFilter", trangThai);
+
+        model.addAttribute("currentPage", phongPage.getNumber());
+        model.addAttribute("totalPages", phongPage.getTotalPages());
+        model.addAttribute("totalItems", phongPage.getTotalElements());
+
         model.addAttribute("title", title);
     }
 }

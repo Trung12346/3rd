@@ -189,6 +189,13 @@
             border-color: #c0392b;
         }
 
+        .admin-btn:disabled,
+        .admin-btn[disabled] {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
         .admin-btn.small {
             padding: 7px 12px;
             font-size: 11px;
@@ -220,23 +227,70 @@
         /* ===== SEARCH ===== */
         .search-row {
             display: flex;
+            flex-wrap: wrap;
             gap: 12px;
             margin-bottom: 18px;
         }
 
-        .search-row input {
+        .search-row input,
+        .search-row select {
             flex: 1;
+            min-width: 140px;
             border: 1px solid var(--border-color);
             border-radius: 2px;
             font-family: 'Montserrat', sans-serif;
             font-size: 14px;
             padding: 10px 12px;
             outline: none;
+            background: var(--white);
+            color: var(--text-dark);
             transition: border-color 0.2s;
         }
 
-        .search-row input:focus {
+        .search-row input:focus,
+        .search-row select:focus {
             border-color: var(--sky-primary);
+        }
+
+        /* ===== PAGINATION ===== */
+        .pagination {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 6px;
+            margin-top: 18px;
+        }
+
+        .pagination .page-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 32px;
+            height: 32px;
+            padding: 0 6px;
+            border: 1px solid var(--border-color);
+            border-radius: 2px;
+            color: var(--sky-primary);
+            font-size: 13px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: background 0.15s, color 0.15s;
+        }
+
+        .pagination .page-number:hover {
+            background: #ebf5fb;
+        }
+
+        .pagination .page-number.active {
+            background: var(--sky-primary);
+            border-color: var(--sky-primary);
+            color: var(--white);
+        }
+
+        .pagination-info {
+            margin-top: 10px;
+            font-size: 13px;
+            color: var(--text-gray);
         }
 
         /* ===== TABLE ===== */
@@ -386,20 +440,20 @@
             <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
             <input type="hidden" th:field="*{maPhong}">
 
+            <!-- Trạng Thái & Hoạt Động không cho sửa trên form -> luôn mặc định "Trống" / "Có" -->
+            <input type="hidden" name="trangThai" value="Trong">
+            <input type="hidden" name="hoatDong" value="true">
+
             <div class="admin-grid">
 
                 <div class="admin-field">
-                    <label>So Phòng</label>
-                    <input type="text" th:field="*{soPhong}" placeholder="VD: 101" required>
-                </div>
-
-                <div class="admin-field">
                     <label>Loại Phòng</label>
-                    <select name="loaiPhongId" required>
+                    <select name="loaiPhongId" id="loaiPhongSelect" required>
                         <option value="">-- Chon loại phòng --</option>
                         <option th:each="lp : ${loaiPhongs}"
                                 th:value="${lp.id}"
                                 th:text="${lp.tenLoai}"
+                                th:attr="data-gia=${lp.giaCoBan}"
                                 th:selected="${phong.loaiPhong != null and phong.loaiPhong.id == lp.id}">
                         </option>
                     </select>
@@ -407,30 +461,28 @@
 
                 <div class="admin-field">
                     <label>So Tang</label>
-                    <input type="number" th:field="*{soTang}" min="1" placeholder="VD: 2" required>
+                    <input type="number" th:field="*{soTang}" id="soTangInput" min="1" placeholder="VD: 2" required>
+                </div>
+
+                <div class="admin-field">
+                    <label>So Phòng</label>
+                    <div style="display:flex; gap:8px;">
+                        <input type="text" id="soPhongPrefix" readonly
+                               style="width:64px; text-align:center; background:#f0f0f0; color: var(--text-gray);"
+                               title="Chữ số đầu = số tầng"
+                               th:value="${phong.soPhong != null and #strings.length(phong.soPhong) > 0 ? phong.soPhong.substring(0,1) : ''}">
+                        <input type="text" id="soPhongSuffix"
+                               placeholder="VD: 01" required
+                               th:value="${phong.soPhong != null and #strings.length(phong.soPhong) > 1 ? phong.soPhong.substring(1) : ''}">
+                    </div>
+                    <input type="hidden" name="soPhong" id="soPhongHidden" th:value="${phong.soPhong}">
                 </div>
 
                 <div class="admin-field">
                     <label>Giá Mỗi Đêm (VND)</label>
-                    <input type="number" th:field="*{giaMoiDem}" min="0" step="1000" placeholder="VD: 500000" required>
-                </div>
-
-                <div class="admin-field">
-                    <label>Trạng Thái</label>
-                    <select th:field="*{trangThai}" required>
-                        <option value="Trong">Trong</option>
-                        <option value="Dang su dung">Đang sử dụng</option>
-                        <option value="Cho xac nhan">Chờ xác nhận</option>
-                        <option value="Bao tri">Bảo trì</option>
-                    </select>
-                </div>
-
-                <div class="admin-field">
-                    <label>Hoạt Động</label>
-                    <select th:field="*{hoatDong}">
-                        <option th:value="true">Có</option>
-                        <option th:value="false">Không</option>
-                    </select>
+                    <input type="number" th:field="*{giaMoiDem}" id="giaMoiDemInput" min="0" step="1000"
+                           placeholder="Tự động theo loại phòng" readonly
+                           title="Giá tự động lấy theo giá cơ bản của loại phòng">
                 </div>
 
                 <div class="admin-field full">
@@ -466,10 +518,35 @@
 
         <form th:action="@{/nhan-su/admin/phong}" method="get" class="search-row">
             <input type="text"
-                   name="keyword"
-                   placeholder=" Tìm theo số phòng, trạng thái, loại phòng..."
-                   th:value="${keyword}">
+                   name="soPhong"
+                   placeholder=" Số phòng..."
+                   th:value="${soPhongFilter}">
+
+            <select name="loaiPhongId">
+                <option value="">-- Tất cả loại phòng --</option>
+                <option th:each="lp : ${loaiPhongs}"
+                        th:value="${lp.id}"
+                        th:text="${lp.tenLoai}"
+                        th:selected="${loaiPhongIdFilter != null and loaiPhongIdFilter == lp.id}">
+                </option>
+            </select>
+
+            <input type="number"
+                   name="soTang"
+                   placeholder=" Tầng..."
+                   min="1"
+                   th:value="${soTangFilter}">
+
+            <select name="trangThai">
+                <option value="">-- Tất cả trạng thái --</option>
+                <option value="Trong" th:selected="${trangThaiFilter == 'Trong'}">Trống</option>
+                <option value="Dang su dung" th:selected="${trangThaiFilter == 'Dang su dung'}">Đang sử dụng</option>
+                <option value="Cho xac nhan" th:selected="${trangThaiFilter == 'Cho xac nhan'}">Chờ xác nhận</option>
+                <option value="Bao tri" th:selected="${trangThaiFilter == 'Bao tri'}">Bảo trì</option>
+            </select>
+
             <button type="submit" class="admin-btn outline">Tìm Kiếm</button>
+            <a th:href="@{/nhan-su/admin/phong}" class="admin-btn outline">Xóa Lọc</a>
         </form>
 
         <div class="admin-table-wrap">
@@ -516,11 +593,40 @@
                     </td>
                     <td>
                         <div class="row-actions">
-                            <a class="admin-btn small outline"
-                               th:href="@{/nhan-su/admin/phong/edit/{id}(id=${p.maPhong}, keyword=${keyword})}">
+                            <a th:if="${!coGiaoDichChuaHoanTat[p.maPhong]}"
+                               class="admin-btn small outline"
+                               th:href="@{/nhan-su/admin/phong/edit/{id}(id=${p.maPhong}, soPhong=${soPhongFilter}, loaiPhongId=${loaiPhongIdFilter}, soTang=${soTangFilter}, trangThai=${trangThaiFilter}, page=${currentPage})}">
                                  Sửa
                             </a>
-                            <form th:action="@{/nhan-su/admin/phong/delete/{id}(id=${p.maPhong})}"
+                            <button th:if="${coGiaoDichChuaHoanTat[p.maPhong]}"
+                                    type="button"
+                                    class="admin-btn small outline"
+                                    disabled
+                                    title="Không thể sửa: phòng đang có giao dịch (đặt phòng/đang ở) chưa hoàn tất">
+                                 Sửa
+                            </button>
+
+                            <!-- Phong da ngung hoat dong -> cho phep kich hoat lai -->
+                            <form th:if="${!p.hoatDong}"
+                                  th:action="@{/nhan-su/admin/phong/activate/{id}(id=${p.maPhong})}"
+                                  method="post"
+                                  onsubmit="return confirm('Kích hoạt lại phòng này?')">
+                                <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                                <button type="submit" class="admin-btn small"> Kích hoạt</button>
+                            </form>
+
+                            <!-- Phong dang hoat dong: co giao dich chua hoan tat -> chan xoa -->
+                            <button th:if="${p.hoatDong and coGiaoDichChuaHoanTat[p.maPhong]}"
+                                    type="button"
+                                    class="admin-btn small danger"
+                                    disabled
+                                    title="Không thể xóa: phòng đang có giao dịch (đặt phòng/đang ở) chưa hoàn tất">
+                                 Xóa
+                            </button>
+
+                            <!-- Phong dang hoat dong: khong co giao dich vuong -> cho phep xoa -->
+                            <form th:if="${p.hoatDong and !coGiaoDichChuaHoanTat[p.maPhong]}"
+                                  th:action="@{/nhan-su/admin/phong/delete/{id}(id=${p.maPhong})}"
                                   method="post"
                                   onsubmit="return confirm('Bạn có chắc muốn xóa phòng này?')">
                                 <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
@@ -539,9 +645,87 @@
                 </tbody>
             </table>
         </div>
+
+        <!-- ===== PHAN TRANG ===== -->
+        <div class="pagination" th:if="${totalPages > 1}">
+            <a th:if="${currentPage > 0}"
+               class="admin-btn small outline"
+               th:href="@{/nhan-su/admin/phong(soPhong=${soPhongFilter}, loaiPhongId=${loaiPhongIdFilter}, soTang=${soTangFilter}, trangThai=${trangThaiFilter}, page=${currentPage - 1})}">
+                &laquo; Trước
+            </a>
+
+            <a th:each="i : ${#numbers.sequence(0, totalPages - 1)}"
+               th:href="@{/nhan-su/admin/phong(soPhong=${soPhongFilter}, loaiPhongId=${loaiPhongIdFilter}, soTang=${soTangFilter}, trangThai=${trangThaiFilter}, page=${i})}"
+               th:text="${i + 1}"
+               th:classappend="${i == currentPage} ? 'active'"
+               class="page-number">
+            </a>
+
+            <a th:if="${currentPage < totalPages - 1}"
+               class="admin-btn small outline"
+               th:href="@{/nhan-su/admin/phong(soPhong=${soPhongFilter}, loaiPhongId=${loaiPhongIdFilter}, soTang=${soTangFilter}, trangThai=${trangThaiFilter}, page=${currentPage + 1})}">
+                Sau &raquo;
+            </a>
+        </div>
+        <p class="pagination-info" th:if="${totalItems > 0}">
+            Trang <span th:text="${currentPage + 1}"></span> / <span th:text="${totalPages}"></span>
+            (<span th:text="${totalItems}"></span> phòng)
+        </p>
     </section>
 
 </main>
+
+<script>
+    (function () {
+        var loaiPhongSelect = document.getElementById('loaiPhongSelect');
+        var giaInput = document.getElementById('giaMoiDemInput');
+        var soTangInput = document.getElementById('soTangInput');
+        var soPhongPrefix = document.getElementById('soPhongPrefix');
+        var soPhongSuffix = document.getElementById('soPhongSuffix');
+        var soPhongHidden = document.getElementById('soPhongHidden');
+
+        // ===== GIA PHU THUOC LOAI PHONG =====
+        function capNhatGiaTheoLoaiPhong() {
+            var option = loaiPhongSelect.options[loaiPhongSelect.selectedIndex];
+            var gia = option ? option.getAttribute('data-gia') : null;
+            giaInput.value = gia ? gia : '';
+        }
+
+        if (loaiPhongSelect) {
+            loaiPhongSelect.addEventListener('change', capNhatGiaTheoLoaiPhong);
+            // Neu dang sua phong da co san loai phong duoc chon, dong bo lai gia
+            if (loaiPhongSelect.value) {
+                capNhatGiaTheoLoaiPhong();
+            }
+        }
+
+        // ===== CHU SO DAU CUA SO PHONG PHU THUOC SO TANG =====
+        function capNhatSoPhong() {
+            var tang = (soTangInput.value || '').trim();
+            var chuSoDau = tang.length > 0 ? tang.charAt(0) : '';
+            var phanConLai = (soPhongSuffix.value || '').trim();
+
+            soPhongPrefix.value = chuSoDau;
+            soPhongHidden.value = chuSoDau + phanConLai;
+        }
+
+        if (soTangInput) {
+            soTangInput.addEventListener('input', capNhatSoPhong);
+        }
+        if (soPhongSuffix) {
+            soPhongSuffix.addEventListener('input', capNhatSoPhong);
+        }
+
+        // Dong bo lan dau khi load trang (truong hop sua phong)
+        capNhatSoPhong();
+
+        // Dam bao gia tri cuoi cung duoc cap nhat truoc khi submit
+        var form = soPhongHidden ? soPhongHidden.closest('form') : null;
+        if (form) {
+            form.addEventListener('submit', capNhatSoPhong);
+        }
+    })();
+</script>
 
 <footer>
     <p>&copy; 2026 Hotel. All rights reserved.</p>

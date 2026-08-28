@@ -48,6 +48,17 @@
         public List<Phong> search(String keyword) {
             return phongRepository.search(keyword);
         }
+
+        /**
+         * Tim kiem phong theo tung truong loc rieng biet (so phong, loai phong,
+         * so tang, trang thai), phan trang, sap xep giam dan theo ma phong.
+         */
+        public org.springframework.data.domain.Page<Phong> searchFiltered(
+                String soPhong, Integer loaiPhongId, Integer soTang, String trangThai, int page, int size) {
+            org.springframework.data.domain.Pageable pageable =
+                    org.springframework.data.domain.PageRequest.of(Math.max(page, 0), size);
+            return phongRepository.searchFiltered(soPhong, loaiPhongId, soTang, trangThai, pageable);
+        }
     
         public Phong findById(int id) {
             return phongRepository.findById(id).orElse(null);
@@ -57,6 +68,10 @@
             return phongRepository.findById(id).orElse(null);
         }
     
+        public List<Phong> findAllPhongIncludingInactive() {
+            return phongRepository.findAll();
+        }
+
         public List<Phong> findAllPhong() {
             return phongRepository.findByHoatDongTrueOrderBySoPhongAsc();
         }
@@ -517,10 +532,29 @@
             tienNghiPhongRepository.saveAll(tienNghiPhongs);
         }
     
+        /**
+         * So giao dich (dat phong) chua hoan tat (dang giu cho/dang o) con
+         * gan voi phong nay. > 0 nghia la KHONG duoc phep xoa (ngung hoat
+         * dong) phong.
+         */
+        public long countGiaoDichChuaHoanTatByPhong(int maPhong) {
+            return phongRepository.countGiaoDichChuaHoanTatByPhong(maPhong);
+        }
+
         public void delete(int id) {
             Phong phong = findById(id);
             if (phong != null) {
                 phong.setHoatDong(false);
+                phong.setNgayCapNhat(LocalDateTime.now());
+                phongRepository.save(phong);
+            }
+        }
+
+        /** Kich hoat lai phong da ngung hoat dong. */
+        public void activate(int id) {
+            Phong phong = findById(id);
+            if (phong != null) {
+                phong.setHoatDong(true);
                 phong.setNgayCapNhat(LocalDateTime.now());
                 phongRepository.save(phong);
             }
