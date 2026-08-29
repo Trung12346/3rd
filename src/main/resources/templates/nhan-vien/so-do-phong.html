@@ -1557,6 +1557,36 @@
            th:value="${_csrf.token}"/>
 </form>
 
+<!-- ==================== MODAL: QR THANH TOÁN CHUYỂN KHOẢN ====================
+     Hien sau khi "Luu lich dat phong" / "Dat phong tai quay" thanh cong voi
+     phuong thuc "Chuyen khoan": QR tro toi /thanh-toan/pool?dat-phong-id={id}
+     (dung chung endpoint voi QR gui qua email - xem BookingEmailService),
+     de khach quet va hoan tat thanh toan ngay. -->
+<div id="sdpQrPayOverlay" class="sdp-cancel-modal-overlay">
+    <div class="sdp-cancel-modal-box" style="max-width:380px;">
+        <div class="sdp-cancel-modal-header">
+            <i class="fa-solid fa-qrcode" style="color:#2563eb;"></i>
+            <h3>Quét mã để thanh toán <span id="sdpQrPayMaDon"></span></h3>
+            <button type="button" class="sdp-cancel-modal-close" onclick="sdpCloseQrPayModal()">&times;</button>
+        </div>
+        <div class="sdp-cancel-modal-body" style="text-align:center;">
+            <p style="margin:0 0 14px; font-size:13px; color:#475569;">
+                Đơn đã được lên lịch. Yêu cầu khách quét mã QR bên dưới bằng ứng dụng ngân hàng
+                để hoàn tất thanh toán qua chuyển khoản.
+            </p>
+            <img id="sdpQrPayImg" src="" alt="QR thanh toán" style="width:220px; height:220px; border:1px solid #e2e8f0; border-radius:10px;">
+            <p style="font-size:12px; color:#94a3b8; margin:14px 0 0;">
+                Mã QR dẫn tới cổng thanh toán của đơn — trạng thái đơn sẽ tự cập nhật khi thanh toán thành công.
+            </p>
+        </div>
+        <div class="sdp-cancel-modal-footer">
+            <button type="button" class="sdp-btn-secondary" onclick="sdpCloseQrPayModal()">
+                Đóng
+            </button>
+        </div>
+    </div>
+</div>
+
 <!-- Context menu cho ô phòng -->
 <div class="sdp-ctx-backdrop" id="sdpCtxBackdrop"></div>
 <div class="sdp-ctx-menu" id="sdpCtxMenu" role="menu"></div>
@@ -1787,7 +1817,7 @@
         <div class="sdp-lich-section">
             <h4>Thanh toán</h4>
             <div class="sdp-lich-pay-row">
-                <div class="sdp-lich-field sdp-lich-pay-amount">
+                <div class="sdp-lich-field sdp-lich-pay-amount" id="sdpLichTienTraGroup">
                     <label for="sdpLichTienTra">Tiền khách trả</label>
                     <input type="text" inputmode="numeric" class="money-input" id="sdpLichTienTra" placeholder="0">
                 </div>
@@ -3275,6 +3305,7 @@
                         statusEl.textContent = 'Đã lưu lúc ' + new Date().toLocaleTimeString('vi-VN');
                     }
                     capNhatTrangThaiLoiGiayToRow(chiTietId);
+                    staffToast('Đã lưu giấy tờ thành công.', 'success');
                 })
                 .catch(function () {
                     if (statusEl) {
@@ -3310,6 +3341,7 @@
                 }
                 don.trangThai = 'Da nhan phong'; // dong bo lai du lieu client-side (SDP_BOOKINGS)
                 capNhatTrangThaiThePhong(card, kq.trangThaiMoi);
+                staffToast('Nhận phòng thành công cho đơn #' + don.id + '.', 'success');
             }).catch(function () {
                 alert('Có lỗi xảy ra khi nhận phòng, vui lòng thử lại.');
             });
@@ -3340,6 +3372,7 @@
                     var thePhong = document.querySelector('.sdp-room-cell[data-ma-phong="' + maPhong + '"]');
                     if (thePhong) capNhatTrangThaiThePhong(thePhong, kq.trangThaiMoi);
                 });
+                staffToast('Nhận phòng cả đoàn thành công cho đơn #' + don.id + '.', 'success');
             }).catch(function () {
                 alert('Có lỗi xảy ra khi nhận phòng cả đoàn, vui lòng thử lại.');
             });
@@ -3385,6 +3418,7 @@
                 don.trangThai = 'Da tra phong'; // dong bo lai du lieu client-side (SDP_BOOKINGS)
                 don.checkoutThuc = new Date().toISOString(); // danh dau da tra phong thuc te (khop voi ngay_tra_phong_thuc)
                 capNhatTrangThaiThePhong(card, kq.trangThaiMoi);
+                staffToast('Trả phòng thành công cho đơn #' + don.id + '.', 'success');
             }).catch(function () {
                 alert('Có lỗi xảy ra khi trả phòng, vui lòng thử lại.');
             });
@@ -3431,6 +3465,7 @@
                     var thePhong = document.querySelector('.sdp-room-cell[data-ma-phong="' + maPhong + '"]');
                     if (thePhong) capNhatTrangThaiThePhong(thePhong, kq.trangThaiMoi);
                 });
+                staffToast('Trả phòng cả đoàn thành công cho đơn #' + don.id + '.', 'success');
             }).catch(function () {
                 alert('Có lỗi xảy ra khi trả phòng cả đoàn, vui lòng thử lại.');
             });
@@ -3680,6 +3715,7 @@
                         }
                     }
                     note.textContent = 'NV dọn phòng: ' + kq.tenNhanVien;
+                    staffToast('Đã gán ' + kq.tenNhanVien + ' dọn phòng ' + maPhong + '.', 'success');
                 })
                 .catch(function () {
                     alert('Có lỗi xảy ra khi gán nhân viên vệ sinh, vui lòng thử lại.');
@@ -3848,6 +3884,7 @@
                         if (badge) badge.remove();
                     }
                     dongModalXacNhanVeSinh();
+                    staffToast('Đã xác nhận vệ sinh phòng ' + vsMaPhongDangXet + '.', 'success');
                 })
                 .catch(function () {
                     vsConfirmBtn.disabled = false;
@@ -4826,8 +4863,30 @@
 
         cccdInput.addEventListener('change', kiemTraCccd);
 
+        // "Chuyen khoan" trong che do "Len lich dat phong" (khong ap dung cho
+        // "Dat phong tai quay" - mode do BAT BUOC thu du 100% ngay tai quay nen
+        // van can nhan vien nhap/xac nhan so tien): khach se thanh toan sau qua
+        // QR -> an truong "Tien khach tra" va coi nhu 0 (BE chi chap nhan dung
+        // 0 hoac tra du 100% cho "Len lich dat phong" - xem
+        // lenLichDatPhongTuSoDoPhong, nen 0 se tao don o trang thai "Yeu cau dat
+        // phong" con day du, dung QR de thanh toan phan con lai).
+        var tienTraGroupEl = document.getElementById('sdpLichTienTraGroup');
+        var tienTraInputEl = document.getElementById('sdpLichTienTra');
+        function dongBoHienThiTienTra() {
+            var pt = form.querySelector('input[name="sdpLichPhuongThuc"]:checked');
+            var anTruong = currentMode === 'lich' && pt && pt.value === 'chuyen-khoan';
+            if (tienTraGroupEl) tienTraGroupEl.style.display = anTruong ? 'none' : '';
+            if (anTruong && tienTraInputEl) {
+                tienTraInputEl.value = '0';
+            }
+        }
+        Array.prototype.slice.call(form.querySelectorAll('input[name="sdpLichPhuongThuc"]')).forEach(function (el) {
+            el.addEventListener('change', dongBoHienThiTienTra);
+        });
+
         function resetForm() {
             form.reset();
+            dongBoHienThiTienTra();
             calWrap.classList.remove('open');
             checkinField.classList.remove('active');
             checkoutField.classList.remove('active');
@@ -5149,6 +5208,32 @@
             submitErrorEl.classList.toggle('show', !!msg);
         }
 
+        // ===== Modal QR thanh toan (chuyen khoan) =====
+        // Wired vao endpoint "payment pool" dung chung voi QR gui qua email
+        // (xem BookingEmailService#buildQrCodeUrl): QR encode link
+        // /thanh-toan/pool?dat-phong-id={id}, khach quet se duoc dua thang toi
+        // cong thanh toan (VNPay) cho dung don vua tao.
+        var CTX_URL_THANH_TOAN_POOL = /*[[@{/thanh-toan/pool}]]*/ '/thanh-toan/pool';
+        var qrPayOverlay = document.getElementById('sdpQrPayOverlay');
+        var qrPayImg = document.getElementById('sdpQrPayImg');
+        var qrPayMaDon = document.getElementById('sdpQrPayMaDon');
+        var qrPayOnClose = null;
+
+        function sdpOpenQrPayModal(maDatPhong, onClose) {
+            var linkThanhToan = window.location.origin + CTX_URL_THANH_TOAN_POOL + '?dat-phong-id=' + maDatPhong;
+            qrPayImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=' + encodeURIComponent(linkThanhToan);
+            qrPayMaDon.textContent = maDatPhong ? ('#' + maDatPhong) : '';
+            qrPayOnClose = typeof onClose === 'function' ? onClose : null;
+            qrPayOverlay.style.display = 'flex';
+        }
+        window.sdpCloseQrPayModal = function () {
+            qrPayOverlay.style.display = 'none';
+            qrPayImg.src = '';
+            var cb = qrPayOnClose;
+            qrPayOnClose = null;
+            if (cb) cb();
+        };
+
         luuBtn.addEventListener('click', function () {
             dienLoiSubmit('');
             var soNguoiGroup = document.getElementById('sdpLichSoNguoiError');
@@ -5217,9 +5302,26 @@
                     // cho don vua tao TRUOC KHI tai lai trang (best-effort).
                     var choLuuGiayTo = laModeQuay ? luuGiayToSauKhiDatTaiQuay(kq.maDatPhong) : Promise.resolve();
                     choLuuGiayTo.then(function () {
-                        // Tai lai trang de cap nhat trang thai/mau phong va lich vua tao
-                        // (giong cach cac hanh dong khac tren So Do Phong dang lam).
-                        window.location.reload();
+                        // Xep hang thong bao thanh cong de hien thi SAU KHI trang tai lai
+                        // (trang se reload ngay ben duoi nen toast goi truc tiep se bi mat).
+                        staffToastQueue(
+                            laModeQuay ? 'Đặt phòng tại quầy thành công.' : 'Lên lịch đặt phòng thành công.',
+                            'success'
+                        );
+                        var reloadNgay = function () {
+                            // Tai lai trang de cap nhat trang thai/mau phong va lich vua tao
+                            // (giong cach cac hanh dong khac tren So Do Phong dang lam).
+                            window.location.reload();
+                        };
+                        // "Chuyen khoan" (chi ap dung cho "Len lich dat phong" - xem
+                        // dongBoHienThiTienTra o tren): hien QR thanh toan (wired toi
+                        // /thanh-toan/pool) truoc, chi reload trang SAU KHI nhan vien
+                        // dong modal - tranh mat QR ngay khi trang vua tai lai.
+                        if (!laModeQuay && phuongThuc && phuongThuc.value === 'chuyen-khoan' && kq.maDatPhong) {
+                            sdpOpenQrPayModal(kq.maDatPhong, reloadNgay);
+                        } else {
+                            reloadNgay();
+                        }
                     });
                 })
                 .catch(function () {
@@ -5251,7 +5353,7 @@
 
         // Mot so modal khac (vd modal huy don) khong dung class .open ma bat/tat
         // truc tiep qua style.display, nen kiem tra rieng bang computed style.
-        var ID_MODAL_INLINE_STYLE = ['sdpCancelBookingOverlay'];
+        var ID_MODAL_INLINE_STYLE = ['sdpCancelBookingOverlay', 'sdpQrPayOverlay'];
 
         function coPopupDangMo() {
             if (document.querySelector(SELECTOR_DANG_MO)) return true;

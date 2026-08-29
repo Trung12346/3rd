@@ -691,10 +691,20 @@
             <i class="ti ti-circle-check"></i>
             <span th:text="${success}"></span>
         </div>
+    <script th:if="${success}" th:inline="javascript">
+        document.addEventListener('DOMContentLoaded', function () {
+            staffToast(/*[[${success}]]*/ 'Thanh cong', 'success');
+        });
+    </script>
         <div th:if="${error}" class="admin-message error">
             <i class="ti ti-alert-circle"></i>
             <span th:text="${error}"></span>
         </div>
+    <script th:if="${error}" th:inline="javascript">
+        document.addEventListener('DOMContentLoaded', function () {
+            staffToast(/*[[${error}]]*/ 'Co loi xay ra', 'error');
+        });
+    </script>
         <div th:if="${toastWarning}" class="admin-message warning">
             <i class="ti ti-alert-triangle"></i>
             <span th:text="${toastWarning}"></span>

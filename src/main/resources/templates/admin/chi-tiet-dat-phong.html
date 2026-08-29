@@ -373,6 +373,26 @@
     <div th:if="${thanhCongCapNhat}" class="admin-message success" th:text="${thanhCongCapNhat}"></div>
     <div th:if="${success}" class="admin-message success" th:text="${success}"></div>
     <div th:if="${error}" class="admin-message error" th:text="${error}"></div>
+    <script th:if="${thanhCongCapNhat}" th:inline="javascript">
+        document.addEventListener('DOMContentLoaded', function () {
+            staffToast(/*[[${thanhCongCapNhat}]]*/ 'Thành công', 'success');
+        });
+    </script>
+    <script th:if="${success}" th:inline="javascript">
+        document.addEventListener('DOMContentLoaded', function () {
+            staffToast(/*[[${success}]]*/ 'Thành công', 'success');
+        });
+    </script>
+    <script th:if="${loiCapNhat}" th:inline="javascript">
+        document.addEventListener('DOMContentLoaded', function () {
+            staffToast(/*[[${loiCapNhat}]]*/ 'Có lỗi xảy ra', 'error');
+        });
+    </script>
+    <script th:if="${error}" th:inline="javascript">
+        document.addEventListener('DOMContentLoaded', function () {
+            staffToast(/*[[${error}]]*/ 'Có lỗi xảy ra', 'error');
+        });
+    </script>
 
     <div th:if="${hoaDonDaXuat}" class="cdp-readonly-notice"
          style="background:#eef2ff; border:1px solid #c7d2fe; color:#1e3a8a;

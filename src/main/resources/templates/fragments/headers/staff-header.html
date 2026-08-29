@@ -5,6 +5,7 @@
 <body>
 <div th:fragment="staffHeader" class="hb-header-shell">
     <th:block th:replace="~{fragments/headers/_header-style :: headerStyle}"></th:block>
+    <script th:src="@{/js/staff-toast.js}"></script>
 
     <header class="hb-header hb-header-compact" aria-label="Staff header">
         <a th:href="@{/nhan-vien/dat-phong}" class="hb-logo" aria-label="Staff bookings">

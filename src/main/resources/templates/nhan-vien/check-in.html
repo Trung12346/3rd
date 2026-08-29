@@ -1260,6 +1260,16 @@
 
         <div th:if="${success}" class="admin-message success"><span th:text="${success}"></span></div>
         <div th:if="${error}" class="admin-message error"><span th:text="${error}"></span></div>
+        <script th:if="${success}" th:inline="javascript">
+            document.addEventListener('DOMContentLoaded', function () {
+                staffToast(/*[[${success}]]*/ 'Thành công', 'success');
+            });
+        </script>
+        <script th:if="${error}" th:inline="javascript">
+            document.addEventListener('DOMContentLoaded', function () {
+                staffToast(/*[[${error}]]*/ 'Có lỗi xảy ra', 'error');
+            });
+        </script>
 
         <div class="checkin-layout">
             <div>

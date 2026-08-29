@@ -184,6 +184,16 @@
         <i class="fa-solid fa-circle-check"></i>
         <span th:text="${thanhCongCapNhat}"></span>
     </div>
+    <script th:if="${thanhCongCapNhat}" th:inline="javascript">
+        document.addEventListener('DOMContentLoaded', function () {
+            staffToast(/*[[${thanhCongCapNhat}]]*/ 'Thành công', 'success');
+        });
+    </script>
+    <script th:if="${error}" th:inline="javascript">
+        document.addEventListener('DOMContentLoaded', function () {
+            staffToast(/*[[${error}]]*/ 'Có lỗi xảy ra', 'error');
+        });
+    </script>
 
     <!-- ===== BANNER YEU CAU ===== -->
     <div class="yc-banner">

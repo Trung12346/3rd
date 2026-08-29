@@ -427,7 +427,17 @@
     </div>
 
     <div th:if="${error}"   class="admin-message error"   th:text="${error}"></div>
+    <script th:if="${error}" th:inline="javascript">
+        document.addEventListener('DOMContentLoaded', function () {
+            staffToast(/*[[${error}]]*/ 'Co loi xay ra', 'error');
+        });
+    </script>
     <div th:if="${success}" class="admin-message success" th:text="${success}"></div>
+    <script th:if="${success}" th:inline="javascript">
+        document.addEventListener('DOMContentLoaded', function () {
+            staffToast(/*[[${success}]]*/ 'Thanh cong', 'success');
+        });
+    </script>
 
     <form th:action="@{/nhan-su/dat-phong-quay/submit}" method="post" id="quayForm">
         <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
