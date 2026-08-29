@@ -113,7 +113,11 @@ public class AdminkhuyenMaiController {
             redirect.addFlashAttribute("error","giá trị giảm phải lớn hơn 0");
             return "redirect:/nhan-su/admin/khuyen-mai";
         }
-
+        if (m.ngayBatDau.isBefore(LocalDate.now()) && m.ngayKetThuc.isAfter(LocalDate.now())){
+            m.setHoatDong(true);
+        }else{
+            m.setHoatDong(false);
+        }
         if (m.id == 0){
             for (NhanSu ng : nvRepo.findAlladmin()){
                 if (ng.getEmail().equalsIgnoreCase(p.getName())){
@@ -133,7 +137,7 @@ public class AdminkhuyenMaiController {
         if (m.hoatDong != false && ( m.ngayBatDau.isAfter(LocalDate.now()) || m.ngayKetThuc.equals(LocalDate.now()) || LocalDate.now().isAfter(m.ngayKetThuc))){
             redirect.addFlashAttribute("error","trạng thái không hợp lệ với mốc ngày đã chỉ định");
             return "redirect:/nhan-su/admin/khuyen-mai";
-        }if (m.hoatDong != true && ( m.ngayBatDau.isBefore(LocalDate.now()) || !m.ngayKetThuc.equals(LocalDate.now()) || LocalDate.now().isBefore(m.ngayKetThuc))){
+        }if (m.hoatDong != true && ( m.ngayBatDau.isBefore(LocalDate.now()) && LocalDate.now().isBefore(m.ngayKetThuc))){
             redirect.addFlashAttribute("error","trạng thái không hợp lệ với mốc ngày đã chỉ định");
             return "redirect:/nhan-su/admin/khuyen-mai";
         }
@@ -142,6 +146,7 @@ public class AdminkhuyenMaiController {
             redirect.addFlashAttribute("error",TimKhuyenMaiDaSuDung);
             return "redirect:/nhan-su/admin/khuyen-mai";
         }
+
 
         if(m.id == 0){
             redirect.addFlashAttribute("success","Luu khuyen mai thanh cong");

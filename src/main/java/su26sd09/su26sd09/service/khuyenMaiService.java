@@ -109,12 +109,12 @@ public class khuyenMaiService {
         repo.tatKhuyenMaiHetHan(today);
     }
 
-    public String TimKhuyenMaiDaSuDung(KhuyenMai km){
-        boolean isnull = repodatPhong.findFirstByKmId(km.id) == null ? true : false;
+    public String TimKhuyenMaiDaSuDung(KhuyenMai km,DatPhong d){
+        boolean isnull = d == null ? true : false;
 
         KhuyenMai kmc = isnull == true ? null : repodatPhong.findFirstByKmId(km.id).getKm();
 
-        if (kmc != null ){
+        if (kmc != null && d.trangThai.equalsIgnoreCase("Cho thanh toan")){
             if ( !kmc.ngayKetThuc.equals(km.ngayKetThuc) && kmc.ngayBatDau.equals(km.ngayBatDau))
                 return "không thể chỉnh sửa ngày kết thúc của khuyến mãi đã được sử dụng";
             else if (kmc.ngayKetThuc.equals(km.ngayKetThuc) && !kmc.ngayBatDau.equals(km.ngayBatDau))
@@ -127,31 +127,31 @@ public class khuyenMaiService {
 
 
     public String ValidUpdateKhuyenMai(KhuyenMai m){
-        String CanChangeDate = TimKhuyenMaiDaSuDung(m);
         DatPhong dp = repodatPhong.findFirstByKmId(m.id);
 
-        if ( dp != null && dp.getKm() != null && dp.trangThai.equalsIgnoreCase("Chua thanh toan")){
-            if (CanChangeDate != null && !CanChangeDate.equalsIgnoreCase("")){
+        String CanChangeDate = TimKhuyenMaiDaSuDung(m,dp);
+        if ( dp != null && dp.getKm() != null && dp.trangThai.equalsIgnoreCase("Cho thanh toan")){
+            if (!CanChangeDate.equalsIgnoreCase("null") && !CanChangeDate.equalsIgnoreCase("")){
                 return CanChangeDate;
             }
 
             if (m.hoatDong == false ){
-                return "không thể sửa hoạt động mã đã được sử dụng ở đơn đặt phòng " + dp.id;
+                return "không thể sửa hoạt động mã đang được sử dụng ở đơn đặt phòng " + dp.id;
             }
             else if (!m.loaiGiam.equalsIgnoreCase(dp.getKm().getLoaiGiam())){
-                return "không thể sửa loại giảm vì mã đã được sử dụng ở đơn đặt phòng" + dp.id;
+                return "không thể sửa loại giảm vì mã đang được sử dụng ở đơn đặt phòng" + dp.id;
             }
             else if (m.giaToiThieuDuocGiam.floatValue() != dp.getKm().giaToiThieuDuocGiam.floatValue()){
-                return "không thể sửa giá tối thiểu được giảm vì mã đã được sử dụng ở đơn đặt phòng " + dp.id;
+                return "không thể sửa giá tối thiểu được giảm vì mã đang được sử dụng ở đơn đặt phòng " + dp.id;
             }
             else if (m.giatriGiam.floatValue() != dp.getKm().giatriGiam.floatValue()){
-                return "không thể sửa giá trị giảm vì mã đã được sử dụng ở đơn đặt phòng " + dp.id;
+                return "không thể sửa giá trị giảm vì mã đang được sử dụng ở đơn đặt phòng " + dp.id;
             }
             else if (!m.promoCode.equalsIgnoreCase(dp.getKm().promoCode)){
-                return "không thể sửa tên mã khuyến mãi vì mã được sử dụng ở đơn đặt phòng " + dp.id;
+                return "không thể sửa tên mã khuyến mãi vì mã đang được sử dụng ở đơn đặt phòng " + dp.id;
             }
             else if (!m.moTa.equalsIgnoreCase(dp.getKm().moTa)){
-                return "không thể sửa mô tả vì khuyến mãi đã được sử dụng ở đơn đặt phòng" + dp.id;
+                return "không thể sửa mô tả vì khuyến mãi đang được sử dụng ở đơn đặt phòng" + dp.id;
             }
         }
         return "null";

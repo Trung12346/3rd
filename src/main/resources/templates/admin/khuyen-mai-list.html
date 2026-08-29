@@ -69,13 +69,12 @@
                     <label>Ngày kết thúc</label>
                     <input type="date" th:field="*{ngayKetThuc}">
                 </div>
-                <div class="admin-field">
-                    <label>Hoạt động</label>
-                    <select th:field="*{hoatDong}">
-                        <option th:value="true">Có</option>
-                        <option th:value="false">Không</option>
-                    </select>
+
+                <div class="admin-field" th:if="${khuyenMai.id != 0}">
+                    <label>hoạt động</label>
+                    <input type="text" th:value="${khuyenMai.hoatDong == true ? 'hoat dong' : 'khong hoat dong'}">
                 </div>
+
                 <div class="admin-field full">
                     <label>Mô tả</label>
                     <textarea th:field="*{moTa}" placeholder="Nhập mô tả khuyến mãi..."></textarea>
