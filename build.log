@@ -1,0 +1,19 @@
+﻿[INFO] Scanning for projects...
+[INFO] 
+[INFO] ------------------------< SU26-SD-09:su26sd09 >-------------------------
+[INFO] Building su26sd09 0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ su26sd09 ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 85 resources from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.14.1:compile (default-compile) @ su26sd09 ---
+[INFO] Nothing to compile - all classes are up to date.
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  3.853 s
+[INFO] Finished at: 2026-08-29T11:25:58+07:00
+[INFO] ------------------------------------------------------------------------

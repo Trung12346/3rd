@@ -118,18 +118,6 @@
         border-color: #E24B4A;
     }
 
-    /* Cột "Tiền thừa" trong danh sách đơn */
-    .tien-thua-cell { font-weight: 600; }
-    .tien-thua-cell.tien-thua-duong { color: #16a34a; }   /* dương = hoàn khách */
-    .tien-thua-cell.tien-thua-am    { color: #dc2626; }   /* âm = khách nợ thêm */
-    .tien-thua-empty { color: #9C9A8F; font-style: italic; }   /* "0 VND" cho đơn chưa đổi */
-    .status-badge.tien-thua-tt-empty {
-        background: #F1EFE8;
-        color: #6b6b6b;
-        border-color: #DEDBCF;
-        font-style: italic;
-    }
-
     .status-action-btn {
         font-size: 13px;
         padding: 6px 14px;
@@ -467,8 +455,6 @@
                     <th>Mã tra cứu</th>
                     <th>CCCD Từng Phòng</th>
                     <th>Trạng thái</th>
-                    <th>Tiền thừa</th>
-                    <th>TT tiền thừa</th>
                     <th>Hóa đơn</th>
                     <th>Hành động</th>
                 </tr>
@@ -550,28 +536,26 @@
                                 </button>
                             </form>
 
-                            <!-- Nút "Đã xác nhận -> Đã nhận phòng": redirect sang trang check-in (CHƯA update trạng thái).
-                                 Trang check-in submit xong mới update thật sự. -->
-                            <form th:if="${dp.datPhong.trangThai == 'Da xac nhan'}"
-                                  th:action="@{/nhan-su/dat-phong/{id}/check-in(id=${dp.datPhong.id})}" method="get" style="margin: 0;">
-                                <button type="submit" class="status-badge info"
-                                        style="cursor: pointer; border: none;">
-                                    Đã xác nhận
-                                </button>
-                            </form>
+                            <!-- Nút "Đã xác nhận": redirect sang Sơ đồ phòng và mở
+                                 sidebar/modal xử lý nhận phòng cho đơn này. -->
+                            <a th:if="${dp.datPhong.trangThai == 'Da xac nhan'}"
+                               th:href="@{/nhan-su/so-do-phong(donId=${dp.datPhong.id}, action='checkin')}"
+                               class="status-badge info"
+                               style="text-decoration: none; cursor: pointer;">
+                                Đã xác nhận
+                            </a>
 
-                            <!-- Nút "Đã nhận phòng -> Đã trả phòng" (POST /update-trang-thai) -->
-                            <form th:if="${dp.datPhong.trangThai == 'Da nhan phong'}"
-                                  th:action="@{/nhan-su/dat-phong/update-trang-thai}" method="post" style="margin: 0;">
-                                <input type="hidden" name="id" th:value="${dp.datPhong.id}">
-                                <input type="hidden" name="page" th:value="${currentPage}">
-                                <input type="hidden" name="size" th:value="${pageSize}">
-                                <button type="submit" name="trangThai" value="Da tra phong"
-                                        class="status-badge success"
-                                        style="cursor: pointer; border: none;">
-                                    Đã nhận phòng
-                                </button>
-                            </form>
+                            <!-- Nút "Đã nhận phòng": redirect sang Sơ đồ phòng và
+                                 trigger luồng trả phòng (xuLyKhachTraPhong). Server sẽ
+                                 tự kiểm tra đơn còn khoản chưa thanh toán không — nếu
+                                 có thì mở popup "Đơn còn khoản chưa thanh toán",
+                                 nếu không thì chuyển trạng thái phòng sang "Trống". -->
+                            <a th:if="${dp.datPhong.trangThai == 'Da nhan phong'}"
+                               th:href="@{/nhan-su/so-do-phong(donId=${dp.datPhong.id}, action='checkout')}"
+                               class="status-badge success"
+                               style="text-decoration: none; cursor: pointer;">
+                                Đã nhận phòng
+                            </a>
 
                             <span th:if="${dp.datPhong.trangThai == 'Da tra phong'}" class="status-badge neutral">
                                 Đã trả phòng
@@ -597,38 +581,6 @@
                         </div>
                     </td>
                     <td>
-                        <!-- Cột "Tiền thừa" do đổi phòng: dương = cần hoàn khách (hiển thị không dấu), âm = khách nợ thêm -->
-                        <span th:if="${dp.datPhong.tienThuaDoDoiPhong != null and dp.datPhong.tienThuaDoDoiPhong.signum() != 0}"
-                              th:classappend="${dp.datPhong.tienThuaDoDoiPhong.signum() > 0} ? ' tien-thua-duong' : ' tien-thua-am'"
-                              class="tien-thua-cell"
-                              th:text="${(dp.datPhong.tienThuaDoDoiPhong.signum() > 0
-                                          ? #numbers.formatDecimal(dp.datPhong.tienThuaDoDoiPhong, 0, 'COMMA', 0, 'POINT')
-                                          : ('-' + #numbers.formatDecimal(dp.datPhong.tienThuaDoDoiPhong.abs(), 0, 'COMMA', 0, 'POINT')))
-                                        + ' VND'}">
-                        </span>
-                        <span th:unless="${dp.datPhong.tienThuaDoDoiPhong != null and dp.datPhong.tienThuaDoDoiPhong.signum() != 0}"
-                              class="tien-thua-empty"
-                              th:text="'0 VND'">
-                        </span>
-                    </td>
-                    <td>
-                        <span th:if="${dp.datPhong.trangThaiTienThua == 'CHO_HOAN'}" class="status-badge warning">Chờ hoàn</span>
-                        <span th:if="${dp.datPhong.trangThaiTienThua == 'KHACH_NO_THEM'}" class="status-badge danger">Nợ thêm</span>
-                        <span th:unless="${dp.datPhong.trangThaiTienThua == 'CHO_HOAN' or dp.datPhong.trangThaiTienThua == 'KHACH_NO_THEM'}"
-                              class="status-badge tien-thua-tt-empty"
-                              th:text="'Không có'">
-                        </span>
-                    </td>
-                    <td>
-                        <!-- <a th:if="${daDatHoaDon != null and !daDatHoaDon.contains(dp.datPhong.id)}"
-                           th:href="@{/nhan-su/admin/hoa-don/create-from-dat-phong(maDatPhong=${dp.datPhong.id})}"
-                           class="admin-btn small outline">
-                            Xuất HĐ
-                        </a>
-                        <span th:if="${daDatHoaDon != null and daDatHoaDon.contains(dp.datPhong.id)}"
-                              class="status-badge success">
-                            Đã xuất HĐ
-                        </span> -->
                         <span class="status-badge warning" th:text="${dp.hoaDonTrangThai}">
 
                         </span>
@@ -641,7 +593,7 @@
                     </td>
                 </tr>
                 <tr th:if="${datPhongs.isEmpty()}">
-                    <td colspan="15"><div class="empty-state">Không tìm thấy đơn đặt phòng phù hợp.</div></td>
+                    <td colspan="13"><div class="empty-state">Không tìm thấy đơn đặt phòng phù hợp.</div></td>
                 </tr>
                 </tbody>
             </table>

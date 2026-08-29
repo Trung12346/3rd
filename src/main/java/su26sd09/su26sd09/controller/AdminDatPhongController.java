@@ -237,7 +237,35 @@ public class AdminDatPhongController {
 
         model.addAttribute("datPhong", datPhong);
         model.addAttribute("chiTietDatPhongList", chiTietDatPhongList);
+        // Tinh san loai dich vu (THUONG / PHAT_SINH / PHU_THU) cho moi dong
+        // chi_tiet_dich_vu, truyen qua Map<id, loai>. Ly do: Thymeleaf inline
+        // expression [[${...}]] khong parse duoc nested ternary phuc tap (3 nhanh),
+        // nen khong the tinh loai ngay trong template. Lay loai phia controller
+        // dam bao template chi dung mot expression don gian [[${loaiDichVuMap[ct.id]}]].
+        Map<Integer, String> loaiDichVuMap = new HashMap<>();
+        for (Chi_tiet_dich_vu ct : chiTietDichVuList) {
+            String loai = "THUONG";
+            String dvTen = "(null)";
+            String dvLoai = "(null)";
+            if (ct != null && ct.getDv() != null) {
+                dvTen = ct.getDv().getTen_dich_vu();
+                dvLoai = ct.getDv().getLoaiDv();
+                if ("PHAT_SINH".equalsIgnoreCase(dvLoai)) {
+                    loai = "PHAT_SINH";
+                } else if ("Phu thu".equalsIgnoreCase(dvLoai)) {
+                    loai = "PHU_THU";
+                }
+            }
+            // DEBUG tam thoi: in ra console de xac nhan runtime
+            System.out.println("[DEBUG-ADPC] don#" + id + " ct.id=" + ct.getId()
+                    + " dv.ten=" + dvTen + " dv.loaiDv=" + dvLoai
+                    + " donGia=" + ct.getDonGia() + " => loai=" + loai);
+            loaiDichVuMap.put(ct.getId(), loai);
+        }
+        System.out.println("[DEBUG-ADPC] don#" + id + " ctdvList.size=" + chiTietDichVuList.size()
+                + " loaiDichVuMap.size=" + loaiDichVuMap.size() + " map=" + loaiDichVuMap);
         model.addAttribute("chiTietDichVuList", chiTietDichVuList);
+        model.addAttribute("loaiDichVuMap", loaiDichVuMap);
         model.addAttribute("dichVuList", dichVuService.findActiveThuong());
         model.addAttribute("kmJson", buildKhuyenMaiJson());
         model.addAttribute("tongPhuThu", tongPhuThu);

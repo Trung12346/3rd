@@ -28,6 +28,7 @@ import java.security.Principal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Period;
+import java.util.List;
 
 @Controller
 @RequestMapping("/nhan-su/admin/nhan-vien")
@@ -105,11 +106,12 @@ public class AdminNhanVienController {
                                @RequestParam(value = "matKhaumoi", required = false) String matKhauMoi
     ) {
 
-        VaiTro roleStaff = vaiTroRepo.findbyname("ROLE_STAFF");
-        if (roleStaff == null) {
+        List<VaiTro> roles = vaiTroRepo.findbyname("ROLE_STAFF");
+        if (roles == null || roles.isEmpty()) {
             redirect.addFlashAttribute("error", "Không tìm thấy vai trò ROLE_STAFF trong hệ thống");
             return "redirect:/nhan-su/admin/nhan-vien";
         }
+        VaiTro roleStaff = roles.get(0);
 
         nv.setVaitro(roleStaff);
 

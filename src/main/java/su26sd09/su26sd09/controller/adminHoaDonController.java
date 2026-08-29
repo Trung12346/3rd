@@ -27,6 +27,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 @Controller
 @RequestMapping("/nhan-su/admin/hoa-don")
 public class adminHoaDonController {
@@ -58,7 +69,6 @@ public class adminHoaDonController {
     @Autowired
     ThanhToanRepo thanhToanRepo;
 
-
     @GetMapping("")
     public String getHoaDon(
             @RequestParam(required = false) Integer maHoaDon,
@@ -70,93 +80,41 @@ public class adminHoaDonController {
             @RequestParam(required = false) BigDecimal tongTienTu,
             @RequestParam(required = false) BigDecimal tongTienDen,
             @RequestParam(required = false) String trangThaiThanhToan,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
             Model model) {
 
-        List<HoaDon> hoaDons = hoaDonService.findAll().stream()
-                .filter(hd -> {
-                    if (maHoaDon != null && hd.getId() != maHoaDon) return false;
+        LocalDateTime tu = (ngayXuatTu != null && !ngayXuatTu.isEmpty()) ? LocalDate.parse(ngayXuatTu).atStartOfDay() : null;
+        LocalDateTime den = (ngayXuatDen != null && !ngayXuatDen.isEmpty()) ? LocalDate.parse(ngayXuatDen).atTime(23, 59, 59) : null;
 
-                    if (maDatPhong != null &&
-                            (hd.getD() == null || hd.getD().getId() != maDatPhong))
-                        return false;
+        // Chuan hoa chuoi rong -> null cho cac filter dang String.
+        // Ly do: Thymeleaf o hyperlink chuyen trang (hoa-don-list.html) van giu lai
+        // tat ca param filter trong URL mac du nguoi dung khong nhap gi, sinh ra
+        // ?tenKhach=&maKhuyenMai=&trangThaiThanhToan= ... Spring se nhan "" (empty
+        // string) thay vi null, lam JPQL `(:trangThai is null or ...)` o HoaDonRepo
+        // tra ve false -> trang chuyen trang bi rong du DB con du lieu.
+        String tenKhachFilter = (tenKhach != null && !tenKhach.trim().isEmpty()) ? tenKhach.trim() : null;
+        String maKhuyenMaiFilter = (maKhuyenMai != null && !maKhuyenMai.trim().isEmpty()) ? maKhuyenMai.trim() : null;
+        String trangThaiFilter = (trangThaiThanhToan != null && !trangThaiThanhToan.trim().isEmpty()) ? trangThaiThanhToan.trim() : null;
 
-                    if (tenKhach != null && !tenKhach.isEmpty() &&
-                            (hd.getD() == null ||
-                                    hd.getD().getN() == null ||
-                                    !hd.getD().getN().getHoTen()
-                                            .toLowerCase()
-                                            .contains(tenKhach.toLowerCase())))
-                        return false;
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
+        Page<HoaDon> hoaDonPage = hoaDonService.search(
+                maHoaDon, maDatPhong, tenKhachFilter, maKhuyenMaiFilter, tu, den, tongTienTu, tongTienDen, trangThaiFilter, pageable);
 
-                    if (maKhuyenMai != null && !maKhuyenMai.isEmpty() &&
-                            (hd.getK() == null ||
-                                    !hd.getK().getPromoCode()
-                                            .toLowerCase()
-                                            .contains(maKhuyenMai.toLowerCase())))
-                        return false;
-
-                    if (tongTienTu != null &&
-                            hd.getTongTien().compareTo(tongTienTu) < 0)
-                        return false;
-                    if (tongTienDen != null &&
-                            hd.getTongTien().compareTo(tongTienDen) > 0)
-                        return false;
-
-                    if (ngayXuatTu != null && !ngayXuatTu.isEmpty()) {
-                        LocalDateTime tu =
-                                LocalDate.parse(ngayXuatTu).atStartOfDay();
-
-                        if (hd.getNgayXuat().isBefore(tu))
-                            return false;
-                    }
-
-                    if (ngayXuatDen != null && !ngayXuatDen.isEmpty()) {
-                        LocalDateTime den =
-                                LocalDate.parse(ngayXuatDen)
-                                        .atTime(23, 59, 59);
-                        if (hd.getNgayXuat().isAfter(den))
-                            return false;
-                    }
-                    if (trangThaiThanhToan != null &&
-                            !trangThaiThanhToan.isEmpty()) {
-                        BigDecimal conNo =
-                                hd.getTongTien()
-                                        .subtract(hd.getDaThanhToan());
-                        if (trangThaiThanhToan.equals("chua") &&
-                                hd.getDaThanhToan()
-                                        .compareTo(BigDecimal.ZERO) != 0)
-                            return false;
-                        if (trangThaiThanhToan.equals("mot_phan") &&
-                                conNo.compareTo(BigDecimal.ZERO) <= 0)
-                            return false;
-                        if (trangThaiThanhToan.equals("du") &&
-                                conNo.compareTo(BigDecimal.ZERO) != 0)
-                            return false;
-                    }
-                    return true;
-                })
-                .collect(Collectors.toList());
-
+        List<HoaDon> hoaDons = hoaDonPage.getContent();
         Map<Integer, List<Chi_tiet_dich_vu>> dvMap = new HashMap<>();
 
         for (HoaDon hd : hoaDons) {
             if (hd.getD() != null) {
-                dvMap.put(
-                        hd.getId(),
-                        chiTietDichVuService.findByDatPhongId(
-                                hd.getD().getId()
-                        )
-                );
+                dvMap.put(hd.getId(), chiTietDichVuService.findByDatPhongId(hd.getD().getId()));
             }
-
         }
 
         model.addAttribute("dvMap", dvMap);
-
         model.addAttribute("hoaDons", hoaDons);
+        model.addAttribute("hoaDonPage", hoaDonPage);
         model.addAttribute("hoaDon", new HoaDon());
         model.addAttribute("datPhongs", datPhongService.findAll());
-
         model.addAttribute("nguoiDungs", nhanVienService.findAll().stream().filter(x -> x.getVaitro().getTenVaiTro().equals("ROLE_STAFF")));
 
         model.addAttribute("maHoaDon", maHoaDon);
@@ -228,12 +186,13 @@ public class adminHoaDonController {
         model.addAttribute("nguoiDungs",nguoiDungService.findWhereRoleNV());
         model.addAttribute("hoaDon", hoaDon);
         model.addAttribute("datPhongs", datPhongService.findAll());
+        model.addAttribute("khuyenMais", khuyenMaiService.findAll());
         // Truyen rieng amountPhuThu ra view de hien thi dong "Phu thu check-in som/check-out muon"
         // tren trang tao hoa don (minh bach tien dv thuong vs tien phu thu).
         model.addAttribute("amountPhuThu", amountPhuThu);
         model.addAttribute("title", "Tạo hóa đơn từ đơn #" + maDatPhong);
 
-        return "admin/hoa-don-list";
+        return "admin/hoa-don-form";
     }
 
     @PostMapping("/save")
@@ -279,11 +238,12 @@ public class adminHoaDonController {
         model.addAttribute("hoaDon", hoaDon);
         model.addAttribute("hoaDons", hoaDonService.findAll());
         model.addAttribute("datPhongs", datPhongService.findAll());
+        model.addAttribute("khuyenMais", khuyenMaiService.findAll());
         model.addAttribute("nguoiDungs", nguoiDungService.findWhereRoleNV());
         model.addAttribute("keyword", keyword);
         model.addAttribute("title", "Sửa hóa đơn #" + id);
 
-        return "admin/hoa-don-list";
+        return "admin/hoa-don-form";
     }
 
     @GetMapping("/search")

@@ -113,99 +113,6 @@
     </div>
 
     <section class="admin-panel">
-        <h2 th:text="${title}">Thêm hóa đơn</h2>
-
-        <form th:action="@{/nhan-su/admin/hoa-don/save}" th:object="${hoaDon}" method="post">
-            <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
-            <input type="hidden" th:field="*{id}">
-
-            <input type="hidden" name="maDatPhong" th:value="${hoaDon.d != null ? hoaDon.d.id : ''}">
-            <input type="hidden" name="maKhuyenMai" th:value="${hoaDon.k != null ? hoaDon.k.id : ''}">
-            <input type="hidden" name="maNhanVienXuat" th:value="${hoaDon.n != null ? hoaDon.n.id : ''}">
-
-            <div class="admin-grid">
-                <div class="admin-field">
-                    <label>Đơn đặt phòng</label>
-                    <select th:disabled="${hoaDon.id != 0}">
-                        <option value="">-- Chọn đơn --</option>
-                        <option th:each="dp : ${datPhongs}"
-                                th:value="${dp.id}"
-                                th:text="${'#' + dp.id + ' - ' + (dp.n != null ? dp.n.hoTen : '')}"
-                                th:selected="${hoaDon.d != null and hoaDon.d.id == dp.id}">
-                        </option>
-                    </select>
-                </div>
-                <div class="admin-field">
-                    <label>Khuyến mãi</label>
-                    <select th:disabled="${hoaDon.id != 0}">
-                        <option value="">-- Không áp dụng --</option>
-                        <option th:each="km : ${khuyenMais}"
-                                th:value="${km.id}"
-                                th:text="${km.promoCode}"
-                                th:selected="${hoaDon.k != null and hoaDon.k.id == km.id}">
-                        </option>
-                    </select>
-                </div>
-                <div class="admin-field">
-                    <label>Nhân viên xuất</label>
-                    <select th:disabled="${hoaDon.id != 0}" name="maNhanVienXuat">
-                        <option value="">-- Chọn nhân viên --</option>
-                        <option th:each="nd : ${nguoiDungs}"
-                                th:value="${nd.id}"
-                                th:text="${nd.hoten + ' - ' + nd.email}"
-                                th:selected="${hoaDon.n != null and hoaDon.n.maNguoiDung == nd.maNguoiDung}">
-                        </option>
-                    </select>
-                </div>
-                <div class="admin-field">
-                    <label>Tiền phòng</label>
-                    <input type="number" th:field="*{tienPhong}" th:readonly="${hoaDon.id != 0}">
-                </div>
-                <div class="admin-field">
-                    <label>Tiền dịch vụ</label>
-                    <input type="number" th:field="*{tienDichVu}" th:readonly="${hoaDon.id != 0}">
-                </div>
-                <div class="admin-field" th:if="${amountPhuThu != null and amountPhuThu.signum() > 0}">
-                    <label>Phụ thu check-in sớm / check-out muộn</label>
-                    <input type="number" th:value="${amountPhuThu}" readonly>
-                </div>
-                <div class="admin-field">
-                    <label>Tiền giảm</label>
-                    <input type="number" th:field="*{tienGiam}" th:readonly="${hoaDon.id != 0}">
-                </div>
-                <div class="admin-field">
-                    <label>Tiền VAT</label>
-                    <input type="number" th:field="*{tienVat}" th:readonly="${hoaDon.id != 0}">
-                </div>
-                <div class="admin-field">
-                    <label>Tổng tiền</label>
-                    <input type="number" th:field="*{tongTien}" th:readonly="${hoaDon.id != 0}">
-                </div>
-                <div class="admin-field">
-                    <div class="admin-field">
-                        <label>Đã thanh toán</label>
-                        <input type="number" th:field="*{daThanhToan}"
-                               min="0" step="1000"
-                               th:disabled="${hoaDon.daThanhToan != null and hoaDon.tongTien != null
-                      and hoaDon.daThanhToan.compareTo(hoaDon.tongTien) >= 0}">
-
-                        <input type="hidden" th:field="*{daThanhToan}">
-                    </div>
-                </div>
-                <div class="admin-field full">
-                    <label>Ghi chú</label>
-                    <textarea th:field="*{ghiChu}" th:readonly="${hoaDon.id != 0}"></textarea>
-                </div>
-            </div>
-
-            <div class="admin-actions">
-                <button type="submit" class="admin-btn">Lưu Hóa Đơn</button>
-                <a th:href="@{/nhan-su/admin/hoa-don}" class="admin-btn outline">Hủy</a>
-            </div>
-        </form>
-    </section>
-
-    <section class="admin-panel">
         <h2>Danh Sách Hóa Đơn</h2>
 
         <section class="admin-panel">
@@ -358,10 +265,27 @@
 
                 </tr>
                 <tr th:if="${hoaDons.isEmpty()}">
-                    <td colspan="8"><div class="empty-state">Không tìm thấy hóa đơn phù hợp.</div></td>
+                    <td colspan="10"><div class="empty-state">Không tìm thấy hóa đơn phù hợp.</div></td>
                 </tr>
                 </tbody>
             </table>
+        </div>
+        <div class="admin-actions" th:if="${hoaDonPage != null and hoaDonPage.totalPages > 1}" style="justify-content:center; gap:6px; margin-top: 16px;">
+            <a th:if="${hoaDonPage.hasPrevious()}"
+               class="admin-btn small outline"
+               th:href="@{/nhan-su/admin/hoa-don(page=${hoaDonPage.number - 1}, maHoaDon=${maHoaDon}, maDatPhong=${maDatPhong}, tenKhach=${tenKhach}, maKhuyenMai=${maKhuyenMai}, ngayXuatTu=${ngayXuatTu}, ngayXuatDen=${ngayXuatDen}, tongTienTu=${tongTienTu}, tongTienDen=${tongTienDen}, trangThaiThanhToan=${trangThaiThanhToan})}">« Trước</a>
+
+            <span th:each="i : ${#numbers.sequence(0, hoaDonPage.totalPages - 1)}">
+            <a th:href="@{/nhan-su/admin/hoa-don(page=${i}, maHoaDon=${maHoaDon}, maDatPhong=${maDatPhong}, tenKhach=${tenKhach}, maKhuyenMai=${maKhuyenMai}, ngayXuatTu=${ngayXuatTu}, ngayXuatDen=${ngayXuatDen}, tongTienTu=${tongTienTu}, tongTienDen=${tongTienDen}, trangThaiThanhToan=${trangThaiThanhToan})}"
+               th:text="${i + 1}"
+               th:classappend="${i == hoaDonPage.number} ? ' active'"
+               class="admin-btn small outline">
+            </a>
+        </span>
+
+            <a th:if="${hoaDonPage.hasNext()}"
+               class="admin-btn small outline"
+               th:href="@{/nhan-su/admin/hoa-don(page=${hoaDonPage.number + 1}, maHoaDon=${maHoaDon}, maDatPhong=${maDatPhong}, tenKhach=${tenKhach}, maKhuyenMai=${maKhuyenMai}, ngayXuatTu=${ngayXuatTu}, ngayXuatDen=${ngayXuatDen}, tongTienTu=${tongTienTu}, tongTienDen=${tongTienDen}, trangThaiThanhToan=${trangThaiThanhToan})}">Sau »</a>
         </div>
     </section>
     <div th:each="hd : ${hoaDons}"
