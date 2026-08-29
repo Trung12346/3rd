@@ -2054,6 +2054,42 @@ public class NhanVienDatPhongController {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Goi y giay to cu (dropdown autocomplete) khi nhan vien go "So dinh danh"
+     * trong panel "Thong tin giay to" tren So do phong. Tim theo so dinh danh
+     * BAT DAU BANG tu khoa (khong tim theo ten - tranh goi y nham nguoi trung
+     * ten khac so), lay 8 ket qua moi nhat. Chon 1 goi y se tu dien toan bo
+     * cac truong con lai (ho ten, ngay sinh, que quan, noi cu tru...) tu giay
+     * to da luu do phia client.
+     */
+    @GetMapping("/so-do-phong/giay-to/goi-y")
+    @ResponseBody
+    public List<Map<String, Object>> goiYGiayTo(@RequestParam(required = false) String q) {
+        if (q == null || q.trim().length() < 3) {
+            return java.util.Collections.emptyList();
+        }
+        return giayToRepo.findTop8BySoDinhDanhStartingWithOrderByIdDesc(q.trim()).stream()
+                .map(g -> {
+                    Map<String, Object> m = new LinkedHashMap<>();
+                    m.put("loaiGiayTo", g.getLoaiGiayTo());
+                    m.put("hoTen", g.getHoTen());
+                    m.put("soDinhDanh", g.getSoDinhDanh());
+                    m.put("ngaySinh", g.getNgaySinh() != null ? g.getNgaySinh().toString() : null);
+                    m.put("gioiTinh", g.getGioiTinh());
+                    m.put("quocTich", g.getQuocTich());
+                    m.put("queQuan", g.getQueQuan());
+                    m.put("noiThuongTru", g.getNoiThuongTru());
+                    m.put("noiCuTru", g.getNoiCuTru());
+                    m.put("noiTamTru", g.getNoiTamTru());
+                    m.put("noiLuuTru", g.getNoiLuuTru());
+                    m.put("ngayCap", g.getNgayCap() != null ? g.getNgayCap().toString() : null);
+                    m.put("giaTriDen", g.getGiaTriDen() != null ? g.getGiaTriDen().toString() : null);
+                    m.put("quocGiaCapPhat", g.getQuocGiaCapPhat());
+                    return m;
+                })
+                .collect(Collectors.toList());
+    }
+
     @GetMapping("/so-do-phong")
     public String soDoPhong(Model model) {
         List<Phong> tatCaPhong = phongService.findAllPhong();

@@ -12,6 +12,12 @@ import java.util.List;
 public interface GiayToRepo extends JpaRepository<GiayTo, Integer> {
     List<GiayTo> findByChiTietDatPhong_Id(int chiTietDatPhongId);
 
+    // Goi y giay to cu theo so dinh danh (autocomplete o panel "Thong tin giay
+    // to" cua So Do Phong): tim cac giay to da luu truoc day co so dinh danh
+    // bat dau bang tu khoa nhap, moi nhat truoc, de dien lai toan bo thong tin
+    // (ho ten, ngay sinh, que quan, noi cu tru...) cho khach quen quay lai.
+    List<GiayTo> findTop8BySoDinhDanhStartingWithOrderByIdDesc(String soDinhDanhPrefix);
+
     @Query("""
         select g from GiayTo g
         left join g.chiTietDatPhong ct

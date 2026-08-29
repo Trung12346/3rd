@@ -53,6 +53,13 @@ public class LoaiPhongService {
     public void save(LoaiPhong c, List<UUID> anhIds) {
         LoaiPhong saved = repo.save(c);
         saveAnhLoaiPhong(saved, anhIds);
+        // Dong bo lai gia/dem cua tat ca phong thuoc loai phong nay theo gia
+        // co ban MOI vua luu - truoc day chi Phong duoc tao/luu lai sau do moi
+        // tu dong lay dung gia (xem "Gia tu dong lay theo loai phong" o form
+        // Phong), khien cac phong cu bi "ket" gia cu sau khi doi gia loai phong.
+        if (saved.getGiaCoBan() != null) {
+            repoPhong.capNhatGiaTheoLoaiPhong(saved.getId(), saved.getGiaCoBan());
+        }
     }
 
     /**

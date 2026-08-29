@@ -456,7 +456,7 @@
         .sdp-giayto-fields-body { padding: 16px 20px; overflow-y: auto; }
         .sdp-giayto-fields-actions { padding: 12px 20px 16px; display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid #eef1f5; flex: none; }
 
-        .sdp-gt-field { margin-bottom: 12px; }
+        .sdp-gt-field { margin-bottom: 12px; position: relative; }
         .sdp-gt-field label { display: block; font-size: 11.5px; font-weight: 700; color: #6b7280; text-transform: uppercase; margin-bottom: 5px; letter-spacing: .02em; }
         .sdp-gt-field input[type="text"], .sdp-gt-field input[type="date"], .sdp-gt-field select {
             width: 100%; padding: 9px 11px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 13.5px; color: #1f2937;
@@ -2175,6 +2175,7 @@
         var CTX_URL_DON_CHI_TIET = /*[[@{/nhan-su/dat-phong/chi-tiet/}]]*/ '/nhan-su/dat-phong/chi-tiet/';
         var CTX_URL_CHECK_IN = /*[[@{/nhan-su/dat-phong/}]]*/ '/nhan-su/dat-phong/';
         var CTX_URL_CHECKOUT = /*[[@{/nhan-su/checkout/}]]*/ '/nhan-su/checkout/';
+        var CTX_URL_GIAYTO_GOI_Y = /*[[@{/nhan-su/so-do-phong/giay-to/goi-y}]]*/ '/nhan-su/so-do-phong/giay-to/goi-y';
 
         var now = SDP_NOW ? new Date(SDP_NOW) : new Date();
         var todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
@@ -2915,6 +2916,18 @@
                     '<input type="' + type + '" id="' + id + '" value="' + (value ? String(value).replace(/"/g, '&quot;') : '') + '"></div>';
             }
 
+            // Rieng "So dinh danh": co them dropdown goi y (autocomplete) - go
+            // so dinh danh trung/gan giong 1 giay to da luu truoc day (khach
+            // quen quay lai) se hien danh sach goi y, chon 1 goi y se tu dien
+            // LAI TOAN BO cac truong con lai (ho ten, ngay sinh, que quan,
+            // noi cu tru...) tu giay to do - khong bat buoc phai chon.
+            function fSoDinhDanh(value) {
+                return '<div class="sdp-gt-field sdp-lich-field-autocomplete"><label>Số định danh</label>' +
+                    '<input type="text" id="gtSoDinhDanh" autocomplete="off" value="' +
+                    (value ? String(value).replace(/"/g, '&quot;') : '') + '">' +
+                    '<div class="sdp-lich-suggest-box" id="gtSoDinhDanhSuggestBox"></div></div>';
+            }
+
             var html = '';
             html += '<div class="sdp-gt-checkbox"><input type="checkbox" id="gtCoDaiDien" ' + (doc.coDaiDien ? 'checked' : '') + '>' +
                 '<label for="gtCoDaiDien" style="margin:0;text-transform:none;font-weight:600;color:#374151;">Là người đại diện nhận phòng</label></div>';
@@ -2922,7 +2935,7 @@
                 '<option value="CCCD"' + (doc.loaiGiayTo === 'CCCD' ? ' selected' : '') + '>CCCD</option>' +
                 '<option value="Hộ chiếu"' + (doc.loaiGiayTo === 'Hộ chiếu' ? ' selected' : '') + '>Hộ chiếu</option>' +
                 '</select></div>';
-            html += '<div class="sdp-gt-row2">' + f('gtHoTen', 'Họ tên', 'text', doc.hoTen) + f('gtSoDinhDanh', 'Số định danh', 'text', doc.soDinhDanh) + '</div>';
+            html += '<div class="sdp-gt-row2">' + f('gtHoTen', 'Họ tên', 'text', doc.hoTen) + fSoDinhDanh(doc.soDinhDanh) + '</div>';
             html += '<div class="sdp-gt-row2">' + f('gtNgaySinh', 'Ngày sinh', 'date', doc.ngaySinh) + f('gtGioiTinh', 'Giới tính', 'text', doc.gioiTinh) + '</div>';
             html += '<div class="sdp-gt-row2">' + f('gtQuocTich', 'Quốc tịch', 'text', doc.quocTich) + f('gtQueQuan', 'Quê quán', 'text', doc.queQuan) + '</div>';
             html += '<div class="sdp-gt-row2">' + f('gtNoiThuongTru', 'Nơi thường trú', 'text', doc.noiThuongTru) + f('gtNoiCuTru', 'Nơi cư trú', 'text', doc.noiCuTru) + '</div>';
@@ -2940,6 +2953,113 @@
                 el.addEventListener('input', xacThucPanelGiayToHienTai);
                 el.addEventListener('change', xacThucPanelGiayToHienTai);
             });
+
+            wireGoiYSoDinhDanh();
+        }
+
+        /* ============ Goi y giay to cu theo "So dinh danh" (autocomplete) ============
+         * Go tren 3 ky tu se goi API tim giay to cu co so dinh danh bat dau
+         * giong tu khoa - chon 1 goi y se dien lai TOAN BO cac truong con lai
+         * (chi dien nhung truong giay to do THUC SU CO du lieu, cac truong
+         * con lai giu nguyen gia tri dang nhap). Hoan toan tuy chon - go tay
+         * so dinh danh moi (khach lan dau) van hoat dong binh thuong.
+         */
+        var gtGoiYDebounce = null;
+        function wireGoiYSoDinhDanh() {
+            var input = document.getElementById('gtSoDinhDanh');
+            var box = document.getElementById('gtSoDinhDanhSuggestBox');
+            if (!input || !box) return;
+
+            function an() {
+                box.classList.remove('open');
+                box.innerHTML = '';
+            }
+
+            function chon(doc) {
+                var setVal = function (id, v) {
+                    var el = document.getElementById(id);
+                    if (el && v !== undefined && v !== null && v !== '') el.value = v;
+                };
+                setVal('gtLoaiGiayTo', doc.loaiGiayTo);
+                setVal('gtHoTen', doc.hoTen);
+                setVal('gtSoDinhDanh', doc.soDinhDanh);
+                setVal('gtNgaySinh', doc.ngaySinh);
+                setVal('gtGioiTinh', doc.gioiTinh);
+                setVal('gtQuocTich', doc.quocTich);
+                setVal('gtQueQuan', doc.queQuan);
+                setVal('gtNoiThuongTru', doc.noiThuongTru);
+                setVal('gtNoiCuTru', doc.noiCuTru);
+                setVal('gtNoiTamTru', doc.noiTamTru);
+                setVal('gtNoiLuuTru', doc.noiLuuTru);
+                setVal('gtNgayCap', doc.ngayCap);
+                setVal('gtGiaTriDen', doc.giaTriDen);
+                setVal('gtQuocGiaCapPhat', doc.quocGiaCapPhat);
+                an();
+                xacThucPanelGiayToHienTai();
+            }
+
+            function ve(items) {
+                box.innerHTML = '';
+                if (!items || !items.length) {
+                    var empty = document.createElement('div');
+                    empty.className = 'sdp-lich-suggest-empty';
+                    empty.textContent = 'Không tìm thấy giấy tờ cũ phù hợp';
+                    box.appendChild(empty);
+                    box.classList.add('open');
+                    return;
+                }
+                items.forEach(function (doc) {
+                    var item = document.createElement('div');
+                    item.className = 'sdp-lich-suggest-item';
+                    var meta = [doc.loaiGiayTo, doc.ngaySinh].filter(Boolean).join(' · ');
+                    item.innerHTML = '<span class="sdp-lich-suggest-name"></span><span class="sdp-lich-suggest-meta"></span>';
+                    item.querySelector('.sdp-lich-suggest-name').textContent =
+                        (doc.hoTen || '(Chưa có tên)') + ' — ' + (doc.soDinhDanh || '');
+                    item.querySelector('.sdp-lich-suggest-meta').textContent = meta;
+                    item.addEventListener('mousedown', function (e) {
+                        e.preventDefault(); // chay truoc blur cua input
+                        chon(doc);
+                    });
+                    box.appendChild(item);
+                });
+                box.classList.add('open');
+            }
+
+            function tim(tuKhoa) {
+                if (!tuKhoa || tuKhoa.trim().length < 3) { an(); return; }
+                fetch(CTX_URL_GIAYTO_GOI_Y + '?q=' + encodeURIComponent(tuKhoa.trim()), { headers: { 'Accept': 'application/json' } })
+                    .then(function (r) { return r.ok ? r.json() : []; })
+                    .then(function (list) {
+                        if ((input.value || '').trim() !== tuKhoa.trim()) return; // tu khoa da doi, bo ket qua cu
+                        ve(list);
+                    })
+                    .catch(function () { /* loi mang: bo qua, khong chan nhap tay */ });
+            }
+
+            input.addEventListener('input', function () {
+                var v = input.value;
+                if (gtGoiYDebounce) clearTimeout(gtGoiYDebounce);
+                gtGoiYDebounce = setTimeout(function () { tim(v); }, 300);
+            });
+            input.addEventListener('blur', function () { setTimeout(an, 150); });
+            input.addEventListener('keydown', function (e) { if (e.key === 'Escape') an(); });
+        }
+
+        // Tinh tuoi (so nam tron) tu chuoi ngay sinh "yyyy-MM-dd" (gia tri cua
+        // input type=date), dua theo ngay hien tai cua he thong. Tra ve null
+        // neu chuoi khong hop le, de noi goi tu quyet dinh co coi la loi hay
+        // khong (VD: bo qua neu rong).
+        function tinhTuoiTuNgaySinh(ngaySinhStr) {
+            if (!ngaySinhStr) return null;
+            var ns = new Date(ngaySinhStr + 'T00:00:00');
+            if (isNaN(ns.getTime())) return null;
+            var homNay = now || new Date();
+            var tuoi = homNay.getFullYear() - ns.getFullYear();
+            var chuaToiSinhNhatNamNay =
+                (homNay.getMonth() < ns.getMonth()) ||
+                (homNay.getMonth() === ns.getMonth() && homNay.getDate() < ns.getDate());
+            if (chuaToiSinhNhatNamNay) tuoi--;
+            return tuoi;
         }
 
         // Nhan hien thi + thu tu cac truong bat buoc trong panel nhap chi tiet.
@@ -2996,6 +3116,20 @@
                 gtHienLoiTruong(id, loi);
                 if (loi) hopLe = false;
             });
+
+            // Rieng nguoi dai dien: ngay sinh (da bat buoc nhap o tren) con phai
+            // dam bao du 18 tuoi tro len. Khach thuong (khong dai dien) khong
+            // bi ap dung dieu kien nay.
+            if (isDaiDien) {
+                var vNgaySinhDaiDien = (document.getElementById('gtNgaySinh').value || '').trim();
+                if (vNgaySinhDaiDien) {
+                    var tuoiDaiDien = tinhTuoiTuNgaySinh(vNgaySinhDaiDien);
+                    if (tuoiDaiDien !== null && tuoiDaiDien < 18) {
+                        gtHienLoiTruong('gtNgaySinh', 'Người đại diện phải từ đủ 18 tuổi trở lên.');
+                        hopLe = false;
+                    }
+                }
+            }
 
             if (isDaiDien) {
                 var coNoi = GT_TRUONG_NOI.some(function (id) { return (document.getElementById(id).value || '').trim(); });

@@ -2,12 +2,14 @@ package su26sd09.su26sd09.repository;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import su26sd09.su26sd09.entity.DatPhong;
 import su26sd09.su26sd09.entity.Phong;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 public interface PhongRepository extends JpaRepository<Phong, Integer> {
@@ -76,4 +78,16 @@ and d.trangThai in ('Yeu cau dat phong','Cho xac nhan','Da xac nhan','Da nhan ph
 
 
     Phong findFirstByloaiPhongId(int id);
+
+    /**
+     * Dong bo lai gia/dem cua TAT CA phong thuoc 1 loai phong ve dung gia co
+     * ban moi cua loai phong do - dung khi admin cap nhat gia o man hinh
+     * "Loai phong" (truoc gio chi Phong moi tao/duoc luu lai moi tu dong lay
+     * dung gia, cac phong cu se bi "ket" gia theo lan luu gan nhat). Dung
+     * bulk update (@Modifying) thay vi fetch tung Phong roi saveAll de tranh
+     * load het danh sach phong (co the rat nhieu) chi de doi 1 cot gia.
+     */
+    @Modifying
+    @Query("update Phong p set p.giaMoiDem = :gia where p.loaiPhong.id = :loaiPhongId")
+    int capNhatGiaTheoLoaiPhong(@Param("loaiPhongId") int loaiPhongId, @Param("gia") BigDecimal gia);
 }
