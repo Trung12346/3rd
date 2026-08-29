@@ -547,28 +547,26 @@
                                 </button>
                             </form>
 
-                            <!-- Nút "Đã xác nhận -> Đã nhận phòng": redirect sang trang check-in (CHƯA update trạng thái).
-                                 Trang check-in submit xong mới update thật sự. -->
-                            <form th:if="${dp.datPhong.trangThai == 'Da xac nhan'}"
-                                  th:action="@{/nhan-su/admin/dat-phong/{id}/check-in(id=${dp.datPhong.id})}" method="get" style="margin: 0;">
-                                <button type="submit" class="status-badge info"
-                                        style="cursor: pointer; border: none;">
-                                    Đã xác nhận
-                                </button>
-                            </form>
+                            <!-- Nút "Đã xác nhận": redirect sang Sơ đồ phòng và mở
+                                 sidebar/modal xử lý nhận phòng cho đơn này. -->
+                            <a th:if="${dp.datPhong.trangThai == 'Da xac nhan'}"
+                               th:href="@{/nhan-su/so-do-phong(donId=${dp.datPhong.id}, action='checkin')}"
+                               class="status-badge info"
+                               style="text-decoration: none; cursor: pointer;">
+                                Đã xác nhận
+                            </a>
 
-                            <!-- Nút "Đã nhận phòng -> Đã trả phòng" (POST /update-trang-thai) -->
-                            <form th:if="${dp.datPhong.trangThai == 'Da nhan phong'}"
-                                  th:action="@{/nhan-su/admin/dat-phong/update-trang-thai}" method="post" style="margin: 0;">
-                                <input type="hidden" name="id" th:value="${dp.datPhong.id}">
-                                <input type="hidden" name="page" th:value="${currentPage}">
-                                <input type="hidden" name="size" th:value="${pageSize}">
-                                <button type="submit" name="trangThai" value="Da tra phong"
-                                        class="status-badge success"
-                                        style="cursor: pointer; border: none;">
-                                    Đã nhận phòng
-                                </button>
-                            </form>
+                            <!-- Nút "Đã nhận phòng": redirect sang Sơ đồ phòng và
+                                 trigger luồng trả phòng (xuLyKhachTraPhong). Server sẽ
+                                 tự kiểm tra đơn còn khoản chưa thanh toán không — nếu
+                                 có thì mở popup "Đơn còn khoản chưa thanh toán",
+                                 nếu không thì chuyển trạng thái phòng sang "Trống". -->
+                            <a th:if="${dp.datPhong.trangThai == 'Da nhan phong'}"
+                               th:href="@{/nhan-su/so-do-phong(donId=${dp.datPhong.id}, action='checkout')}"
+                               class="status-badge success"
+                               style="text-decoration: none; cursor: pointer;">
+                                Đã nhận phòng
+                            </a>
 
                             <span th:if="${dp.datPhong.trangThai == 'Da tra phong'}" class="status-badge neutral">
                                 Đã trả phòng
@@ -594,15 +592,6 @@
                         </div>
                     </td>
                     <td>
-                        <!-- <a th:if="${daDatHoaDon != null and !daDatHoaDon.contains(dp.datPhong.id)}"
-                           th:href="@{/nhan-su/admin/hoa-don/create-from-dat-phong(maDatPhong=${dp.datPhong.id})}"
-                           class="admin-btn small outline">
-                            Xuất HĐ
-                        </a>
-                        <span th:if="${daDatHoaDon != null and daDatHoaDon.contains(dp.datPhong.id)}"
-                              class="status-badge success">
-                            Đã xuất HĐ
-                        </span> -->
                         <span class="status-badge warning" th:text="${dp.hoaDonTrangThai}">
 
                         </span>

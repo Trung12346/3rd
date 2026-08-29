@@ -12,5 +12,5 @@ public interface VaiTroRepo extends JpaRepository<VaiTro,Integer> {
 
 
     @Query("select v from VaiTro v where v.tenVaiTro like concat('%',:name,'%')")
-    public VaiTro findbyname(@Param("name") String name);
+    public List<VaiTro> findbyname(@Param("name") String name);
 }

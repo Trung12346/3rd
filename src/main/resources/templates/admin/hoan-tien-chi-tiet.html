@@ -336,17 +336,33 @@
             </div>
         </div>
 
-        <!-- ===== FORM 1: TIỀN MẶT - 1 bước, không qua VNPay ===== -->
-        <form id="formTienMat" th:action="@{/nhan-su/admin/hoan-tien/{id}/xac-nhan(id=${hoaDon.id})}" method="post">
+        <!-- ===== FORM 1: TIỀN MẶT (mặc định) hoặc HỦY ĐƠN KHÔNG HOÀN (khi tyLeHoan = 0) =====
+             Khi tỷ lệ hoàn = 0% thì không có gì để trả — form này chuyển sang chế độ
+             "Hủy đơn không hoàn" để gộp nút, khỏi dài dòng 2 chỗ. -->
+        <form id="formTienMat"
+              th:action="${hoaDon.tyLeHoan != null and hoaDon.tyLeHoan.signum() == 0}
+                         ? @{/nhan-su/admin/hoan-tien/{id}/huy-khong-hoan(id=${hoaDon.id})}
+                         : @{/nhan-su/admin/hoan-tien/{id}/xac-nhan(id=${hoaDon.id})}"
+              method="post"
+              th:attr="data-msg=${hoaDon.tyLeHoan != null and hoaDon.tyLeHoan.signum() == 0}
+                              ? |Xác nhận HỦY ĐƠN và KHÔNG HOÀN TIỀN? \n\n Đơn sẽ chuyển sang Đã hủy, phòng sẽ được nhả về trạng thái trống. Hóa đơn vẫn được xuất PDF cho khách cầm về (số tiền hoàn = 0 VND).|
+                              : null">
             <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
-            <input type="hidden" name="phuongThucHoan" value="Tien Mat">
+            <input type="hidden" th:if="${hoaDon.tyLeHoan == null or hoaDon.tyLeHoan.signum() != 0}" name="phuongThucHoan" value="Tien Mat">
 
             <div class="admin-grid">
                 <div class="admin-field">
                     <label>Giá hoàn tiền (VND) <span style="color:#dc2626;">*</span></label>
                     <input type="number" name="soTienHoanNhap" id="soTienHoanNhap" min="0" step="1000"
-                           th:value="${hoaDon.soTienHoan != null ? hoaDon.soTienHoan : 0}" required readonly>
-                    <small class="form-hint">Đã được hệ thống tính sẵn theo tỷ lệ. Có thể chỉnh nếu cần.</small>
+                           th:value="${hoaDon.soTienHoan != null ? hoaDon.soTienHoan : 0}"
+                           th:readonly="${hoaDon.tyLeHoan == null or hoaDon.tyLeHoan.signum() != 0}"
+                           th:required="${hoaDon.tyLeHoan == null or hoaDon.tyLeHoan.signum() != 0}">
+                    <small class="form-hint"
+                           th:text="${hoaDon.tyLeHoan != null and hoaDon.tyLeHoan.signum() == 0}
+                                    ? 'Đơn không có khoản hoàn — số tiền hiển thị để đối chiếu.'
+                                    : 'Đã được hệ thống tính sẵn theo tỷ lệ. Có thể chỉnh nếu cần.'">
+                        Đã được hệ thống tính sẵn theo tỷ lệ. Có thể chỉnh nếu cần.
+                    </small>
                 </div>
                 <div class="admin-field">
                     <label>Tỷ lệ áp dụng (%)</label>
@@ -363,14 +379,27 @@
                     <small class="form-hint">Thời điểm khách tạo yêu cầu hủy.</small>
                 </div>
                 <div class="admin-field full">
-                    <label>Ghi chú</label>
-                    <textarea name="ghiChu" placeholder="VD: Khách đã nhận tiền mặt tại quầy lúc 10h30..."></textarea>
+                    <label th:text="${hoaDon.tyLeHoan != null and hoaDon.tyLeHoan.signum() == 0} ? 'Lý do hủy đơn không hoàn' : 'Ghi chú'">Ghi chú</label>
+                    <textarea name="lyDo"
+                              th:if="${hoaDon.tyLeHoan != null and hoaDon.tyLeHoan.signum() == 0}"
+                              placeholder="VD: Khách hủy muộn theo chính sách - tỷ lệ hoàn 0%. Khách đồng ý hủy không hoàn."></textarea>
+                    <textarea name="ghiChu"
+                              th:if="${hoaDon.tyLeHoan == null or hoaDon.tyLeHoan.signum() != 0}"
+                              placeholder="VD: Khách đã nhận tiền mặt tại quầy lúc 10h30..."></textarea>
                 </div>
             </div>
 
             <div class="admin-actions">
-                <button type="submit" class="admin-btn" onclick="return xacNhanTienMat();">
+                <!-- Trường hợp bình thường (tyLeHoan > 0): nút xác nhận đã trả tiền mặt -->
+                <button th:if="${hoaDon.tyLeHoan == null or hoaDon.tyLeHoan.signum() != 0}"
+                        type="submit" class="admin-btn" onclick="return xacNhanTienMat();">
                     <i class="fa-solid fa-money-bill-wave"></i> Xác Nhận Đã Trả Tiền Mặt
+                </button>
+                <!-- Trường hợp tyLeHoan = 0: nút hủy đơn không hoàn (gộp vào đây luôn) -->
+                <button th:if="${hoaDon.tyLeHoan != null and hoaDon.tyLeHoan.signum() == 0}"
+                        type="submit" class="admin-btn" style="background:#dc2626;"
+                        onclick="return xacNhanHuyKhongHoan(this);">
+                    <i class="fa-solid fa-circle-xmark"></i> Xác Nhận Hủy Đơn Không Hoàn
                 </button>
             </div>
         </form>
@@ -422,11 +451,13 @@
             </div>
         </form>
 
-        <!-- ===== FORM HỦY ĐƠN KHÔNG HOÀN - chỉ hiển thị khi tỷ lệ hoàn = 0% =====
+        <!-- ===== FORM HỦY ĐƠN KHÔNG HOÀN - chỉ hiển thị khi tỷ lệ hoàn > 0% =====
+             Khi tyLeHoan = 0%, nút này đã được gộp vào formTienMat ở trên (đỡ dài dòng),
+             nên chỉ hiện form riêng này khi tyLeHoan > 0.
              Dùng khi khách vẫn muốn hủy đơn dù không được hoàn tiền.
              Đơn chuyển "Da huy", phòng về "Trong", hóa đơn cập nhật "Huy khong hoan",
              hóa đơn vẫn được phép xuất PDF (minh bạch, số tiền hoàn = 0). -->
-        <div th:if="${hoaDon.tyLeHoan != null and hoaDon.tyLeHoan.signum() == 0}"
+        <div th:if="${hoaDon.tyLeHoan == null or hoaDon.tyLeHoan.signum() != 0}"
              style="margin-top: 24px;">
             <form th:action="@{/nhan-su/admin/hoan-tien/{id}/huy-khong-hoan(id=${hoaDon.id})}" method="post"
                   onsubmit="return confirm(this.dataset.msg);" th:attr="data-msg=|Xác nhận HỦY ĐƠN và KHÔNG HOÀN TIỀN? \n\n Đơn sẽ chuyển sang Đã hủy, phòng sẽ được nhả về trạng thái trống. Hóa đơn vẫn được xuất PDF cho khách cầm về (số tiền hoàn = 0 VND).|">
@@ -537,6 +568,15 @@
             return false;
         }
         return confirm('Xác nhận đã trả TIỀN MẶT ' + soTien.toLocaleString('vi-VN') + ' VND tại quầy cho khách?');
+    }
+
+    // Confirm cho nút "Hủy đơn không hoàn" — gộp vào form TienMat khi tyLeHoan = 0
+    function xacNhanHuyKhongHoan(btn) {
+        var form = btn ? btn.closest('form') : document.getElementById('formTienMat');
+        if (!form) return true;
+        var msg = form.dataset.msg;
+        if (!msg) msg = 'Xác nhận HỦY ĐƠN và KHÔNG HOÀN TIỀN?';
+        return confirm(msg);
     }
 
     function xacNhanChuyenKhoan() {

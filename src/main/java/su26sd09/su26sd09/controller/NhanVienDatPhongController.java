@@ -323,7 +323,36 @@ public class NhanVienDatPhongController {
 
         model.addAttribute("datPhong", datPhong);
         model.addAttribute("chiTietDatPhongList", chiTietDatPhongList);
-        model.addAttribute("chiTietDichVuList", ctdvService.findByDatPhongId(id));
+        // Tinh san loai dich vu (THUONG / PHAT_SINH / PHU_THU) cho moi dong
+        // chi_tiet_dich_vu, truyen qua Map<id, loai>. Ly do: Thymeleaf inline
+        // expression [[${...}]] khong parse duoc nested ternary phuc tap (3 nhanh),
+        // nen khong the tinh loai ngay trong template. Lay loai phia controller
+        // dam bao template chi dung mot expression don gian [[${loaiDichVuMap[ct.id]}]].
+        List<su26sd09.su26sd09.entity.Chi_tiet_dich_vu> ctdvList = ctdvService.findByDatPhongId(id);
+        Map<Integer, String> loaiDichVuMap = new HashMap<>();
+        for (su26sd09.su26sd09.entity.Chi_tiet_dich_vu ct : ctdvList) {
+            String loai = "THUONG";
+            String dvTen = "(null)";
+            String dvLoai = "(null)";
+            if (ct != null && ct.getDv() != null) {
+                dvTen = ct.getDv().getTen_dich_vu();
+                dvLoai = ct.getDv().getLoaiDv();
+                if ("PHAT_SINH".equalsIgnoreCase(dvLoai)) {
+                    loai = "PHAT_SINH";
+                } else if ("Phu thu".equalsIgnoreCase(dvLoai)) {
+                    loai = "PHU_THU";
+                }
+            }
+            // DEBUG tam thoi: in ra console de xac nhan runtime co map dung loai
+            System.out.println("[DEBUG-NVDPC] don#" + id + " ct.id=" + ct.getId()
+                    + " dv.ten=" + dvTen + " dv.loaiDv=" + dvLoai
+                    + " donGia=" + ct.getDonGia() + " => loai=" + loai);
+            loaiDichVuMap.put(ct.getId(), loai);
+        }
+        System.out.println("[DEBUG-NVDPC] don#" + id + " ctdvList.size=" + ctdvList.size()
+                + " loaiDichVuMap.size=" + loaiDichVuMap.size() + " map=" + loaiDichVuMap);
+        model.addAttribute("chiTietDichVuList", ctdvList);
+        model.addAttribute("loaiDichVuMap", loaiDichVuMap);
         model.addAttribute("dichVuList", dichVuService.findActiveThuong());
         model.addAttribute("kmJson", buildKhuyenMaiJson());
         model.addAttribute("tongPhuThu", tongPhuThu);

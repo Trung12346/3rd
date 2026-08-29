@@ -77,7 +77,8 @@
                 </div>
                 <div class="admin-field">
                     <label>mã căn cước công dân</label>
-                    <input type="text" inputmode="numeric" th:field="*{maCCCD}" placeholder="0012xxxxxxxx" pattern="[0-9]{12}" required>
+                    <input type="text" inputmode="numeric" th:field="*{maCCCD}" placeholder="Nhập 12 số CCCD (VD: 001234567890)" pattern="[0-9]{12}" maxlength="12" required>
+                    <small style="color: #666; font-size: 0.8em; margin-top: 4px; display: block;">Yêu cầu: Nhập chính xác 12 chữ số.</small>
                 </div>
 
                 <div class="admin-field">
@@ -176,7 +177,7 @@
                     <td th:text="${nv != null ? nv.maCCCD : ''}"></td>
                     <td th:text="${nv != null ? #temporals.format(nv.ngaySinh, 'dd/MM/yyyy') : ''}"></td>
                     <td th:text="${nv != null ? nv.dia_chi : ''}"></td>
-                    <td th:text="${nv != null ? nv.vaitro.tenVaiTro : ''}"></td>
+                    <td th:text="${nv != null && nv.vaitro != null ? #strings.replace(nv.vaitro.tenVaiTro, 'ROLE_', '') : ''}"></td>
                     <td th:text="${nv.trang_thai == true ? 'mở khóa' : 'khóa'}"></td>
                     <td th:text="${nv.boPhan}"></td>
                     <td>

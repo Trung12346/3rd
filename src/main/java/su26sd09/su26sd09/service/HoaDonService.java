@@ -1,6 +1,8 @@
 package su26sd09.su26sd09.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import su26sd09.su26sd09.constants.HuyDonConstants;
 import su26sd09.su26sd09.entity.Chi_tiet_dich_vu;
@@ -34,6 +36,11 @@ public class HoaDonService {
     public static final String TT_DA_THANH_TOAN = "Da thanh toan";
     public static final String TT_DA_XUAT = "Da xuat";
     public static final String TT_CHO_THANH_TOAN = "Cho thanh toan";
+
+    public Page<HoaDon> search(Integer maHoaDon, Integer maDatPhong, String tenKhach, String maKhuyenMai,
+                                 LocalDateTime ngayTu, LocalDateTime ngayDen, BigDecimal tongTu, BigDecimal tongDen, String trangThai, Pageable pageable) {
+        return hoaDonRepo.search(maHoaDon, maDatPhong, tenKhach, maKhuyenMai, ngayTu, ngayDen, tongTu, tongDen, trangThai, pageable);
+    }
 
     public List<HoaDon> findAll(){
         return hoaDonRepo.findAll();

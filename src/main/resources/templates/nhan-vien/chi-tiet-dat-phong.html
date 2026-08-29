@@ -916,6 +916,7 @@
         <input type="hidden" name="maKhuyenMai" id="promoIdHidden"
                th:value="${datPhong != null and datPhong.km != null ? datPhong.km.id : ''}">
         <input type="hidden" name="tongTienVat" id="h-tien-vat" value="0">
+        <input type="hidden" name="tongPhuThu" id="h-tien-phu-thu" value="0">
         <input type="hidden" name="tongCong" id="h-tong-cong" value="0">
         <div id="dichVuHiddenInputs"></div>
 
@@ -1141,6 +1142,16 @@
                     <span>Tien giam</span>
                     <span id="sumTienGiam">- đ 0</span>
                 </div>
+                <!-- Phu thu check-in som / check-out muon: NGOAI VAT, hien thi rieng de minh bach -->
+                <div class="sum-row" id="sumPhuThuRow" style="display:none;">
+                    <span>Phụ thu (check-in sớm / check-out muộn)</span>
+                    <span id="sumPhuThu">đ 0</span>
+                </div>
+                <!-- Co so tinh VAT = (Tien phong + Tien DV - Tien giam), chi hien thi khi co giam gia de minh bach cong thuc -->
+                <div class="sum-row" id="sumCoSoVatRow" style="display:none;">
+                    <span>Cơ sở tính VAT</span>
+                    <span id="sumCoSoVat">đ 0</span>
+                </div>
                 <div class="sum-row">
                     <span>VAT (10%)</span>
                     <span id="sumVat">đ 0</span>
@@ -1235,6 +1246,10 @@
     const promoErrorEl = document.getElementById('promoError');
     const sumGiamRowEl = document.getElementById('sumGiamRow');
     const sumTienGiamEl = document.getElementById('sumTienGiam');
+    const sumPhuThuRowEl = document.getElementById('sumPhuThuRow');
+    const sumPhuThuEl = document.getElementById('sumPhuThu');
+    const sumCoSoVatRowEl = document.getElementById('sumCoSoVatRow');
+    const sumCoSoVatEl = document.getElementById('sumCoSoVat');
     const kmList = JSON.parse(/*[[${kmJson}]]*/ '[]');
 
     // Trang thai khuyen mai hien tai: { id, code, loaiGiam, giatriGiam, dieuKien } hoặc null
@@ -1267,8 +1282,13 @@
         giaDonVi: /*[[${ct.soluong != null and ct.soluong == 1 and ct.donGia != null ? ct.donGia : (ct.dv != null ? ct.dv.gia : 0)}]]*/ 0,
         soLuong: /*[[${ct.soluong != null ? ct.soluong : 1}]]*/ 1,
         ngaySuDung: /*[[${ct.ngay_su_dung != null ? #temporals.format(ct.ngay_su_dung, 'yyyy-MM-dd''T''HH:mm') : ''}]]*/ '',
-        // Phân biệt dịch vụ thường / phát sinh dựa theo loại dịch vụ trong danh mục (Dich_vu.loaiDv = PHAT_SINH).
-        loai: /*[[${ct.dv != null and ct.dv.loaiDv == 'PHAT_SINH'} ? 'PHAT_SINH' : 'THUONG']]*/ 'THUONG',
+        // Phân biệt 3 loại dịch vụ dựa theo Dich_vu.loaiDv:
+        //   "PHAT_SINH" -> dich vu phat sinh (nhap tay gia + mo ta)
+        //   "Phu thu"   -> phu thu check-in som / check-out muon (NGOAI VAT)
+        //   con lai     -> dich vu thuong (chiu VAT)
+        // Loai da duoc tinh san phia controller (loaiDichVuMap[ct.id]) - xem NhanVienDatPhongController.chiTiet.
+        // Fallback 'THUONG' khi key khong co trong map (vd: dv null, id null, ...) de JS khong bi null/undefined.
+        loai: /*[[${loaiDichVuMap[ct.id] ?: 'THUONG'}]]*/ 'THUONG',
         ghiChu: /*[[${ct.ghichu != null ? ct.ghichu : ''}]]*/ ''
     });
     /*[/]*/
@@ -1620,13 +1640,16 @@
         promoInfoRowEl.style.display = 'flex';
     }
 
-    /** Tinh toan bong tong tien: tien phong + tien dich vu + VAT, ap dung khuyen mai neu co */
+    /** Tinh toan bong tong tien:
+     *   - Phu thu (check-in som / check-out muon) di rieng, NGOAI VAT.
+     *   - Giam gia ap dung TREN (Tien phong + Tien DV), sau do moi tinh VAT 10%.
+     *   - Tong cong = (Tien phong + Tien DV - Giam gia) + VAT + Phu thu. */
     function tinhTongTien() {
         BookingValidate.capNhatMinNgayTra(ngayNhanEl, ngayTraEl);
         const ketQuaNgay = BookingValidate.validateNgayNhanTra(ngayNhanEl.value, ngayTraEl.value);
         BookingValidate.hienThiLoi(ngayTraEl, ketQuaNgay.hopLe ? '' : ketQuaNgay.thongBao);
 
-        let soDem = 0, tienPhong = 0, tienDv = 0, vat = 0, tongCong = 0;
+        let soDem = 0, tienPhong = 0, tienDv = 0, tienPhuThu = 0, vat = 0, tongCong = 0;
 
         if (ketQuaNgay.hopLe) {
             soDem = ketQuaNgay.soDem;
@@ -1641,7 +1664,14 @@
 
         let dichVuHopLe = true;
         dsDichVu.forEach(dv => {
-            tienDv += dv.giaDonVi * dv.soLuong;
+            const thanhTien = dv.giaDonVi * dv.soLuong;
+            if (dv.loai === 'PHU_THU') {
+                // Phu thu check-in som / check-out muon: NGOAI VAT, cong cuoi vao tong
+                tienPhuThu += thanhTien;
+            } else {
+                // Dich vu thuong hoac phat sinh: chiu VAT
+                tienDv += thanhTien;
+            }
             if (dv.ngaySuDung) {
                 const kq = BookingValidate.validateNgayTrongKhoangLuuTru(dv.ngaySuDung, ngayNhanEl.value, ngayTraEl.value);
                 if (!kq.hopLe) dichVuHopLe = false;
@@ -1653,14 +1683,14 @@
         // dung cong thuc voi sidebar "Len lich dat phong" o trang So Do Phong,
         // tranh tinh VAT tren tong truoc khi giam lam sai lech tong cong khi co KM.)
         let tienGiam = 0;
-        const tongTruocVat = tienPhong + tienDv;
+        const coSoGiamGia = tienPhong + tienDv;
         if (currentKM) {
             const dieuKien = Number(currentKM.dieuKien || 0);
-            if (dieuKien <= 0 || tongTruocVat >= dieuKien) {
+            if (dieuKien <= 0 || coSoGiamGia >= dieuKien) {
                 const gtri = Number(currentKM.giatriGiam || 0);
                 const isPercent = (currentKM.loaiGiam || '').toUpperCase() === 'PERCENT';
                 tienGiam = isPercent
-                    ? Math.round(tongTruocVat * gtri / 100)
+                    ? Math.round(coSoGiamGia * gtri / 100)
                     : Math.round(gtri);
             } else {
                 promoErrorEl.textContent = 'Don phai dat toi thieu ' + BookingValidate.formatVND(dieuKien) + ' de ap dung ma nay.';
@@ -1668,23 +1698,43 @@
             }
         }
         // Gioi han so tien giam khong vuot qua tong truoc VAT
-        if (tienGiam > tongTruocVat) {
-            tienGiam = Math.round(tongTruocVat);
+        if (tienGiam > coSoGiamGia) {
+            tienGiam = Math.round(coSoGiamGia);
         }
-        vat = Math.round((tongTruocVat - tienGiam) * 0.10);
-        tongCong = tongTruocVat - tienGiam + vat;
+        const coSoTinhVat = coSoGiamGia - tienGiam;
+        vat = Math.round(coSoTinhVat * 0.10);
+        // Tong cong: phan chiu VAT (sau giam) + VAT + phu thu (ngoai VAT)
+        tongCong = coSoTinhVat + vat + tienPhuThu;
 
         document.getElementById('sumSoDem').textContent = ketQuaNgay.hopLe ? (soDem + ' đêm') : '--';
         document.getElementById('sumTienPhong').textContent = 'đ ' + BookingValidate.formatVND(tienPhong).replace(' VND', '');
         document.getElementById('sumTienDv').textContent = 'đ ' + BookingValidate.formatVND(tienDv).replace(' VND', '');
+        // Dong phu thu: chi hien thi khi co gia tri > 0
+        if (sumPhuThuRowEl) {
+            if (tienPhuThu > 0) {
+                sumPhuThuEl.textContent = 'đ ' + BookingValidate.formatVND(tienPhuThu).replace(' VND', '');
+                sumPhuThuRowEl.style.display = 'flex';
+            } else {
+                sumPhuThuRowEl.style.display = 'none';
+            }
+        }
+        // Co so tinh VAT chi hien khi co giam gia de minh bach cong thuc
+        if (sumCoSoVatEl) {
+            sumCoSoVatEl.textContent = 'đ ' + BookingValidate.formatVND(coSoTinhVat).replace(' VND', '');
+        }
         document.getElementById('sumVat').textContent = 'đ ' + BookingValidate.formatVND(vat).replace(' VND', '');
         if (tienGiam > 0) {
             sumTienGiamEl.textContent = '- đ ' + BookingValidate.formatVND(tienGiam).replace(' VND', '');
             sumGiamRowEl.style.display = 'flex';
+            if (sumCoSoVatRowEl) sumCoSoVatRowEl.style.display = 'flex';
         } else {
             sumGiamRowEl.style.display = 'none';
+            if (sumCoSoVatRowEl) sumCoSoVatRowEl.style.display = 'none';
         }
         document.getElementById('sumTongCong').textContent = 'đ ' + BookingValidate.formatVND(tongCong).replace(' VND', '');
+        // Phu thu gui len server qua hidden input
+        const phuThuInput = document.getElementById('h-tien-phu-thu');
+        if (phuThuInput) phuThuInput.value = Math.round(tienPhuThu);
 
         // "Da thanh toan" la so tien THUC TE khach da tra (tu hoa don), khong doi
         // theo cac thay doi nhap lieu tren man hinh nay; "Con lai" = tong cong

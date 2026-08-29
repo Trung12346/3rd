@@ -191,6 +191,16 @@
         .sdp-room-card:hover { box-shadow: 0 10px 24px rgba(15,23,42,0.1); transform: translateY(-2px); }
         .sdp-room-card:active { transform: translateY(0); }
 
+        /* Highlight khi redirect tu trang danh sach don dat phong (?action=view). */
+        .sdp-room-card.sdp-room-highlight {
+            box-shadow: 0 0 0 3px #F59E0B, 0 8px 24px rgba(245,158,11,0.45);
+            animation: sdpHighlightPulse 1.6s ease-in-out 2;
+        }
+        @keyframes sdpHighlightPulse {
+            0%, 100% { box-shadow: 0 0 0 3px #F59E0B, 0 8px 24px rgba(245,158,11,0.45); }
+            50%      { box-shadow: 0 0 0 6px #FCD34D, 0 10px 28px rgba(245,158,11,0.6); }
+        }
+
         .sdp-room-card__bar { height: 5px; width: 100%; }
         .sdp-status-empty .sdp-room-card__bar { background: linear-gradient(90deg, #34d399, #10b981); }
         .sdp-status-inuse .sdp-room-card__bar { background: linear-gradient(90deg, #60a5fa, #2563eb); }
@@ -2466,6 +2476,10 @@
             moModalGiayTo(card, don, true);
         }
 
+        // Expose cho deep-link tu trang danh sach don dat phong (action=checkin).
+        window.xuLyKhachNhanPhong = xuLyKhachNhanPhong;
+        window.xuLyCaDoanKhachNhanPhong = xuLyCaDoanKhachNhanPhong;
+
         // ================== MODAL "THEM GIAY TO" TRUOC KHI NHAN PHONG ==================
         // Hien 1 section cho moi phong cua don. Moi section co the them nhieu
         // "Document box" (giay to tuy than), bam vao box de nhap chi tiet.
@@ -3406,6 +3420,10 @@
             }
             thucHienTraPhong(card, don, false);
         }
+
+        // Expose cho deep-link tu trang danh sach don dat phong (action=checkout).
+        window.xuLyKhachTraPhong = xuLyKhachTraPhong;
+        window.xuLyCaDoanKhachTraPhong = xuLyCaDoanKhachTraPhong;
 
         // Tuong tu thucHienNhanPhong: xacNhan=false chi de xem truoc phu thu/con no
         // (neu co), xacNhan=true (sau khi nhan vien nhap dung tien va bam xac nhan
@@ -5558,6 +5576,148 @@
                     luuBtn.disabled = false;
                     luuBtn.textContent = nhanMacDinh;
                 });
+        });
+    })();
+</script>
+
+<!-- ==================== Deep-link tu trang danh sach don dat phong ====================
+     Khi user click vao trang thai "Da xac nhan" / "Da nhan phong" o trang
+     /nhan-su/admin/dat-phong hoac /nhan-su/dat-phong, controller redirect sang
+     day voi ?donId=...&action=checkin|view. Script nay xu ly:
+       - action=checkin: mo modal "Them giay to" (xuLyKhachNhanPhong) cho don do.
+       - action=view:    cuon toi the phong cua don va highlight vang (3.2s).
+     Muc dich: nhan vien check-in/trả-phòng khong phai chuot phai tim phong nua. -->
+<script>
+    (function () {
+        function getUrlParams() {
+            var p = new URLSearchParams(window.location.search);
+            return {
+                donId: p.get('donId'),
+                action: p.get('action')
+            };
+        }
+
+        function timMaPhongCuaDon(donId) {
+            if (!donId || !window.SDP_BOOKINGS) return null;
+            var target = String(donId);
+            var maPhongs = Object.keys(window.SDP_BOOKINGS);
+            for (var i = 0; i < maPhongs.length; i++) {
+                var list = window.SDP_BOOKINGS[maPhongs[i]] || [];
+                for (var j = 0; j < list.length; j++) {
+                    if (String(list[j].id) === target) return parseInt(maPhongs[i], 10);
+                }
+            }
+            return null;
+        }
+
+        function timThePhong(maPhong) {
+            if (maPhong == null) return null;
+            return document.querySelector('.sdp-room-cell[data-ma-phong="' + maPhong + '"]');
+        }
+
+        function xuLyActionCheckin(donId) {
+            var maPhong = timMaPhongCuaDon(donId);
+            var card = timThePhong(maPhong);
+            if (!card) {
+                alert('Khong tim thay phong cua don #' + donId + ' tren so do phong.');
+                return;
+            }
+            // Don thuoc phong nao thi lay booking tu SDP_BOOKINGS de mo modal
+            // "Them giay to" (giong nhu nhan "Khach nhan phong" tren the phong).
+            var list = (window.SDP_BOOKINGS && window.SDP_BOOKINGS[maPhong]) || [];
+            var don = list.find(function (b) { return String(b.id) === String(donId); });
+            if (!don) {
+                alert('Khong tai duoc thong tin don #' + donId + '.');
+                return;
+            }
+            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // Modal chi hoat dong khi phong dang "Trong" (context menu an nut
+            // "Khach nhan phong"). Neu phong da "Dang su dung" thi canh bao.
+            var trangThai = card.getAttribute('data-trang-thai');
+            if (trangThai !== 'Trống') {
+                if (!confirm('Phong nay dang o trang thai "' + trangThai + '", khong the mo modal check-in truc tiep. Mo bang "Xem don hien tai" de xem chi tiet?')) {
+                    return;
+                }
+                if (typeof window.moDonHienTai === 'function') {
+                    window.moDonHienTai(parseInt(donId, 10), card);
+                }
+                return;
+            }
+            if (typeof window.xuLyKhachNhanPhong === 'function') {
+                setTimeout(function () { window.xuLyKhachNhanPhong(card, don); }, 350);
+            }
+        }
+
+        function xuLyActionCheckout(donId) {
+            var maPhong = timMaPhongCuaDon(donId);
+            var card = timThePhong(maPhong);
+            if (!card) {
+                alert('Khong tim thay phong cua don #' + donId + ' tren so do phong.');
+                return;
+            }
+            var list = (window.SDP_BOOKINGS && window.SDP_BOOKINGS[maPhong]) || [];
+            var don = list.find(function (b) { return String(b.id) === String(donId); });
+            if (!don) {
+                alert('Khong tai duoc thong tin don #' + donId + '.');
+                return;
+            }
+            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            var trangThai = card.getAttribute('data-trang-thai');
+            if (trangThai !== 'Đang sử dụng') {
+                if (!confirm('Phong nay dang o trang thai "' + trangThai + '", khong the mo modal tra phong truc tiep. Mo bang "Xem don hien tai" de xem chi tiet?')) {
+                    return;
+                }
+                if (typeof window.moDonHienTai === 'function') {
+                    window.moDonHienTai(parseInt(donId, 10), card);
+                }
+                return;
+            }
+            // Don co nhieu phong (don nhom) thi mo modal tra phong cho ca doan;
+            // nguoc lai chi 1 phong thi dung modal don le.
+            setTimeout(function () {
+                if (don.soPhong > 1 && typeof window.xuLyCaDoanKhachTraPhong === 'function') {
+                    window.xuLyCaDoanKhachTraPhong(card, don);
+                } else if (typeof window.xuLyKhachTraPhong === 'function') {
+                    window.xuLyKhachTraPhong(card, don);
+                } else {
+                    alert('Trang chua san sang, vui long tai lai.');
+                }
+            }, 350);
+        }
+
+        function xuLyActionView(donId) {
+            var maPhong = timMaPhongCuaDon(donId);
+            var card = timThePhong(maPhong);
+            if (!card) {
+                // Phong da tra xong va giai phong — van scroll toi the phong neu
+                // co the, nguoc lai chi can alert.
+                alert('Đã cập nhật trạng thái đơn #' + donId + ' thành công.');
+                return;
+            }
+            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            card.classList.add('sdp-room-highlight');
+            setTimeout(function () { card.classList.remove('sdp-room-highlight'); }, 3200);
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            var p = getUrlParams();
+            if (!p.donId || !p.action) return;
+
+            // Xoa query params khoi URL de tranh auto-refresh (3s) lap lai
+            // action nay. Dung history.replaceState de khong tao entry moi.
+            try {
+                var cleanUrl = window.location.pathname;
+                window.history.replaceState({}, '', cleanUrl);
+            } catch (e) { /* bo qua neu trinh duyet khong ho tro */ }
+
+            if (p.action === 'checkin') {
+                // Doi 1 frame de room cards + SDP_BOOKINGS san sang.
+                setTimeout(function () { xuLyActionCheckin(p.donId); }, 100);
+            } else if (p.action === 'checkout') {
+                setTimeout(function () { xuLyActionCheckout(p.donId); }, 100);
+            } else if (p.action === 'view') {
+                setTimeout(function () { xuLyActionView(p.donId); }, 100);
+            }
         });
     })();
 </script>
