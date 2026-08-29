@@ -180,7 +180,7 @@ public class AdminkhuyenMaiController {
         if (repo.doesExitsInDatPhong(id) == false) {
             repo.delete(repo.findbyId(id));
         } else {
-            redirect.addFlashAttribute("error", "xóa không thành công: khuyến mãi đã được sử dụng tạm thời ");
+            redirect.addFlashAttribute("error", "xóa không thành công: khuyến mãi đã được sử dụng");
         }
         return "redirect:/nhan-su/admin/khuyen-mai";
     }
