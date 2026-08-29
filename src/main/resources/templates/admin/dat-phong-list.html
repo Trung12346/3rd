@@ -118,18 +118,6 @@
         border-color: #E24B4A;
     }
 
-    /* Cột "Tiền thừa" trong danh sách đơn */
-    .tien-thua-cell { font-weight: 600; }
-    .tien-thua-cell.tien-thua-duong { color: #16a34a; }   /* dương = hoàn khách */
-    .tien-thua-cell.tien-thua-am    { color: #dc2626; }   /* âm = khách nợ thêm */
-    .tien-thua-empty { color: #9C9A8F; font-style: italic; }   /* "0 VND" cho đơn chưa đổi */
-    .status-badge.tien-thua-tt-empty {
-        background: #F1EFE8;
-        color: #6b6b6b;
-        border-color: #DEDBCF;
-        font-style: italic;
-    }
-
     .status-action-btn {
         font-size: 13px;
         padding: 6px 14px;
@@ -477,8 +465,6 @@
                     <th>Mã tra cứu</th>
                     <th>CCCD Từng Phòng</th>
                     <th>Trạng thái</th>
-                    <th>Tiền thừa</th>
-                    <th>TT tiền thừa</th>
                     <th>Hóa đơn</th>
                     <th>Hành động</th>
                 </tr>
@@ -608,29 +594,6 @@
                         </div>
                     </td>
                     <td>
-                        <!-- Cột "Tiền thừa" do đổi phòng: dương = cần hoàn khách (hiển thị không dấu), âm = khách nợ thêm -->
-                        <span th:if="${dp.datPhong.tienThuaDoDoiPhong != null and dp.datPhong.tienThuaDoDoiPhong.signum() != 0}"
-                              th:classappend="${dp.datPhong.tienThuaDoDoiPhong.signum() > 0} ? ' tien-thua-duong' : ' tien-thua-am'"
-                              class="tien-thua-cell"
-                              th:text="${(dp.datPhong.tienThuaDoDoiPhong.signum() > 0
-                                          ? #numbers.formatDecimal(dp.datPhong.tienThuaDoDoiPhong, 0, 'COMMA', 0, 'POINT')
-                                          : ('-' + #numbers.formatDecimal(dp.datPhong.tienThuaDoDoiPhong.abs(), 0, 'COMMA', 0, 'POINT')))
-                                        + ' VND'}">
-                        </span>
-                        <span th:unless="${dp.datPhong.tienThuaDoDoiPhong != null and dp.datPhong.tienThuaDoDoiPhong.signum() != 0}"
-                              class="tien-thua-empty"
-                              th:text="'0 VND'">
-                        </span>
-                    </td>
-                    <td>
-                        <span th:if="${dp.datPhong.trangThaiTienThua == 'CHO_HOAN'}" class="status-badge warning">Chờ hoàn</span>
-                        <span th:if="${dp.datPhong.trangThaiTienThua == 'KHACH_NO_THEM'}" class="status-badge danger">Nợ thêm</span>
-                        <span th:unless="${dp.datPhong.trangThaiTienThua == 'CHO_HOAN' or dp.datPhong.trangThaiTienThua == 'KHACH_NO_THEM'}"
-                              class="status-badge tien-thua-tt-empty"
-                              th:text="'Không có'">
-                        </span>
-                    </td>
-                    <td>
                         <!-- <a th:if="${daDatHoaDon != null and !daDatHoaDon.contains(dp.datPhong.id)}"
                            th:href="@{/nhan-su/admin/hoa-don/create-from-dat-phong(maDatPhong=${dp.datPhong.id})}"
                            class="admin-btn small outline">
@@ -652,7 +615,7 @@
                     </td>
                 </tr>
                 <tr th:if="${datPhongs.isEmpty()}">
-                    <td colspan="15"><div class="empty-state">Không tìm thấy đơn đặt phòng phù hợp.</div></td>
+                    <td colspan="13"><div class="empty-state">Không tìm thấy đơn đặt phòng phù hợp.</div></td>
                 </tr>
                 </tbody>
             </table>

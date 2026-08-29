@@ -1,0 +1,394 @@
+﻿<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tra cứu giấy tờ | Hotel</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<style>
+    .admin-pagination {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+        padding: 12px 16px;
+        margin-top: 12px;
+        border-top: 1px solid #e5e5e5;
+    }
+
+    .admin-pagination .pagination-info {
+        font-size: 14px;
+        color: #6b6b6b;
+    }
+
+    .admin-pagination .pagination-info strong {
+        color: #1a1a1a;
+        font-weight: 500;
+    }
+
+    .pagination-links {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .page-btn {
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #d9d9d9;
+        border-radius: 6px;
+        background: #fff;
+        font-size: 14px;
+        line-height: 1;
+        color: #333;
+        text-decoration: none;
+        cursor: pointer;
+        transition: background 0.15s, border-color 0.15s;
+    }
+
+    .page-btn:hover {
+        background: #f5f5f5;
+        border-color: #b3b3b3;
+    }
+
+    .page-btn.active {
+        background: #2563eb;
+        color: #fff;
+        border-color: #2563eb;
+        font-weight: 500;
+    }
+
+    .page-btn.disabled {
+        color: #c2c2c2;
+        pointer-events: none;
+        cursor: default;
+        background: #fafafa;
+    }
+
+    .status-badge {
+        display: inline-block;
+        font-size: 12px;
+        font-weight: 500;
+        padding: 4px 10px;
+        border-radius: 6px;
+        border: 1px solid transparent;
+        white-space: nowrap;
+    }
+
+    .status-badge.info {
+        background: #E6F1FB;
+        color: #0C447C;
+        border-color: #378ADD;
+    }
+
+    .status-badge.neutral {
+        background: #F1EFE8;
+        color: #2C2C2A;
+        border-color: #888780;
+    }
+
+    .empty-cell { color: #9C9A8F; font-style: italic; }
+
+    /* MODAL CHI TIET GIAY TO */
+    .giayto-modal-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.45);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+    }
+    .giayto-modal-overlay.open { display: flex; }
+    .giayto-modal-box {
+        background: #fff;
+        border-radius: 6px;
+        box-shadow: 0 8px 40px rgba(0,0,0,0.18);
+        max-height: 85vh;
+        overflow-y: auto;
+        padding: 24px 28px;
+        width: 560px;
+        max-width: 92vw;
+        position: relative;
+    }
+    .giayto-modal-title {
+        color: #0C447C;
+        font-size: 17px;
+        font-weight: 700;
+        margin-bottom: 16px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #e5e5e5;
+    }
+    .giayto-modal-close {
+        position: absolute;
+        top: 14px; right: 18px;
+        background: none;
+        border: none;
+        font-size: 20px;
+        cursor: pointer;
+        color: #888;
+        line-height: 1;
+    }
+    .giayto-modal-close:hover { color: #333; }
+    .giayto-modal-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px 20px;
+    }
+    .giayto-modal-grid .full { grid-column: 1 / -1; }
+    .giayto-field-label {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #8a8a8a;
+        margin-bottom: 3px;
+    }
+    .giayto-field-value {
+        font-size: 14px;
+        color: #1a1a1a;
+        word-break: break-word;
+    }
+</style>
+
+<div th:replace="~{fragments/cms-sidebar :: cmsSidebar}"></div>
+<div th:replace="~{fragments/headers/cms-header :: cmsHeader}"></div>
+<main class="admin-wrapper">
+    <div class="admin-header">
+        <h1>Tra Cứu Giấy Tờ</h1>
+        <a th:href="@{/nhan-su/giay-to}" class="admin-btn outline">Làm mới</a>
+    </div>
+
+    <section class="admin-panel">
+        <h2>Tìm Kiếm Giấy Tờ</h2>
+
+        <form th:action="@{/nhan-su/giay-to}" method="get">
+            <div class="admin-grid">
+                <div class="admin-field">
+                    <label>Họ tên / Số định danh / Số phòng</label>
+                    <input type="text" name="keyword" placeholder="Nhập họ tên, CCCD/hộ chiếu hoặc số phòng..."
+                           th:value="${keyword}">
+                </div>
+                <div class="admin-field">
+                    <label>Loại giấy tờ</label>
+                    <select name="loaiGiayTo">
+                        <option value="" th:selected="${loaiGiayTo == null or loaiGiayTo == ''}">-- Tất cả --</option>
+                        <option value="CCCD" th:selected="${loaiGiayTo == 'CCCD'}">CCCD</option>
+                        <option value="Ho chieu" th:selected="${loaiGiayTo == 'Ho chieu'}">Hộ chiếu</option>
+                    </select>
+                </div>
+                <div class="admin-field">
+                    <label>Quốc tịch</label>
+                    <input type="text" name="quocTich" placeholder="VD: Việt Nam" th:value="${quocTich}">
+                </div>
+                <div class="admin-field">
+                    <label>Mã đặt phòng</label>
+                    <input type="number" name="maDatPhong" min="1" th:value="${maDatPhong}">
+                </div>
+            </div>
+
+            <div class="admin-actions">
+                <button type="submit" class="admin-btn outline">Tìm Kiếm</button>
+                <a th:href="@{/nhan-su/giay-to}" class="admin-btn outline">Xóa Lọc</a>
+            </div>
+        </form>
+    </section>
+
+    <section class="admin-panel">
+        <h2>Danh Sách Giấy Tờ</h2>
+
+        <div class="admin-table-wrap">
+            <table class="admin-table">
+                <thead>
+                <tr>
+                    <th>Mã</th>
+                    <th>Họ tên</th>
+                    <th>Loại giấy tờ</th>
+                    <th>Số định danh</th>
+                    <th>Ngày sinh</th>
+                    <th>Quốc tịch</th>
+                    <th>Phòng</th>
+                    <th>Mã đặt phòng</th>
+                    <th>Ngày cấp</th>
+                    <th>Giá trị đến</th>
+                    <th>Thao tác</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="g : ${giayTos}">
+                    <td th:text="${g.id}"></td>
+                    <td>
+                        <strong th:text="${g.hoTen}"></strong>
+                        <span th:if="${g.coDaiDien != null and g.coDaiDien}" class="status-badge info">Đại diện</span>
+                    </td>
+                    <td th:text="${g.loaiGiayTo}"></td>
+                    <td th:text="${g.soDinhDanh}"></td>
+                    <td th:text="${g.ngaySinh != null ? #temporals.format(g.ngaySinh, 'dd/MM/yyyy') : '-'}"></td>
+                    <td th:text="${g.quocTich != null and !g.quocTich.isEmpty() ? g.quocTich : '-'}"></td>
+                    <td th:text="${g.chiTietDatPhong != null and g.chiTietDatPhong.p != null ? g.chiTietDatPhong.p.soPhong : '-'}"></td>
+                    <td>
+                        <a th:if="${g.chiTietDatPhong != null and g.chiTietDatPhong.d != null}"
+                           th:href="@{/nhan-su/dat-phong/chi-tiet/{id}(id=${g.chiTietDatPhong.d.id})}"
+                           th:text="${g.chiTietDatPhong.d.id}"></a>
+                        <span th:unless="${g.chiTietDatPhong != null and g.chiTietDatPhong.d != null}" class="empty-cell">-</span>
+                    </td>
+                    <td th:text="${g.ngayCap != null ? #temporals.format(g.ngayCap, 'dd/MM/yyyy') : '-'}"></td>
+                    <td th:text="${g.giaTriDen != null ? #temporals.format(g.giaTriDen, 'dd/MM/yyyy') : '-'}"></td>
+                    <td>
+                        <button type="button" class="admin-btn small outline"
+                                th:attr="onclick=|openGiayToModal(${g.id})|">Xem</button>
+                    </td>
+                </tr>
+                <tr th:if="${giayTos.isEmpty()}">
+                    <td colspan="11">
+                        <div class="empty-state">Không tìm thấy giấy tờ phù hợp.</div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Phân trang -->
+        <div class="admin-pagination" th:if="${totalPages > 0}">
+            <span class="pagination-info">
+                Hiển thị
+                <strong th:text="${currentPage * pageSize + 1}"></strong>–<strong
+                    th:text="${currentPage * pageSize + giayTos.size()}"></strong>
+                trong tổng số <strong th:text="${totalItems}"></strong> giấy tờ
+            </span>
+
+            <div class="pagination-links">
+                <a th:if="${currentPage > 0}"
+                   th:href="@{/nhan-su/giay-to(page=0, keyword=${keyword}, loaiGiayTo=${loaiGiayTo}, quocTich=${quocTich}, maDatPhong=${maDatPhong})}"
+                   class="page-btn" aria-label="Trang đầu">&laquo;</a>
+                <span th:if="${currentPage == 0}" class="page-btn disabled">&laquo;</span>
+
+                <a th:if="${currentPage > 0}"
+                   th:href="@{/nhan-su/giay-to(page=${currentPage - 1}, keyword=${keyword}, loaiGiayTo=${loaiGiayTo}, quocTich=${quocTich}, maDatPhong=${maDatPhong})}"
+                   class="page-btn" aria-label="Trang trước">&lsaquo;</a>
+                <span th:if="${currentPage == 0}" class="page-btn disabled">&lsaquo;</span>
+
+                <span th:each="i : ${#numbers.sequence(0, totalPages - 1)}">
+                    <a th:if="${i != currentPage}"
+                       th:href="@{/nhan-su/giay-to(page=${i}, keyword=${keyword}, loaiGiayTo=${loaiGiayTo}, quocTich=${quocTich}, maDatPhong=${maDatPhong})}"
+                       class="page-btn" th:text="${i + 1}"></a>
+                    <span th:if="${i == currentPage}"
+                          class="page-btn active" th:text="${i + 1}"></span>
+                </span>
+
+                <a th:if="${currentPage < totalPages - 1}"
+                   th:href="@{/nhan-su/giay-to(page=${currentPage + 1}, keyword=${keyword}, loaiGiayTo=${loaiGiayTo}, quocTich=${quocTich}, maDatPhong=${maDatPhong})}"
+                   class="page-btn" aria-label="Trang sau">&rsaquo;</a>
+                <span th:if="${currentPage == totalPages - 1}" class="page-btn disabled">&rsaquo;</span>
+
+                <a th:if="${currentPage < totalPages - 1}"
+                   th:href="@{/nhan-su/giay-to(page=${totalPages - 1}, keyword=${keyword}, loaiGiayTo=${loaiGiayTo}, quocTich=${quocTich}, maDatPhong=${maDatPhong})}"
+                   class="page-btn" aria-label="Trang cuối">&raquo;</a>
+                <span th:if="${currentPage == totalPages - 1}" class="page-btn disabled">&raquo;</span>
+            </div>
+        </div>
+    </section>
+</main>
+
+<!-- MODAL CHI TIET GIAY TO (du lieu render san, an/hien bang JS theo id) -->
+<div th:each="g : ${giayTos}" class="giayto-modal-overlay" th:id="${'giayto-modal-' + g.id}">
+    <div class="giayto-modal-box">
+        <button type="button" class="giayto-modal-close" th:attr="onclick=|closeGiayToModal(${g.id})|" aria-label="Đóng">×</button>
+        <div class="giayto-modal-title" th:text="'Chi tiết giấy tờ #' + ${g.id}"></div>
+        <div class="giayto-modal-grid">
+            <div>
+                <div class="giayto-field-label">Họ tên</div>
+                <div class="giayto-field-value" th:text="${g.hoTen != null and !g.hoTen.isEmpty() ? g.hoTen : '-'}"></div>
+            </div>
+            <div>
+                <div class="giayto-field-label">Loại giấy tờ</div>
+                <div class="giayto-field-value" th:text="${g.loaiGiayTo != null and !g.loaiGiayTo.isEmpty() ? g.loaiGiayTo : '-'}"></div>
+            </div>
+            <div>
+                <div class="giayto-field-label">Số định danh</div>
+                <div class="giayto-field-value" th:text="${g.soDinhDanh != null and !g.soDinhDanh.isEmpty() ? g.soDinhDanh : '-'}"></div>
+            </div>
+            <div>
+                <div class="giayto-field-label">Giới tính</div>
+                <div class="giayto-field-value" th:text="${g.gioiTinh != null and !g.gioiTinh.isEmpty() ? g.gioiTinh : '-'}"></div>
+            </div>
+            <div>
+                <div class="giayto-field-label">Ngày sinh</div>
+                <div class="giayto-field-value" th:text="${g.ngaySinh != null ? #temporals.format(g.ngaySinh, 'dd/MM/yyyy') : '-'}"></div>
+            </div>
+            <div>
+                <div class="giayto-field-label">Quốc tịch</div>
+                <div class="giayto-field-value" th:text="${g.quocTich != null and !g.quocTich.isEmpty() ? g.quocTich : '-'}"></div>
+            </div>
+            <div class="full">
+                <div class="giayto-field-label">Quê quán</div>
+                <div class="giayto-field-value" th:text="${g.queQuan != null and !g.queQuan.isEmpty() ? g.queQuan : '-'}"></div>
+            </div>
+            <div class="full">
+                <div class="giayto-field-label">Nơi thường trú</div>
+                <div class="giayto-field-value" th:text="${g.noiThuongTru != null and !g.noiThuongTru.isEmpty() ? g.noiThuongTru : '-'}"></div>
+            </div>
+            <div class="full">
+                <div class="giayto-field-label">Nơi cư trú</div>
+                <div class="giayto-field-value" th:text="${g.noiCuTru != null and !g.noiCuTru.isEmpty() ? g.noiCuTru : '-'}"></div>
+            </div>
+            <div class="full">
+                <div class="giayto-field-label">Nơi tạm trú</div>
+                <div class="giayto-field-value" th:text="${g.noiTamTru != null and !g.noiTamTru.isEmpty() ? g.noiTamTru : '-'}"></div>
+            </div>
+            <div class="full">
+                <div class="giayto-field-label">Nơi lưu trú</div>
+                <div class="giayto-field-value" th:text="${g.noiLuuTru != null and !g.noiLuuTru.isEmpty() ? g.noiLuuTru : '-'}"></div>
+            </div>
+            <div>
+                <div class="giayto-field-label">Ngày cấp</div>
+                <div class="giayto-field-value" th:text="${g.ngayCap != null ? #temporals.format(g.ngayCap, 'dd/MM/yyyy') : '-'}"></div>
+            </div>
+            <div>
+                <div class="giayto-field-label">Giá trị đến</div>
+                <div class="giayto-field-value" th:text="${g.giaTriDen != null ? #temporals.format(g.giaTriDen, 'dd/MM/yyyy') : '-'}"></div>
+            </div>
+            <div>
+                <div class="giayto-field-label">Quốc gia cấp phát</div>
+                <div class="giayto-field-value" th:text="${g.quocGiaCapPhat != null and !g.quocGiaCapPhat.isEmpty() ? g.quocGiaCapPhat : '-'}"></div>
+            </div>
+            <div>
+                <div class="giayto-field-label">Phòng</div>
+                <div class="giayto-field-value" th:text="${g.chiTietDatPhong != null and g.chiTietDatPhong.p != null ? g.chiTietDatPhong.p.soPhong : '-'}"></div>
+            </div>
+            <div>
+                <div class="giayto-field-label">Mã đặt phòng</div>
+                <div class="giayto-field-value" th:text="${g.chiTietDatPhong != null and g.chiTietDatPhong.d != null ? g.chiTietDatPhong.d.id : '-'}"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openGiayToModal(id) {
+        var el = document.getElementById('giayto-modal-' + id);
+        if (el) { el.classList.add('open'); }
+    }
+    function closeGiayToModal(id) {
+        var el = document.getElementById('giayto-modal-' + id);
+        if (el) { el.classList.remove('open'); }
+    }
+    document.addEventListener('click', function (e) {
+        if (e.target.classList.contains('giayto-modal-overlay')) {
+            e.target.classList.remove('open');
+        }
+    });
+</script>
+
+<footer>
+    <p>&copy; 2026 Hotel. All rights reserved.</p>
+</footer>
+
+</body>
+</html>

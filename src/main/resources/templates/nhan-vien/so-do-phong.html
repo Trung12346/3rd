@@ -13,7 +13,7 @@
         *, *::before, *::after { box-sizing: border-box; }
         body { background: linear-gradient(180deg, #f3f7fb 0%, #eef2f7 100%); font-family: 'Montserrat', sans-serif; }
 
-        .sdp-shell { margin: 0 auto auto 100px !important; width: 85vw; max-width: 1800px; padding: 32px; }
+        .sdp-shell { margin: 0 auto auto 100px !important; width: 92.5vw; max-width: 1900px; padding: 32px; }
 
         /* Badge dem nguoc auto-refresh, goc tren phai man hinh */
         .sdp-refresh-badge {
@@ -720,6 +720,24 @@
             outline: none; border-color: #2196c4; background: #fff;
         }
         .sdp-lich-field textarea { resize: vertical; min-height: 64px; }
+
+        /* Dropdown goi y tai khoan khach hang co san (autocomplete o o "Ten khach") */
+        .sdp-lich-field-autocomplete { position: relative; }
+        .sdp-lich-suggest-box {
+            display: none; position: absolute; left: 0; right: 0; top: 100%; margin-top: 4px;
+            background: #fff; border: 1px solid #dbe3ee; border-radius: 9px;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, .12); z-index: 40; max-height: 220px; overflow-y: auto;
+        }
+        .sdp-lich-suggest-box.open { display: block; }
+        .sdp-lich-suggest-item {
+            display: flex; flex-direction: column; gap: 2px; padding: 8px 12px; cursor: pointer;
+            border-bottom: 1px solid #f0f3f8;
+        }
+        .sdp-lich-suggest-item:last-child { border-bottom: none; }
+        .sdp-lich-suggest-item:hover, .sdp-lich-suggest-item.active { background: #f0f8fb; }
+        .sdp-lich-suggest-name { font-size: 13px; font-weight: 700; color: #1f2937; }
+        .sdp-lich-suggest-meta { font-size: 11.5px; color: #64748b; }
+        .sdp-lich-suggest-empty { padding: 10px 12px; font-size: 12.5px; color: #94a3b8; }
 
         /* Dịch vụ thêm - chip checkboxes */
         .sdp-lich-services { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -1734,9 +1752,11 @@
         <div class="sdp-lich-section">
             <h4>Thông tin khách</h4>
             <div class="sdp-lich-grid">
-                <div class="sdp-lich-field">
+                <div class="sdp-lich-field sdp-lich-field-autocomplete">
                     <label for="sdpLichTen">Tên khách</label>
                     <input type="text" id="sdpLichTen" placeholder="Nguyễn Văn A" autocomplete="off">
+                    <input type="hidden" id="sdpLichKhachHangId">
+                    <div class="sdp-lich-suggest-box" id="sdpLichSuggestBox"></div>
                 </div>
                 <div class="sdp-lich-field">
                     <label for="sdpLichEmail">Email</label>
@@ -1778,9 +1798,10 @@
         <div class="sdp-lich-section">
             <h4>Khuyến mại &amp; ghi chú</h4>
             <div class="sdp-lich-grid full">
-                <div class="sdp-lich-field">
+                <div class="sdp-lich-field sdp-lich-field-autocomplete">
                     <label for="sdpLichKhuyenMai">Mã khuyến mại</label>
                     <input type="text" id="sdpLichKhuyenMai" placeholder="Nhập mã khuyến mại (nếu có)" autocomplete="off">
+                    <div class="sdp-lich-suggest-box" id="sdpLichPromoSuggestBox"></div>
                     <div class="sdp-lich-summary-row" id="sdpLichPromoInfoRow" style="display:none; padding:4px 0 0; color:#0f9d58; font-size:12px;">
                         <span id="sdpLichPromoInfo">--</span>
                     </div>
@@ -4275,6 +4296,7 @@
 <!-- Logic cho sidebar "Lên lịch đặt phòng" -->
 <script>
     (function () {
+        var CTX_URL_KHACH_HANG_GOI_Y = /*[[@{/nhan-su/so-do-phong/khach-hang/goi-y}]]*/ '/nhan-su/so-do-phong/khach-hang/goi-y';
         var VN_MONTHS = ['Th1', 'Th2', 'Th3', 'Th4', 'Th5', 'Th6', 'Th7', 'Th8', 'Th9', 'Th10', 'Th11', 'Th12'];
 
         function formatDisplay(d) {
@@ -4487,6 +4509,12 @@
         var cccdInput = document.getElementById('sdpLichCccd');
         var cccdError = document.getElementById('sdpLichCccdError');
 
+        var tenInput = document.getElementById('sdpLichTen');
+        var emailInput = document.getElementById('sdpLichEmail');
+        var sdtInput = document.getElementById('sdpLichSdt');
+        var khachHangIdInput = document.getElementById('sdpLichKhachHangId');
+        var suggestBox = document.getElementById('sdpLichSuggestBox');
+
         // Khung "giay to" tai su dung cho mode "quay" - xem window.__sdpGiayToShared
         // (dinh nghia o IIFE modal "Them giay to", phia tren trong file nay).
         var giayToShared = window.__sdpGiayToShared || null;
@@ -4514,6 +4542,111 @@
         var sumTienPhuThuEl = document.getElementById('sdpLichSumTienPhuThu');
         var sumPhuThuNoteEl = document.getElementById('sdpLichSumPhuThuNote');
         var currentKM = null;
+
+        /* ============ Goi y tai khoan khach hang co san (autocomplete o "Ten khach") ============
+         * Ap dung chung cho ca 2 mode "quay" va "lich" vi dung chung 1 sidebar.
+         * Chi goi y (khong bat buoc chon) - go tay binh thuong van duoc, danh
+         * cho khach vang lai chua co tai khoan.
+         */
+        var suggestDebounceTimer = null;
+        var suggestActiveItems = [];
+        var suggestActiveIndex = -1;
+
+        function an_KhachHangGoiY() {
+            suggestBox.classList.remove('open');
+            suggestBox.innerHTML = '';
+            suggestActiveItems = [];
+            suggestActiveIndex = -1;
+        }
+
+        function chonKhachHangGoiY(kh) {
+            tenInput.value = kh.hoTen || '';
+            emailInput.value = kh.email || '';
+            sdtInput.value = kh.sdt || '';
+            khachHangIdInput.value = kh.id != null ? kh.id : '';
+            an_KhachHangGoiY();
+        }
+
+        function veKhachHangGoiY(items) {
+            suggestBox.innerHTML = '';
+            if (!items || !items.length) {
+                var empty = document.createElement('div');
+                empty.className = 'sdp-lich-suggest-empty';
+                empty.textContent = 'Không tìm thấy tài khoản phù hợp';
+                suggestBox.appendChild(empty);
+                suggestBox.classList.add('open');
+                return;
+            }
+            items.forEach(function (kh) {
+                var item = document.createElement('div');
+                item.className = 'sdp-lich-suggest-item';
+                var lienHe = [kh.email, kh.sdt].filter(Boolean).join(' · ');
+                item.innerHTML = '<span class="sdp-lich-suggest-name"></span><span class="sdp-lich-suggest-meta"></span>';
+                item.querySelector('.sdp-lich-suggest-name').textContent = kh.hoTen || '(Chưa có tên)';
+                item.querySelector('.sdp-lich-suggest-meta').textContent = lienHe;
+                item.addEventListener('mousedown', function (e) {
+                    // mousedown (khong phai click) de chay TRUOC blur cua input.
+                    e.preventDefault();
+                    chonKhachHangGoiY(kh);
+                });
+                suggestBox.appendChild(item);
+            });
+            suggestActiveItems = items;
+            suggestActiveIndex = -1;
+            suggestBox.classList.add('open');
+        }
+
+        function timKhachHangGoiY(tuKhoa) {
+            khachHangIdInput.value = '';
+            if (!tuKhoa || tuKhoa.trim().length < 2) {
+                an_KhachHangGoiY();
+                return;
+            }
+            fetch(CTX_URL_KHACH_HANG_GOI_Y + '?q=' + encodeURIComponent(tuKhoa.trim()), { headers: { 'Accept': 'application/json' } })
+                .then(function (r) { return r.ok ? r.json() : []; })
+                .then(function (list) {
+                    // Neu nguoi dung da go them/xoa ky tu trong luc cho response thi
+                    // bo qua ket qua cu (tranh dropdown hien sai tu khoa).
+                    if ((tenInput.value || '').trim() !== tuKhoa.trim()) return;
+                    veKhachHangGoiY(list);
+                })
+                .catch(function () { /* loi mang: bo qua, khong chan nhap tay */ });
+        }
+
+        tenInput.addEventListener('input', function () {
+            var v = tenInput.value;
+            if (suggestDebounceTimer) clearTimeout(suggestDebounceTimer);
+            suggestDebounceTimer = setTimeout(function () { timKhachHangGoiY(v); }, 300);
+        });
+
+        tenInput.addEventListener('keydown', function (e) {
+            if (!suggestBox.classList.contains('open') || !suggestActiveItems.length) return;
+            var children = suggestBox.querySelectorAll('.sdp-lich-suggest-item');
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                suggestActiveIndex = Math.min(suggestActiveIndex + 1, suggestActiveItems.length - 1);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                suggestActiveIndex = Math.max(suggestActiveIndex - 1, 0);
+            } else if (e.key === 'Enter') {
+                if (suggestActiveIndex >= 0) {
+                    e.preventDefault();
+                    chonKhachHangGoiY(suggestActiveItems[suggestActiveIndex]);
+                }
+                return;
+            } else if (e.key === 'Escape') {
+                an_KhachHangGoiY();
+                return;
+            } else {
+                return;
+            }
+            children.forEach(function (el, idx) { el.classList.toggle('active', idx === suggestActiveIndex); });
+        });
+
+        tenInput.addEventListener('blur', function () {
+            // Delay nho de mousedown tren item kip chay truoc khi dropdown bi an.
+            setTimeout(an_KhachHangGoiY, 150);
+        });
 
         function formatVND(n) {
             return Math.round(n || 0).toLocaleString('vi-VN');
@@ -4548,6 +4681,98 @@
                 (Number(km.dieuKien || 0) > 0 ? ' (áp dụng cho đơn từ ' + formatVND(km.dieuKien) + ' đ)' : '');
             promoInfoRow.style.display = 'flex';
         }
+
+        /* ============ Goi y ma khuyen mai dang hoat dong (o "Ma khuyen mai") ============
+         * Loc truc tiep tren kmList da co san o client (khong can goi API) - hien
+         * cac ma chua chuoi dang go (hoac toan bo khi o dang trong va duoc focus).
+         */
+        var promoSuggestBox = document.getElementById('sdpLichPromoSuggestBox');
+        var promoSuggestActiveItems = [];
+        var promoSuggestActiveIndex = -1;
+
+        function moTaKhuyenMai(km) {
+            var gtri = Number(km.giatriGiam || 0);
+            var isPercent = (km.loaiGiam || '').toUpperCase() === 'PERCENT';
+            var moTaGiam = isPercent ? ('Giảm ' + gtri + '%') : ('Giảm ' + formatVND(gtri) + ' đ');
+            return moTaGiam + (Number(km.dieuKien || 0) > 0 ? ' · từ ' + formatVND(km.dieuKien) + ' đ' : '');
+        }
+
+        function an_KhuyenMaiGoiY() {
+            promoSuggestBox.classList.remove('open');
+            promoSuggestBox.innerHTML = '';
+            promoSuggestActiveItems = [];
+            promoSuggestActiveIndex = -1;
+        }
+
+        function chonKhuyenMaiGoiY(km) {
+            promoInput.value = km.code || '';
+            an_KhuyenMaiGoiY();
+            apDungKhuyenMaiLenLich();
+            tinhTongTienLenLich();
+        }
+
+        function veKhuyenMaiGoiY(items) {
+            promoSuggestBox.innerHTML = '';
+            if (!items || !items.length) {
+                var empty = document.createElement('div');
+                empty.className = 'sdp-lich-suggest-empty';
+                empty.textContent = 'Không có mã khuyến mại phù hợp';
+                promoSuggestBox.appendChild(empty);
+                promoSuggestBox.classList.add('open');
+                return;
+            }
+            items.forEach(function (km) {
+                var item = document.createElement('div');
+                item.className = 'sdp-lich-suggest-item';
+                item.innerHTML = '<span class="sdp-lich-suggest-name"></span><span class="sdp-lich-suggest-meta"></span>';
+                item.querySelector('.sdp-lich-suggest-name').textContent = km.code || '';
+                item.querySelector('.sdp-lich-suggest-meta').textContent = moTaKhuyenMai(km);
+                item.addEventListener('mousedown', function (e) {
+                    e.preventDefault();
+                    chonKhuyenMaiGoiY(km);
+                });
+                promoSuggestBox.appendChild(item);
+            });
+            promoSuggestActiveItems = items;
+            promoSuggestActiveIndex = -1;
+            promoSuggestBox.classList.add('open');
+        }
+
+        function timKhuyenMaiGoiY() {
+            var tuKhoa = (promoInput.value || '').trim().toUpperCase();
+            var items = !tuKhoa ? kmList.slice() : kmList.filter(function (k) {
+                return String(k.code || '').toUpperCase().indexOf(tuKhoa) !== -1;
+            });
+            if (!items.length && !tuKhoa) { an_KhuyenMaiGoiY(); return; }
+            veKhuyenMaiGoiY(items);
+        }
+
+        promoInput.addEventListener('input', function () { timKhuyenMaiGoiY(); });
+        promoInput.addEventListener('focus', function () { timKhuyenMaiGoiY(); });
+        promoInput.addEventListener('blur', function () { setTimeout(an_KhuyenMaiGoiY, 150); });
+        promoInput.addEventListener('keydown', function (e) {
+            if (!promoSuggestBox.classList.contains('open') || !promoSuggestActiveItems.length) return;
+            var children = promoSuggestBox.querySelectorAll('.sdp-lich-suggest-item');
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                promoSuggestActiveIndex = Math.min(promoSuggestActiveIndex + 1, promoSuggestActiveItems.length - 1);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                promoSuggestActiveIndex = Math.max(promoSuggestActiveIndex - 1, 0);
+            } else if (e.key === 'Enter') {
+                if (promoSuggestActiveIndex >= 0) {
+                    e.preventDefault();
+                    chonKhuyenMaiGoiY(promoSuggestActiveItems[promoSuggestActiveIndex]);
+                }
+                return;
+            } else if (e.key === 'Escape') {
+                an_KhuyenMaiGoiY();
+                return;
+            } else {
+                return;
+            }
+            children.forEach(function (el, idx) { el.classList.toggle('active', idx === promoSuggestActiveIndex); });
+        });
 
         var currentMaPhong = null;
         var currentGiaMoiDem = 0;
@@ -4886,6 +5111,8 @@
 
         function resetForm() {
             form.reset();
+            an_KhachHangGoiY();
+            an_KhuyenMaiGoiY();
             dongBoHienThiTienTra();
             calWrap.classList.remove('open');
             checkinField.classList.remove('active');

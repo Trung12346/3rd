@@ -93,7 +93,7 @@
                     </select>
                 </div>
 
-                <div class="admin-field">
+                <div class="admin-field" th:if="${khachHang.ma_khach_hang != null}">
                     <label>Trang thai</label>
                     <select th:field="*{trangThai}">
                         <option th:value="true">Hoat dong</option>

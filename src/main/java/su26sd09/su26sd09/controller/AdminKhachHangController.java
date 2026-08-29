@@ -34,7 +34,9 @@ public class AdminKhachHangController {
     {
         model.addAttribute("keyword", ten);
         model.addAttribute("khachHangs", ndRepo.findAllKhach(ten));
-        model.addAttribute("khachHang", new KhachHang());
+        KhachHang khachHangMoi = new KhachHang();
+        khachHangMoi.setTrangThai(true);
+        model.addAttribute("khachHang", khachHangMoi);
         model.addAttribute("vaiTros", vtRepo.findAll());
 
         return "admin/khach-hang-list";
@@ -89,6 +91,7 @@ public class AdminKhachHangController {
         } else
         {
             nguoiDung.setVaiTro(vtRepo.findById(3).get());
+            nguoiDung.setTrangThai(true);
             errByp = false;
             if(matKhauMoi != null && !matKhauMoi.isBlank())
             {

@@ -70,6 +70,7 @@ public class NhanVienDatPhongController {
     @Autowired private CheckInExpirationCacheService checkInExpirationCacheService;
     @Autowired private su26sd09.su26sd09.service.LichSuHoatDongService lichSuHoatDongService;
     @Autowired private JanitorCacheService janitorCacheService;
+    @Autowired private su26sd09.su26sd09.repository.KhachHangRepository khachHangRepository;
 
     /**
      * Lay so giay to (CCCD/Ho chieu) cua khach dai dien cho 1 phong cu the
@@ -1985,6 +1986,32 @@ public class NhanVienDatPhongController {
         dv.setHoatDong(true);
         dv.setLoaiDv("Phu thu");
         return dichVuService.save(dv);
+    }
+
+    /**
+     * Goi y tai khoan khach hang (dropdown autocomplete) khi nhan vien go ten
+     * khach o sidebar "Dat phong tai quay" / "Len lich dat phong" tren So do
+     * phong. Chi tim theo ho ten (khach vang lai khong co tai khoan se khong
+     * xuat hien) - chon 1 goi y se tu dien ten/email/sdt ben phia client.
+     * Gioi han ket qua tra ve de tranh dropdown qua dai.
+     */
+    @GetMapping("/so-do-phong/khach-hang/goi-y")
+    @ResponseBody
+    public List<Map<String, Object>> goiYKhachHang(@RequestParam(required = false) String q) {
+        if (q == null || q.trim().length() < 2) {
+            return java.util.Collections.emptyList();
+        }
+        return khachHangRepository.search(q.trim()).stream()
+                .limit(8)
+                .map(kh -> {
+                    Map<String, Object> m = new LinkedHashMap<>();
+                    m.put("id", kh.getMa_khach_hang());
+                    m.put("hoTen", kh.getHoTen());
+                    m.put("email", kh.getEmail());
+                    m.put("sdt", kh.getSoDienThoai());
+                    return m;
+                })
+                .collect(Collectors.toList());
     }
 
     @GetMapping("/so-do-phong")

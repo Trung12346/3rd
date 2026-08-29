@@ -5,6 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quản Lý Loại Phòng | Hotel</title>
     <link rel="stylesheet" href="/style.css">
+    <style>
+        .admin-btn:disabled,
+        .admin-btn[disabled] {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+    </style>
 </head>
 <body>
 
@@ -134,8 +142,16 @@
                         <div class="row-actions">
                             <a class="admin-btn small outline"
                                th:href="@{/nhan-su/admin/loai-phong/edit/{id}(id=${lp.id})}">Sửa</a>
-                            <a class="admin-btn small danger"
+                            <a th:if="${!coPhongLienQuan[lp.id]}"
+                               class="admin-btn small danger"
                                th:href="@{/nhan-su/admin/loai-phong/delete/{id}(id=${lp.id})}">xóa</a>
+                            <button th:if="${coPhongLienQuan[lp.id]}"
+                                    type="button"
+                                    class="admin-btn small danger"
+                                    disabled
+                                    title="Không thể xóa: loại phòng đã có phòng được tạo hoặc từng phát sinh giao dịch">
+                                xóa
+                            </button>
                             <a class="admin-btn small outline"
                                th:href="@{/nhan-su/admin/loai-phong/{id}/danh-gia(id=${lp.id})}" th:text="'đánh giá loại phòng :' + ${lp.id}"></a>
                         </div>

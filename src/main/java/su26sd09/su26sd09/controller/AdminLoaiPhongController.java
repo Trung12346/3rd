@@ -15,7 +15,9 @@ import su26sd09.su26sd09.entity.LoaiPhong;
 import su26sd09.su26sd09.service.LoaiPhongService;
 
 import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Controller
@@ -37,6 +39,7 @@ public class AdminLoaiPhongController {
         model.addAttribute("loaiPhongs", result.getContent());
         model.addAttribute("page", result);
         model.addAttribute("selectedAnhs", List.of());
+        model.addAttribute("coPhongLienQuan", coPhongLienQuan(result.getContent()));
         model.addAttribute("title", "Thêm loại phòng");
         return "admin/loai-phong-list";
     }
@@ -53,6 +56,7 @@ public class AdminLoaiPhongController {
         model.addAttribute("loaiPhongs", result.getContent());
         model.addAttribute("page", result);
         model.addAttribute("selectedAnhs", repo.findAnhByLoaiPhong(id));
+        model.addAttribute("coPhongLienQuan", coPhongLienQuan(result.getContent()));
         model.addAttribute("title", "Sửa loại phòng");
         return "admin/loai-phong-list";
     }
@@ -106,11 +110,27 @@ public class AdminLoaiPhongController {
         model.addAttribute("loaiPhongs", result.getContent());
         model.addAttribute("page", result);
         model.addAttribute("selectedAnhs", List.of());
+        model.addAttribute("coPhongLienQuan", coPhongLienQuan(result.getContent()));
         model.addAttribute("keyword", keyword);
         model.addAttribute("minGia", minGia);
         model.addAttribute("maxGia", maxGia);
         model.addAttribute("soKhach", soKhach);
         model.addAttribute("title", "Kết quả tìm kiếm");
         return "admin/loai-phong-list";
+    }
+
+    /**
+     * Xac dinh nhung loai phong da co phong duoc tao (khong con "moi hoan
+     * toan") de vo hieu hoa nut Xoa tren giao dien thay vi de nguoi dung bam
+     * xoa roi moi bao loi flash. Dieu kien xoa duoc giu nguyen o backend
+     * (checkReference trong delete()) de phong truong hop truy cap URL xoa
+     * truc tiep.
+     */
+    private Map<Integer, Boolean> coPhongLienQuan(List<LoaiPhong> loaiPhongs) {
+        Map<Integer, Boolean> ketQua = new HashMap<>();
+        for (LoaiPhong lp : loaiPhongs) {
+            ketQua.put(lp.getId(), repo.checkReference(lp.getId()) != null);
+        }
+        return ketQua;
     }
 }
