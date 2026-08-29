@@ -30,10 +30,21 @@ public class AdminKhachHangController {
 
     @GetMapping
     public String get_0(Model model,
-                        @RequestParam(value = "keyword", required = false) String ten)
+                        @RequestParam(value = "keyword", required = false) String keyword,
+                        @RequestParam(value = "trangThai", required = false) Boolean trangThai,
+                        @RequestParam(value = "tuNgay", required = false)
+                        @org.springframework.format.annotation.DateTimeFormat(pattern = "yyyy-MM-dd") java.time.LocalDate tuNgay,
+                        @RequestParam(value = "denNgay", required = false)
+                        @org.springframework.format.annotation.DateTimeFormat(pattern = "yyyy-MM-dd") java.time.LocalDate denNgay)
     {
-        model.addAttribute("keyword", ten);
-        model.addAttribute("khachHangs", ndRepo.findAllKhach(ten));
+        java.time.LocalDateTime tuNgayDt = (tuNgay != null) ? tuNgay.atStartOfDay() : null;
+        java.time.LocalDateTime denNgayDt = (denNgay != null) ? denNgay.atTime(23, 59, 59) : null;
+
+        model.addAttribute("keyword", keyword);
+        model.addAttribute("trangThai", trangThai);
+        model.addAttribute("tuNgay", tuNgay);
+        model.addAttribute("denNgay", denNgay);
+        model.addAttribute("khachHangs", ndRepo.filterKhach(keyword, trangThai, tuNgayDt, denNgayDt));
         KhachHang khachHangMoi = new KhachHang();
         khachHangMoi.setTrangThai(true);
         model.addAttribute("khachHang", khachHangMoi);
@@ -46,7 +57,7 @@ public class AdminKhachHangController {
     public String get_1(Model model, @PathVariable("id") Integer id)
     {
         model.addAttribute("khachHangs", ndRepo.findAllKhach(null));
-        model.addAttribute("khachHang", ndRepo.findById(id));
+        model.addAttribute("khachHang", ndRepo.findById(id).orElseGet(KhachHang::new));
         model.addAttribute("vaiTros", vtRepo.findAll());
 
         return "admin/khach-hang-list";
@@ -125,6 +136,19 @@ public class AdminKhachHangController {
     {
         userService.setTrangThai(id, false);
         redirect.addFlashAttribute("success", "Khoa nguoi dung thanh cong");
+
+        return "redirect:/nhan-su/admin/khach-hang";
+    }
+
+    @PostMapping("/unlock/{id}")
+    public String post_2(
+            Principal p,
+            @PathVariable("id") Integer id,
+            RedirectAttributes redirect
+    )
+    {
+        userService.setTrangThai(id, true);
+        redirect.addFlashAttribute("success", "Mo khoa nguoi dung thanh cong");
 
         return "redirect:/nhan-su/admin/khach-hang";
     }

@@ -396,18 +396,12 @@ public class VnpayService {
             amountPhong = amountPhong.add(ctdp.getGiaKhiDat());
         }
         BigDecimal amountDv = BigDecimal.ZERO;
-        BigDecimal amountPhuThu = BigDecimal.ZERO;
         for (Chi_tiet_dich_vu ctdv : chiTietDichVus) {
             BigDecimal donGia = ctdv.getDonGia() == null ? BigDecimal.ZERO : ctdv.getDonGia();
-            // PHAN BIET RACH RAC:
-            // - dv.loaiDv = "Phu thu" -> penalty (check-in som/check-out muon),
-            //   KHONG cong vao tienDichVu. Day la dong tien rieng.
-            // - Con lai -> cong vao tienDichVu.
-            if (ctdv.getDv() != null && "Phu thu".equalsIgnoreCase(ctdv.getDv().getLoaiDv())) {
-                amountPhuThu = amountPhuThu.add(donGia);
-            } else {
-                amountDv = amountDv.add(donGia);
-            }
+            // Phu thu (check-in som / check-out muon) gio gop chung vao tienDichVu,
+            // chiu KM + VAT nhu dich vu thuong/phat sinh - dong bo voi ThanhToanController
+            // va HoaDonService#dongBoTienDichVuTuChiTiet.
+            amountDv = amountDv.add(donGia);
         }
 
         HoaDon _hd = hoaDonService.findByDatPhongId(dp.id);
@@ -417,11 +411,11 @@ public class VnpayService {
         System.out.println("DA THANH TOAN: " + daThanhToan);
 
         BigDecimal VATCD = new BigDecimal("0.10");
-        // KM ap dung tren TONG (phong + dich vu), VAT tren gia SAU GIAM, phu thu khong giam/KM/VAT
+        // KM ap dung tren TONG (phong + dich vu, bao gom ca phu thu), VAT tren gia SAU GIAM.
         BigDecimal tienGiam = tinhTienGiam(amountPhong.add(amountDv), dp.getKm());
         BigDecimal tongSauGiam = amountPhong.add(amountDv).subtract(tienGiam);
         BigDecimal tienVat = tongSauGiam.multiply(VATCD).setScale(2, RoundingMode.HALF_UP);
-        BigDecimal amountTongTien = tongSauGiam.add(tienVat).add(amountPhuThu);
+        BigDecimal amountTongTien = tongSauGiam.add(tienVat);
 
         BigDecimal tongDaThanhToan = amountVnpay.add(daThanhToan);
         System.out.println("DA THANH TOAN: " + tongDaThanhToan);

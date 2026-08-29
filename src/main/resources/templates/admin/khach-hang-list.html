@@ -118,8 +118,25 @@
         <h2>Danh Sách Khách Hàng</h2>
 
         <form th:action="@{/nhan-su/admin/khach-hang}" method="get" class="search-row">
-            <input type="text" name="keyword" placeholder="Tìm theo tên" th:value="${keyword}">
+            <input type="text" name="keyword" placeholder="Tên, email hoặc SĐT" th:value="${keyword}">
+
+            <select name="trangThai">
+                <option value="" th:selected="${trangThai == null}">-- Tất cả trạng thái --</option>
+                <option value="true" th:selected="${trangThai != null && trangThai == true}">Hoạt động</option>
+                <option value="false" th:selected="${trangThai != null && trangThai == false}">Khoá</option>
+            </select>
+
+            <label style="display:flex;align-items:center;gap:4px;">
+                Từ ngày
+                <input type="date" name="tuNgay" th:value="${tuNgay}">
+            </label>
+            <label style="display:flex;align-items:center;gap:4px;">
+                Đến ngày
+                <input type="date" name="denNgay" th:value="${denNgay}">
+            </label>
+
             <button type="submit" class="admin-btn outline">Tìm Kiếm</button>
+            <a th:href="@{/nhan-su/admin/khach-hang}" class="admin-btn outline">Xoá Lọc</a>
         </form>
 
         <div class="admin-table-wrap">
@@ -151,11 +168,19 @@
                         <div class="row-actions">
                             <a class="admin-btn small outline"
                                th:href="@{/nhan-su/admin/khach-hang/edit/{id}(id=${kh.ma_khach_hang})}">Sửa</a>
-                            <form th:action="@{/nhan-su/admin/khach-hang/lock/{id}(id=${kh.ma_khach_hang})}"
+                            <form th:if="${kh.trangThai == true}"
+                                  th:action="@{/nhan-su/admin/khach-hang/lock/{id}(id=${kh.ma_khach_hang})}"
                                   method="post"
                                   onsubmit="return confirm('Bạn có chắc muốn khoá khách hàng này này?')">
                                 <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
                                 <button type="submit" class="admin-btn small danger">Khoá</button>
+                            </form>
+                            <form th:if="${kh.trangThai == false}"
+                                  th:action="@{/nhan-su/admin/khach-hang/unlock/{id}(id=${kh.ma_khach_hang})}"
+                                  method="post"
+                                  onsubmit="return confirm('Bạn có chắc muốn mở khoá khách hàng này?')">
+                                <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                                <button type="submit" class="admin-btn small">Mở</button>
                             </form>
                         </div>
                     </td>

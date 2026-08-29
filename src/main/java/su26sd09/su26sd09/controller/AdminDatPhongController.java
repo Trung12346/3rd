@@ -629,19 +629,9 @@ public class AdminDatPhongController {
         if (treEm == null || treEm < 0) {
             errors.add("So tre em khong duoc am.");
         }
-        if (ngayNhan != null && ngayTra != null && dichVuIds != null) {
-            for (Integer maDichVu : dichVuIds) {
-                String ngaySuDungStr = allParams.get("ngaySuDung_" + maDichVu);
-                if (ngaySuDungStr == null || ngaySuDungStr.isBlank()) {
-                    continue;
-                }
-                LocalDateTime ngaySuDung = LocalDateTime.parse(ngaySuDungStr);
-                if (ngaySuDung.isBefore(ngayNhan) || ngaySuDung.isAfter(ngayTra)) {
-                    errors.add("Ngay su dung dich vu phai nam trong khoang luu tru.");
-                    break;
-                }
-            }
-        }
+        // Ngay su dung dich vu: KHONG con validate phai nam trong khoang luu tru nua
+        // (dong bo voi client - xem chi-tiet-dat-phong.html, gia tri nay gio luon la
+        // thoi diem hien tai luc tao dong, khong cho nguoi dung sua/chon nua).
         // Validate dịch vụ phát sinh: nếu có tên thì bắt buộc đơn giá > 0 và ghi chú không rỗng
         if (phatSinhTenList != null && phatSinhDonGiaList != null) {
             int soPhatSinh = phatSinhTenList.size();

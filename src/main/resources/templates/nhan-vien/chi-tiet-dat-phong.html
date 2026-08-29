@@ -195,7 +195,7 @@
         .dv-tab#tabPhatSinh.active { color: #c2410c; }
 
         .dv-them-form {
-            display: grid; gap: 12px; grid-template-columns: minmax(0,1.6fr) 0.8fr 1.2fr auto; align-items: end;
+            display: grid; gap: 12px; grid-template-columns: minmax(0,1.6fr) 0.8fr auto; align-items: end;
             margin-bottom: 18px; padding: 16px; background: #f8fafc; border-radius: 0 8px 8px 8px; border: 1px dashed #cbd5e1;
             min-width: 0;
         }
@@ -231,6 +231,7 @@
         }
         .dv-loai-badge.thuong { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
         .dv-loai-badge.phat-sinh { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+        .dv-loai-badge.phu-thu { background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; }
 
         /* Ô tên dịch vụ: cho phép xuống dòng thay vì đẩy tràn bảng ra ngoài panel */
         .dv-table td.ten-dv-cell {
@@ -968,20 +969,28 @@
                         </div>
                     </div>
 
-                    <input type="hidden" id="ngayNhan" name="ngayNhan"
+                    <!-- form="chiTietForm": nhu nut Luu Thay Doi o duoi, panel "Thong Tin
+                         Luu Tru" nay cung bi sapXepLaiNoiDungDon() (so-do-phong.html) di
+                         chuyen ra NGOAI <form id="chiTietForm"> khi nhung vao sidebar "Xem
+                         don hien tai". Neu khong gan form="chiTietForm" cho 2 o an ngay
+                         nhan/tra nay, chung se KHONG duoc gui len server khi luu -> sua
+                         ngay nhan/tra tu sidebar se bi mat, khong duoc luu. -->
+                    <input type="hidden" id="ngayNhan" name="ngayNhan" form="chiTietForm"
                            th:value="${datPhong != null and datPhong.ngaydatPhong != null} ? ${#temporals.format(datPhong.ngaydatPhong, 'yyyy-MM-dd''T''HH:mm')} : ''">
-                    <input type="hidden" id="ngayTra" name="ngayTra"
+                    <input type="hidden" id="ngayTra" name="ngayTra" form="chiTietForm"
                            th:value="${datPhong != null and datPhong.ngaytraPhong != null} ? ${#temporals.format(datPhong.ngaytraPhong, 'yyyy-MM-dd''T''HH:mm')} : ''">
 
                     <div class="stay-guests">
                         <div class="stay-field">
                             <label>Người lớn</label>
-                            <input type="number" id="nguoiLon" name="nguoiLon" min="1"
+                            <!-- Cung ly do nhu tren: can form="chiTietForm" de van duoc gui
+                                 len khi panel nay bi doi cho ra ngoai form luc nhung. -->
+                            <input type="number" id="nguoiLon" name="nguoiLon" min="1" form="chiTietForm"
                                    th:value="${datPhong != null ? datPhong.songuoiLon : 1}">
                         </div>
                         <div class="stay-field">
                             <label>Trẻ em</label>
-                            <input type="number" id="treEm" name="treEm" min="0"
+                            <input type="number" id="treEm" name="treEm" min="0" form="chiTietForm"
                                    th:value="${datPhong != null ? datPhong.sotreEm : 0}">
                         </div>
                     </div>
@@ -1044,7 +1053,7 @@
                             <label>Số lượng</label>
                             <input type="number" id="dvSoLuong" min="1" value="1">
                         </div>
-                        <div class="ff">
+                        <div class="ff" style="display:none;">
                             <label>Ngày sử dụng</label>
                             <input type="datetime-local" id="dvNgaySuDung">
                         </div>
@@ -1072,7 +1081,7 @@
                             <label>Số lượng <span style="color:#dc2626;">*</span></label>
                             <input type="number" id="psSoLuong" min="1" value="1">
                         </div>
-                        <div class="ff">
+                        <div class="ff" style="display:none;">
                             <label>Ngày phát sinh <span style="color:#dc2626;">*</span></label>
                             <input type="datetime-local" id="psNgay">
                         </div>
@@ -1089,12 +1098,11 @@
                     <!-- Bảng dịch vụ đã thêm -->
                     <table class="dv-table">
                         <colgroup>
-                            <col style="width:22%">
-                            <col style="width:11%">
-                            <col style="width:9%">
-                            <col style="width:17%">
-                            <col style="width:22%">
-                            <col style="width:13%">
+                            <col style="width:26%">
+                            <col style="width:12%">
+                            <col style="width:10%">
+                            <col style="width:26%">
+                            <col style="width:16%">
                             <col style="width:6%">
                         </colgroup>
                         <thead>
@@ -1102,7 +1110,6 @@
                             <th>Dịch vụ</th>
                             <th>Loại</th>
                             <th>Số lượng</th>
-                            <th>Ngày sử dụng</th>
                             <th>Ghi chú</th>
                             <th>Thành tiền</th>
                             <th></th>
@@ -1171,7 +1178,17 @@
                     <span id="sumConLai">đ 0</span>
                 </div>
 
-                <button type="submit" class="btn-luu-thay-doi" id="btnLuu">
+                <!-- form="chiTietForm": khi trang nay duoc nhung vao so-do-phong.html,
+                     ham sapXepLaiNoiDungDon() ben do se DI CHUYEN panel nay (.summary-panel)
+                     cung voi panel "Quan Ly Dich Vu" va "Phong Da Dat" ra NGOAI the <form
+                     id="chiTietForm"> (de xep lai thu tu hien thi canh panel "Thong Tin
+                     Khach Hang"). Neu khong co thuoc tinh form="..." o day, sau khi bi doi
+                     cho, nut nay khong con nam trong form nao ca -> bam vao KHONG LAM GI CA
+                     (trinh duyet khong biet submit form nao) -> day chinh la nguyen nhan
+                     nut "Luu Thay Doi" "khong hoat dong" khi mo tu sidebar "Xem don hien
+                     tai". Thuoc tinh form nay gan nut voi #chiTietForm THEO ID, khong phu
+                     thuoc vi tri trong DOM, nen du bi doi cho van submit dung form. -->
+                <button type="submit" class="btn-luu-thay-doi" id="btnLuu" form="chiTietForm">
                     <i class="fa-solid fa-floppy-disk"></i> Lưu Thay Đổi
                 </button>
                 <p style="text-align:center; font-size:11px; color:#94a3b8; margin-top:12px;">
@@ -1196,8 +1213,21 @@
      * TRANG CHI TIẾT ĐẶT PHÒNG & QUẢN LÝ DỊCH VỤ
      * Toàn bộ tính toán / validate đều chạy phía CLIENT (JS thuần),
      * dùng chung thư viện BookingValidate (booking-validate.js).
+     *
+     * QUAN TRONG: toan bo khoi nay duoc boc trong 1 IIFE. Trang nay
+     * co the duoc NHUNG (embed) nhieu lan vao so-do-phong.html (moi
+     * lan mo sidebar "Xem don hien tai" se fetch + chay lai script).
+     * Neu de cac khai bao const/let o TOP-LEVEL (global scope), lan
+     * nhung thu 2 tro di se bi loi "Identifier ... has already been
+     * declared" ngay tu dong const dau tien -> ca script dung lai
+     * giua chung -> nut "Luu Thay Doi" va cac validate phia duoi
+     * khong bao gio duoc gan event listener (chinh la loi da gap).
+     * Boc IIFE de moi lan chay la 1 scope moi, khong dam vao nhau.
+     * Cac ham duoc goi tu onclick="..." trong HTML (chonLoaiDichVu,
+     * themDichVu, themDichVuPhatSinh) duoc gan them vao window o
+     * cuoi khoi de onclick (chay o global scope) van goi duoc.
      * ============================================================ */
-
+    (function () {
     const BookingValidate = {
         formatVND(n) {
             return Math.round(n || 0).toLocaleString('vi-VN') + ' VND';
@@ -1274,12 +1304,11 @@
         id: /*[[${ct.dv != null ? ct.dv.id : 0}]]*/ 0,
         ten: /*[[${ct.dv != null ? ct.dv.ten_dich_vu : ''}]]*/ '',
         donVi: /*[[${ct.dv != null ? ct.dv.donVi : ''}]]*/ '',
-        // giaDonVi: uu tien lay tu chinh so tien da luu tren dong dich vu (ct.donGia)
-        // khi so luong = 1 (dung cho cac dong phu thu tu dong tao, vi du "Phu thu nhan
-        // phong som"/"Phu thu tra phong muon" - dich_vu goc co gia = 0 nen KHONG the
-        // dung dv.gia, neu khong tong tien dich vu se bi tinh sai thanh 0). Voi cac dich
-        // vu thuong (so luong > 1, gia lay tu danh muc), giu nguyen hanh vi cu la dv.gia.
-        giaDonVi: /*[[${ct.soluong != null and ct.soluong == 1 and ct.donGia != null ? ct.donGia : (ct.dv != null ? ct.dv.gia : 0)}]]*/ 0,
+        // giaDonVi: LUON lay tu giaDonViMap (tinh san o Java tu chi_tiet_dich_vu.donGia / soluong,
+        // xem NhanVienDatPhongController.chiTiet()) - dam bao gia hien thi la gia THUC TE da chot
+        // luc dat/them dich vu, khong bi doi khi bang gia dich_vu goc thay doi sau nay.
+        // KHONG fallback ve ct.dv.gia (gia catalog) nua du giaDonViMap thieu key.
+        giaDonVi: /*[[${giaDonViMap != null ? giaDonViMap[ct.id] : 0}]]*/ 0,
         soLuong: /*[[${ct.soluong != null ? ct.soluong : 1}]]*/ 1,
         ngaySuDung: /*[[${ct.ngay_su_dung != null ? #temporals.format(ct.ngay_su_dung, 'yyyy-MM-dd''T''HH:mm') : ''}]]*/ '',
         // Phân biệt 3 loại dịch vụ dựa theo Dich_vu.loaiDv:
@@ -1314,6 +1343,14 @@
         }
     }
 
+    /** Tra ve thoi diem hien tai dang chuoi 'yyyy-MM-ddTHH:mm' (gio dia phuong), dung cho input datetime-local. */
+    function nowAsDatetimeLocalString() {
+        const d = new Date();
+        const pad = n => String(n).padStart(2, '0');
+        return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) +
+            'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+    }
+
     function themDichVu() {
         const sel = document.getElementById('dvSelect');
         const opt = sel.options[sel.selectedIndex];
@@ -1322,7 +1359,6 @@
             return;
         }
         const soLuongInput = document.getElementById('dvSoLuong');
-        const ngayInput = document.getElementById('dvNgaySuDung');
         const soLuong = parseInt(soLuongInput.value) || 1;
 
         dsDichVu.push({
@@ -1332,14 +1368,13 @@
             donVi: opt.dataset.donvi,
             giaDonVi: parseFloat(opt.dataset.gia) || 0,
             soLuong: soLuong,
-            ngaySuDung: ngayInput.value || '',
+            ngaySuDung: nowAsDatetimeLocalString(),
             loai: 'THUONG',
             ghiChu: ''
         });
 
         sel.value = '';
         soLuongInput.value = 1;
-        ngayInput.value = '';
 
         veLaiBangDichVu();
         tinhTongTien();
@@ -1352,7 +1387,7 @@
      *  Thay vào đó, việc validate 5 ô này CHỈ chạy thủ công bên trong themDichVuPhatSinh(), và CHỈ
      *  được kích hoạt khi người dùng bấm nút "+ Thêm dịch vụ phát sinh" — không có cơ chế nào khác
      *  (submit form chính, phím Enter, đổi tab...) có thể vô tình trigger validate của khu vực này. */
-    const psInputs = ['psTen', 'psDonGia', 'psSoLuong', 'psNgay', 'psGhiChu'].map(id => document.getElementById(id));
+    const psInputs = ['psTen', 'psDonGia', 'psSoLuong', 'psGhiChu'].map(id => document.getElementById(id));
 
     /** Hiện / ẩn lỗi ngay dưới 1 ô input trong form phát sinh (không dùng tooltip validity của trình duyệt). */
     function hienLoiPhatSinh(inputEl, thongBao) {
@@ -1391,7 +1426,6 @@
         const tenEl = document.getElementById('psTen');
         const giaEl = document.getElementById('psDonGia');
         const soLuongEl = document.getElementById('psSoLuong');
-        const ngayEl = document.getElementById('psNgay');
         const ghiChuEl = document.getElementById('psGhiChu');
 
         xoaTatCaLoiPhatSinh();
@@ -1401,7 +1435,6 @@
         const gia = MoneyFormat.parse(giaRaw);
         const soLuongRaw = soLuongEl.value.trim();
         const soLuong = parseInt(soLuongRaw);
-        const ngay = ngayEl.value;
         const ghiChu = ghiChuEl.value.trim();
 
         // Kiểm tra lần lượt từng ô, dừng lại ở ô đầu tiên sai và focus vào đó.
@@ -1420,25 +1453,10 @@
             soLuongEl.focus();
             return;
         }
-        if (!ngay) {
-            hienLoiPhatSinh(ngayEl, 'Vui lòng chọn ngày phát sinh.');
-            ngayEl.focus();
-            return;
-        }
         if (!ghiChu) {
             hienLoiPhatSinh(ghiChuEl, 'Vui lòng nhập ghi chú / lý do cụ thể.');
             ghiChuEl.focus();
             return;
-        }
-
-        // Kiểm tra ngày phát sinh nằm trong khoảng lưu trú (nếu đã chọn ngày nhận/trả)
-        if (ngayNhanEl.value && ngayTraEl.value) {
-            const kqNgay = BookingValidate.validateNgayTrongKhoangLuuTru(ngay, ngayNhanEl.value, ngayTraEl.value);
-            if (!kqNgay.hopLe) {
-                hienLoiPhatSinh(ngayEl, 'Ngày phát sinh phải nằm trong khoảng lưu trú.');
-                ngayEl.focus();
-                return;
-            }
         }
 
         dsDichVu.push({
@@ -1448,7 +1466,7 @@
             donVi: 'vụ',
             giaDonVi: gia,
             soLuong: soLuong,
-            ngaySuDung: ngay,
+            ngaySuDung: nowAsDatetimeLocalString(),
             loai: 'PHAT_SINH',
             ghiChu: ghiChu
         });
@@ -1457,7 +1475,6 @@
         tenEl.value = '';
         giaEl.value = '';
         soLuongEl.value = 1;
-        ngayEl.value = '';
         ghiChuEl.value = '';
         xoaTatCaLoiPhatSinh();
 
@@ -1477,17 +1494,6 @@
         tinhTongTien();
     }
 
-    function capNhatNgaySuDung(key, value, inputEl) {
-        const dv = dsDichVu.find(d => d.key === key);
-        if (!dv) return;
-
-        const ketQua = BookingValidate.validateNgayTrongKhoangLuuTru(value, ngayNhanEl.value, ngayTraEl.value);
-        BookingValidate.hienThiLoi(inputEl, ketQua.hopLe ? '' : ketQua.thongBao);
-        dv.ngaySuDung = value;
-        dv.hopLe = ketQua.hopLe;
-        tinhTongTien();
-    }
-
     function veLaiBangDichVu() {
         const tbody = document.getElementById('dvTableBody');
         const countLabel = document.getElementById('dvCountLabel');
@@ -1497,6 +1503,7 @@
 
         dsDichVu.forEach(dv => {
             const laPhatSinh = dv.loai === 'PHAT_SINH';
+            const laPhuThu = dv.loai === 'PHU_THU';
             const tr = document.createElement('tr');
             if (laPhatSinh) tr.className = 'row-phat-sinh';
             const thanhTien = dv.giaDonVi * dv.soLuong;
@@ -1507,8 +1514,8 @@
 
             const tdLoai = document.createElement('td');
             const badge = document.createElement('span');
-            badge.className = 'dv-loai-badge ' + (laPhatSinh ? 'phat-sinh' : 'thuong');
-            badge.textContent = laPhatSinh ? 'Phát sinh' : 'Dịch vụ';
+            badge.className = 'dv-loai-badge ' + (laPhuThu ? 'phu-thu' : (laPhatSinh ? 'phat-sinh' : 'thuong'));
+            badge.textContent = laPhuThu ? 'Phụ thu' : (laPhatSinh ? 'Phát sinh' : 'Dịch vụ');
             tdLoai.appendChild(badge);
 
             const tdSl = document.createElement('td');
@@ -1519,28 +1526,12 @@
             slInput.addEventListener('input', function () { capNhatSoLuong(dv.key, this.value); veLaiBangDichVu(); });
             tdSl.appendChild(slInput);
 
-            const tdNgay = document.createElement('td');
-            const ngayInput = document.createElement('input');
-            ngayInput.type = 'datetime-local';
-            ngayInput.value = dv.ngaySuDung || '';
-            if (ngayNhanEl.value) ngayInput.min = ngayNhanEl.value;
-            if (ngayTraEl.value) ngayInput.max = ngayTraEl.value;
-            ngayInput.addEventListener('change', function () { capNhatNgaySuDung(dv.key, this.value, this); });
-            tdNgay.appendChild(ngayInput);
-            if (dv.ngaySuDung) {
-                const ketQua = BookingValidate.validateNgayTrongKhoangLuuTru(dv.ngaySuDung, ngayNhanEl.value, ngayTraEl.value);
-                if (!ketQua.hopLe) {
-                    const err = document.createElement('span');
-                    err.className = 'dv-row-error';
-                    err.textContent = ketQua.thongBao;
-                    tdNgay.appendChild(err);
-                    dv.hopLe = false;
-                } else {
-                    dv.hopLe = true;
-                }
-            } else {
-                dv.hopLe = true;
+            // Ngay su dung/phat sinh: KHONG con cho nguoi dung nhap/sua va KHONG con validate
+            // trong khoang luu tru nua - luon tu dong gan bang thoi diem hien tai luc tao dong.
+            if (!dv.ngaySuDung) {
+                dv.ngaySuDung = nowAsDatetimeLocalString();
             }
+            dv.hopLe = true;
 
             // Ghi chú: đọc trực tiếp từ dv.ghiChu của TỪNG object riêng biệt trong mảng dsDichVu.
             // Mỗi dòng dịch vụ phát sinh giữ ghi chú độc lập, không chia sẻ / không bị ghi đè lẫn nhau.
@@ -1565,7 +1556,6 @@
             tr.appendChild(tdTen);
             tr.appendChild(tdLoai);
             tr.appendChild(tdSl);
-            tr.appendChild(tdNgay);
             tr.appendChild(tdGhiChu);
             tr.appendChild(tdThanh);
             tr.appendChild(tdXoa);
@@ -1641,9 +1631,12 @@
     }
 
     /** Tinh toan bong tong tien:
-     *   - Phu thu (check-in som / check-out muon) di rieng, NGOAI VAT.
-     *   - Giam gia ap dung TREN (Tien phong + Tien DV), sau do moi tinh VAT 10%.
-     *   - Tong cong = (Tien phong + Tien DV - Giam gia) + VAT + Phu thu. */
+     *   - Phu thu (check-in som / check-out muon) gio duoc GOP CHUNG vao Tien DV,
+     *     chiu giam gia KM va VAT 10% giong dich vu thuong/phat sinh (khong con
+     *     tach rieng ngoai VAT nua). Dong "Phu thu" van hien rieng de nhan vien de
+     *     doi chieu, nhung chi la hien thi - da nam trong Tien DV / VAT / Tong cong.
+     *   - Giam gia ap dung TREN (Tien phong + Tien DV, bao gom phu thu), sau do moi tinh VAT 10%.
+     *   - Tong cong = (Tien phong + Tien DV - Giam gia) + VAT. */
     function tinhTongTien() {
         BookingValidate.capNhatMinNgayTra(ngayNhanEl, ngayTraEl);
         const ketQuaNgay = BookingValidate.validateNgayNhanTra(ngayNhanEl.value, ngayTraEl.value);
@@ -1656,34 +1649,26 @@
             tienPhong = tongGiaMoiDem * soDem;
         }
 
-        // Cập nhật min/max ngày sử dụng dịch vụ theo khoảng lưu trú mới + tái validate từng dòng
-        document.querySelectorAll('#dvTableBody input[type="datetime-local"]').forEach(inp => {
-            if (ngayNhanEl.value) inp.min = ngayNhanEl.value;
-            if (ngayTraEl.value) inp.max = ngayTraEl.value;
-        });
-
-        let dichVuHopLe = true;
         dsDichVu.forEach(dv => {
             const thanhTien = dv.giaDonVi * dv.soLuong;
+            // Tach rieng PHU_THU khoi dich vu thuong/phat sinh de "Tien dich vu" va
+            // "Phu thu" hien thi 2 con so KHAC NHAU (khong bi trung/lap gia tri).
+            // tienDvVaPhuThu (thay cho tienDv cu) van gom ca 2 de tinh KM + VAT
+            // tren dung tong, nhung tienDv rieng chi con dich vu thuong/phat sinh.
             if (dv.loai === 'PHU_THU') {
-                // Phu thu check-in som / check-out muon: NGOAI VAT, cong cuoi vao tong
                 tienPhuThu += thanhTien;
             } else {
-                // Dich vu thuong hoac phat sinh: chiu VAT
                 tienDv += thanhTien;
             }
-            if (dv.ngaySuDung) {
-                const kq = BookingValidate.validateNgayTrongKhoangLuuTru(dv.ngaySuDung, ngayNhanEl.value, ngayTraEl.value);
-                if (!kq.hopLe) dichVuHopLe = false;
-            }
         });
+        const tienDvVaPhuThu = tienDv + tienPhuThu;
 
         // ===== Ap dung khuyen mai (neu co) =====
         // (Doi thu tu: tinh tienGiam TRUOC, VAT tinh SAU tren phan da giam -
         // dung cong thuc voi sidebar "Len lich dat phong" o trang So Do Phong,
         // tranh tinh VAT tren tong truoc khi giam lam sai lech tong cong khi co KM.)
         let tienGiam = 0;
-        const coSoGiamGia = tienPhong + tienDv;
+        const coSoGiamGia = tienPhong + tienDvVaPhuThu;
         if (currentKM) {
             const dieuKien = Number(currentKM.dieuKien || 0);
             if (dieuKien <= 0 || coSoGiamGia >= dieuKien) {
@@ -1703,8 +1688,8 @@
         }
         const coSoTinhVat = coSoGiamGia - tienGiam;
         vat = Math.round(coSoTinhVat * 0.10);
-        // Tong cong: phan chiu VAT (sau giam) + VAT + phu thu (ngoai VAT)
-        tongCong = coSoTinhVat + vat + tienPhuThu;
+        // Tong cong: phan chiu VAT (sau giam, da gom ca phu thu) + VAT
+        tongCong = coSoTinhVat + vat;
 
         document.getElementById('sumSoDem').textContent = ketQuaNgay.hopLe ? (soDem + ' đêm') : '--';
         document.getElementById('sumTienPhong').textContent = 'đ ' + BookingValidate.formatVND(tienPhong).replace(' VND', '');
@@ -1749,7 +1734,10 @@
         if (sumConLaiRowEl) sumConLaiRowEl.classList.toggle('da-du', conLai <= 0);
 
         document.getElementById('h-tien-phong').value = Math.round(tienPhong);
-        document.getElementById('h-tien-dv').value = Math.round(tienDv);
+        // Server dung tongTienDichVu de tinh lai VAT/tong tien hoa don, nen phai
+        // gui TONG ca dich vu thuong/phat sinh + phu thu (tienDvVaPhuThu), khong
+        // phai chi rieng tienDv (da tach phu thu ra de hien thi 2 dong khac nhau).
+        document.getElementById('h-tien-dv').value = Math.round(tienDvVaPhuThu);
         document.getElementById('h-tien-giam').value = Math.round(tienGiam);
         document.getElementById('h-tien-vat').value = Math.round(vat);
         document.getElementById('h-tong-cong').value = Math.round(tongCong);
@@ -1773,6 +1761,32 @@
         chiTietFormEl.addEventListener('submit', function (e) {
             tinhTongTien();
             sinhHiddenInputsDichVu();
+
+            // Khi trang nay dang duoc NHUNG vao sidebar "Xem don hien tai" cua
+            // trang So Do Phong (#sdpDonContent): KHONG cho submit dieu huong ca
+            // trinh duyet sang /nhan-su/dat-phong/chi-tiet/{id} - lam vay se
+            // thoat khoi trang So Do Phong ma nhan vien dang lam viec. Thay vao
+            // do, submit bang fetch (AJAX), lay HTML tra ve (co the la ket qua
+            // thanh cong hoac trang loi validate) roi nhung lai vao dung cho cu
+            // qua window.napLaiNoiDungDonTuHtml (expose boi so-do-phong.html),
+            // giu nguyen nguoi dung tren So Do Phong.
+            var dangNhungTrongSoDoPhong = !!chiTietFormEl.closest('#sdpDonContent');
+            if (dangNhungTrongSoDoPhong && typeof window.napLaiNoiDungDonTuHtml === 'function') {
+                e.preventDefault();
+                var donIdHienTai = /*[[${datPhong != null ? datPhong.id : 0}]]*/ 0;
+                var fd = new FormData(chiTietFormEl);
+                if (btnLuuEl) btnLuuEl.disabled = true;
+                fetch(chiTietFormEl.action, { method: 'POST', credentials: 'same-origin', body: fd })
+                    .then(function (res) { return res.text(); })
+                    .then(function (html) {
+                        window.napLaiNoiDungDonTuHtml(html, donIdHienTai);
+                        if (window.staffToast) window.staffToast('Đã lưu thay đổi.', 'success');
+                    })
+                    .catch(function () {
+                        if (window.staffToast) window.staffToast('Có lỗi khi lưu thay đổi, vui lòng thử lại.', 'error');
+                        if (btnLuuEl) btnLuuEl.disabled = false;
+                    });
+            }
         });
     }
 
@@ -1965,22 +1979,35 @@
 
         capNhatTatCa();
     })();
-</script>
 
-<!-- ============================================================
-     Calendar chon "Ngày nhận / trả phòng" - dung lai y het logic
-     RoomAvailabilityCalendar + kiem tra overlap cua sidebar
-     "Lên lịch đặt phòng" (so-do-phong.html), CHI KHAC 1 diem:
-     khi kiem tra overlap, LOAI TRU chinh don dang xem (id ===
-     CDP_DAT_PHONG_ID) khoi danh sach khoa cua tung phong, vi doi
-     lai ngay cho chinh don nay khong the coi la "trung lich voi
-     chinh no" - miem la khong trung voi 1 don KHAC nao khac.
-     ============================================================ -->
-<script th:inline="javascript">
+    // Cac ham duoc goi truc tiep tu thuoc tinh onclick="..." trong HTML
+    // (chay o global scope) nen phai duoc export ra window o day.
+    window.chonLoaiDichVu = chonLoaiDichVu;
+    window.themDichVu = themDichVu;
+    window.themDichVuPhatSinh = themDichVuPhatSinh;
+
+    /* ============================================================
+     * Calendar chon "Ngày nhận / trả phòng" - dung lai y het logic
+     * RoomAvailabilityCalendar + kiem tra overlap cua sidebar
+     * "Lên lịch đặt phòng" (so-do-phong.html), CHI KHAC 1 diem:
+     * khi kiem tra overlap, LOAI TRU chinh don dang xem (id ===
+     * CDP_DAT_PHONG_ID) khoi danh sach khoa cua tung phong, vi doi
+     * lai ngay cho chinh don nay khong the coi la "trung lich voi
+     * chinh no" - miem la khong trung voi 1 don KHAC nao khac.
+     *
+     * GHEP CHUNG voi khoi phia tren (cung 1 the <script>, cung 1
+     * IIFE bao ngoai) thay vi tach the <script> rieng: khoi ben
+     * duoi can doc chiTietFormEl/kiemTraNgay(), va cac bien nay chi
+     * ton tai trong closure cua IIFE bao ngoai o tren - hai the
+     * <script> khac nhau la hai "program" doc lap, KHONG chia se
+     * closure duoc voi nhau (chi chia se global scope, ma bien o
+     * tren gio da la local do IIFE). Ghep 1 the la de code ben
+     * duoi thuc su nam long trong IIFE tren ve mat cu phap, moi
+     * doc duoc cac bien do qua closure.
+     * ============================================================ */
     var CDP_BOOKINGS = [(${bookingsByRoomJson})];
     var CDP_DAT_PHONG_ID = /*[[${datPhong != null ? datPhong.id : 0}]]*/ 0;
-</script>
-<script>
+
     (function () {
         var VN_MONTHS = ['Th1', 'Th2', 'Th3', 'Th4', 'Th5', 'Th6', 'Th7', 'Th8', 'Th9', 'Th10', 'Th11', 'Th12'];
 
@@ -2297,6 +2324,7 @@
             });
         }
     })();
+    })(); // dong IIFE bao ngoai toan bo script (xem ghi chu o dau khoi)
 </script>
 </body>
 </html>

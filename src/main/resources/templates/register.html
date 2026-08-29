@@ -44,6 +44,12 @@
                     <label for="dia_chi">Địa chỉ liên hệ</label>
                     <input type="text" id="dia_chi" name="dia_chi" placeholder="Số nhà, đường, tỉnh/TP" required>
                 </div>
+
+                <div class="form-group">
+                    <label for="ngay_sinh">Ngày sinh</label>
+                    <input type="date" id="ngay_sinh" required>
+                    <small id="ngaySinhError" style="color:#c0392b; display:none;">Bạn phải đủ 18 tuổi trở lên để đăng ký.</small>
+                </div>
             </div>
 
             <button type="submit" class="btn-submit" style="margin-top: 30px;">Tạo Tài Khoản</button>
@@ -59,6 +65,49 @@
     <p>&copy; 2026 Hotel. All rights reserved.</p>
 </footer>
 
+<script>
+    (function () {
+        var form = document.getElementById('registerForm');
+        var ngaySinhInput = document.getElementById('ngay_sinh');
+        var errorEl = document.getElementById('ngaySinhError');
+
+        function isAtLeast18(dateStr) {
+            var birthDate = new Date(dateStr);
+            if (isNaN(birthDate.getTime())) {
+                return false;
+            }
+            var today = new Date();
+            var age = today.getFullYear() - birthDate.getFullYear();
+            var monthDiff = today.getMonth() - birthDate.getMonth();
+            var dayDiff = today.getDate() - birthDate.getDate();
+            if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) {
+                age--;
+            }
+            return age >= 18;
+        }
+
+        // Cap the date picker so future dates can't be picked
+        var todayStr = new Date().toISOString().split('T')[0];
+        ngaySinhInput.setAttribute('max', todayStr);
+
+        form.addEventListener('submit', function (e) {
+            var value = ngaySinhInput.value;
+            if (!value || !isAtLeast18(value)) {
+                e.preventDefault();
+                errorEl.style.display = 'block';
+                ngaySinhInput.focus();
+            } else {
+                errorEl.style.display = 'none';
+            }
+        });
+
+        ngaySinhInput.addEventListener('change', function () {
+            if (ngaySinhInput.value && isAtLeast18(ngaySinhInput.value)) {
+                errorEl.style.display = 'none';
+            }
+        });
+    })();
+</script>
 
 </body>
 </html>

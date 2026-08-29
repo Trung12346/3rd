@@ -400,31 +400,18 @@
             </div>
         </div>
 
-        <aside class="room-review-form-box">
-            <div sec:authorize="isAuthenticated()">
+        <aside class="room-review-form-box" th:if="${reviewEligibility != null && reviewEligibility.canReview}">
+            <div>
                 <h3>Gửi đánh giá</h3>
 
-                <div class="room-review-alert error room-review-form-alert" th:if="${roomReviewDenied}" role="alert">
-                    <strong>Không thể gửi đánh giá</strong>
-                    <p th:text="${roomReviewError}">Trải nghiệm phòng để có thể đánh giá.</p>
-                </div>
-
-                <div class="room-review-alert error room-review-form-alert"
-                     th:if="${reviewEligibility != null && !reviewEligibility.canReview}" role="alert">
-                    <strong>Không thể gửi đánh giá</strong>
-                    <p th:text="${reviewEligibility.reason}">Bạn chưa thể đánh giá phòng này.</p>
-                </div>
-
                 <p class="room-review-muted"
-                   th:if="${reviewEligibility == null || reviewEligibility.canReview}"
                    th:text="${isTypeScope}
                         ? 'Đánh giá này sẽ được gắn với lượt đặt phòng gần nhất của bạn thuộc loại phòng này.'
                         : 'Đánh giá này sẽ được gắn với lượt đặt phòng gần nhất của bạn cho phòng này.'">
                     Đánh giá này sẽ được gắn với lượt đặt phòng gần nhất của bạn cho phòng này.
                 </p>
 
-                <form th:if="${reviewEligibility != null && reviewEligibility.canReview}"
-                      th:action="${isTypeScope} ? @{/loai-phong/reviews/types/{id}(id=${roomId})} : @{/phong/reviews/rooms/{id}(id=${roomId})}"
+                <form th:action="${isTypeScope} ? @{/loai-phong/reviews/types/{id}(id=${roomId})} : @{/phong/reviews/rooms/{id}(id=${roomId})}"
                       method="post" data-review-form>
                     <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
 
@@ -452,12 +439,6 @@
 
                     <button type="submit" class="room-review-button">Gửi đánh giá</button>
                 </form>
-            </div>
-
-            <div sec:authorize="isAnonymous()">
-                <h3>Gửi đánh giá</h3>
-                <p class="room-review-muted">Vui lòng đăng nhập để viết đánh giá cho phòng này.</p>
-                <a th:href="@{/Login}" class="room-review-button">Đăng nhập</a>
             </div>
         </aside>
     </div>

@@ -234,26 +234,20 @@ public class ThanhToanController {
         }
 
         BigDecimal amountDv = BigDecimal.ZERO;
-        BigDecimal amountPhuThu = BigDecimal.ZERO;
         List<Chi_tiet_dich_vu> chiTietDichVus = ctdvService.findByDatPhongId(id);
         for (Chi_tiet_dich_vu ctdv : chiTietDichVus) {
             BigDecimal donGia = ctdv.getDonGia() == null ? BigDecimal.ZERO : ctdv.getDonGia();
-            // Phan biet: loaiDv = "Phu thu" la penalty, KHONG cong vao tienDichVu
-            if (ctdv.getDv() != null && "Phu thu".equalsIgnoreCase(ctdv.getDv().getLoaiDv())) {
-                amountPhuThu = amountPhuThu.add(donGia);
-            } else {
-                amountDv = amountDv.add(donGia);
-            }
+            // Phu thu (check-in som / check-out muon) gio duoc gop chung vao tienDichVu,
+            // chiu KM + VAT nhu dich vu thuong/phat sinh - KHONG con tach rieng ngoai VAT nua.
+            amountDv = amountDv.add(donGia);
         }
 
         BigDecimal VATCD = new BigDecimal("0.10");
-        // KM: ap dung tren TONG (phong + dich vu), VAT 10% tinh tren gia SAU GIAM.
-        // Phu thu (dv.loaiDv = "Phu thu") KHONG cong vao tienDichVu (chi ghi rieng de hien thi dong "Phu thu"),
-        // con phu thu khong chiu giam KM va khong chiu VAT - cong thang vao tongTien cuoi.
+        // KM: ap dung tren TONG (phong + dich vu, bao gom ca phu thu), VAT 10% tinh tren gia SAU GIAM.
         BigDecimal tienGiam = tinhTienGiam(amountPhong.add(amountDv), dp.getKm());
         BigDecimal tongSauGiam = amountPhong.add(amountDv).subtract(tienGiam);
         BigDecimal tienVat = tongSauGiam.multiply(VATCD).setScale(2, RoundingMode.HALF_UP);
-        BigDecimal amountTongTien = tongSauGiam.add(tienVat).add(amountPhuThu);
+        BigDecimal amountTongTien = tongSauGiam.add(tienVat);
 
         //-------------------------------------------------------deprecated--
         // KHONG doi trangThai DatPhong o day — don nay la "Yeu cau dat phong",

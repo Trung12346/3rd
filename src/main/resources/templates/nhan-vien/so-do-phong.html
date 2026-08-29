@@ -2292,22 +2292,20 @@
             document.querySelectorAll('.sdp-room-cell').forEach(capNhatBadgeCheckIn);
         }
 
-        // Đơn đang trong khoảng lưu trú tại đúng thời điểm hiện tại
-        //  - Đã nhận phòng thực tế (checkinThuc có giá trị): coi la don hien tai
-        //    ngay ca khi thoi diem hien tai con truoc gio nhan phong du kien (checkin).
-        //  - Chua nhan phong thuc te: giu quy tac cu, chi xet theo gio nhan phong du kien.
-        //  - Bo qua moc gio tra phong du kien (checkout): don van duoc coi la "hien tai"
-        //    cho toi khi co checkoutThuc (da tra phong thuc te).
+        // Đơn đang gắn với phòng này, coi là "đơn hiện tại" de hien nut "Xem đơn
+        // hiện tại" bat ke tinh trang thanh toan hay da den gio nhan phong hay
+        // chua - nhan vien co the can xem/chinh sua don tu som (vd truoc khi
+        // khach dat coc/thanh toan xong), khong nen bi chan boi cac dieu kien
+        // thoi gian/thanh toan nua.
+        //  - Da tra phong thuc te (checkoutThuc): khong con la don hien tai.
+        //  - Tat ca cac truong hop con lai (chua den gio nhan phong, chua thanh
+        //    toan du, dang cho xac nhan...) deu duoc coi la don hien tai.
         function tinDonHienTai(maPhong) {
             var list = getBookings(maPhong);
             for (var i = 0; i < list.length; i++) {
                 var b = list[i];
                 if (parseDt(b.checkoutThuc)) continue; // da tra phong thuc te -> khong con la don hien tai
-
-                if (parseDt(b.checkinThuc)) return b; // da nhan phong thuc te -> luon hien thi
-
-                var ci = parseDt(b.checkin);
-                if (ci && now >= ci) return b; // chua nhan phong thuc te -> theo quy tac cu (chi con dieu kien duoi)
+                return b;
             }
             return null;
         }
@@ -4165,6 +4163,16 @@
         // Nhieu file nhung, dung "window." de expose ra global cho panel
         // "Khach cho check-in" ben canh co the goi lai duoc.
         window.moDonHienTai = moDonHienTai;
+
+        // Expose them ham nhung 1 doan HTML (da fetch san, vd tu ket qua submit
+        // form "Luu Thay Doi" ben trong chi-tiet-dat-phong.html) vao lai dung
+        // cho #sdpDonContent, ma KHONG dieu huong ca trinh duyet - dung khi
+        // form ben trong sidebar submit bang AJAX de tranh thoat khoi trang
+        // So Do Phong.
+        window.napLaiNoiDungDonTuHtml = function (html, donId) {
+            nhungNoiDungDon(html);
+            if (donId) taiGiayToChoCacHangCuaDon(donId);
+        };
 
         // Expose lai cac ham/dung chung cua khung "giay to" de sidebar "Dat
         // phong tai quay" (nam trong 1 IIFE khac o duoi trang) co the tai su

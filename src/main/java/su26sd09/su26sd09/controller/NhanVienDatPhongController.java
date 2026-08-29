@@ -330,6 +330,13 @@ public class NhanVienDatPhongController {
         // dam bao template chi dung mot expression don gian [[${loaiDichVuMap[ct.id]}]].
         List<su26sd09.su26sd09.entity.Chi_tiet_dich_vu> ctdvList = ctdvService.findByDatPhongId(id);
         Map<Integer, String> loaiDichVuMap = new HashMap<>();
+        // Gia don vi hien thi cho tung dong dich vu: LUON uu tien chi_tiet_dich_vu.donGia
+        // (gia thuc te da chot luc dat/them dich vu, khong doi dù bang gia dich_vu goc
+        // thay doi sau do), chia lai cho soluong de ra don gia/1 don vi (donGia dang luu
+        // la THANH TIEN ca dong = gia*soluong, xem capNhatDichVuDatPhong()). Tinh o day
+        // (Java, BigDecimal.divide co RoundingMode) de tranh ArithmeticException khi
+        // chia khong het (vi du 100000/3) neu tinh truc tiep trong Thymeleaf SpEL.
+        Map<Integer, BigDecimal> giaDonViMap = new HashMap<>();
         for (su26sd09.su26sd09.entity.Chi_tiet_dich_vu ct : ctdvList) {
             String loai = "THUONG";
             String dvTen = "(null)";
@@ -348,11 +355,22 @@ public class NhanVienDatPhongController {
                     + " dv.ten=" + dvTen + " dv.loaiDv=" + dvLoai
                     + " donGia=" + ct.getDonGia() + " => loai=" + loai);
             loaiDichVuMap.put(ct.getId(), loai);
+
+            int soLuong = (ct.getSoluong() != null && ct.getSoluong() > 0) ? ct.getSoluong() : 1;
+            // Luon lay gia tu chi_tiet_dich_vu.don_gia (KHONG fallback ve dich_vu.gia nua,
+            // vi dich_vu.gia la gia goc trong danh muc, co the da thay doi/khong dung voi
+            // gia thuc te da chot luc dat/them dich vu). Neu don_gia null (du lieu thieu) thi
+            // hien thi 0 de de phat hien, thay vi lay nham gia catalog gay sai lech.
+            BigDecimal giaDonVi = (ct.getDonGia() != null)
+                    ? ct.getDonGia().divide(BigDecimal.valueOf(soLuong), 0, RoundingMode.HALF_UP)
+                    : BigDecimal.ZERO;
+            giaDonViMap.put(ct.getId(), giaDonVi);
         }
         System.out.println("[DEBUG-NVDPC] don#" + id + " ctdvList.size=" + ctdvList.size()
                 + " loaiDichVuMap.size=" + loaiDichVuMap.size() + " map=" + loaiDichVuMap);
         model.addAttribute("chiTietDichVuList", ctdvList);
         model.addAttribute("loaiDichVuMap", loaiDichVuMap);
+        model.addAttribute("giaDonViMap", giaDonViMap);
         model.addAttribute("dichVuList", dichVuService.findActiveThuong());
         model.addAttribute("kmJson", buildKhuyenMaiJson());
         model.addAttribute("tongPhuThu", tongPhuThu);
@@ -560,19 +578,6 @@ public class NhanVienDatPhongController {
         }
         if (treEm == null || treEm < 0) {
             errors.add("So tre em khong duoc am.");
-        }
-        if (ngayNhan != null && ngayTra != null && dichVuIds != null) {
-            for (Integer maDichVu : dichVuIds) {
-                String ngaySuDungStr = allParams.get("ngaySuDung_" + maDichVu);
-                if (ngaySuDungStr == null || ngaySuDungStr.isBlank()) {
-                    continue;
-                }
-                LocalDateTime ngaySuDung = LocalDateTime.parse(ngaySuDungStr);
-                if (ngaySuDung.isBefore(ngayNhan) || ngaySuDung.isAfter(ngayTra)) {
-                    errors.add("Ngay su dung dich vu phai nam trong khoang luu tru.");
-                    break;
-                }
-            }
         }
         // Validate dịch vụ phát sinh: nếu có tên thì bắt buộc đơn giá > 0 và ghi chú không rỗng
         if (phatSinhTenList != null && phatSinhDonGiaList != null) {
@@ -1894,10 +1899,11 @@ public class NhanVienDatPhongController {
         return new KetQuaPhuThu(BigDecimal.ZERO, "Trả phòng đúng giờ hoặc trước giờ check-out đã đặt — không phụ thu.");
     }
 
-    /** Tạo 1 dòng chi_tiet_dich_vu phụ thu, gắn vào dịch vụ "Phụ thu nhận/trả phòng" (tự tạo nếu chưa có). */
+    /** Tạo 1 dòng chi_tiet_dich_vu phụ thu, gắn vào 1 dịch vụ "Phụ thu nhận/trả phòng" MỚI
+     *  (tạo mới moi lan, mang dung gia phu thu thuc te cua lan nay - xem taoMoiDichVuPhuThu). */
     private void luuChiTietDichVuPhuThu(DatPhong dp, String ghiChu, BigDecimal donGia) {
         String tenDv = "check-in som".equals(ghiChu) ? "Phụ thu nhận phòng sớm" : "Phụ thu trả phòng muộn";
-        Dich_vu dv = timHoacTaoDichVuPhuThu(tenDv);
+        Dich_vu dv = taoMoiDichVuPhuThu(tenDv, donGia);
 
         Chi_tiet_dich_vu ctdv = new Chi_tiet_dich_vu();
         ctdv.setDatPhong(dp);
@@ -2002,15 +2008,20 @@ public class NhanVienDatPhongController {
         return String.format("%,.0f", tien.doubleValue()) + " VND";
     }
 
-    private Dich_vu timHoacTaoDichVuPhuThu(String ten) {
-        for (Dich_vu dv : dichVuService.findAll()) {
-            if (ten.equalsIgnoreCase(dv.getTen_dich_vu())) {
-                return dv;
-            }
-        }
+    /**
+     * Tao 1 dong Dich_vu MOI cho MOI LAN phat sinh phu thu nhan phong som / tra
+     * phong muon, thay vi dung chung 1 dich vu "placeholder" voi gia = 0 cho tat
+     * ca cac lan (cach cu: timHoacTaoDichVuPhuThu tim theo ten roi tai su dung,
+     * gia luon la 0 vi chi tao 1 lan duy nhat luc dau). Voi cach moi, dich_vu.gia
+     * duoc gan DUNG bang so tien phu thu thuc te cua lan nay (donGia), nen moi
+     * dong chi_tiet_dich_vu deu tro toi 1 dich_vu rieng phan anh dung gia tri cua
+     * no - khong con tinh trang gia catalog = 0 (dv gia) trong khi chi_tiet_dich_vu
+     * moi la noi luu gia dung.
+     */
+    private Dich_vu taoMoiDichVuPhuThu(String ten, BigDecimal donGia) {
         Dich_vu dv = new Dich_vu();
         dv.setTen_dich_vu(ten);
-        dv.setGia(BigDecimal.ZERO);
+        dv.setGia(donGia != null ? donGia : BigDecimal.ZERO);
         dv.setDonVi("lần");
         dv.setHoatDong(true);
         dv.setLoaiDv("Phu thu");
@@ -2850,7 +2861,7 @@ public class NhanVienDatPhongController {
         // binh thuong, de khoan phu thu nay hien thi dong bo o moi noi khac trong
         // he thong (chi tiet dat phong, hoa don...).
         if (viPhamNhanSom) {
-            Dich_vu dvPhuThuSom = timHoacTaoDichVuPhuThu("Phụ thu nhận phòng sớm");
+            Dich_vu dvPhuThuSom = taoMoiDichVuPhuThu("Phụ thu nhận phòng sớm", soTienPhuThuSom);
             Chi_tiet_dich_vu ctPhuThuSom = new Chi_tiet_dich_vu();
             ctPhuThuSom.setDatPhong(savedDp);
             ctPhuThuSom.setDv(dvPhuThuSom);
