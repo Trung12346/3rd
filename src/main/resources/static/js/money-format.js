@@ -16,8 +16,35 @@
 (function (window, document) {
     'use strict';
 
+    /**
+     * Chuan hoa 1 chuoi da format/tho thanh chuoi so nguyen thuan (VND, khong
+     * co phan thap phan). QUAN TRONG: khong the chi xoa moi ky tu khong phai
+     * chu so (regex /[^\d]/g), vi gia tri BigDecimal tu server (vd tu
+     * th:field voi cot decimal(x,2)) co the render ra dang "1200000.00".
+     * Neu xoa thang dau cham/phay thap phan thi "1200000.00" -> "120000000",
+     * tuc bi nhan nham len 100 lan. Ham nay phat hien dau phan cach thap phan
+     * (dau cham/phay cuoi cung, theo sau boi dung 1-2 chu so) va bo phan
+     * thap phan do di truoc khi ghep cac nhom hang nghin lai.
+     */
     function digitsOnly(value) {
-        return (value || '').toString().replace(/[^\d]/g, '');
+        var s = (value || '').toString().trim();
+        if (s === '') return '';
+
+        var lastDot = s.lastIndexOf('.');
+        var lastComma = s.lastIndexOf(',');
+        var sepIndex = Math.max(lastDot, lastComma);
+
+        if (sepIndex !== -1) {
+            var fracPart = s.substring(sepIndex + 1);
+            // Chi coi day la dau phan cach thap phan neu phan sau no la
+            // 1-2 chu so thuan tuy (vd ".00", ",5") - con lai (vd dau phan
+            // cach hang nghin ",000") thi giu nguyen de gop vao phan nguyen.
+            if (/^\d{1,2}$/.test(fracPart)) {
+                s = s.substring(0, sepIndex);
+            }
+        }
+
+        return s.replace(/[^\d]/g, '');
     }
 
     /** Tra ve so nguyen (khong dau phay) tu 1 input hoac 1 chuoi da format. */
