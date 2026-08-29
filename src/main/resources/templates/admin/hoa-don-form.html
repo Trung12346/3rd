@@ -77,33 +77,32 @@
                 </div>
                 <div class="admin-field">
                     <label>Tiền phòng</label>
-                    <input type="number" th:field="*{tienPhong}" th:readonly="${hoaDon.id != 0}">
+                    <input type="text" inputmode="numeric" class="money-input" th:field="*{tienPhong}" th:readonly="${hoaDon.id != 0}">
                 </div>
                 <div class="admin-field">
                     <label>Tiền dịch vụ</label>
-                    <input type="number" th:field="*{tienDichVu}" th:readonly="${hoaDon.id != 0}">
+                    <input type="text" inputmode="numeric" class="money-input" th:field="*{tienDichVu}" th:readonly="${hoaDon.id != 0}">
                 </div>
                 <div class="admin-field" th:if="${amountPhuThu != null and amountPhuThu.signum() > 0}">
                     <label>Phụ thu check-in sớm / check-out muộn</label>
-                    <input type="number" th:value="${amountPhuThu}" readonly>
+                    <input type="text" inputmode="numeric" class="money-input" th:value="${amountPhuThu}" readonly>
                 </div>
                 <div class="admin-field">
                     <label>Tiền giảm</label>
-                    <input type="number" th:field="*{tienGiam}" th:readonly="${hoaDon.id != 0}">
+                    <input type="text" inputmode="numeric" class="money-input" th:field="*{tienGiam}" th:readonly="${hoaDon.id != 0}">
                 </div>
                 <div class="admin-field">
                     <label>Tiền VAT</label>
-                    <input type="number" th:field="*{tienVat}" th:readonly="${hoaDon.id != 0}">
+                    <input type="text" inputmode="numeric" class="money-input" th:field="*{tienVat}" th:readonly="${hoaDon.id != 0}">
                 </div>
                 <div class="admin-field">
                     <label>Tổng tiền</label>
-                    <input type="number" th:field="*{tongTien}" th:readonly="${hoaDon.id != 0}">
+                    <input type="text" inputmode="numeric" class="money-input" th:field="*{tongTien}" th:readonly="${hoaDon.id != 0}">
                 </div>
                 <div class="admin-field">
                     <div class="admin-field">
                         <label>Đã thanh toán</label>
-                        <input type="number" th:field="*{daThanhToan}"
-                               min="0" step="1000"
+                        <input type="text" inputmode="numeric" class="money-input" th:field="*{daThanhToan}"
                                th:disabled="${hoaDon.daThanhToan != null and hoaDon.tongTien != null
                       and hoaDon.daThanhToan.compareTo(hoaDon.tongTien) >= 0}">
 
@@ -127,5 +126,6 @@
 <footer>
     <p>&copy; 2026 Hotel. All rights reserved.</p>
 </footer>
+<script src="/js/money-format.js"></script>
 </body>
 </html>

@@ -490,7 +490,7 @@
 
                 <div class="admin-field">
                     <label>Giá Mỗi Đêm (VND)</label>
-                    <input type="number" th:field="*{giaMoiDem}" id="giaMoiDemInput" min="0" step="1000"
+                    <input type="text" inputmode="numeric" class="money-input" th:field="*{giaMoiDem}" id="giaMoiDemInput"
                            placeholder="Tự động theo loại phòng" readonly
                            title="Giá tự động lấy theo giá cơ bản của loại phòng">
                 </div>
@@ -699,6 +699,7 @@
             var option = loaiPhongSelect.options[loaiPhongSelect.selectedIndex];
             var gia = option ? option.getAttribute('data-gia') : null;
             giaInput.value = gia ? gia : '';
+            if (window.MoneyFormat) { MoneyFormat.format(giaInput); }
         }
 
         if (loaiPhongSelect) {
@@ -736,6 +737,7 @@
         }
     })();
 </script>
+<script src="/js/money-format.js"></script>
 
 <footer>
     <p>&copy; 2026 Hotel. All rights reserved.</p>

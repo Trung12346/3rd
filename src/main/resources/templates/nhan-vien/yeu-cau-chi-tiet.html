@@ -434,7 +434,7 @@
             <div class="info-cell">
                 <div class="info-cell-label"><i class="fa-solid fa-money-bill-trend-up"></i> Giá trị giảm</div>
                 <div class="info-cell-value">
-                    <span th:text="${khuyenMai.giatriGiam}"></span>
+                    <span th:text="${khuyenMai.giatriGiam != null ? #numbers.formatDecimal(khuyenMai.giatriGiam, 0, 'COMMA', 0, 'POINT') : ''}"></span>
                     <span th:text="${khuyenMai.loaiGiam == 'PERCENT' ? '%' : ' VND'}"></span>
                 </div>
             </div>

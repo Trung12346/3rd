@@ -155,13 +155,13 @@
                     </div>
                     <div class="admin-field">
                         <label>Tổng tiền từ</label>
-                        <input type="number" name="tongTienTu"
-                               min="0" step="1000" th:value="${tongTienTu}">
+                        <input type="text" inputmode="numeric" class="money-input" name="tongTienTu"
+                               th:value="${tongTienTu}">
                     </div>
                     <div class="admin-field">
                         <label>Tổng tiền đến</label>
-                        <input type="number" name="tongTienDen"
-                               min="0" step="1000" th:value="${tongTienDen}">
+                        <input type="text" inputmode="numeric" class="money-input" name="tongTienDen"
+                               th:value="${tongTienDen}">
                     </div>
                     <div class="admin-field">
                         <label>Trạng thái thanh toán</label>
@@ -305,6 +305,7 @@
 </footer>
 
 <script src="/xuat-pdf-handler.js"></script>
+<script src="/js/money-format.js"></script>
 <script>
     function openDvModal(id) {
         document.getElementById('dvModal' + id).classList.add('show');

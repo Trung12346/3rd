@@ -62,7 +62,7 @@
                 </div>
                 <div class="admin-field">
                     <label>Gia moi dem (VND)</label>
-                    <input type="number" th:field="*{giaMoiDem}" min="0" step="1000" placeholder="VD: 500000" required>
+                    <input type="text" inputmode="numeric" class="money-input" th:field="*{giaMoiDem}" placeholder="VD: 500000" required>
                 </div>
                 <div class="admin-field">
                     <label>Trang thai</label>
@@ -183,5 +183,6 @@
     <p>&copy; 2026 Hotel. All rights reserved.</p>
 </footer>
 
+<script src="/js/money-format.js"></script>
 </body>
 </html>

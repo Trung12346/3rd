@@ -790,12 +790,29 @@ public class PhongController {
      * thong tin lien he nen duoc bo qua form).
      */
     private DatPhong createBookingFromDraft(su26sd09.su26sd09.dto.PendingBookingDraft draft, KhachHang khachHang) {
-        List<Phong> phongDuocChon = phongService.assignRoomsForType(
-                draft.getLoaiPhongId(), draft.getSoLuong(), draft.getNgayNhan(), draft.getNgayTra());
+        // FIX (race condition): assignRoomsForType() chi "synchronized" cho BUOC
+        // CHON phong (doc DB + so sanh trong bo nho), nhung viec THUC SU GHI
+        // (ChiTietDatPhong) danh dau phong da bi giu cho lai nam o
+        // createAutoAssignedBooking() - truoc day goi RIENG BEN NGOAI khoi
+        // synchronized block. Giua 2 buoc do, mot request khac (tu chinh luong
+        // nay, tu "Dat phong tai quay", hoac "Len lich dat phong" o So Do Phong)
+        // co the xen vao va cung chon/giu duoc CUNG mot phong cho khoang ngay
+        // trung nhau (double-booking). De dong lai ke ho nay, gop CA HAI buoc
+        // "chon phong" + "ghi giu cho" vao CHUNG 1 khoi synchronized, dung
+        // chung 1 khoa (phongService - CUNG mot bean/monitor voi
+        // "synchronized" instance method assignRoomsForType(), nen khoa nay
+        // se loai tru lan nhau voi TAT CA cac diem tao dat phong khac trong
+        // he thong cung dang khoa tren phongService).
+        List<Phong> phongDuocChon;
+        DatPhong datPhong;
+        synchronized (phongService) {
+            phongDuocChon = phongService.assignRoomsForType(
+                    draft.getLoaiPhongId(), draft.getSoLuong(), draft.getNgayNhan(), draft.getNgayTra());
 
-        DatPhong datPhong = datphongservice.createAutoAssignedBooking(
-                phongDuocChon, khachHang, draft.getNgayNhan(), draft.getNgayTra(),
-                draft.getNguoiLon(), draft.getTreEm(), draft.getMaCccd());
+            datPhong = datphongservice.createAutoAssignedBooking(
+                    phongDuocChon, khachHang, draft.getNgayNhan(), draft.getNgayTra(),
+                    draft.getNguoiLon(), draft.getTreEm(), draft.getMaCccd());
+        }
 
         if (draft.getMaKhuyenMai() != null) {
             KhuyenMai km = khuyenMaiService.findbyId(draft.getMaKhuyenMai());

@@ -59,7 +59,7 @@
                 </div>
                 <div class="admin-field">
                     <label>giá tối thiểu có thể giảm</label>
-                    <input type="number" th:field="*{giaToiThieuDuocGiam}" min="1" step="any"  required>
+                    <input type="text" inputmode="numeric" class="money-input" th:field="*{giaToiThieuDuocGiam}" required>
                 </div>
                 <div class="admin-field">
                     <label>Ngày bắt đầu</label>
@@ -276,5 +276,6 @@
     <p>&copy; 2026 Hotel. All rights reserved.</p>
 </footer>
 
+<script src="/js/money-format.js"></script>
 </body>
 </html>

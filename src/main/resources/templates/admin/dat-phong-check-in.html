@@ -6,6 +6,7 @@
     <title>Nhận Phòng<span th:if="${dp != null}" th:text="' - Đơn #' + ${dp.id}"></span> | Hotel</title>
     <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/3.44.0/tabler-icons.min.css">
+    <script src="/js/money-format.js"></script>
 </head>
 <body>
 <style>
@@ -1721,7 +1722,7 @@
                             </div>
                             <div class="ff">
                                 <label>Đơn giá (VND) <span style="color:#9F2F25;">*</span></label>
-                                <input type="number" id="psDonGia" placeholder="VD: 150000">
+                                <input type="text" inputmode="numeric" class="money-input" id="psDonGia" placeholder="VD: 150000">
                             </div>
                             <div class="ff">
                                 <label>Số lượng <span style="color:#9F2F25;">*</span></label>
@@ -2208,7 +2209,7 @@
 
             var ten = tenEl.value.trim();
             var giaRaw = giaEl.value.trim();
-            var gia = parseFloat(giaRaw);
+            var gia = MoneyFormat.parse(giaRaw);
             var slRaw = slEl.value.trim();
             var sl = parseInt(slRaw, 10);
             var ngay = ngayEl.value;

@@ -59,7 +59,7 @@
                 </div>
                 <div class="admin-field">
                     <label>Giá cơ bản (VND)</label>
-                    <input type="number" th:field="*{giaCoBan}" min="0" step="1000" placeholder="VD: 1200000" required>
+                    <input type="text" inputmode="numeric" class="money-input" th:field="*{giaCoBan}" placeholder="VD: 1200000" required>
                 </div>
 
                 <div class="admin-field full">
@@ -103,11 +103,11 @@
             </div>
             <div class="lp-search-item">
                 <label>Giá từ</label>
-                <input type="number" name="minGia" min="0" step="1000" th:value="${minGia}">
+                <input type="text" inputmode="numeric" class="money-input" name="minGia" th:value="${minGia}">
             </div>
             <div class="lp-search-item">
                 <label>Giá đến</label>
-                <input type="number" name="maxGia" min="0" step="1000" th:value="${maxGia}">
+                <input type="text" inputmode="numeric" class="money-input" name="maxGia" th:value="${maxGia}">
             </div>
             <div class="lp-search-item">
                 <label>Sức chứa tối thiểu</label>
@@ -268,5 +268,6 @@
         };
     })();
 </script>
+<script src="/js/money-format.js"></script>
 </body>
 </html>

@@ -6,6 +6,7 @@
     <title th:text="'Chi tiết đặt phòng #' + (${datPhong != null ? datPhong.id : ''}) + ' | Hotel'">Chi tiết đặt phòng | Hotel</title>
     <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="/js/money-format.js"></script>
     <style>
         *, *::before, *::after { box-sizing: border-box; }
         body { background: #f4f7fa; }
@@ -666,7 +667,7 @@
 
             <div class="ff">
                 <label>Số tiền thu</label>
-                <input type="number" name="soTien" min="0" step="1000" required
+                <input type="text" inputmode="numeric" class="money-input" name="soTien" required
                        th:readonly="${hoaDonDaXuat}"
                        th:value="${hoaDon != null and hoaDon.tongTien != null and hoaDon.daThanhToan != null
                                    and hoaDon.tongTien.subtract(hoaDon.daThanhToan).signum() > 0}
@@ -825,7 +826,7 @@
                         </div>
                         <div class="ff">
                             <label>Đơn giá (VND) <span style="color:#dc2626;">*</span></label>
-                            <input type="number" id="psDonGia" placeholder="VD: 150000">
+                            <input type="text" inputmode="numeric" class="money-input" id="psDonGia" placeholder="VD: 150000">
                         </div>
                         <div class="ff">
                             <label>Số lượng <span style="color:#dc2626;">*</span></label>
@@ -1158,7 +1159,7 @@
 
         const ten = tenEl.value.trim();
         const giaRaw = giaEl.value.trim();
-        const gia = parseFloat(giaRaw);
+        const gia = MoneyFormat.parse(giaRaw);
         const soLuongRaw = soLuongEl.value.trim();
         const soLuong = parseInt(soLuongRaw);
         const ngay = ngayEl.value;

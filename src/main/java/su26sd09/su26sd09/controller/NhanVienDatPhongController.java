@@ -2370,15 +2370,6 @@ public class NhanVienDatPhongController {
         LocalDateTime ngayNhan = checkin.atTime(14, 0);
         LocalDateTime ngayTra = checkout.atTime(12, 0);
 
-        // Overlap dung chinh xac cung 1 luat voi lich phong hien thi tren So Do Phong
-        // (nua-mo [checkin, checkout)) thay vi tin vao trangThai tuc thoi cua phong.
-        java.util.Set<Integer> maPhongDaKhoa = phongService.findMaPhongDaKhoaTrongKhoang(ngayNhan, ngayTra);
-        if (maPhongDaKhoa.contains(maPhong)) {
-            result.put("ok", false);
-            result.put("loi", "Phòng đã có lịch trong khoảng ngày đã chọn.");
-            return result;
-        }
-
         KhuyenMai km = null;
         if (khuyenMaiCode != null && !khuyenMaiCode.isBlank()) {
             List<KhuyenMai> kms = khuyenMaiService.findbyNameVoucher(khuyenMaiCode.trim());
@@ -2448,33 +2439,59 @@ public class NhanVienDatPhongController {
             return result;
         }
 
-        DatPhong dp = new DatPhong();
-        dp.setHoten(hoTen);
-        dp.setEmail(email);
-        dp.setSdt(sdt);
-        dp.setMa_cccd(cccd.trim());
-        dp.setNgaydatPhong(ngayNhan);
-        dp.setNgaytraPhong(ngayTra);
-        dp.setSonguoiLon(slNguoiLon);
-        dp.setSotreEm(slTreEm);
-        dp.setYeuCauThem(ghiChu);
-        // Da tra du 100% -> coi nhu da chac chan, danh dau "Da xac nhan" ngay
-        // (khac voi luong khach tu dat online phai qua "Cho xac nhan"). Chua tra
-        // gi -> chi la mot yeu cau giu cho, danh dau "Yeu cau dat phong".
-        dp.setTrangThai(laDaTraDu ? "Da xac nhan" : "Yeu cau dat phong");
-        dp.setNgayTao(LocalDateTime.now());
-        dp.setKm(km);
-        dp.setNv(nhanVienXuLy);
+        // FIX (race condition): buoc kiem tra "phong con trong khong"
+        // (findMaPhongDaKhoaTrongKhoang) va buoc THUC SU GHI ChiTietDatPhong
+        // (danh dau phong da bi giu cho) phai la MOT THAO TAC NGUYEN TU (atomic),
+        // neu khong 2 nhan vien (hoac 1 nhan vien + 1 khach dang tu dat online)
+        // co the cung luc kiem tra thay phong con trong roi cung tao don cho
+        // CUNG mot phong/khoang ngay (double-booking). Gop lai kiem tra +
+        // ghi vao chung 1 khoi synchronized(phongService) - dung chung 1 khoa/
+        // monitor voi PhongService#assignRoomsForType() (synchronized instance
+        // method) va voi diem tao dat phong tu dong cua khach
+        // (PhongController#createBookingFromDraft) va voi diem "Dat phong tai
+        // quay" ben duoi, de ca 3 diem tao dat phong nay loai tru lan nhau.
+        DatPhong savedDp;
+        synchronized (phongService) {
+            // Overlap dung chinh xac cung 1 luat voi lich phong hien thi tren So Do
+            // Phong (nua-mo [checkin, checkout)) thay vi tin vao trangThai tuc thoi
+            // cua phong. Kiem tra LAI ngay tai day (thay vi chi kiem tra truoc do o
+            // ngoai khoi synchronized) de dam bao khong co request nao khac kip
+            // chen vao giua luc kiem tra va luc ghi.
+            java.util.Set<Integer> maPhongDaKhoa = phongService.findMaPhongDaKhoaTrongKhoang(ngayNhan, ngayTra);
+            if (maPhongDaKhoa.contains(maPhong)) {
+                result.put("ok", false);
+                result.put("loi", "Phòng đã có lịch trong khoảng ngày đã chọn. Vui lòng chọn phòng hoặc khoảng ngày khác.");
+                return result;
+            }
 
-        DatPhong savedDp = datPhongService.save(dp);
+            DatPhong dp = new DatPhong();
+            dp.setHoten(hoTen);
+            dp.setEmail(email);
+            dp.setSdt(sdt);
+            dp.setMa_cccd(cccd.trim());
+            dp.setNgaydatPhong(ngayNhan);
+            dp.setNgaytraPhong(ngayTra);
+            dp.setSonguoiLon(slNguoiLon);
+            dp.setSotreEm(slTreEm);
+            dp.setYeuCauThem(ghiChu);
+            // Da tra du 100% -> coi nhu da chac chan, danh dau "Da xac nhan" ngay
+            // (khac voi luong khach tu dat online phai qua "Cho xac nhan"). Chua tra
+            // gi -> chi la mot yeu cau giu cho, danh dau "Yeu cau dat phong".
+            dp.setTrangThai(laDaTraDu ? "Da xac nhan" : "Yeu cau dat phong");
+            dp.setNgayTao(LocalDateTime.now());
+            dp.setKm(km);
+            dp.setNv(nhanVienXuLy);
 
-        ChiTietDatPhong ctdp = new ChiTietDatPhong();
-        ctdp.setD(savedDp);
-        ctdp.setP(phong);
-        ctdp.setGiaMoiDem(phong.getGiaMoiDem());
-        ctdp.setGiaKhiDat(giaApDung.add(phuPhiNgoaiGio));
-        ctdp.setPhuPhi(phuPhiNgoaiGio);
-        chiTietDatPhongService.save(ctdp);
+            savedDp = datPhongService.save(dp);
+
+            ChiTietDatPhong ctdp = new ChiTietDatPhong();
+            ctdp.setD(savedDp);
+            ctdp.setP(phong);
+            ctdp.setGiaMoiDem(phong.getGiaMoiDem());
+            ctdp.setGiaKhiDat(giaApDung.add(phuPhiNgoaiGio));
+            ctdp.setPhuPhi(phuPhiNgoaiGio);
+            chiTietDatPhongService.save(ctdp);
+        }
 
         // Don duoc len lich (dat truoc) tu So Do Phong -> KHONG thay doi
         // Phong.trangThai o day. O model hien tai, kha dung cua phong duoc xet
@@ -2691,13 +2708,6 @@ public class NhanVienDatPhongController {
                 ? phong.getGiaMoiDem().multiply(kqPhuThuSom.tyLe).setScale(0, RoundingMode.HALF_UP)
                 : BigDecimal.ZERO;
 
-        java.util.Set<Integer> maPhongDaKhoa = phongService.findMaPhongDaKhoaTrongKhoang(ngayNhan, ngayTra);
-        if (maPhongDaKhoa.contains(maPhong)) {
-            result.put("ok", false);
-            result.put("loi", "Phòng đã có lịch trong khoảng ngày đã chọn.");
-            return result;
-        }
-
         KhuyenMai km = null;
         if (khuyenMaiCode != null && !khuyenMaiCode.isBlank()) {
             List<KhuyenMai> kms = khuyenMaiService.findbyNameVoucher(khuyenMaiCode.trim());
@@ -2750,46 +2760,65 @@ public class NhanVienDatPhongController {
             return result;
         }
 
-        DatPhong dp = new DatPhong();
-        dp.setHoten(hoTen);
-        dp.setEmail(email);
-        dp.setSdt(sdt);
-        dp.setMa_cccd(cccd.trim());
-        dp.setNgaydatPhong(ngayNhan);
-        dp.setNgaydatPhongThuc(ngayNhanThuc);
-        dp.setNgaytraPhong(ngayTra);
-        dp.setSonguoiLon(slNguoiLon);
-        dp.setSotreEm(slTreEm);
-        dp.setYeuCauThem(ghiChu);
-        // Dat tai quay = khach nhan phong ngay lap tuc, khac voi "Len lich dat
-        // phong" (chi "Da xac nhan", cho check-in sau).
-        dp.setTrangThai("Da nhan phong");
-        dp.setNgayTao(LocalDateTime.now());
-        dp.setKm(km);
-        dp.setNv(nhanVienXuLy);
+        // FIX (race condition): giong het luu y o lenLichDatPhongTuSoDoPhong() -
+        // gop kiem tra "phong con trong khong" + ghi ChiTietDatPhong (va cap nhat
+        // Phong.trangThai) vao CHUNG 1 khoi synchronized(phongService) de loai
+        // tru lan nhau voi TAT CA cac diem tao dat phong khac (khach tu dat,
+        // "Len lich dat phong") dang cung khoa tren phongService - tranh 2 nguoi
+        // (vd 2 nhan vien, hoac 1 nhan vien + 1 khach dang tu dat online) cung
+        // giu duoc CUNG mot phong cho khoang ngay trung nhau.
+        DatPhong savedDp;
+        BigDecimal giaApDung;
+        BigDecimal phuPhiNgoaiGio;
+        synchronized (phongService) {
+            java.util.Set<Integer> maPhongDaKhoa = phongService.findMaPhongDaKhoaTrongKhoang(ngayNhan, ngayTra);
+            if (maPhongDaKhoa.contains(maPhong)) {
+                result.put("ok", false);
+                result.put("loi", "Phòng đã có lịch trong khoảng ngày đã chọn. Vui lòng chọn phòng hoặc khoảng ngày khác.");
+                return result;
+            }
 
-        DatPhong savedDp = datPhongService.save(dp);
+            DatPhong dp = new DatPhong();
+            dp.setHoten(hoTen);
+            dp.setEmail(email);
+            dp.setSdt(sdt);
+            dp.setMa_cccd(cccd.trim());
+            dp.setNgaydatPhong(ngayNhan);
+            dp.setNgaydatPhongThuc(ngayNhanThuc);
+            dp.setNgaytraPhong(ngayTra);
+            dp.setSonguoiLon(slNguoiLon);
+            dp.setSotreEm(slTreEm);
+            dp.setYeuCauThem(ghiChu);
+            // Dat tai quay = khach nhan phong ngay lap tuc, khac voi "Len lich dat
+            // phong" (chi "Da xac nhan", cho check-in sau).
+            dp.setTrangThai("Da nhan phong");
+            dp.setNgayTao(LocalDateTime.now());
+            dp.setKm(km);
+            dp.setNv(nhanVienXuLy);
 
-        // Gia phong GOC (chua giam) X so dem + phu phi ngoai gio - giong het cach
-        // tinh o buoc kiem tra ben tren va cach ChiTietDatPhong.giaKhiDat duoc
-        // luu o moi noi khac trong he thong (luon la gia GOC, KHONG bake giam
-        // gia vao don gia).
-        long soDem = Math.max(1, ChronoUnit.DAYS.between(ngayNhan.toLocalDate(), ngayTra.toLocalDate()));
-        BigDecimal giaApDung = phong.getGiaMoiDem().multiply(BigDecimal.valueOf(soDem));
-        BigDecimal phuPhiNgoaiGio = phongService.calculateExtraFeeFor(maPhong, ngayNhan, ngayTra);
+            savedDp = datPhongService.save(dp);
 
-        ChiTietDatPhong ctdp = new ChiTietDatPhong();
-        ctdp.setD(savedDp);
-        ctdp.setP(phong);
-        ctdp.setGiaMoiDem(phong.getGiaMoiDem());
-        ctdp.setGiaKhiDat(giaApDung.add(phuPhiNgoaiGio));
-        ctdp.setPhuPhi(phuPhiNgoaiGio);
-        chiTietDatPhongService.save(ctdp);
+            // Gia phong GOC (chua giam) X so dem + phu phi ngoai gio - giong het cach
+            // tinh o buoc kiem tra ben tren va cach ChiTietDatPhong.giaKhiDat duoc
+            // luu o moi noi khac trong he thong (luon la gia GOC, KHONG bake giam
+            // gia vao don gia).
+            long soDem = Math.max(1, ChronoUnit.DAYS.between(ngayNhan.toLocalDate(), ngayTra.toLocalDate()));
+            giaApDung = phong.getGiaMoiDem().multiply(BigDecimal.valueOf(soDem));
+            phuPhiNgoaiGio = phongService.calculateExtraFeeFor(maPhong, ngayNhan, ngayTra);
 
-        // Phong chuyen thang sang "Dang su dung" (nhan phong tuc thi), khac voi
-        // "Len lich dat phong" chi chuyen sang "Da dat truoc".
-        phong.setTrangThai("Dang su dung");
-        phongService.save1(phong);
+            ChiTietDatPhong ctdp = new ChiTietDatPhong();
+            ctdp.setD(savedDp);
+            ctdp.setP(phong);
+            ctdp.setGiaMoiDem(phong.getGiaMoiDem());
+            ctdp.setGiaKhiDat(giaApDung.add(phuPhiNgoaiGio));
+            ctdp.setPhuPhi(phuPhiNgoaiGio);
+            chiTietDatPhongService.save(ctdp);
+
+            // Phong chuyen thang sang "Dang su dung" (nhan phong tuc thi), khac voi
+            // "Len lich dat phong" chi chuyen sang "Da dat truoc".
+            phong.setTrangThai("Dang su dung");
+            phongService.save1(phong);
+        }
 
         BigDecimal amountPhong = giaApDung.add(phuPhiNgoaiGio);
         BigDecimal amountDv = BigDecimal.ZERO;

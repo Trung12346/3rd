@@ -353,7 +353,7 @@
             <div class="admin-grid">
                 <div class="admin-field">
                     <label>Giá hoàn tiền (VND) <span style="color:#dc2626;">*</span></label>
-                    <input type="number" name="soTienHoanNhap" id="soTienHoanNhap" min="0" step="1000"
+                    <input type="text" inputmode="numeric" class="money-input" name="soTienHoanNhap" id="soTienHoanNhap"
                            th:value="${hoaDon.soTienHoan != null ? hoaDon.soTienHoan : 0}"
                            th:readonly="${hoaDon.tyLeHoan == null or hoaDon.tyLeHoan.signum() != 0}"
                            th:required="${hoaDon.tyLeHoan == null or hoaDon.tyLeHoan.signum() != 0}">
@@ -562,7 +562,7 @@
 
     function xacNhanTienMat() {
         var input = document.getElementById('soTienHoanNhap');
-        var soTien = input ? Number(input.value) : 0;
+        var soTien = input ? MoneyFormat.parse(input) : 0;
         if (!soTien || soTien <= 0) {
             alert('Vui lòng nhập số tiền hoàn hợp lệ (> 0).');
             return false;

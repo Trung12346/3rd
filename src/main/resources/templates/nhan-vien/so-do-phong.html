@@ -5539,7 +5539,16 @@
                 .then(function (res) { return res.json(); })
                 .then(function (kq) {
                     if (!kq.ok) {
-                        dienLoiSubmit(kq.loi || (laModeQuay ? 'Không thể đặt phòng tại quầy.' : 'Không thể lên lịch đặt phòng.'));
+                        var thongBaoLoi = kq.loi || (laModeQuay ? 'Không thể đặt phòng tại quầy.' : 'Không thể lên lịch đặt phòng.');
+                        dienLoiSubmit(thongBaoLoi);
+                        // Popup rieng cho truong hop het phong (race condition: phong vua
+                        // bi giu boi mot giao dich khac giua luc mo sidebar va luc bam luu)
+                        // - dung chung "staff-toast" (window.staffToast, da wire san o
+                        // fragments/headers/staff-header.html) de nhan vien de nhan biet
+                        // ngay ca khi khong nhin vao vung loi inline trong sidebar.
+                        if (window.staffToast) {
+                            window.staffToast(thongBaoLoi, 'error', 5000);
+                        }
                         return;
                     }
                     dongLichSidebar();
