@@ -510,7 +510,7 @@
 
     function xacNhanTienMat() {
         var soTien = [[${hoaDon.soTienHoan != null ? hoaDon.soTienHoan : 0}]];
-        return confirm('Xác nhận đã trả TIỀN MẶT ' + soTien.toLocaleString('vi-VN') + ' VND tại quầy cho khách?');
+        return confirm('Xác nhận đã trả TIỀN MẶT ' + soTien.toLocaleString('en-US') + ' VND tại quầy cho khách?');
     }
 
     // Confirm cho nút "Hủy đơn không hoàn" — gộp vào form TienMat khi tyLeHoan = 0
@@ -530,7 +530,7 @@
             return false;
         }
         var soTien = [[${hoaDon.soTienHoan != null ? hoaDon.soTienHoan : 0}]];
-        return confirm('Sẽ chuyển sang VNPay để thực hiện giao dịch ' + soTien.toLocaleString('vi-VN')
+        return confirm('Sẽ chuyển sang VNPay để thực hiện giao dịch ' + soTien.toLocaleString('en-US')
             + ' VND hoàn về STK ' + stk + ' (' + nh + '). Tiếp tục?');
     }
 

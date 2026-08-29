@@ -1494,7 +1494,7 @@
                             <div>
                                 <strong>Khách đến sớm ≥ 30 phút</strong>
                                 (<span th:text="${labelChenhLech}"></span>).
-                                Phụ phí check-in sớm: <strong>100.000 VND</strong>
+                                Phụ phí check-in sớm: <strong>100,000 VND</strong>
                                 — sẽ được cộng vào hóa đơn (tính 1 lần cho cả đơn).<br>
                                 <em>Lưu ý: khách đến trễ không phát sinh phụ phí.</em>
                             </div>
@@ -1946,7 +1946,7 @@
 
     function dinhDangTien(n) {
         if (isNaN(n)) return '0';
-        return new Intl.NumberFormat('vi-VN').format(n);
+        return new Intl.NumberFormat('en-US').format(n);
     }
 
     /**
@@ -2081,7 +2081,7 @@
     }
 
     function dinhDangTienVND(n) {
-        return Math.round(n || 0).toLocaleString('vi-VN') + ' VND';
+        return Math.round(n || 0).toLocaleString('en-US') + ' VND';
     }
 
     /** Build 1 the <tr> moi trong bang dich vu va chen vao cuoi <tbody>.
@@ -2220,7 +2220,7 @@
                 tenEl.focus(); return;
             }
             if (!giaRaw || isNaN(gia) || !(gia > 50000)) {
-                hienLoiPhatSinhCheckin(giaEl, 'Vui lòng nhập đơn giá lớn hơn 50.000 VND.');
+                hienLoiPhatSinhCheckin(giaEl, 'Vui lòng nhập đơn giá lớn hơn 50,000 VND.');
                 giaEl.focus(); return;
             }
             if (!slRaw || isNaN(sl) || sl < 1) {

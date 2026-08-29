@@ -1013,7 +1013,7 @@
                         </div>
                         <div class="room-price"
                              th:text="${ct.p != null} ? (${#numbers.formatDecimal(ct.p.giaMoiDem, 0, 'COMMA', 0, 'POINT')} + ' VND/đêm') : '0 VND/đêm'">
-                            1.200.000 VND/đêm
+                            1,200,000 VND/đêm
                         </div>
                     </div>
                 </div>
@@ -1045,7 +1045,7 @@
                                         th:value="${dv.id}"
                                         th:attr="data-gia=${dv.gia},data-ten=${dv.ten_dich_vu},data-donvi=${dv.donVi}"
                                         th:text="${dv.ten_dich_vu} + ' — ' + ${#numbers.formatDecimal(dv.gia, 0, 'COMMA', 0, 'POINT')} + ' VND/' + ${dv.donVi}">
-                                    Bữa sáng — 150.000 VND/người
+                                    Bữa sáng — 150,000 VND/người
                                 </option>
                             </select>
                         </div>
@@ -1230,7 +1230,7 @@
     (function () {
     const BookingValidate = {
         formatVND(n) {
-            return Math.round(n || 0).toLocaleString('vi-VN') + ' VND';
+            return Math.round(n || 0).toLocaleString('en-US') + ' VND';
         },
         hienThiLoi() {},
         capNhatMinNgayTra(ngayNhanEl, ngayTraEl) {
@@ -1444,7 +1444,7 @@
             return;
         }
         if (!giaRaw || isNaN(gia) || !(gia > 50000)) {
-            hienLoiPhatSinh(giaEl, 'Vui lòng nhập đơn giá lớn hơn 50.000 VND.');
+            hienLoiPhatSinh(giaEl, 'Vui lòng nhập đơn giá lớn hơn 50,000 VND.');
             giaEl.focus();
             return;
         }
@@ -1806,7 +1806,7 @@
         function fmtVnd(n) {
             if (n === null || n === undefined || isNaN(n)) return 'đ 0';
             const sign = n < 0 ? '-' : '';
-            return sign + 'đ ' + Math.abs(Math.round(n)).toLocaleString('vi-VN');
+            return sign + 'đ ' + Math.abs(Math.round(n)).toLocaleString('en-US');
         }
 
         function capNhatTatCa() {

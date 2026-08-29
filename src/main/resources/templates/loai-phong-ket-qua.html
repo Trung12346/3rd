@@ -1160,10 +1160,10 @@
             <label><i class="fa-solid fa-sack-dollar"></i> Khoảng giá</label>
             <select name="mucGia" id="heroPriceSelect" aria-label="Khoảng giá mỗi đêm">
                 <option value="" th:selected="${mucGia == null or mucGia == ''}">Tất cả mức giá</option>
-                <option value="0-500000" th:selected="${mucGia == '0-500000'}">0 - 500.000đ</option>
-                <option value="500000-1000000" th:selected="${mucGia == '500000-1000000'}">500.000đ - 1.000.000đ</option>
-                <option value="1000000-2000000" th:selected="${mucGia == '1000000-2000000'}">1.000.000đ - 2.000.000đ</option>
-                <option value="2000000-5000000" th:selected="${mucGia == '2000000-5000000'}">2.000.000đ - 5.000.000đ</option>
+                <option value="0-500000" th:selected="${mucGia == '0-500000'}">0 - 500,000đ</option>
+                <option value="500000-1000000" th:selected="${mucGia == '500000-1000000'}">500,000đ - 1,000,000đ</option>
+                <option value="1000000-2000000" th:selected="${mucGia == '1000000-2000000'}">1,000,000đ - 2,000,000đ</option>
+                <option value="2000000-5000000" th:selected="${mucGia == '2000000-5000000'}">2,000,000đ - 5,000,000đ</option>
             </select>
         </div>
 
@@ -1317,7 +1317,7 @@
                                     </select>
                                 </div>
 
-                                <!-- Them tre em: moi phong toi da 1 tre em, moi tre em +250.000/dem.
+                                <!-- Them tre em: moi phong toi da 1 tre em, moi tre em +250,000/dem.
                                      Nut duoc sua thanh dang button ro rang (co vien, nen, icon +)
                                      de nguoi dung nhan ra ngay va dam bam vao. -->
                                 <div class="child-toggle-row">
@@ -1330,7 +1330,7 @@
                                 <div class="child-panel js-child-panel">
                                     <div class="child-panel-inner">
                                         <p class="child-hint">
-                                            Lưu ý: mỗi phòng chỉ được thêm tối đa 1 trẻ em. Mỗi trẻ em tính thêm 250.000đ/đêm.
+                                            Lưu ý: mỗi phòng chỉ được thêm tối đa 1 trẻ em. Mỗi trẻ em tính thêm 250,000đ/đêm.
                                         </p>
                                         <div class="child-rows js-child-rows"></div>
                                         <div class="child-fee-summary js-child-fee-summary" style="display:none;"></div>
@@ -1805,10 +1805,10 @@
         const hiddenCccd = document.getElementById('hiddenMaCccd');
 
         function fmt(n) {
-            return n.toLocaleString('en-US').replace(/,/g, '.');
+            return n.toLocaleString('en-US');
         }
 
-        // ===== THEM TRE EM: moi phong toi da 1 tre em, moi tre em +250.000d/dem =====
+        // ===== THEM TRE EM: moi phong toi da 1 tre em, moi tre em +250,000d/dem =====
         const PHI_TRE_EM_MOI_DEM = 250000;
         const childState = new Map(); // card -> mang so tre em theo tung phong (0 hoac 1)
 

@@ -408,7 +408,7 @@
                         </span>
                     <span th:unless="${km.loaiGiam == 'PERCENT'}" class="promo-value">
                             <i class="fa-solid fa-sack-dollar"></i>
-                            Giảm <span th:text="${#numbers.formatDecimal(km.giatriGiam, 0, 'COMMA', 0, 'POINT')}">100.000</span> VND
+                            Giảm <span th:text="${#numbers.formatDecimal(km.giatriGiam, 0, 'COMMA', 0, 'POINT')}">100,000</span> VND
                         </span>
                     <button type="button" class="btn-copy" th:attr="onclick=|copyPromoCode(this, '${km.promoCode}')|">
                         Sao chép mã
@@ -424,7 +424,7 @@
                 <div class="promo-meta">
                         <span th:if="${km.giaToiThieuDuocGiam != null}">
                             <i class="fa-solid fa-receipt"></i>Áp dụng cho đơn từ
-                            <strong th:text="${#numbers.formatDecimal(km.giaToiThieuDuocGiam, 0, 'COMMA', 0, 'POINT') + ' VND'}">500.000 VND</strong>
+                            <strong th:text="${#numbers.formatDecimal(km.giaToiThieuDuocGiam, 0, 'COMMA', 0, 'POINT') + ' VND'}">500,000 VND</strong>
                         </span>
                 </div>
 

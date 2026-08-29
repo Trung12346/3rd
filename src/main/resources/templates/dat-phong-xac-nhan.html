@@ -469,7 +469,7 @@
                             </div>
                         </div>
                         <div class="room-price">
-                            <span th:text="${'đ ' + #numbers.formatDecimal(chiTiet.p.giaMoiDem, 0, 'COMMA', 0, 'POINT')}">đ 1.000.000</span>
+                            <span th:text="${'đ ' + #numbers.formatDecimal(chiTiet.p.giaMoiDem, 0, 'COMMA', 0, 'POINT')}">đ 1,000,000</span>
                             <span class="unit">/ đêm</span>
                         </div>
                     </div>
@@ -495,7 +495,7 @@
                             <div style="width:100%">
                                 <div class="addon-name" th:text="${dv.ten_dich_vu}">Bữa sáng</div>
                                 <div class="addon-price">
-                                    <span th:text="${#numbers.formatDecimal(dv.gia, 0, 'COMMA', 0, 'POINT')}">150.000</span>
+                                    <span th:text="${#numbers.formatDecimal(dv.gia, 0, 'COMMA', 0, 'POINT')}">150,000</span>
                                     <span class="addon-unit" th:text="${'VNĐ / ' + dv.donVi}">VNĐ / người</span>
                                 </div>
                                 <!-- Hiển thị khung giờ phục vụ nếu dịch vụ có giới hạn giờ -->
@@ -623,7 +623,7 @@
     const nightCount = /*[[${nightCount != null ? nightCount : 1}]]*/ 1;
 
     function formatTien(soTien) {
-        return Number(soTien).toLocaleString('vi-VN');
+        return Number(soTien).toLocaleString('en-US');
     }
 
     // ===== TOAST =====

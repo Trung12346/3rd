@@ -567,7 +567,7 @@
                                              th:text="${p.moTa}">Mô tả</div>
                                         <div class="room-price"
                                              th:text="${#numbers.formatDecimal(p.giaMoiDem,0,'COMMA',0,'POINT') + ' VND/đêm'}">
-                                            500.000 VND/đêm
+                                            500,000 VND/đêm
                                         </div>
                                         <!-- Giờ trả dự kiến (nếu phòng đang có khách) hoặc các khoảng đã đặt trước
                                              (nếu phòng trống nhưng có đơn chờ xác nhận) — điền bằng JS từ roomStatusJson -->
@@ -635,7 +635,7 @@
                                 <div class="addon-name"  th:text="${dv.ten_dich_vu}">Bữa sáng</div>
                                 <div class="addon-price"
                                      th:text="${#numbers.formatDecimal(dv.gia,0,'COMMA',0,'POINT') + ' VND / ' + dv.donVi}">
-                                    150.000 VND / người
+                                    150,000 VND / người
                                 </div>
                                 <!-- Số lượng + ngày sử dụng: hiện khi tick -->
                                 <div class="addon-extra">
@@ -673,7 +673,7 @@
                                 <div class="addon-name"  th:text="${dv.ten_dich_vu}">Giặt ủi</div>
                                 <div class="addon-price"
                                      th:text="${#numbers.formatDecimal(dv.gia,0,'COMMA',0,'POINT') + ' VND / ' + dv.donVi}">
-                                    50.000 VND / lần
+                                    50,000 VND / lần
                                 </div>
                                 <!-- Số lượng + ngày sử dụng: hiện khi tick -->
                                 <div class="addon-extra">
@@ -803,7 +803,7 @@
 </footer>
 
 <script>
-    function fmt(n) { return 'đ ' + Math.round(n).toLocaleString('vi-VN'); }
+    function fmt(n) { return 'đ ' + Math.round(n).toLocaleString('en-US'); }
     function fmtDate(str) {
         if (!str) return '--';
         const [y,m,d] = str.split('-');

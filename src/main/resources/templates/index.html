@@ -133,10 +133,10 @@
             <label><i class="fa-solid fa-sack-dollar"></i> Khoảng giá</label>
             <select name="mucGia" id="heroPriceSelect" aria-label="Khoảng giá mỗi đêm">
                 <option value="" th:selected="${mucGia == null or mucGia == ''}">Tất cả mức giá</option>
-                <option value="0-500000" th:selected="${mucGia == '0-500000'}">0 - 500.000đ</option>
-                <option value="500000-1000000" th:selected="${mucGia == '500000-1000000'}">500.000đ - 1.000.000đ</option>
-                <option value="1000000-2000000" th:selected="${mucGia == '1000000-2000000'}">1.000.000đ - 2.000.000đ</option>
-                <option value="2000000-5000000" th:selected="${mucGia == '2000000-5000000'}">2.000.000đ - 5.000.000đ</option>
+                <option value="0-500000" th:selected="${mucGia == '0-500000'}">0 - 500,000đ</option>
+                <option value="500000-1000000" th:selected="${mucGia == '500000-1000000'}">500,000đ - 1,000,000đ</option>
+                <option value="1000000-2000000" th:selected="${mucGia == '1000000-2000000'}">1,000,000đ - 2,000,000đ</option>
+                <option value="2000000-5000000" th:selected="${mucGia == '2000000-5000000'}">2,000,000đ - 5,000,000đ</option>
             </select>
         </div>
 
@@ -178,7 +178,7 @@
             <p th:text="${p.moTa != null and !p.moTa.isBlank() ? p.moTa : 'Phòng đang trống và sẵn sàng đặt.'}">Phòng đang trống.</p>
             <div class="home-room-meta">
                 <span>Loại: <strong th:text="${p.loaiPhong != null ? p.loaiPhong.tenLoai : 'Chưa phân loại'}">Deluxe</strong></span>
-                <span>Giá: <strong th:text="${#numbers.formatDecimal(p.giaMoiDem, 0, 'COMMA', 0, 'POINT')} + ' VND/đêm'">1.000.000 VND/đêm</strong></span>
+                <span>Giá: <strong th:text="${#numbers.formatDecimal(p.giaMoiDem, 0, 'COMMA', 0, 'POINT')} + ' VND/đêm'">1,000,000 VND/đêm</strong></span>
             </div>
             <a th:href="@{/phong/{id}(id=${p.maPhong})}" class="btn-view-detail">Xem chi tiết</a>
         </article>
@@ -217,7 +217,7 @@
                     </p>
                     <div class="card-footer" style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 16px;">
                         <div class="card-price" style="font-size: 13px; color: var(--text-gray);">
-                            Từ <strong th:text="${#numbers.formatDecimal(loai.giaCoBan, 0, 'COMMA', 0, 'POINT')}" style="font-size: 20px; color: var(--sky-primary); font-weight: 700;">1.200.000</strong>
+                            Từ <strong th:text="${#numbers.formatDecimal(loai.giaCoBan, 0, 'COMMA', 0, 'POINT')}" style="font-size: 20px; color: var(--sky-primary); font-weight: 700;">1,200,000</strong>
                             <span style="font-size: 12px; color: var(--text-gray);"> VND/đêm</span>
                         </div>
                         <a th:href="@{'/loai-phong/' + ${loai.id}}" class="btn-view-detail" style="display: inline-block; padding: 9px 20px; background: var(--sky-primary); color: #fff; border: none; border-radius: 2px; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; text-decoration: none; transition: background 0.2s;">Xem Phòng</a>

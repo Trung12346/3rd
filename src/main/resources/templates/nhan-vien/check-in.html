@@ -1390,7 +1390,7 @@
                             <div>
                                 <strong>Khách đến trễ ≥ 1 giờ</strong>
                                 (<span th:text="${labelChenhLech}"></span>).
-                                Phụ phí check-in trễ: <strong>100.000 VND</strong>
+                                Phụ phí check-in trễ: <strong>100,000 VND</strong>
                                 — sẽ được cộng vào hóa đơn (tính 1 lần cho cả đơn).
                             </div>
                         </div>
@@ -1741,7 +1741,7 @@
 
     function dinhDangTien(n) {
         if (isNaN(n)) return '0';
-        return new Intl.NumberFormat('vi-VN').format(n);
+        return new Intl.NumberFormat('en-US').format(n);
     }
 
     /**

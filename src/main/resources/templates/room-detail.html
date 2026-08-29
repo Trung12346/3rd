@@ -485,7 +485,7 @@
           </p>
           <div class="card-footer" style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 16px;">
             <div class="card-price" style="font-size: 13px; color: var(--text-gray);">
-              Từ <strong th:text="${#numbers.formatDecimal(lp.giaCoBan, 0, 'COMMA', 0, 'POINT')}" style="font-size: 20px; color: var(--sky-primary); font-weight: 700;">1.200.000</strong>
+              Từ <strong th:text="${#numbers.formatDecimal(lp.giaCoBan, 0, 'COMMA', 0, 'POINT')}" style="font-size: 20px; color: var(--sky-primary); font-weight: 700;">1,200,000</strong>
               <span style="font-size: 12px; color: var(--text-gray);"> VND/đêm</span>
             </div>
             <a th:href="@{'/loai-phong/' + ${lp.id}}" class="btn-view-detail" style="display: inline-block; padding: 9px 20px; background: var(--sky-primary); color: #fff; border: none; border-radius: 2px; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; text-decoration: none; transition: background 0.2s;">Xem Phòng</a>
@@ -732,11 +732,11 @@
 
   // FIX: bien dung chung de luu phu phi ngoai gio hien tai, giup ham tinh
   // tong tien (o duoi) cong dung phu phi vao tong, thay vi tinh rieng le
-  // khong lien quan nhu truoc (khien Tong tien bi thieu 100.000 VND phu phi).
+  // khong lien quan nhu truoc (khien Tong tien bi thieu 100,000 VND phu phi).
   let currentExtraFee = 0;
 
   function formatTienVND(n) {
-    return Math.round(n).toLocaleString('vi-VN') + ' VND';
+    return Math.round(n).toLocaleString('en-US') + ' VND';
   }
 
   function tinhSoDemVaTongTien() {
@@ -1235,7 +1235,7 @@
 
       if (ngoaiGioNhan || ngoaiGioTra) {
         const fee = phuPhiMacDinh;
-        extraFeeValueEl.textContent = fee.toLocaleString('vi-VN') + ' VND';
+        extraFeeValueEl.textContent = fee.toLocaleString('en-US') + ' VND';
         extraFeeRow.classList.add('show');
         extraFeeRow.style.display = 'flex';
         // FIX: cap nhat bien dung chung va tinh lai Tong tien de cong
@@ -1259,7 +1259,7 @@
         showToast('Bạn chọn giờ ngoài khung ' + formatTime(gioNhanToiThieu) + ' - ' + formatTime(gioNhanToiDa) +
                 ' (nhận phòng) hoặc sau ' + formatTime(gioTraToiDa) + ' (trả phòng). Hệ thống sẽ cộng thêm phụ phí.', {
           type: 'warning',
-          title: 'Phụ phí ngoài giờ +' + fee.toLocaleString('vi-VN') + ' VND'
+          title: 'Phụ phí ngoài giờ +' + fee.toLocaleString('en-US') + ' VND'
         });
       }
       lastExtraFee = fee;

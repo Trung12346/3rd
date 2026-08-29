@@ -342,7 +342,7 @@
         var phuthiRow = document.getElementById('phuthuRow');
         var phuthiVal = document.getElementById('phuthuValue');
         if (phuthiData !== null && phuthiData > 0 && phuthiRow && phuthiVal) {
-            var formatted = new Intl.NumberFormat('vi-VN').format(Math.round(phuthiData));
+            var formatted = new Intl.NumberFormat('en-US').format(Math.round(phuthiData));
             phuthiVal.textContent = '+ đ ' + formatted;
             phuthiRow.style.display = 'flex';
         }

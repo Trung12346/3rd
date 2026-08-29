@@ -1055,7 +1055,7 @@
             if (v === null || v === undefined || v === '') return '--';
             var n = Number(v);
             if (isNaN(n)) return '--';
-            return n.toLocaleString('vi-VN') + ' đ';
+            return n.toLocaleString('en-US') + ' đ';
         }
         function nightsBetween(checkIn, checkOut){
             var ms = checkOut.getTime() - checkIn.getTime();

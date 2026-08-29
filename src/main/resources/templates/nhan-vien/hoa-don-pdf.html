@@ -260,7 +260,7 @@
                     th:text="${hoaDon.tienPhong != null
                         ? #numbers.formatDecimal(hoaDon.tienPhong, 0, 'COMMA', 0, 'POINT')
                         : '0'}">
-                    2.400.000
+                    2,400,000
                 </td>
             </tr>
 
@@ -270,7 +270,7 @@
                 <td>Phụ phí ngoài giờ</td>
                 <td class="right"
                     th:text="${'+ ' + #numbers.formatDecimal(tongPhuThu, 0, 'COMMA', 0, 'POINT')}">
-                    + 100.000
+                    + 100,000
                 </td>
             </tr>
 
@@ -280,7 +280,7 @@
                 <td>Phụ thu check-in sớm / check-out muộn</td>
                 <td class="right"
                     th:text="${'+ ' + #numbers.formatDecimal(tongPhuThuCheckInSom, 0, 'COMMA', 0, 'POINT')}">
-                    + 200.000
+                    + 200,000
                 </td>
             </tr>
 
@@ -290,7 +290,7 @@
                 <td>Tiền dịch vụ bổ sung</td>
                 <td class="right"
                     th:text="${#numbers.formatDecimal(tongDichVuThuong, 0, 'COMMA', 0, 'POINT')}">
-                    350.000
+                    350,000
                 </td>
             </tr>
 
@@ -301,7 +301,7 @@
                     th:text="${hoaDon.tienVat != null
                         ? #numbers.formatDecimal(hoaDon.tienVat, 0, 'COMMA', 0, 'POINT')
                         : '0'}">
-                    275.000
+                    275,000
                 </td>
             </tr>
 
@@ -314,7 +314,7 @@
                 </td>
                 <td class="right"
                     th:text="${'- ' + #numbers.formatDecimal(hoaDon.tienGiam, 0, 'COMMA', 0, 'POINT')}">
-                    - 100.000
+                    - 100,000
                 </td>
             </tr>
             </tbody>
@@ -329,7 +329,7 @@
                   th:text="${hoaDon.tongTien != null
                       ? #numbers.formatDecimal(hoaDon.tongTien, 0, 'COMMA', 0, 'POINT') + ' VNĐ'
                       : '0 VNĐ'}">
-                3.025.000 VNĐ
+                3,025,000 VNĐ
             </span>
         </div>
         <div class="total-row">
@@ -338,7 +338,7 @@
                   th:text="${hoaDon.daThanhToan != null
                       ? #numbers.formatDecimal(hoaDon.daThanhToan, 0, 'COMMA', 0, 'POINT') + ' VNĐ'
                       : '0 VNĐ'}">
-                3.025.000 VNĐ
+                3,025,000 VNĐ
             </span>
         </div>
         <!-- Hoàn trả khách (chỉ hiển thị nếu có) -->

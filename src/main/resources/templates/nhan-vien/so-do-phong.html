@@ -1362,7 +1362,7 @@
                             </div>
 
                             <div class="gia">
-                                <span th:text="${#numbers.formatDecimal(phong.giaMoiDem, 0, 'COMMA', 0, 'POINT')} + 'đ'">1.800.000đ</span>
+                                <span th:text="${#numbers.formatDecimal(phong.giaMoiDem, 0, 'COMMA', 0, 'POINT')} + 'đ'">1,800,000đ</span>
                                 <span class="unit">/ đêm</span>
                             </div>
 
@@ -2014,7 +2014,7 @@
 
     function sdpFormatVND(n) {
         if (n === null || n === undefined || isNaN(n)) return '—';
-        return Number(n).toLocaleString('vi-VN') + ' đ';
+        return Number(n).toLocaleString('en-US') + ' đ';
     }
 
     function sdpHighlightRefundTier(soNgayConLai) {
@@ -3703,7 +3703,7 @@
 
         function fmtTien(v) {
             v = Number(v || 0);
-            return v.toLocaleString('vi-VN') + 'đ';
+            return v.toLocaleString('en-US') + 'đ';
         }
 
         function moXemThongTinPhong(card) {
@@ -4809,7 +4809,7 @@
         });
 
         function formatVND(n) {
-            return Math.round(n || 0).toLocaleString('vi-VN');
+            return Math.round(n || 0).toLocaleString('en-US');
         }
 
         /** Tra ma khuyen mai (khong phan biet hoa/thuong) trong kmList va cap
@@ -5494,10 +5494,10 @@
             var tongCong = tongTruocVat - tienGiam + vat;
 
             soDemEl.textContent = soDem > 0 ? (soDem + ' đêm') : '--';
-            tienPhongEl.textContent = 'đ ' + Math.round(tienPhong).toLocaleString('vi-VN');
-            tienDvEl.textContent = 'đ ' + Math.round(tienDv).toLocaleString('vi-VN');
+            tienPhongEl.textContent = 'đ ' + Math.round(tienPhong).toLocaleString('en-US');
+            tienDvEl.textContent = 'đ ' + Math.round(tienDv).toLocaleString('en-US');
             if (phuThu > 0) {
-                tienPhuThuEl.textContent = 'đ ' + Math.round(phuThu).toLocaleString('vi-VN');
+                tienPhuThuEl.textContent = 'đ ' + Math.round(phuThu).toLocaleString('en-US');
                 phuThuRowEl.style.display = 'flex';
                 phuThuNoteEl.textContent = currentPhuThuSom.moTa || 'Phát hiện vi phạm chính sách nhận phòng sớm — đã tự động cộng khoản phụ thu vào tổng tiền.';
                 phuThuNoteEl.style.display = 'block';
@@ -5506,15 +5506,15 @@
                 phuThuNoteEl.style.display = 'none';
             }
             if (tienGiam > 0) {
-                sumTienGiamEl.textContent = '- đ ' + Math.round(tienGiam).toLocaleString('vi-VN');
+                sumTienGiamEl.textContent = '- đ ' + Math.round(tienGiam).toLocaleString('en-US');
                 sumGiamRow.style.display = 'flex';
                 sumHintEl.textContent = 'Đã áp dụng mã khuyến mại.';
             } else {
                 sumGiamRow.style.display = 'none';
                 sumHintEl.textContent = 'Nhập mã khuyến mại hợp lệ để xem giá đã giảm.';
             }
-            vatEl.textContent = 'đ ' + Math.round(vat).toLocaleString('vi-VN');
-            tongCongEl.textContent = 'đ ' + Math.round(tongCong).toLocaleString('vi-VN');
+            vatEl.textContent = 'đ ' + Math.round(vat).toLocaleString('en-US');
+            tongCongEl.textContent = 'đ ' + Math.round(tongCong).toLocaleString('en-US');
         }
         form.querySelectorAll('.sdp-lich-service-chip input').forEach(function (el) {
             el.addEventListener('change', tinhTongTienLenLich);

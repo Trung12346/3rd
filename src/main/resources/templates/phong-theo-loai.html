@@ -654,7 +654,7 @@
             Sức chứa tối đa
             <span th:text="${loaiPhong != null ? loaiPhong.sucChuaToiDa + ' người' : '2 người'}">2 người</span>
             &nbsp;&nbsp;
-            Từ <span th:text="${loaiPhong != null} ? ${#numbers.formatDecimal(loaiPhong.giaCoBan, 0, 'COMMA', 0, 'POINT')} + ' VND/đêm' : '1.200.000 VND/đêm'">1.200.000 VND/đêm</span>
+            Từ <span th:text="${loaiPhong != null} ? ${#numbers.formatDecimal(loaiPhong.giaCoBan, 0, 'COMMA', 0, 'POINT')} + ' VND/đêm' : '1,200,000 VND/đêm'">1,200,000 VND/đêm</span>
         </div>
     </div>
 </section>
@@ -711,7 +711,7 @@
                 </div>
                 <div class="phong-card-footer">
                     <div class="phong-price">
-                        <strong th:text="${#numbers.formatDecimal(p.giaMoiDem, 0, 'COMMA', 0, 'POINT')}">1.200.000</strong>
+                        <strong th:text="${#numbers.formatDecimal(p.giaMoiDem, 0, 'COMMA', 0, 'POINT')}">1,200,000</strong>
                         <span> VND/đêm</span>
                     </div>
                     <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
@@ -841,7 +841,7 @@
                 <div class="summary-box" id="summaryBox">
                     <div class="summary-row">
                         <span>Giá cơ bản</span>
-                        <span th:text="${loaiPhong != null} ? ${#numbers.formatDecimal(loaiPhong.giaCoBan, 0, 'COMMA', 0, 'POINT')} + ' VND' : '1.200.000 VND'" id="gia-co-ban">1.200.000 VND</span>
+                        <span th:text="${loaiPhong != null} ? ${#numbers.formatDecimal(loaiPhong.giaCoBan, 0, 'COMMA', 0, 'POINT')} + ' VND' : '1,200,000 VND'" id="gia-co-ban">1,200,000 VND</span>
                     </div>
                     <div class="summary-row">
                         <span>Số đêm</span>
@@ -914,11 +914,11 @@
     }
 
     function formatVND(n) {
-        return n.toLocaleString('vi-VN') + ' VND';
+        return n.toLocaleString('en-US') + ' VND';
     }
 
     function formatTienVND(n) {
-        return '+ đ ' + n.toLocaleString('vi-VN');
+        return '+ đ ' + n.toLocaleString('en-US');
     }
 
     function parseTime(value) {
@@ -1134,7 +1134,7 @@
             showToast('Bạn chọn giờ ngoài khung ' + formatTime(gioNhanToiThieu) + ' - ' + formatTime(gioNhanToiDa) +
                 ' (nhận phòng) hoặc sau ' + formatTime(gioTraToiDa) + ' (trả phòng). Hệ thống sẽ cộng thêm phụ phí.', {
                 type: 'warning',
-                title: 'Phụ phí ngoài giờ +' + extraFee.toLocaleString('vi-VN') + ' VND'
+                title: 'Phụ phí ngoài giờ +' + extraFee.toLocaleString('en-US') + ' VND'
             });
         }
         lastExtraFee = extraFee;

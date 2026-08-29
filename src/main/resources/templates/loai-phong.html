@@ -481,9 +481,9 @@
 <!--                <label>Mức giá (VND/đêm)</label>-->
 <!--            <select name="mucGia">-->
 <!--                <option value="" th:selected="${mucGia == null or mucGia == ''}">Tất cả mức giá</option>-->
-<!--                <option value="duoi1tr" th:selected="${mucGia == 'duoi1tr'}">Dưới 1.000.000</option>-->
-<!--                <option value="1tr-2tr" th:selected="${mucGia == '1tr-2tr'}">1.000.000 - 2.000.000</option>-->
-<!--                <option value="tren2tr" th:selected="${mucGia == 'tren2tr'}">Trên 2.000.000</option>-->
+<!--                <option value="duoi1tr" th:selected="${mucGia == 'duoi1tr'}">Dưới 1,000,000</option>-->
+<!--                <option value="1tr-2tr" th:selected="${mucGia == '1tr-2tr'}">1,000,000 - 2,000,000</option>-->
+<!--                <option value="tren2tr" th:selected="${mucGia == 'tren2tr'}">Trên 2,000,000</option>-->
 <!--            </select>-->
 <!--        </div>-->
 
@@ -521,7 +521,7 @@
                     </p>
                     <div class="card-footer">
                         <div class="card-price">
-                            Từ <strong th:text="${#numbers.formatDecimal(lp.giaCoBan, 0, 'COMMA', 0, 'POINT')}">1.200.000</strong>
+                            Từ <strong th:text="${#numbers.formatDecimal(lp.giaCoBan, 0, 'COMMA', 0, 'POINT')}">1,200,000</strong>
                             <span> VND/đêm</span>
                         </div>
                         <a th:href="@{'/loai-phong/' + ${lp.id}}" class="btn-view-detail">Xem Phòng</a>
