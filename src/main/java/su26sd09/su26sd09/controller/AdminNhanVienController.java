@@ -114,7 +114,7 @@ public class AdminNhanVienController {
         VaiTro roleStaff = roles.get(0);
 
         nv.setVaitro(roleStaff);
-
+        nv.setTrang_thai(true);
         if (matKhauMoi != null && !matKhauMoi.isBlank()) {
             nv.setMat_khau_hash(passwordEncoder.encode(matKhauMoi));
         }
