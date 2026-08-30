@@ -36,4 +36,6 @@ public interface DichVuRepo extends JpaRepository<Dich_vu,Integer> {
             "WHERE c.dv IS NOT NULL AND c.datPhong IS NOT NULL " +
             "ORDER BY c.dv.id, c.datPhong.id")
     List<Object[]> findMaDatPhongTheoDichVu();
+
+
 }

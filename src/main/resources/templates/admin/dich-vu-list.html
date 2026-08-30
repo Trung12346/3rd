@@ -142,6 +142,13 @@
       border-color: #c0392b;
     }
 
+    .admin-btn.danger:disabled {
+      background: #F5B7B1;
+      border-color: #F5B7B1;
+      cursor: not-allowed;
+      opacity: 0.7;
+    }
+
     .admin-btn.small {
       padding: 7px 12px;
       font-size: 11px;
@@ -344,6 +351,25 @@
       white-space: nowrap;
     }
 
+    /* ===== TIME BADGE (thoi gian phuc vu) ===== */
+    .time-badge {
+      background: #F0F9FF;
+      border: 1px solid #BAE6FD;
+      border-radius: 999px;
+      color: #0369A1;
+      display: inline-block;
+      font-size: 14px;
+      font-weight: 700;
+      padding: 6px 14px;
+      white-space: nowrap;
+    }
+
+    .time-badge.ca-ngay {
+      background: #F2F2F2;
+      color: #666;
+      border-color: #E0E0E0;
+    }
+
     /* ===== ROW ACTIONS ===== */
     .row-actions {
       display: flex;
@@ -394,19 +420,19 @@
   <div th:if="${success}" class="admin-message success">
     <span th:text="${success}"></span>
   </div>
-    <script th:if="${success}" th:inline="javascript">
-        document.addEventListener('DOMContentLoaded', function () {
-            staffToast(/*[[${success}]]*/ 'Thanh cong', 'success');
-        });
-    </script>
+  <script th:if="${success}" th:inline="javascript">
+    document.addEventListener('DOMContentLoaded', function () {
+      staffToast(/*[[${success}]]*/ 'Thanh cong', 'success');
+    });
+  </script>
   <div th:if="${error}" class="admin-message error">
     <span th:text="${error}"></span>
   </div>
-    <script th:if="${error}" th:inline="javascript">
-        document.addEventListener('DOMContentLoaded', function () {
-            staffToast(/*[[${error}]]*/ 'Co loi xay ra', 'error');
-        });
-    </script>
+  <script th:if="${error}" th:inline="javascript">
+    document.addEventListener('DOMContentLoaded', function () {
+      staffToast(/*[[${error}]]*/ 'Co loi xay ra', 'error');
+    });
+  </script>
 
   <!-- ===== THONG KE ===== -->
   <div class="stat-cards">
@@ -539,6 +565,7 @@
           <th>Giá</th>
           <th>Đơn vị</th>
           <th>Loại</th>
+          <th>Thời gian phục vụ</th>
           <th>Lượt sử dụng</th>
           <th>Hoạt động</th>
           <th>Thao tác</th>
@@ -548,11 +575,28 @@
         <tr th:each="dv : ${dichVus}" th:classappend="${dichVu.id != null and dichVu.id == dv.id} ? 'editing-row'">
           <td th:text="${dv.id}"></td>
           <td><strong th:text="${dv.ten_dich_vu}"></strong></td>
-          <td th:text="${#numbers.formatDecimal(dv.gia, 0, 'COMMA', 0, 'POINT')} + ' đ'"></td>
+          <td>
+            <span th:if="${dv.gia != null and dv.gia.signum() > 0}"
+                  th:text="${#numbers.formatDecimal(dv.gia, 0, 'COMMA', 0, 'POINT')} + ' đ'"></span>
+            <span th:if="${dv.gia == null or dv.gia.signum() == 0}"
+                  style="color:#9C640C; font-style:italic; font-size:13px;">
+              Tính theo % giá phòng
+            </span>
+          </td>
           <td th:text="${dv.donVi != null and !dv.donVi.isEmpty() ? dv.donVi : '-'}"></td>
           <td>
             <span th:if="${dv.loaiDv  == 'PHAT_SINH'}" class="loai-badge phat-sinh">Phát sinh</span>
             <span th:unless="${dv.loaiDv  == 'PHAT_SINH'}" class="loai-badge thuong">Dịch vụ thường</span>
+          </td>
+          <td>
+            <span th:if="${dv.gioBatDau != null and dv.gioKetThuc != null}"
+                  class="time-badge"
+                  th:text="${#temporals.format(dv.gioBatDau, 'H:mm')} + ' - ' + ${#temporals.format(dv.gioKetThuc, 'H:mm')}">
+              6:30 - 9:30
+            </span>
+            <span th:unless="${dv.gioBatDau != null and dv.gioKetThuc != null}" class="time-badge ca-ngay">
+              Cả ngày
+            </span>
           </td>
           <td>
             <span class="usage-badge" th:if="${soLuongSuDung[dv.id] != null}" th:text="${soLuongSuDung[dv.id]} + ' lượt'"></span>
@@ -568,17 +612,25 @@
                  th:href="@{/nhan-su/admin/dich-vu/edit/{id}(id=${dv.id}, keyword=${keyword}, trangThai=${trangThai}, loaiDichVu=${loaiDichVu})}">
                 Sửa
               </a>
-              <form th:action="@{/nhan-su/admin/dich-vu/delete/{id}(id=${dv.id})}"
+              <form th:if="${dichVuDangSuDung == null or !dichVuDangSuDung.contains(dv.id)}"
+                    th:action="@{/nhan-su/admin/dich-vu/delete/{id}(id=${dv.id})}"
                     method="post"
                     onsubmit="return confirm('Bạn có chắc muốn xóa dịch vụ này?')">
                 <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
                 <button type="submit" class="admin-btn small danger">Xóa</button>
               </form>
+              <button th:if="${dichVuDangSuDung != null and dichVuDangSuDung.contains(dv.id)}"
+                      type="button"
+                      class="admin-btn small danger"
+                      disabled
+                      title="Không thể xóa: dịch vụ đang được dùng trong đơn Đã xác nhận / Đã nhận phòng">
+                Xóa
+              </button>
             </div>
           </td>
         </tr>
         <tr th:if="${dichVus.isEmpty()}">
-          <td colspan="8">
+          <td colspan="9">
             <div class="empty-state">
               <p>Không tìm thấy dịch vụ nào phù hợp.</p>
             </div>

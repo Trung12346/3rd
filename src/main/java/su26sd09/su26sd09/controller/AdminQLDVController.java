@@ -11,6 +11,7 @@ import su26sd09.su26sd09.service.DichVuService;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Controller
 @RequestMapping("/nhan-su/admin/dich-vu")
@@ -59,6 +60,11 @@ public class AdminQLDVController {
 
     @PostMapping("/delete/{id}")
     public String delete(@PathVariable("id") Integer id, RedirectAttributes redirectAttributes) {
+        if (dichVuService.dangDuocSuDungTrongDonHoatDong(id)) {
+            redirectAttributes.addFlashAttribute("error",
+                    "Không thể xóa dịch vụ này vì đang được sử dụng trong đơn đặt phòng đã xác nhận hoặc đang sử dụng");
+            return "redirect:/nhan-su/admin/dich-vu";
+        }
         try {
             dichVuService.deleteById(id);
             redirectAttributes.addFlashAttribute("success", "Xóa dịch vụ thành công");
@@ -67,13 +73,15 @@ public class AdminQLDVController {
         }
         return "redirect:/nhan-su/admin/dich-vu";
     }
-
-    private void loadFormAndList(Model model, Dich_vu dv, String keyword, String trangThai, String loaiDichVu,String title) {
-        List<Dich_vu> dichVus = dichVuService.search(keyword, trangThai,loaiDichVu);
+    private void loadFormAndList(Model model, Dich_vu dv, String keyword, String trangThai, String loaiDichVu, String title) {
+        List<Dich_vu> dichVus = dichVuService.search(keyword, trangThai, loaiDichVu);
         Map<Integer, Long> soLuongSuDung = dichVuService.soLuongSuDungTheoDichVu();
         Dich_vu topDichVu = dichVuService.dichVuDuocSuDungNhieuNhat();
         long topSoLuong = topDichVu != null ? soLuongSuDung.getOrDefault(topDichVu.getId(), 0L) : 0L;
         BigDecimal tongTien = dichVuService.tongTienDichVu();
+
+        // NEW: các dịch vụ đang bị khóa (không cho xóa) vì đang dùng trong đơn Da xac nhan / Dang su dung
+        Set<Integer> dichVuDangSuDung = dichVuService.layDichVuDangSuDungTrongDonHoatDong();
 
         model.addAttribute("dichVu", dv);
         model.addAttribute("dichVus", dichVus);
@@ -88,5 +96,8 @@ public class AdminQLDVController {
         model.addAttribute("topDichVu", topDichVu);
         model.addAttribute("topSoLuong", topSoLuong);
         model.addAttribute("tongTienDichVu", tongTien);
+        model.addAttribute("dichVuDangSuDung", dichVuDangSuDung); // NEW
     }
+
+
 }

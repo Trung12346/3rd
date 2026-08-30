@@ -7,11 +7,7 @@ import su26sd09.su26sd09.repository.ChiTietDichvuRepo;
 import su26sd09.su26sd09.repository.DichVuRepo;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 public class DichVuService {
@@ -22,6 +18,18 @@ public class DichVuService {
     @Autowired
     ChiTietDichvuRepo chiTietDichvuRepo;
 
+    public Set<Integer> layDichVuDangSuDungTrongDonHoatDong() {
+        List<Integer> ids = chiTietDichvuRepo.timDichVuIdDangSuDungTheoTrangThaiDon(
+                List.of("Da xac nhan", "Da nhan phong")
+        );
+        return new HashSet<>(ids);
+    }
+
+    public boolean dangDuocSuDungTrongDonHoatDong(Integer dichVuId) {
+        return chiTietDichvuRepo.demDichVuDangSuDungTheoTrangThaiDon(
+                dichVuId, List.of("Da xac nhan", "Da nhan phong")
+        ) > 0;
+    }
     public List<Dich_vu> findAll(){
         return dichVuRepo.findAll();
     }
