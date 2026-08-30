@@ -2311,12 +2311,24 @@
             return null;
         }
 
-        // Đơn có thời điểm check-in rơi vào hôm nay (đến 12:00 trưa ngày hôm sau)
+        // Đơn ĐÃ đến giờ check-in (ci <= hiện tại) và CHƯA quá giờ trả phòng
+        // (co > hiện tại) — dùng cho nut "Khach nhan phong".
+        // KHONG con gioi han theo "hom nay" (todayStart/todayEnd) nua: khung gio
+        // do bi neo theo ngay cua "now" nen sang hom sau se tu dong truot qua,
+        // khien don tu hom truoc chua nhan phong bi rot khoi danh sach dù khach
+        // van chua checkin. Dieu kien dung nen dua vao ngay tra phong (checkout)
+        // cua chinh don do - ngay nay co the duoc nhan vien gia han - giong cach
+        // tinDonTreNhanPhong da lam cho canh bao "Tre nhan phong".
         function tinCheckInHomNay(maPhong) {
             var list = getBookings(maPhong);
+            var t = nowTick();
             for (var i = 0; i < list.length; i++) {
-                var ci = parseDt(list[i].checkin);
-                if (ci && ci >= todayStart && ci < todayEnd) return list[i];
+                var b = list[i];
+                var ci = parseDt(b.checkin);
+                var co = parseDt(b.checkout);
+                if (!ci || ci > t) continue; // chua den gio nhan phong
+                if (co && co <= t) continue; // da qua gio tra phong -> het han
+                return b;
             }
             return null;
         }
