@@ -2311,14 +2311,18 @@
             return null;
         }
 
-        // Đơn ĐÃ đến giờ check-in (ci <= hiện tại) và CHƯA quá giờ trả phòng
-        // (co > hiện tại) — dùng cho nut "Khach nhan phong".
-        // KHONG con gioi han theo "hom nay" (todayStart/todayEnd) nua: khung gio
-        // do bi neo theo ngay cua "now" nen sang hom sau se tu dong truot qua,
-        // khien don tu hom truoc chua nhan phong bi rot khoi danh sach dù khach
-        // van chua checkin. Dieu kien dung nen dua vao ngay tra phong (checkout)
-        // cua chinh don do - ngay nay co the duoc nhan vien gia han - giong cach
-        // tinDonTreNhanPhong da lam cho canh bao "Tre nhan phong".
+        // Đơn CHƯA quá giờ trả phòng (checkout > hiện tại) VÀ đã sang đến ngày
+        // check-in dự kiến (00:00 của chính ngày checkin, không phải 00:00 của
+        // "hôm nay") — dùng cho nut "Khach nhan phong".
+        // Luu y: gioi han duoi phai neo theo ngay CUA CHINH DON (ci), khong
+        // phai theo ngay cua "now" (todayStart cu). Neu neo theo "now" thi sang
+        // ngay hom sau ranh gioi se tu dong truot toi, khien don tu hom truoc
+        // chua nhan phong bi rot khoi danh sach dù khach van chua checkin - day
+        // chinh la loi da sua truoc do. Gioi han tren (checkout) van dua vao
+        // chinh don do vi ngay tra phong co the duoc nhan vien gia han.
+        // KHONG kiem tra ci > t: giu nguyen hanh vi cho phep nhan phong som
+        // trong ngay checkin du kien (truoc gio checkin), da co xu ly rieng o
+        // xuLyKhachNhanPhong / backend cho truong hop nhan phong som.
         function tinCheckInHomNay(maPhong) {
             var list = getBookings(maPhong);
             var t = nowTick();
@@ -2326,7 +2330,9 @@
                 var b = list[i];
                 var ci = parseDt(b.checkin);
                 var co = parseDt(b.checkout);
-                if (!ci || ci > t) continue; // chua den gio nhan phong
+                if (!ci) continue;
+                var ciDayStart = new Date(ci.getFullYear(), ci.getMonth(), ci.getDate(), 0, 0, 0);
+                if (t < ciDayStart) continue; // chua sang ngay nhan phong du kien
                 if (co && co <= t) continue; // da qua gio tra phong -> het han
                 return b;
             }
