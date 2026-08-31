@@ -310,6 +310,23 @@
         .promo-info { color: var(--bx-green); background: #f0fdf4; }
         .promo-error { color: var(--bx-red); background: #fef2f2; }
 
+        /* Dropdown goi y ma khuyen mai dang hoat dong (giong trang "So do phong" ben nhan vien) */
+        .promo-suggest-box {
+            display: none; position: absolute; left: 0; right: 0; top: 100%; margin-top: 4px;
+            background: #fff; border: 1px solid #dbe3ee; border-radius: 9px;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, .12); z-index: 40; max-height: 220px; overflow-y: auto;
+        }
+        .promo-suggest-box.open { display: block; }
+        .promo-suggest-item {
+            display: flex; flex-direction: column; gap: 2px; padding: 8px 12px; cursor: pointer;
+            border-bottom: 1px solid #f0f3f8;
+        }
+        .promo-suggest-item:last-child { border-bottom: none; }
+        .promo-suggest-item:hover, .promo-suggest-item.active { background: #f0f8fb; }
+        .promo-suggest-name { font-size: 13px; font-weight: 700; color: #1f2937; }
+        .promo-suggest-meta { font-size: 11.5px; color: #64748b; }
+        .promo-suggest-empty { padding: 10px 12px; font-size: 12.5px; color: #94a3b8; }
+
         .booking-actions { display: grid; gap: 12px; grid-template-columns: 130px 1fr; margin-top: 24px; }
         .back-btn, .continue-btn {
             align-items: center;
@@ -582,6 +599,7 @@
                                placeholder="Nhập mã khuyến mãi"
                                autocomplete="off"
                                th:value="${datPhong.km != null ? datPhong.km.promoCode : ''}">
+                        <div class="promo-suggest-box" id="promoSuggestBox"></div>
                     </div>
                     <div class="promo-info" id="promoInfo"></div>
                     <div class="promo-error" id="promoError"></div>
@@ -700,6 +718,77 @@
         return matchedKm;
     }
 
+    /* ============ Gợi ý mã khuyến mại đang hoạt động (giống trang "Sơ đồ phòng" bên nhân viên) ============
+     * Lọc trực tiếp trên window.__KM_LIST__ đã có sẵn ở client (không cần gọi API) - hiện
+     * các mã chứa chuỗi đang gõ (hoặc toàn bộ khi ô đang trống và được focus).
+     */
+    const promoSuggestBox = document.getElementById('promoSuggestBox');
+    let promoSuggestActiveItems = [];
+    let promoSuggestActiveIndex = -1;
+
+    function formatTienGoiY(n) {
+        return Math.round(n || 0).toLocaleString('en-US');
+    }
+
+    function moTaKhuyenMaiGoiY(km) {
+        const gtri = parseFloat(km.giatriGiam) || 0;
+        const isPercent = (km.loaiGiam || '').toUpperCase() === 'PERCENT';
+        const moTaGiam = isPercent ? ('Giảm ' + gtri + '%') : ('Giảm ' + formatTienGoiY(gtri) + ' đ');
+        const dieuKien = parseFloat(km.dieuKien) || 0;
+        return moTaGiam + (dieuKien > 0 ? ' · từ đ ' + formatTienGoiY(dieuKien) : '');
+    }
+
+    function an_KhuyenMaiGoiY() {
+        promoSuggestBox.classList.remove('open');
+        promoSuggestBox.innerHTML = '';
+        promoSuggestActiveItems = [];
+        promoSuggestActiveIndex = -1;
+    }
+
+    function chonKhuyenMaiGoiY(km) {
+        const promoInput = document.getElementById('promoInput');
+        promoInput.value = km.code || '';
+        an_KhuyenMaiGoiY();
+        tinhLaiTongTien();
+    }
+
+    function veKhuyenMaiGoiY(items) {
+        promoSuggestBox.innerHTML = '';
+        if (!items || !items.length) {
+            const empty = document.createElement('div');
+            empty.className = 'promo-suggest-empty';
+            empty.textContent = 'Không có mã khuyến mãi phù hợp';
+            promoSuggestBox.appendChild(empty);
+            promoSuggestBox.classList.add('open');
+            return;
+        }
+        items.forEach(function (km) {
+            const item = document.createElement('div');
+            item.className = 'promo-suggest-item';
+            item.innerHTML = '<span class="promo-suggest-name"></span><span class="promo-suggest-meta"></span>';
+            item.querySelector('.promo-suggest-name').textContent = km.code || '';
+            item.querySelector('.promo-suggest-meta').textContent = moTaKhuyenMaiGoiY(km);
+            item.addEventListener('mousedown', function (e) {
+                // mousedown (khong phai click) de chay TRUOC blur cua input.
+                e.preventDefault();
+                chonKhuyenMaiGoiY(km);
+            });
+            promoSuggestBox.appendChild(item);
+        });
+        promoSuggestActiveItems = items;
+        promoSuggestActiveIndex = -1;
+        promoSuggestBox.classList.add('open');
+    }
+
+    function timKhuyenMaiGoiY() {
+        const promoInput = document.getElementById('promoInput');
+        const tuKhoa = (promoInput.value || '').trim().toUpperCase();
+        const items = !tuKhoa ? (window.__KM_LIST__ || []).slice() : (window.__KM_LIST__ || []).filter(function (km) {
+            return String(km.code || '').toUpperCase().indexOf(tuKhoa) !== -1;
+        });
+        veKhuyenMaiGoiY(items);
+    }
+
     function tinhLaiTongTien() {
         let tongDichVu = 0;
         const dvItems = [];
@@ -813,7 +902,38 @@
         input.addEventListener('input', tinhLaiTongTien);
     });
 
-    document.getElementById('promoInput').addEventListener('input', tinhLaiTongTien);
+    document.getElementById('promoInput').addEventListener('input', function () {
+        tinhLaiTongTien();
+        timKhuyenMaiGoiY();
+    });
+    document.getElementById('promoInput').addEventListener('focus', function () { timKhuyenMaiGoiY(); });
+    document.getElementById('promoInput').addEventListener('blur', function () {
+        // Delay nho de mousedown tren item kip chay truoc khi dropdown bi an.
+        setTimeout(an_KhuyenMaiGoiY, 150);
+    });
+    document.getElementById('promoInput').addEventListener('keydown', function (e) {
+        if (!promoSuggestBox.classList.contains('open') || !promoSuggestActiveItems.length) return;
+        const children = promoSuggestBox.querySelectorAll('.promo-suggest-item');
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            promoSuggestActiveIndex = Math.min(promoSuggestActiveIndex + 1, promoSuggestActiveItems.length - 1);
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            promoSuggestActiveIndex = Math.max(promoSuggestActiveIndex - 1, 0);
+        } else if (e.key === 'Enter') {
+            if (promoSuggestActiveIndex >= 0) {
+                e.preventDefault();
+                chonKhuyenMaiGoiY(promoSuggestActiveItems[promoSuggestActiveIndex]);
+            }
+            return;
+        } else if (e.key === 'Escape') {
+            an_KhuyenMaiGoiY();
+            return;
+        } else {
+            return;
+        }
+        children.forEach(function (el, idx) { el.classList.toggle('active', idx === promoSuggestActiveIndex); });
+    });
 
     // Submit form không còn chặn bởi validate ngày sử dụng nữa
     document.getElementById('xacNhanDichVuForm').addEventListener('submit', function () {
