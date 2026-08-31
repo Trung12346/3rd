@@ -39,6 +39,7 @@ public class LoaiPhongService {
         return repo.findById(id).orElse(null);
     }
 
+    @Transactional
     public void delete(LoaiPhong p) {
         loaiPhongAnhRepository.deleteByMaLoaiPhong_Id(p.getId());
         repo.delete(p);
