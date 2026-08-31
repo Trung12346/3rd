@@ -60,8 +60,7 @@ public class NhanVienCheckoutController {
     @Autowired private NhanVienService nhanVienService;
     @Autowired private TemplateEngine templateEngine;
     @Autowired private su26sd09.su26sd09.service.LichSuHoatDongService lichSuHoatDongService;
-
-    private static final BigDecimal VAT = new BigDecimal("0.10");
+    @Autowired private InvoicePricingService invoicePricingService;
 
     // ================= QUYEN TRUY CAP =================
 
@@ -90,34 +89,22 @@ public class NhanVienCheckoutController {
 
     // ================= TINH TOAN FOLIO =================
 
+    /**
+     * VIEW: xem folio cua don (khong luu DB). Doc gia tu bang trung gian
+     * (chi_tiet_dat_phong + chi_tiet_dich_vu) va tinh bang cong thuc CHUAN
+     * dung chung voi moi luong khac (xem InvoicePricingService) - VAT tren
+     * gia SAU giam.
+     */
     private Map<String, BigDecimal> tinhFolio(DatPhong dp) {
-        List<ChiTietDatPhong> phongList = chiTietDatPhongService.findByDatPhongId(dp.getId());
-        List<Chi_tiet_dich_vu> dichVuList = ctdvService.findByDatPhongId(dp.getId());
-
-        BigDecimal tienPhong = phongList.stream()
-                .map(ChiTietDatPhong::getGiaKhiDat)
-                .filter(java.util.Objects::nonNull)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        BigDecimal tienDichVu = dichVuList.stream()
-                .map(Chi_tiet_dich_vu::getDonGia)
-                .filter(java.util.Objects::nonNull)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        BigDecimal tienGiam = BigDecimal.ZERO; // giam gia (neu co) da duoc ap vao gia tung phong luc dat
-
-        BigDecimal tienVat = tienPhong.add(tienDichVu)
-                .multiply(VAT)
-                .setScale(0, RoundingMode.HALF_UP);
-
-        BigDecimal tongTien = tienPhong.add(tienDichVu).add(tienVat).subtract(tienGiam);
+        su26sd09.su26sd09.dto.InvoicePricingResult gia =
+                invoicePricingService.previewInvoice(dp.getId(), dp.getKm());
 
         Map<String, BigDecimal> ketQua = new LinkedHashMap<>();
-        ketQua.put("tienPhong", tienPhong);
-        ketQua.put("tienDichVu", tienDichVu);
-        ketQua.put("tienGiam", tienGiam);
-        ketQua.put("tienVat", tienVat);
-        ketQua.put("tongTien", tongTien);
+        ketQua.put("tienPhong", gia.getTienPhong());
+        ketQua.put("tienDichVu", gia.getTienDichVu());
+        ketQua.put("tienGiam", gia.getTienGiam());
+        ketQua.put("tienVat", gia.getTienVat());
+        ketQua.put("tongTien", gia.getTongTien());
         return ketQua;
     }
 
@@ -441,11 +428,12 @@ public class NhanVienCheckoutController {
         }
         if (soLuong == null || soLuong < 1) soLuong = 1;
 
+        // NEW: dich vu vua duoc gan vao don lan dau -> lay don gia truc tiep tu Dich_vu.
         Chi_tiet_dich_vu ct = new Chi_tiet_dich_vu();
         ct.setDatPhong(dp);
         ct.setDv(dv);
         ct.setSoluong(soLuong);
-        ct.setDonGia(dv.getGia().multiply(BigDecimal.valueOf(soLuong)));
+        ct.setDonGia(invoicePricingService.createServiceLineItemPrice(dv, soLuong));
         ct.setNgay_su_dung(LocalDateTime.now());
         ct.setGhichu("Phát sinh lúc trả phòng");
         ctdvService.save(ct);

@@ -9,6 +9,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import su26sd09.su26sd09.dto.InvoicePricingResult;
 import su26sd09.su26sd09.dto.PendingBookingDraft;
 import su26sd09.su26sd09.dto.RoomBookingGuardDTO;
 import su26sd09.su26sd09.entity.*;
@@ -66,6 +67,9 @@ public class PhongController {
 
     @Autowired
     private BookingEmailService bookingEmailService;
+
+    @Autowired
+    private InvoicePricingService invoicePricingService;
 //
 ////    @GetMapping
 ////    public String index(Model model) {
@@ -189,15 +193,16 @@ public class PhongController {
         BigDecimal resthue = BigDecimal.valueOf(soDem(dp.getNgaydatPhong(), dp.getNgaytraPhong()));
         List<ChiTietDatPhong> listCt = chiTietDatPhongService.findByDatPhongId(id);
         List<Chi_tiet_dich_vu> listctdv = ctdvService.findByDatPhongId(id);
-        BigDecimal amountDv = BigDecimal.ZERO;
-        BigDecimal amount = BigDecimal.ZERO;
-        BigDecimal amountP = BigDecimal.ZERO;
-        if (listctdv != null) {
-            for (Chi_tiet_dich_vu dv : listctdv) {
-                amountDv = amountDv.add(dv.getDonGia());
+        // VIEW: xem gio hang truoc khi dat, cung cong thuc voi UPDATE_EXISTING.
+        InvoicePricingResult gia = invoicePricingService.previewInvoice(id, dp.getKm());
+        BigDecimal amount = gia.getTongTruocGiam();
+        BigDecimal amountDv = gia.getTienDichVu();
+        BigDecimal amountP = gia.getTienPhong();
+        BigDecimal tienGiam = gia.getTienGiam();
+        BigDecimal tongSauGiam = gia.getTongSauGiam();
+        BigDecimal tienVat = gia.getTienVat();
+        BigDecimal tongCong = gia.getTongTien();
 
-            }
-        }
         Map<Integer, Chi_tiet_dich_vu> dichVuDaChonMap = new HashMap<>();
         List<Integer> dichVuDaChonIds = new ArrayList<>();
         if (listctdv != null) {
@@ -208,21 +213,6 @@ public class PhongController {
                 }
             }
         }
-        for(ChiTietDatPhong ct : listCt){
-            amountP = amountP.add(ct.getGiaKhiDat());
-            System.out.println("Chi tiet phong dang dat: "+ct.getP().getSoPhong());
-            amount = amount.add(ct.getGiaKhiDat());
-
-            System.out.println("Amount: "+amount);
-
-        }
-        System.out.println("AmountDv: "+amountDv);
-        amount = amount.add(amountDv);
-        // KM: ap dung tren TONG (phong + dich vu), sau do VAT 10% tinh tren gia SAU GIAM
-        BigDecimal tienGiam = tinhTienGiam(amountP.add(amountDv), dp.getKm());
-        BigDecimal tongSauGiam = amountP.add(amountDv).subtract(tienGiam);
-        BigDecimal tienVat = tongSauGiam.multiply(new BigDecimal("0.10")).setScale(2, java.math.RoundingMode.HALF_UP);
-        BigDecimal tongCong = tongSauGiam.add(tienVat);
         model.addAttribute("TienDv",amountDv);
 
         model.addAttribute("TongTien",amount);
@@ -300,8 +290,10 @@ public class PhongController {
         BigDecimal tongPhuPhi = BigDecimal.ZERO;
         List<ChiTietDatPhong> listCt = new ArrayList<>();
         for (Phong p : phongDuocChon) {
+            // NEW: phong duoc chon lan dau cho gio hang nay -> lay gia truc tiep tu Phong.
             BigDecimal phuPhi = phongService.calculateExtraFeeFor(p.getMaPhong(), draft.getNgayNhan(), draft.getNgayTra());
-            BigDecimal giaKhiDat = p.getGiaMoiDem().multiply(BigDecimal.valueOf(soDemVal)).add(phuPhi);
+            BigDecimal giaKhiDat = invoicePricingService.createRoomLineItemPrice(
+                    p, draft.getNgayNhan(), draft.getNgayTra(), phuPhi);
             ChiTietDatPhong ct = new ChiTietDatPhong();
             ct.setP(p);
             ct.setGiaMoiDem(p.getGiaMoiDem());
@@ -325,8 +317,10 @@ public class PhongController {
                 Chi_tiet_dich_vu ct = new Chi_tiet_dich_vu();
                 ct.setSoluong(sl);
                 ct.setDv(dv);
-                // Tong tien dich vu = gia * soLuong * nightCount (moi ngay luu tru deu su dung)
-                ct.setDonGia(dv.getGia().multiply(BigDecimal.valueOf(sl)).multiply(BigDecimal.valueOf(soDemVal)));
+                // NEW: dich vu duoc chon lan dau cho gio hang nay -> lay don gia truc
+                // tiep tu Dich_vu. Tong tien dich vu = gia * soLuong * nightCount
+                // (moi ngay luu tru deu su dung).
+                ct.setDonGia(invoicePricingService.createServiceLineItemPrice(dv, sl * (int) soDemVal));
                 ct.setNgay_su_dung(draft.getNgayNhan());
                 dichVuDaChonMap.put(maDichVu, ct);
                 dichVuDaChonIds.add(maDichVu);
@@ -336,11 +330,14 @@ public class PhongController {
 
         KhuyenMai km = draft.getMaKhuyenMai() != null ? khuyenMaiService.findbyId(draft.getMaKhuyenMai()) : null;
         dp.setKm(km);
-        // KM: ap dung tren TONG (phong + dich vu), sau do VAT 10% tinh tren gia SAU GIAM
-        BigDecimal tienGiam = tinhTienGiam(amountP.add(amountDv), km);
-        BigDecimal tongSauGiam = amountP.add(amountDv).subtract(tienGiam);
-        BigDecimal tienVat = tongSauGiam.multiply(new BigDecimal("0.10")).setScale(2, java.math.RoundingMode.HALF_UP);
-        BigDecimal tongCong = tongSauGiam.add(tienVat);
+        // Booking nay CHUA duoc luu vao chi_tiet_dat_phong/chi_tiet_dich_vu nen
+        // khong the dung previewInvoice() (can maDatPhong da ton tai) - dung
+        // computeTotals() voi cac tong da tinh bang gia NEW o tren.
+        InvoicePricingResult gia = invoicePricingService.computeTotals(amountP, amountDv, km);
+        BigDecimal tienGiam = gia.getTienGiam();
+        BigDecimal tongSauGiam = gia.getTongSauGiam();
+        BigDecimal tienVat = gia.getTienVat();
+        BigDecimal tongCong = gia.getTongTien();
         BigDecimal amount = amountP.add(amountDv);
 
         model.addAttribute("TienDv", amountDv);
@@ -465,8 +462,9 @@ public class PhongController {
                 ct.setSoluong(sl);
                 ct.setDatPhong(dp);
                 ct.setDv(dv);
-                // Tong tien dich vu = gia * soLuong * nightCount
-                ct.setDonGia(dv.getGia().multiply(BigDecimal.valueOf(sl)).multiply(BigDecimal.valueOf(nightCount)));
+                // NEW: dich vu duoc gan vao don lan dau -> lay don gia truc tiep tu
+                // Dich_vu. Tong tien dich vu = gia * soLuong * nightCount.
+                ct.setDonGia(invoicePricingService.createServiceLineItemPrice(dv, sl * (int) nightCount));
                 // Filler: ngay su dung = ngay nhan phong (schema cot NOT NULL, nguoi dung khong chon nua)
                 ct.setNgay_su_dung(dp.getNgaydatPhong());
                 ctdvService.save(ct);
@@ -627,33 +625,21 @@ public class PhongController {
 
         List<ChiTietDatPhong> listCt = chiTietDatPhongService.findByDatPhongId(id);
         List<Chi_tiet_dich_vu> listctdv = ctdvService.findByDatPhongId(id);
-        BigDecimal amountDv = BigDecimal.ZERO;
        model.addAttribute("datPhong",dp);
         System.out.println("Debug dat phong Ngay nhan phong: "+dp.getNgaydatPhong());
        long nightCount = ChronoUnit.DAYS.between(dp.getNgaydatPhong().toLocalDate(), dp.getNgaytraPhong().toLocalDate());
        model.addAttribute("nightCount", Math.max(1, nightCount));
        model.addAttribute("chiTietDatPhongList",listCt);
-        BigDecimal amount = BigDecimal.ZERO;
-        BigDecimal ThueVat = new BigDecimal("0.10");
 
-
-        BigDecimal resThue = BigDecimal.valueOf(dp.getNgaytraPhong().getDayOfYear() - dp.getNgaydatPhong().getDayOfYear());
-        for(Chi_tiet_dich_vu dv : listctdv){
-            amountDv = amountDv.add(dv.getDonGia());
-        }
+        // VIEW: xem lai thong tin truoc khi khach xac nhan, cung cong thuc voi
+        // UPDATE_EXISTING.
+        InvoicePricingResult gia = invoicePricingService.previewInvoice(id, dp.getKm());
+        BigDecimal amountDv = gia.getTienDichVu();
+        BigDecimal amount = gia.getTienPhong();
+        BigDecimal tienGiam = gia.getTienGiam();
+        BigDecimal TienVat = gia.getTienVat();
+        BigDecimal TotalAmount = gia.getTongTien();
         model.addAttribute("TienDv",amountDv);
-        for (ChiTietDatPhong chiTietDatPhong : listCt){
-            amount = amount.add(chiTietDatPhong.getGiaKhiDat());
-            System.out.println("So tien: "+chiTietDatPhong.getGiaKhiDat() + "Amount: "+amount );
-
-            System.out.println("In for each loops: "+chiTietDatPhong.getGiaMoiDem());
-
-        }
-        // KM: ap dung tren TONG (phong + dich vu), VAT 10% tinh tren gia SAU GIAM
-        BigDecimal tienGiam = tinhTienGiam(amount.add(amountDv), dp.getKm());
-        BigDecimal tongSauGiam = amount.add(amountDv).subtract(tienGiam);
-        BigDecimal TienVat = tongSauGiam.multiply(ThueVat).setScale(2, RoundingMode.HALF_UP);
-        BigDecimal TotalAmount = tongSauGiam.add(TienVat);
         System.out.println("Amount: "+ amount);
         model.addAttribute("TienVat",TienVat);
         model.addAttribute("TienPhong",amount);
@@ -720,8 +706,10 @@ public class PhongController {
         BigDecimal tongPhuPhi = BigDecimal.ZERO;
         List<ChiTietDatPhong> listCt = new ArrayList<>();
         for (Phong p : phongDuocChon) {
+            // NEW: phong duoc chon lan dau cho ban nhap nay -> lay gia truc tiep tu Phong.
             BigDecimal phuPhi = phongService.calculateExtraFeeFor(p.getMaPhong(), draft.getNgayNhan(), draft.getNgayTra());
-            BigDecimal giaKhiDat = p.getGiaMoiDem().multiply(BigDecimal.valueOf(soDemVal)).add(phuPhi);
+            BigDecimal giaKhiDat = invoicePricingService.createRoomLineItemPrice(
+                    p, draft.getNgayNhan(), draft.getNgayTra(), phuPhi);
             ChiTietDatPhong ct = new ChiTietDatPhong();
             ct.setP(p);
             ct.setGiaMoiDem(p.getGiaMoiDem());
@@ -744,7 +732,8 @@ public class PhongController {
                 Chi_tiet_dich_vu ct = new Chi_tiet_dich_vu();
                 ct.setSoluong(sl);
                 ct.setDv(dv);
-                ct.setDonGia(dv.getGia().multiply(BigDecimal.valueOf(sl)));
+                // NEW: dich vu duoc chon lan dau cho ban nhap nay -> lay don gia truc tiep tu Dich_vu.
+                ct.setDonGia(invoicePricingService.createServiceLineItemPrice(dv, sl));
                 listctdv.add(ct);
                 amountDv = amountDv.add(ct.getDonGia());
             }
@@ -753,12 +742,12 @@ public class PhongController {
         KhuyenMai km = draft.getMaKhuyenMai() != null ? khuyenMaiService.findbyId(draft.getMaKhuyenMai()) : null;
         dp.setKm(km);
 
-        // KM: ap dung tren TONG (phong + dich vu), VAT 10% tinh tren gia SAU GIAM
-        BigDecimal tienGiam = tinhTienGiam(amount.add(amountDv), km);
-        BigDecimal tongSauGiam = amount.add(amountDv).subtract(tienGiam);
-        BigDecimal thueVat = new BigDecimal("0.10");
-        BigDecimal tienVat = tongSauGiam.multiply(thueVat).setScale(2, RoundingMode.HALF_UP);
-        BigDecimal totalAmount = tongSauGiam.add(tienVat);
+        // Ban nhap CHUA duoc luu vao chi_tiet_dat_phong/chi_tiet_dich_vu nen
+        // dung computeTotals() voi cac tong da tinh bang gia NEW o tren.
+        InvoicePricingResult gia = invoicePricingService.computeTotals(amount, amountDv, km);
+        BigDecimal tienGiam = gia.getTienGiam();
+        BigDecimal tienVat = gia.getTienVat();
+        BigDecimal totalAmount = gia.getTongTien();
 
         model.addAttribute("datPhong", dp);
         model.addAttribute("nightCount", Math.max(1, soDemVal));
@@ -833,7 +822,8 @@ public class PhongController {
                 ct.setSoluong(sl);
                 ct.setDatPhong(datPhong);
                 ct.setDv(dv);
-                ct.setDonGia(dv.getGia().multiply(BigDecimal.valueOf(sl)));
+                // NEW: dich vu duoc gan vao don lan dau -> lay don gia truc tiep tu Dich_vu.
+                ct.setDonGia(invoicePricingService.createServiceLineItemPrice(dv, sl));
                 ct.setNgay_su_dung(ngaySuDung);
                 ctdvService.save(ct);
             }
@@ -848,24 +838,6 @@ public class PhongController {
         }
 
         return datPhong;
-    }
-//
-    private BigDecimal tinhTienGiam(BigDecimal tienPhong, KhuyenMai km) {
-        if (km == null || !km.isHoatDong() || km.getGiatriGiam() == null) {
-            return BigDecimal.ZERO;
-        }
-        BigDecimal dieuKien = km.getGiaToiThieuDuocGiam() == null ? BigDecimal.ZERO : km.getGiaToiThieuDuocGiam();
-        if (tienPhong.compareTo(dieuKien) < 0) {
-            return BigDecimal.ZERO;
-        }
-        if ("PERCENT".equalsIgnoreCase(km.getLoaiGiam())) {
-            return tienPhong.multiply(km.getGiatriGiam())
-                    .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
-        }
-        if ("AMOUNT".equalsIgnoreCase(km.getLoaiGiam()) || "FIXED".equalsIgnoreCase(km.getLoaiGiam())) {
-            return km.getGiatriGiam().min(tienPhong);
-        }
-        return BigDecimal.ZERO;
     }
 //
     private String buildKhuyenMaiJson() {
@@ -1112,7 +1084,8 @@ public class PhongController {
         ctdp.setD(savedDp);
         ctdp.setP(phong);
         ctdp.setGiaMoiDem(phong.getGiaMoiDem());
-        ctdp.setGiaKhiDat(phong.getGiaMoiDem().multiply(BigDecimal.valueOf(soDem)).add(phuPhiNgoaiGio));
+        // NEW: phong duoc gan vao don lan dau -> lay gia truc tiep tu Phong.
+        ctdp.setGiaKhiDat(invoicePricingService.createRoomLineItemPrice(phong, ngayNhan, ngayTra, phuPhiNgoaiGio));
         ctdp.setPhuPhi(phuPhiNgoaiGio);
         chiTietDatPhongService.save(ctdp);
 

@@ -5,17 +5,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import su26sd09.su26sd09.constants.HuyDonConstants;
-import su26sd09.su26sd09.entity.Chi_tiet_dich_vu;
 import su26sd09.su26sd09.entity.DatPhong;
 import su26sd09.su26sd09.entity.HoaDon;
-import su26sd09.su26sd09.repository.ChiTietDichvuRepo;
 import su26sd09.su26sd09.repository.HoaDonRepo;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Objects;
 
 @Service
 public class HoaDonService {
@@ -27,11 +23,7 @@ public class HoaDonService {
     DatPhongService datPhongService;
 
     @Autowired
-    ChiTietDichvuRepo chiTietDichvuRepo;
-
-    /** VAT dung chung cho moi lan dong bo lai tien_dich_vu, khop voi cong thuc
-     *  tinhFolio() ben NhanVienCheckoutController (10%, lam tron ve so nguyen). */
-    private static final BigDecimal VAT_DONG_BO = new BigDecimal("0.10");
+    InvoicePricingService invoicePricingService;
 
     public static final String TT_DA_THANH_TOAN = "Da thanh toan";
     public static final String TT_DA_XUAT = "Da xuat";
@@ -176,22 +168,11 @@ public class HoaDonService {
             return null; // chua co hoa don, se duoc tinh dung ngay luc tao hoa don
         }
 
-        BigDecimal tongTienDichVuMoi = chiTietDichvuRepo.findByDatPhongId(maDatPhong).stream()
-                .map(Chi_tiet_dich_vu::getDonGia)
-                .filter(Objects::nonNull)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        BigDecimal tienPhong = hoaDon.getTienPhong() == null ? BigDecimal.ZERO : hoaDon.getTienPhong();
-        BigDecimal tienGiam = hoaDon.getTienGiam() == null ? BigDecimal.ZERO : hoaDon.getTienGiam();
-
-        BigDecimal tienVatMoi = tienPhong.add(tongTienDichVuMoi)
-                .multiply(VAT_DONG_BO)
-                .setScale(0, RoundingMode.HALF_UP);
-        BigDecimal tongTienMoi = tienPhong.add(tongTienDichVuMoi).add(tienVatMoi).subtract(tienGiam);
-
-        hoaDon.setTienDichVu(tongTienDichVuMoi);
-        hoaDon.setTienVat(tienVatMoi);
-        hoaDon.setTongTien(tongTienMoi);
+        // UPDATE_EXISTING: doc lai gia tu bang trung gian (chi_tiet_dat_phong +
+        // chi_tiet_dich_vu) va tinh lai toan bo hoa don bang cong thuc chuan (VAT
+        // tren gia SAU giam - xem InvoicePricingService). Thay the cong thuc
+        // VAT-on-gross rieng truoc day de tranh lech so voi cac luong khac.
+        invoicePricingService.recalculateInvoice(maDatPhong, hoaDon.getK(), hoaDon);
         hoaDon.setNgayCapNhat(LocalDateTime.now());
 
         return saveWithPaymentStatusCheck(hoaDon);

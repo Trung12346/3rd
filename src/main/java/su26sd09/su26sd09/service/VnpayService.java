@@ -7,6 +7,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import su26sd09.su26sd09.config.vnpayConfig;
+import su26sd09.su26sd09.dto.InvoicePricingResult;
 import su26sd09.su26sd09.dto.RefundDraft;
 import su26sd09.su26sd09.entity.*;
 
@@ -52,6 +53,9 @@ public class VnpayService {
 
     @Autowired
     HuyDonService huyDonService;
+
+    @Autowired
+    InvoicePricingService invoicePricingService;
 
     /** Phân biệt các luồng callback VNPay. */
     public static final String ORDER_INFO_THU_THEM_DICH_VU = "ThuThemDichVu";
@@ -391,31 +395,20 @@ public class VnpayService {
         List<ChiTietDatPhong> chiTietDatPhong = CtdatPhongService.findByDatPhongId(maDatPhong);
         List<Chi_tiet_dich_vu> chiTietDichVus = chiTietDichVuService.findByDatPhongId(maDatPhong);
 
-        BigDecimal amountPhong = BigDecimal.ZERO;
-        for (ChiTietDatPhong ctdp : chiTietDatPhong) {
-            amountPhong = amountPhong.add(ctdp.getGiaKhiDat());
-        }
-        BigDecimal amountDv = BigDecimal.ZERO;
-        for (Chi_tiet_dich_vu ctdv : chiTietDichVus) {
-            BigDecimal donGia = ctdv.getDonGia() == null ? BigDecimal.ZERO : ctdv.getDonGia();
-            // Phu thu (check-in som / check-out muon) gio gop chung vao tienDichVu,
-            // chiu KM + VAT nhu dich vu thuong/phat sinh - dong bo voi ThanhToanController
-            // va HoaDonService#dongBoTienDichVuTuChiTiet.
-            amountDv = amountDv.add(donGia);
-        }
-
         HoaDon _hd = hoaDonService.findByDatPhongId(dp.id);
         System.out.println("ID DP: " + dp.id);
 
         BigDecimal daThanhToan = _hd != null ? _hd.daThanhToan : BigDecimal.ZERO;
         System.out.println("DA THANH TOAN: " + daThanhToan);
 
-        BigDecimal VATCD = new BigDecimal("0.10");
-        // KM ap dung tren TONG (phong + dich vu, bao gom ca phu thu), VAT tren gia SAU GIAM.
-        BigDecimal tienGiam = tinhTienGiam(amountPhong.add(amountDv), dp.getKm());
-        BigDecimal tongSauGiam = amountPhong.add(amountDv).subtract(tienGiam);
-        BigDecimal tienVat = tongSauGiam.multiply(VATCD).setScale(2, RoundingMode.HALF_UP);
-        BigDecimal amountTongTien = tongSauGiam.add(tienVat);
+        // VIEW: xac minh so tien da thanh toan qua VNPay, cung cong thuc voi
+        // UPDATE_EXISTING (xem InvoicePricingService).
+        InvoicePricingResult gia = invoicePricingService.previewInvoice(maDatPhong, dp.getKm());
+        BigDecimal amountPhong = gia.getTienPhong();
+        BigDecimal amountDv = gia.getTienDichVu();
+        BigDecimal tienGiam = gia.getTienGiam();
+        BigDecimal tienVat = gia.getTienVat();
+        BigDecimal amountTongTien = gia.getTongTien();
 
         BigDecimal tongDaThanhToan = amountVnpay.add(daThanhToan);
         System.out.println("DA THANH TOAN: " + tongDaThanhToan);
@@ -484,24 +477,6 @@ public class VnpayService {
 
         System.out.println("Thanh toan thanh cong (dat phong lan dau): " + amountVnpay + " Ma GD: " + vnp_TransactionNo);
         return 1;
-    }
-
-    private BigDecimal tinhTienGiam(BigDecimal tienPhong, KhuyenMai km) {
-        if (km == null || !km.isHoatDong() || km.getGiatriGiam() == null) {
-            return BigDecimal.ZERO;
-        }
-        BigDecimal dieuKien = km.getGiaToiThieuDuocGiam() == null ? BigDecimal.ZERO : km.getGiaToiThieuDuocGiam();
-        if (tienPhong.compareTo(dieuKien) < 0) {
-            return BigDecimal.ZERO;
-        }
-        if ("PERCENT".equalsIgnoreCase(km.getLoaiGiam())) {
-            return tienPhong.multiply(km.getGiatriGiam())
-                    .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
-        }
-        if ("AMOUNT".equalsIgnoreCase(km.getLoaiGiam()) || "FIXED".equalsIgnoreCase(km.getLoaiGiam())) {
-            return km.getGiatriGiam().min(tienPhong);
-        }
-        return BigDecimal.ZERO;
     }
 }
 

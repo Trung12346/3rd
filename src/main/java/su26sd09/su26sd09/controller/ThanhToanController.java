@@ -10,12 +10,12 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
+import su26sd09.su26sd09.dto.InvoicePricingResult;
 import su26sd09.su26sd09.dto.VNPayParserDTO;
 import su26sd09.su26sd09.entity.*;
 import su26sd09.su26sd09.service.*;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -50,6 +50,9 @@ public class ThanhToanController {
     @Autowired
     BookingEmailService bookingEmailService;
 
+    @Autowired
+    InvoicePricingService invoicePricingService;
+
     @GetMapping("/dat-phong/{id}")
     public String submitTransaction(@PathVariable Integer id,Model model,
                                     RedirectAttributes redirectAttributes){
@@ -76,38 +79,21 @@ public class ThanhToanController {
             }
         }
 
-        BigDecimal Totalamount = BigDecimal.ZERO;
-        BigDecimal amountDv = BigDecimal.ZERO;
-        BigDecimal amountPhong = BigDecimal.ZERO;
-        BigDecimal ThueVat = new BigDecimal("0.10");
+        // VIEW: xem truoc hoa don (khong luu DB), dung chung cong thuc voi UPDATE_EXISTING.
+        InvoicePricingResult gia = invoicePricingService.previewInvoice(id, dp.getKm());
 
         List<ChiTietDatPhong> chiTietDatPhongs = chiTietDatPhongService.findByDatPhongId(id);
         List<Chi_tiet_dich_vu> chiTietDichVus = ctdvService.findByDatPhongId(id);
-
-        for(ChiTietDatPhong ctdp : chiTietDatPhongs){
-            Totalamount = Totalamount.add(ctdp.getGiaKhiDat());
-            amountPhong = amountPhong.add(ctdp.getGiaKhiDat());
-        }
-
-        for(Chi_tiet_dich_vu ctdv: chiTietDichVus){
-            amountDv = amountDv.add(ctdv.getDonGia());
-        }
-
-        // KM: ap dung tren TONG (phong + dich vu), VAT 10% tinh tren gia SAU GIAM
-        BigDecimal tienGiam = tinhTienGiam(amountPhong.add(amountDv), dp.getKm());
-        BigDecimal tongSauGiam = amountPhong.add(amountDv).subtract(tienGiam);
-        BigDecimal tienVat = tongSauGiam.multiply(ThueVat).setScale(2,RoundingMode.HALF_UP);
-        Totalamount = tongSauGiam.add(tienVat);
 
         long nightCount = java.time.temporal.ChronoUnit.DAYS.between(
                 dp.getNgaydatPhong().toLocalDate(), dp.getNgaytraPhong().toLocalDate());
 
         model.addAttribute("datPhong",dp);
-        model.addAttribute("TongTien",amountPhong);
-        model.addAttribute("TienDv",amountDv);
-        model.addAttribute("TienGiam",tienGiam);
-        model.addAttribute("TienVat",tienVat);
-        model.addAttribute("TongCong",Totalamount);
+        model.addAttribute("TongTien",gia.getTienPhong());
+        model.addAttribute("TienDv",gia.getTienDichVu());
+        model.addAttribute("TienGiam",gia.getTienGiam());
+        model.addAttribute("TienVat",gia.getTienVat());
+        model.addAttribute("TongCong",gia.getTongTien());
         // Chi tiet phong va dich vu de khach kiem duyet lai truoc khi thanh toan
         model.addAttribute("chiTietDatPhongList", chiTietDatPhongs);
         model.addAttribute("chiTietDichVuList", chiTietDichVus);
@@ -117,26 +103,12 @@ public class ThanhToanController {
 
     @PostMapping("/vnpay/{id}")
     public String submitVnpay(@PathVariable Integer id, HttpServletRequest request) {
-        BigDecimal amount = BigDecimal.ZERO;
-        BigDecimal amountDv = BigDecimal.ZERO;
-
-        List<ChiTietDatPhong> chiTietDatPhongs = chiTietDatPhongService.findByDatPhongId(id);
-        for (ChiTietDatPhong ctdp : chiTietDatPhongs) {
-            amount = amount.add(ctdp.getGiaKhiDat());
-        }
-
-        List<Chi_tiet_dich_vu> chiTietDichVus = ctdvService.findByDatPhongId(id);
-        for (Chi_tiet_dich_vu ctdv : chiTietDichVus) {
-            amountDv = amountDv.add(ctdv.getDonGia());
-        }
-
         DatPhong dp = datPhongService.findById(id);
-        BigDecimal VATCD = new BigDecimal("0.10");
-        // KM: ap dung tren TONG (phong + dich vu), VAT 10% tinh tren gia SAU GIAM
-        BigDecimal tienGiam = tinhTienGiam(amount.add(amountDv), dp != null ? dp.getKm() : null);
-        BigDecimal tongSauGiam = amount.add(amountDv).subtract(tienGiam);
-        BigDecimal tienVat = tongSauGiam.multiply(VATCD).setScale(2, RoundingMode.HALF_UP);
-        BigDecimal tongTien = tongSauGiam.add(tienVat);
+
+        // VIEW: chi de lay so tien can thu (khong luu DB o day, hoa don da
+        // duoc tao/tinh o buoc truoc). Dung chung cong thuc voi UPDATE_EXISTING.
+        InvoicePricingResult gia = invoicePricingService.previewInvoice(id, dp != null ? dp.getKm() : null);
+        BigDecimal tongTien = gia.getTongTien();
 
         //them cong nang
         HoaDon hd = hoaDonService.findByDatPhongId(id);
@@ -227,27 +199,17 @@ public class ThanhToanController {
             return "redirect:/home";
         }
 
-        BigDecimal amountPhong = BigDecimal.ZERO;
-        List<ChiTietDatPhong> chiTietDatPhongs = chiTietDatPhongService.findByDatPhongId(id);
-        for (ChiTietDatPhong ctdp : chiTietDatPhongs) {
-            amountPhong = amountPhong.add(ctdp.getGiaKhiDat());
-        }
-
-        BigDecimal amountDv = BigDecimal.ZERO;
-        List<Chi_tiet_dich_vu> chiTietDichVus = ctdvService.findByDatPhongId(id);
-        for (Chi_tiet_dich_vu ctdv : chiTietDichVus) {
-            BigDecimal donGia = ctdv.getDonGia() == null ? BigDecimal.ZERO : ctdv.getDonGia();
-            // Phu thu (check-in som / check-out muon) gio duoc gop chung vao tienDichVu,
-            // chiu KM + VAT nhu dich vu thuong/phat sinh - KHONG con tach rieng ngoai VAT nua.
-            amountDv = amountDv.add(donGia);
-        }
-
-        BigDecimal VATCD = new BigDecimal("0.10");
-        // KM: ap dung tren TONG (phong + dich vu, bao gom ca phu thu), VAT 10% tinh tren gia SAU GIAM.
-        BigDecimal tienGiam = tinhTienGiam(amountPhong.add(amountDv), dp.getKm());
-        BigDecimal tongSauGiam = amountPhong.add(amountDv).subtract(tienGiam);
-        BigDecimal tienVat = tongSauGiam.multiply(VATCD).setScale(2, RoundingMode.HALF_UP);
-        BigDecimal amountTongTien = tongSauGiam.add(tienVat);
+        // UPDATE_EXISTING: cac dong ChiTietDatPhong/Chi_tiet_dich_vu (bao gom ca
+        // phu thu check-in som/check-out muon) da duoc tao san (gia lay truc tiep
+        // tu Phong/Dich_vu luc do). O day chi doc lai tu bang trung gian de tinh
+        // tong hoa don lan dau — chua co HoaDon nen truyen null, tao HoaDon moi
+        // ngay ben duoi tu ket qua tra ve.
+        InvoicePricingResult gia = invoicePricingService.recalculateInvoice(id, dp.getKm(), null);
+        BigDecimal amountPhong = gia.getTienPhong();
+        BigDecimal amountDv = gia.getTienDichVu();
+        BigDecimal tienGiam = gia.getTienGiam();
+        BigDecimal tienVat = gia.getTienVat();
+        BigDecimal amountTongTien = gia.getTongTien();
 
         //-------------------------------------------------------deprecated--
         // KHONG doi trangThai DatPhong o day — don nay la "Yeu cau dat phong",
@@ -305,56 +267,20 @@ public class ThanhToanController {
     public String thanhToanThanhCong(@PathVariable Integer id, Model model) {
         DatPhong dp = datPhongService.findById(id);
 
-        BigDecimal Totalamount = BigDecimal.ZERO;
-        BigDecimal amountDv = BigDecimal.ZERO;
-        BigDecimal amountPhong = BigDecimal.ZERO;
-        BigDecimal ThueVat = new BigDecimal("0.10");
+        // VIEW: hien thi lai hoa don, cung cong thuc voi UPDATE_EXISTING nen so
+        // luon khop voi so da luu trong HoaDon.
+        InvoicePricingResult gia = invoicePricingService.previewInvoice(id, dp.getKm());
 
-        List<ChiTietDatPhong> chiTietDatPhongs = chiTietDatPhongService.findByDatPhongId(id);
-        List<Chi_tiet_dich_vu> chiTietDichVus = ctdvService.findByDatPhongId(id);
-
-        for (ChiTietDatPhong ctdp : chiTietDatPhongs) {
-            amountPhong = amountPhong.add(ctdp.getGiaKhiDat());
-        }
-        for (Chi_tiet_dich_vu ctdv : chiTietDichVus) {
-            amountDv = amountDv.add(ctdv.getDonGia());
-        }
-
-        BigDecimal tienGiam = tinhTienGiam(amountPhong, dp.getKm());
-        Totalamount = amountPhong.subtract(tienGiam).add(amountDv);
-        BigDecimal tienVat = Totalamount.multiply(ThueVat).setScale(2, RoundingMode.HALF_UP);
-        Totalamount = Totalamount.add(tienVat);
         HoaDon hd = hoaDonService.findByDatPhongId(id);
         model.addAttribute("transactionId",thanhToanService.findByHoaDonId(hd.getId()).getMagiaodich());
         model.addAttribute("datPhong", dp);
-        model.addAttribute("TongTien", amountPhong);
-        model.addAttribute("TienVat",tienVat);
-        model.addAttribute("TienDv", amountDv);
-        model.addAttribute("TienGiam", tienGiam);
-        model.addAttribute("TongCong", Totalamount);
-
-
+        model.addAttribute("TongTien", gia.getTienPhong());
+        model.addAttribute("TienVat",gia.getTienVat());
+        model.addAttribute("TienDv", gia.getTienDichVu());
+        model.addAttribute("TienGiam", gia.getTienGiam());
+        model.addAttribute("TongCong", gia.getTongTien());
 
         return "thanh-toan-thanh-cong";
     }
-
-    private BigDecimal tinhTienGiam(BigDecimal tienPhong, KhuyenMai km) {
-        if (km == null || !km.isHoatDong() || km.getGiatriGiam() == null) {
-            return BigDecimal.ZERO;
-        }
-        BigDecimal dieuKien = km.getGiaToiThieuDuocGiam() == null ? BigDecimal.ZERO : km.getGiaToiThieuDuocGiam();
-        if (tienPhong.compareTo(dieuKien) < 0) {
-            return BigDecimal.ZERO;
-        }
-        if ("PERCENT".equalsIgnoreCase(km.getLoaiGiam())) {
-            return tienPhong.multiply(km.getGiatriGiam())
-                    .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
-        }
-        if ("AMOUNT".equalsIgnoreCase(km.getLoaiGiam()) || "FIXED".equalsIgnoreCase(km.getLoaiGiam())) {
-            return km.getGiatriGiam().min(tienPhong);
-        }
-        return BigDecimal.ZERO;
-    }
-
 
 }

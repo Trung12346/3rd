@@ -11,6 +11,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
+import su26sd09.su26sd09.dto.InvoicePricingResult;
 import su26sd09.su26sd09.entity.ChiTietDatPhong;
 import su26sd09.su26sd09.entity.Chi_tiet_dich_vu;
 import su26sd09.su26sd09.entity.DatPhong;
@@ -55,7 +56,6 @@ public class BookingEmailService {
     private static final DateTimeFormatter FMT_DATETIME = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
     private static final DateTimeFormatter FMT_DATE = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
-    private static final BigDecimal VAT_RATE = new BigDecimal("0.10");
 
     private final JavaMailSender mailSender;
     private final TemplateEngine templateEngine;
@@ -63,6 +63,7 @@ public class BookingEmailService {
     private final ChiTietDatPhongService chiTietDatPhongService;
     private final ChiTietDichVuService chiTietDichVuService;
     private final HoaDonService hoaDonService;
+    private final InvoicePricingService invoicePricingService;
 
     @Value("${spring.mail.username:noreply@hotel.com}")
     private String fromAddress;
@@ -362,9 +363,11 @@ public class BookingEmailService {
         vars.put("danhSachDichVu", dsDichVu);
         vars.put("tongTienDichVu", formatTien(tongTienDv));
 
-        // Khuyen mai (neu co) - ap dung tren TONG (phong + dich vu)
+        // Khuyen mai (neu co) - ap dung tren TONG (phong + dich vu). VIEW: dung
+        // cong thuc CHUAN dung chung voi moi luong khac (xem InvoicePricingService).
         KhuyenMai km = dp.getKm();
-        BigDecimal tienGiam = tinhTienGiam(tongTienPhong.add(tongTienDv), km);
+        InvoicePricingResult gia = invoicePricingService.previewInvoice(dp.getId(), km);
+        BigDecimal tienGiam = gia.getTienGiam();
         if (km != null) {
             vars.put("khuyenMai", km);
             vars.put("moTaKhuyenMai", km.getPromoCode() != null ? km.getPromoCode() : "—");
@@ -380,12 +383,11 @@ public class BookingEmailService {
         boolean coPhuPhiThucTe = tongPhuPhi != null && tongPhuPhi.compareTo(BigDecimal.ZERO) > 0;
         vars.put("coPhuPhiThucTe", coPhuPhiThucTe);
 
-        // Tong cong = (phong + DV - giam) + VAT 10%
+        // Tong cong = (phong + DV - giam) + VAT 10% (VAT tren gia SAU giam).
         // KHONG cong phu phi (phu phi chi ap dung khi da check-in/out that su)
-        BigDecimal tienSauGiam = tongTienPhong.add(tongTienDv).subtract(tienGiam).max(BigDecimal.ZERO);
-        BigDecimal truocVat = tienSauGiam;
-        BigDecimal tienVat = truocVat.multiply(VAT_RATE).setScale(0, java.math.RoundingMode.HALF_UP);
-        BigDecimal tongCong = truocVat.add(tienVat);
+        BigDecimal truocVat = gia.getTongSauGiam();
+        BigDecimal tienVat = gia.getTienVat();
+        BigDecimal tongCong = gia.getTongTien();
 
         vars.put("tienTruocVat", formatTien(truocVat));
         vars.put("tienVat", formatTien(tienVat));
@@ -426,32 +428,6 @@ public class BookingEmailService {
     private String formatTien(BigDecimal tien) {
         if (tien == null) tien = BigDecimal.ZERO;
         return String.format("%,.0f", tien.doubleValue()) + " VND";
-    }
-
-    /**
-     * Giam gia theo loai cua khuyen mai.
-     * PERCENT: giam tienPhong * (giatriGiam / 100)
-     * AMOUNT/FIXED: giam giatriGiam (toi da tienPhong)
-     * Tra ve 0 neu khong dat gia toi thieu hoac KM khong hoat dong.
-     */
-    private BigDecimal tinhTienGiam(BigDecimal tienPhong, KhuyenMai km) {
-        if (km == null || !km.isHoatDong() || km.getGiatriGiam() == null) {
-            return BigDecimal.ZERO;
-        }
-        BigDecimal dieuKien = km.getGiaToiThieuDuocGiam() == null
-                ? BigDecimal.ZERO : km.getGiaToiThieuDuocGiam();
-        if (tienPhong.compareTo(dieuKien) < 0) {
-            return BigDecimal.ZERO;
-        }
-        if ("PERCENT".equalsIgnoreCase(km.getLoaiGiam())) {
-            return tienPhong.multiply(km.getGiatriGiam())
-                    .divide(BigDecimal.valueOf(100), 2, java.math.RoundingMode.HALF_UP);
-        }
-        if ("AMOUNT".equalsIgnoreCase(km.getLoaiGiam())
-                || "FIXED".equalsIgnoreCase(km.getLoaiGiam())) {
-            return km.getGiatriGiam().min(tienPhong);
-        }
-        return BigDecimal.ZERO;
     }
 
     private void sendEmail(String to, String subject, String templateName, Map<String, Object> vars)

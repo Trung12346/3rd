@@ -122,7 +122,10 @@ public class LichPhongController {
             for (Chi_tiet_dich_vu ctdv : ctdvList) {
                 int soLuong = ctdv.getSoluong() != null ? ctdv.getSoluong() : 0;
                 BigDecimal donGia = ctdv.getDonGia() != null ? ctdv.getDonGia() : BigDecimal.ZERO;
-                BigDecimal thanhTien = donGia.multiply(BigDecimal.valueOf(soLuong));
+                // donGia da la THANH TIEN (gia * soLuong, xem InvoicePricingService.
+                // createServiceLineItemPrice) - KHONG nhan lai voi soLuong o day nua,
+                // neu khong se bi tinh gap doi tren luoi lich.
+                BigDecimal thanhTien = donGia;
                 tong = tong.add(thanhTien);
                 dtoList.add(new LichPhongDichVuDTO(
                         ctdv.getDv() != null ? ctdv.getDv().getTen_dich_vu() : "Dịch vụ",

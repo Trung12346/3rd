@@ -36,6 +36,9 @@ public class DatPhongService {
     @Autowired
     PhongService phongService;
 
+    @Autowired
+    InvoicePricingService invoicePricingService;
+
 
 
 
@@ -318,8 +321,9 @@ public class DatPhongService {
 
         List<ChiTietDatPhong> chiTietList = new ArrayList<>();
         for (Phong p : danhSachPhong) {
+            // NEW: phong duoc gan vao don lan dau -> lay gia truc tiep tu Phong.
             BigDecimal phuPhi = phongService.calculateExtraFeeFor(p.getMaPhong(), ngayNhan, ngayTra);
-            BigDecimal giaKhiDat = p.getGiaMoiDem().multiply(BigDecimal.valueOf(soDem)).add(phuPhi);
+            BigDecimal giaKhiDat = invoicePricingService.createRoomLineItemPrice(p, ngayNhan, ngayTra, phuPhi);
 
             ChiTietDatPhong chiTiet = new ChiTietDatPhong();
             chiTiet.setP(p);
