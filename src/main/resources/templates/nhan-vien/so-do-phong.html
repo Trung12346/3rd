@@ -1585,36 +1585,6 @@
            th:value="${_csrf.token}"/>
 </form>
 
-<!-- ==================== MODAL: QR THANH TOÁN CHUYỂN KHOẢN ====================
-     Hien sau khi "Luu lich dat phong" / "Dat phong tai quay" thanh cong voi
-     phuong thuc "Chuyen khoan": QR tro toi /thanh-toan/pool?dat-phong-id={id}
-     (dung chung endpoint voi QR gui qua email - xem BookingEmailService),
-     de khach quet va hoan tat thanh toan ngay. -->
-<div id="sdpQrPayOverlay" class="sdp-cancel-modal-overlay">
-    <div class="sdp-cancel-modal-box" style="max-width:380px;">
-        <div class="sdp-cancel-modal-header">
-            <i class="fa-solid fa-qrcode" style="color:#2563eb;"></i>
-            <h3>Quét mã để thanh toán <span id="sdpQrPayMaDon"></span></h3>
-            <button type="button" class="sdp-cancel-modal-close" onclick="sdpCloseQrPayModal()">&times;</button>
-        </div>
-        <div class="sdp-cancel-modal-body" style="text-align:center;">
-            <p style="margin:0 0 14px; font-size:13px; color:#475569;">
-                Đơn đã được lên lịch. Yêu cầu khách quét mã QR bên dưới bằng ứng dụng ngân hàng
-                để hoàn tất thanh toán qua chuyển khoản.
-            </p>
-            <img id="sdpQrPayImg" src="" alt="QR thanh toán" style="width:220px; height:220px; border:1px solid #e2e8f0; border-radius:10px;">
-            <p style="font-size:12px; color:#94a3b8; margin:14px 0 0;">
-                Mã QR dẫn tới cổng thanh toán của đơn — trạng thái đơn sẽ tự cập nhật khi thanh toán thành công.
-            </p>
-        </div>
-        <div class="sdp-cancel-modal-footer">
-            <button type="button" class="sdp-btn-secondary" onclick="sdpCloseQrPayModal()">
-                Đóng
-            </button>
-        </div>
-    </div>
-</div>
-
 <!-- Context menu cho ô phòng -->
 <div class="sdp-ctx-backdrop" id="sdpCtxBackdrop"></div>
 <div class="sdp-ctx-menu" id="sdpCtxMenu" role="menu"></div>
@@ -2266,7 +2236,7 @@
                 var ciTre = parseDt(treTarget.checkin);
                 badge.classList.add('show');
                 badge.classList.remove('cd-soon', 'cd-urgent', 'cd-overdue');
-                labelEl.textContent = 'Trễ nhận phòng ';
+                labelEl.textContent = 'Trễ nhận phòng ' + hauToDonTiepTheo(maPhong, treTarget);
                 timeEl.textContent = fmtCountdown(t - ciTre);
                 badge.classList.add('cd-overdue');
                 return;
@@ -2284,9 +2254,21 @@
 
             badge.classList.add('show');
             badge.classList.remove('cd-soon', 'cd-urgent', 'cd-overdue');
-            labelEl.textContent = 'Nhận phòng sau ';
+            labelEl.textContent = 'Nhận phòng sau ' + hauToDonTiepTheo(maPhong, target);
             timeEl.textContent = fmtCountdown(diffMs);
             badge.classList.add(diffMs < 3600000 ? 'cd-urgent' : 'cd-soon');
+        }
+
+        // Neu phong dang co mot don khac ("Da nhan phong", tuc khach truoc van
+        // con o - vd tra phong muon) khac voi don dang duoc badge nhac toi, thi
+        // them cum "Đơn tiếp theo..." de nhan vien hieu day la canh bao cho
+        // luot khach KE TIEP, khong phai khach dang o trong phong hien tai.
+        function hauToDonTiepTheo(maPhong, donDangXet) {
+            var donDangO = tinDangSuDung(maPhong);
+            if (donDangO && (!donDangXet || donDangO.id !== donDangXet.id)) {
+                return '- Đơn tiếp theo... ';
+            }
+            return '';
         }
 
         function capNhatTatCaBadgeCheckIn() {
@@ -2303,12 +2285,18 @@
         //    toan du, dang cho xac nhan...) deu duoc coi la don hien tai.
         function tinDonHienTai(maPhong) {
             var list = getBookings(maPhong);
+            var donKhac = null;
             for (var i = 0; i < list.length; i++) {
                 var b = list[i];
                 if (parseDt(b.checkoutThuc)) continue; // da tra phong thuc te -> khong con la don hien tai
-                return b;
+                // Uu tien don khach dang thuc su o trong phong ("Da nhan phong") -
+                // vd truong hop tra phong muon: khach cu van dang o trong khi da
+                // co don ke tiep duoc tao san cho phong nay. Neu chua tim thay don
+                // dang o thi tam giu lai don dau tien hop le lam phuong an du phong.
+                if (b.trangThai === 'Da nhan phong') return b;
+                if (!donKhac) donKhac = b;
             }
-            return null;
+            return donKhac;
         }
 
         // Đơn CHƯA quá giờ trả phòng (checkout > hiện tại) VÀ đã sang đến ngày
@@ -5613,31 +5601,14 @@
             submitErrorEl.classList.toggle('show', !!msg);
         }
 
-        // ===== Modal QR thanh toan (chuyen khoan) =====
+        // ===== Trang QR thanh toan (chuyen khoan), mo o tab moi =====
         // Wired vao endpoint "payment pool" dung chung voi QR gui qua email
         // (xem BookingEmailService#buildQrCodeUrl): QR encode link
         // /thanh-toan/pool?dat-phong-id={id}, khach quet se duoc dua thang toi
-        // cong thanh toan (VNPay) cho dung don vua tao.
-        var CTX_URL_THANH_TOAN_POOL = /*[[@{/thanh-toan/pool}]]*/ '/thanh-toan/pool';
-        var qrPayOverlay = document.getElementById('sdpQrPayOverlay');
-        var qrPayImg = document.getElementById('sdpQrPayImg');
-        var qrPayMaDon = document.getElementById('sdpQrPayMaDon');
-        var qrPayOnClose = null;
-
-        function sdpOpenQrPayModal(maDatPhong, onClose) {
-            var linkThanhToan = window.location.origin + CTX_URL_THANH_TOAN_POOL + '?dat-phong-id=' + maDatPhong;
-            qrPayImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=' + encodeURIComponent(linkThanhToan);
-            qrPayMaDon.textContent = maDatPhong ? ('#' + maDatPhong) : '';
-            qrPayOnClose = typeof onClose === 'function' ? onClose : null;
-            qrPayOverlay.style.display = 'flex';
-        }
-        window.sdpCloseQrPayModal = function () {
-            qrPayOverlay.style.display = 'none';
-            qrPayImg.src = '';
-            var cb = qrPayOnClose;
-            qrPayOnClose = null;
-            if (cb) cb();
-        };
+        // cong thanh toan (VNPay) cho dung don vua tao. Trang QR duoc render
+        // rieng o server (xem NhanVienDatPhongController#thanhToanQr) va mo o
+        // MOT TAB MOI thay vi popup modal ngay tren So Do Phong.
+        var CTX_URL_THANH_TOAN_QR_PAGE = /*[[@{/nhan-su/so-do-phong/thanh-toan-qr/}]]*/ '/nhan-su/so-do-phong/thanh-toan-qr/';
 
         luuBtn.addEventListener('click', function () {
             dienLoiSubmit('');
@@ -5728,14 +5699,14 @@
                             window.location.reload();
                         };
                         // "Chuyen khoan" (chi ap dung cho "Len lich dat phong" - xem
-                        // dongBoHienThiTienTra o tren): hien QR thanh toan (wired toi
-                        // /thanh-toan/pool) truoc, chi reload trang SAU KHI nhan vien
-                        // dong modal - tranh mat QR ngay khi trang vua tai lai.
+                        // dongBoHienThiTienTra o tren): mo trang QR thanh toan rieng
+                        // O MOT TAB MOI (thay vi popup modal) de nhan vien co the dua
+                        // man hinh/tab do cho khach quet, roi reload lai So Do Phong
+                        // ngay tren tab hien tai.
                         if (!laModeQuay && phuongThuc && phuongThuc.value === 'chuyen-khoan' && kq.maDatPhong) {
-                            sdpOpenQrPayModal(kq.maDatPhong, reloadNgay);
-                        } else {
-                            reloadNgay();
+                            window.open(CTX_URL_THANH_TOAN_QR_PAGE + kq.maDatPhong, '_blank');
                         }
+                        reloadNgay();
                     });
                 })
                 .catch(function () {
@@ -5909,7 +5880,7 @@
 
         // Mot so modal khac (vd modal huy don) khong dung class .open ma bat/tat
         // truc tiep qua style.display, nen kiem tra rieng bang computed style.
-        var ID_MODAL_INLINE_STYLE = ['sdpCancelBookingOverlay', 'sdpQrPayOverlay'];
+        var ID_MODAL_INLINE_STYLE = ['sdpCancelBookingOverlay'];
 
         function coPopupDangMo() {
             if (document.querySelector(SELECTOR_DANG_MO)) return true;

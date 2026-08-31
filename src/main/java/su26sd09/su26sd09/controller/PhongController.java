@@ -473,7 +473,7 @@ public class PhongController {
             }
         }
 
-        if (dp.getN() != null && dp.getN().getVaiTro() != null && "ROLE_GUEST".equals(dp.getN().getVaiTro().getTenVaiTro())){
+        if (dp.getN() != null && dp.getN().getVaiTro() != null && "ROLE_KHACHHANG".equals(dp.getN().getVaiTro().getTenVaiTro())){
             KhachHang kh = dp.getN();
             if (dp.getHoten() == null || dp.getHoten().isBlank()) dp.setHoten(kh.getHoTen());
             if (dp.getEmail() == null || dp.getEmail().isBlank())   dp.setEmail(kh.getEmail());
@@ -585,26 +585,26 @@ public class PhongController {
             return "redirect:/home";
         }
 
-        // ===== BỎ QUA BƯỚC NHẬP THÔNG TIN NẾU LÀ KHÁCH CÓ TÀI KHOẢN (ROLE_GUEST) =====
-        // Có 2 cách xác định: đơn đã gắn user (dp.getN() != null) HOẶC user hiện tại đang login là ROLE_GUEST
+        // ===== BỎ QUA BƯỚC NHẬP THÔNG TIN NẾU LÀ KHÁCH CÓ TÀI KHOẢN (ROLE_KHACHHANG) =====
+        // Có 2 cách xác định: đơn đã gắn user (dp.getN() != null) HOẶC user hiện tại đang login là ROLE_KHACHHANG
         KhachHang currentKhach = null;
         boolean isRoleGuest = false;
 
         // Cách 1: đơn đã được gắn với user từ trước
         if (dp.getN() != null
                 && dp.getN().getVaiTro() != null
-                && "ROLE_GUEST".equals(dp.getN().getVaiTro().getTenVaiTro())) {
+                && "ROLE_KHACHHANG".equals(dp.getN().getVaiTro().getTenVaiTro())) {
             isRoleGuest = true;
             currentKhach = dp.getN();
         }
 
-        // Cách 2: user hiện tại đang đăng nhập với role ROLE_GUEST (kể cả khi đơn chưa gắn user)
+        // Cách 2: user hiện tại đang đăng nhập với role ROLE_KHACHHANG (kể cả khi đơn chưa gắn user)
         if (!isRoleGuest && authentication != null
                 && authentication.isAuthenticated()
                 && !(authentication instanceof AnonymousAuthenticationToken)) {
             KhachHang nd = nguoiDungService.findByEmail(authentication.getName());
             if (nd != null && nd.getVaiTro() != null
-                    && "ROLE_GUEST".equals(nd.getVaiTro().getTenVaiTro())) {
+                    && "ROLE_KHACHHANG".equals(nd.getVaiTro().getTenVaiTro())) {
                 isRoleGuest = true;
                 currentKhach = nd;
                 // Gắn user vào đơn nếu đơn chưa gắn (đơn tạo trước khi login)
@@ -615,20 +615,15 @@ public class PhongController {
         }
 
         if (isRoleGuest && currentKhach != null) {
-            // Tự động lấy thông tin từ tài khoản KhachHang để gán vào đơn đặt phòng
-            if (dp.getHoten() == null || dp.getHoten().isBlank()) {
-                dp.setHoten(currentKhach.getHoTen());
-            }
-            if (dp.getEmail() == null || dp.getEmail().isBlank()) {
-                dp.setEmail(currentKhach.getEmail());
-            }
-            if (dp.getSdt() == null || dp.getSdt().isBlank()) {
-                dp.setSdt(currentKhach.getSoDienThoai());
-            }
-            datphongservice.save(dp);
-            // Chuyển thẳng sang bước thanh toán, bỏ qua form nhập thông tin khách
-            return "redirect:/thanh-toan/dat-phong/" + id;
+            // Khach da co tai khoan (ROLE_KHACHHANG): KHONG con bo qua buoc nay nua -
+            // van hien thi trang xac nhan thong tin, nhung Ho ten/Email/SDT duoc
+            // tu dong dien tu tai khoan va khoa (readonly) o giao dien - xem
+            // "khachDaDangNhap" duoc truyen xuong view ben duoi.
+            dp.setHoten(currentKhach.getHoTen());
+            dp.setEmail(currentKhach.getEmail());
+            dp.setSdt(currentKhach.getSoDienThoai());
         }
+        model.addAttribute("khachDaDangNhap", isRoleGuest && currentKhach != null);
 
         List<ChiTietDatPhong> listCt = chiTietDatPhongService.findByDatPhongId(id);
         List<Chi_tiet_dich_vu> listctdv = ctdvService.findByDatPhongId(id);
@@ -671,12 +666,11 @@ public class PhongController {
     }
 
     /**
-     * Ban nhap (id < 0). Neu khach hien dang dang nhap voi tai khoan da co
-     * (ROLE_GUEST) - da biet ho ten/email/sdt - thi coi nhu buoc "Hoan tat
-     * dat phong" da du dieu kien, TAO DatPhong that ngay (bo qua form nhap
-     * tay) roi chuyen sang thanh toan, giong het hanh vi cu. Neu la khach
-     * vang lai (chua co thong tin lien he) thi CHUA tao gi ca, chi hien thi
-     * preview + form - DatPhong that chi duoc tao khi khach bam nut
+     * Ban nhap (id < 0). Luon hien thi trang xac nhan thong tin (preview),
+     * chua tao gi trong DB o day. Neu khach hien dang dang nhap voi tai
+     * khoan da co (ROLE_KHACHHANG) thi tu dong dien Ho ten/Email/SDT tu tai
+     * khoan va khoa (readonly) cac truong nay o giao dien (xem
+     * "khachDaDangNhap"). DatPhong that chi duoc tao khi khach bam nut
      * "Hoan tat dat phong" (xem SaveXacThucThongTin).
      */
     private String confirmCustomerInforPending(int id, Model model, Authentication authentication,
@@ -691,26 +685,21 @@ public class PhongController {
                 && !(authentication instanceof AnonymousAuthenticationToken)) {
             KhachHang nd = nguoiDungService.findByEmail(authentication.getName());
             if (nd != null && nd.getVaiTro() != null
-                    && "ROLE_GUEST".equals(nd.getVaiTro().getTenVaiTro())) {
+                    && "ROLE_KHACHHANG".equals(nd.getVaiTro().getTenVaiTro())) {
                 currentKhach = nd;
             }
         }
 
-        if (currentKhach != null) {
-            try {
-                DatPhong datPhong = createBookingFromDraft(draft, currentKhach);
-                datPhong.setHoten(currentKhach.getHoTen());
-                datPhong.setEmail(currentKhach.getEmail());
-                datPhong.setSdt(currentKhach.getSoDienThoai());
-                datphongservice.save(datPhong);
-                pendingBookingService.remove(request, id);
-                return "redirect:/thanh-toan/dat-phong/" + datPhong.getId();
-            } catch (IllegalStateException | IllegalArgumentException e) {
-                return "redirect:/loai-phong/" + draft.getLoaiPhongId();
-            }
-        }
+        // Khach da co tai khoan (ROLE_KHACHHANG): KHONG con tao DatPhong that va
+        // chuyen thang sang thanh toan nua - van hien thi trang xac nhan thong
+        // tin (preview) nhu khach vang lai, nhung se tu dong dien + khoa (readonly)
+        // Ho ten/Email/SDT tu tai khoan (xem buildTransientDatPhong ben duoi va
+        // "khachDaDangNhap" duoc truyen xuong view).
+        boolean khachDaDangNhap = currentKhach != null;
 
-        // Khach vang lai: preview, chua tao gi trong DB.
+        // Khach vang lai / khach da co tai khoan: preview, chua tao gi trong DB
+        // (DatPhong that chi duoc tao khi bam "Hoan tat dat phong" - xem
+        // SaveXacThucThongTin).
         List<Phong> phongDuocChon;
         try {
             phongDuocChon = phongService.assignRoomsForType(
@@ -720,6 +709,11 @@ public class PhongController {
         }
 
         DatPhong dp = buildTransientDatPhong(id, draft);
+        if (khachDaDangNhap) {
+            dp.setHoten(currentKhach.getHoTen());
+            dp.setEmail(currentKhach.getEmail());
+            dp.setSdt(currentKhach.getSoDienThoai());
+        }
         long soDemVal = soDem(draft.getNgayNhan(), draft.getNgayTra());
 
         BigDecimal amount = BigDecimal.ZERO;
@@ -777,6 +771,7 @@ public class PhongController {
         model.addAttribute("TongCong", totalAmount);
         model.addAttribute("TongPhuPhi", tongPhuPhi);
         model.addAttribute("chiTietDichVuList", listctdv);
+        model.addAttribute("khachDaDangNhap", khachDaDangNhap);
         return "dat-phong-thong-tin-khach";
     }
 
@@ -943,9 +938,9 @@ public class PhongController {
                     return "redirect:/loai-phong/" + draft.getLoaiPhongId();
                 }
 
-                dpThat.setHoten(hoten);
-                dpThat.setEmail(email);
-                dpThat.setSdt(sodienthoai);
+                dpThat.setHoten(khachHang != null ? khachHang.getHoTen() : hoten);
+                dpThat.setEmail(khachHang != null ? khachHang.getEmail() : email);
+                dpThat.setSdt(khachHang != null ? khachHang.getSoDienThoai() : sodienthoai);
                 dpThat.setYeuCauThem(yeucauthem);
                 datphongservice.save(dpThat);
 
@@ -1011,9 +1006,20 @@ public class PhongController {
         }
         System.out.println("Amount Xac nhan thong tin khach hang: "+amount);
         System.out.println("Amount dich vu xac nhan thong tin khach hang: "+amountdv);
-            dp.setHoten(hoten);
-            dp.setEmail(email);
-            dp.setSdt(sodienthoai);
+            KhachHang khachDangNhap = null;
+            if (!isNvDp && auth != null && auth.isAuthenticated() && !(auth instanceof AnonymousAuthenticationToken)) {
+                KhachHang ndAuth = nguoiDungService.findByEmail(auth.getName());
+                if (ndAuth != null && ndAuth.getVaiTro() != null
+                        && "ROLE_KHACHHANG".equals(ndAuth.getVaiTro().getTenVaiTro())) {
+                    khachDangNhap = ndAuth;
+                }
+            }
+            // Khach da dang nhap: Ho ten/Email/SDT bi khoa (readonly) o giao dien,
+            // nen luon lay tu tai khoan thay vi tin tuong gia tri gui len tu form
+            // de tranh bi sua tay qua devtools.
+            dp.setHoten(khachDangNhap != null ? khachDangNhap.getHoTen() : hoten);
+            dp.setEmail(khachDangNhap != null ? khachDangNhap.getEmail() : email);
+            dp.setSdt(khachDangNhap != null ? khachDangNhap.getSoDienThoai() : sodienthoai);
             dp.setYeuCauThem(yeucauthem);
 
             datphongservice.save(dp);

@@ -87,6 +87,25 @@
       border-color: var(--bx-blue); outline: none; box-shadow: 0 0 0 3px rgba(52,152,219,0.12);
     }
     .guest-field textarea { min-height: 82px; resize: vertical; }
+    .guest-field input.is-locked {
+      background: #f1f5f9;
+      color: #475569;
+      cursor: not-allowed;
+    }
+    .guest-locked-note {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      background: #eff6ff;
+      color: #1d4ed8;
+      border: 1px solid #bfdbfe;
+      border-radius: 9px;
+      padding: 10px 12px;
+      font-size: 12.5px;
+      line-height: 1.5;
+      margin: 0 0 16px;
+    }
+    .guest-locked-note i { margin-top: 2px; }
     .required { color: var(--bx-red); }
 
     /* ===== Tóm tắt ===== */
@@ -206,34 +225,44 @@
       <!-- ===== PANEL TRÁI: Form nhập thông tin khách ===== -->
       <section class="guest-panel">
         <h1><i class="fa-solid fa-user"></i> Xác Nhận Thông Tin Khách Đặt Phòng</h1>
+        <p th:if="${khachDaDangNhap}" class="guest-locked-note">
+          <i class="fa-solid fa-lock"></i>
+          Bạn đang đăng nhập bằng tài khoản của mình nên các thông tin bên dưới được lấy tự động từ tài khoản và không thể chỉnh sửa ở đây. Vui lòng vào trang tài khoản nếu cần cập nhật.
+        </p>
         <div class="guest-grid">
 
           <div class="guest-field full">
             <label>Họ tên <span class="required">*</span></label>
             <input type="text" name="hoTen" maxlength="150" required
                    placeholder="Nhập họ và tên đầy đủ"
-                   th:value="${guestInfo != null ? guestInfo.hoTen : ''}">
+                   th:readonly="${khachDaDangNhap}"
+                   th:classappend="${khachDaDangNhap} ? 'is-locked' : ''"
+                   th:value="${datPhong != null ? datPhong.hoten : ''}">
           </div>
 
           <div class="guest-field">
             <label>Email <span class="required">*</span></label>
             <input type="email" name="email" maxlength="150" required
                    placeholder="example@email.com"
-                   th:value="${guestInfo != null ? guestInfo.email : ''}">
+                   th:readonly="${khachDaDangNhap}"
+                   th:classappend="${khachDaDangNhap} ? 'is-locked' : ''"
+                   th:value="${datPhong != null ? datPhong.email : ''}">
           </div>
 
           <div class="guest-field">
             <label>Số điện thoại <span class="required">*</span></label>
             <input type="tel" name="sdt" maxlength="20" required
                    placeholder="0xxxxxxxxx"
-                   th:value="${guestInfo != null ? guestInfo.sdt : ''}">
+                   th:readonly="${khachDaDangNhap}"
+                   th:classappend="${khachDaDangNhap} ? 'is-locked' : ''"
+                   th:value="${datPhong != null ? datPhong.sdt : ''}">
           </div>
 
           <div class="guest-field full">
             <label>Yêu cầu thêm</label>
             <textarea name="yeuCauThem"
                       placeholder="Ví dụ: phòng tầng cao, giường đôi, ..."
-                      th:text="${guestInfo != null ? guestInfo.yeuCauThem : ''}"></textarea>
+                      th:text="${datPhong != null ? datPhong.yeuCauThem : ''}"></textarea>
           </div>
 
         </div>

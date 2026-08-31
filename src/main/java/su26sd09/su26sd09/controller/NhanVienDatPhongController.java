@@ -2090,6 +2090,15 @@ public class NhanVienDatPhongController {
                 .collect(Collectors.toList());
     }
 
+    // Trang rieng hien QR thanh toan chuyen khoan cho don vua "Len lich dat
+    // phong" tu So Do Phong - mo o TAB MOI thay vi popup modal, dung chung
+    // endpoint "/thanh-toan/pool" nhu QR gui qua email (xem BookingEmailService).
+    @GetMapping("/so-do-phong/thanh-toan-qr/{maDatPhong}")
+    public String thanhToanQr(@PathVariable Integer maDatPhong, Model model) {
+        model.addAttribute("maDatPhong", maDatPhong);
+        return "nhan-vien/thanh-toan-qr";
+    }
+
     @GetMapping("/so-do-phong")
     public String soDoPhong(Model model) {
         List<Phong> tatCaPhong = phongService.findAllPhong();
