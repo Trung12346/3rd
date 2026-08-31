@@ -2340,9 +2340,16 @@ public class NhanVienDatPhongController {
             @RequestParam(value = "dichVuIds", required = false) List<Integer> dichVuIds,
             @RequestParam(required = false) BigDecimal tienKhachTra,
             @RequestParam(required = false) String phuongThucThanhToan,
+            @RequestParam(required = false) Integer khachHangId,
             Authentication authentication) {
 
         Map<String, Object> result = new LinkedHashMap<>();
+
+        // Neu nhan vien chon 1 khach hang co san tu goi y (autocomplete) va KHONG
+        // sua tay ten/email/sdt sau do, gan thang don dat phong nay vao tai khoan
+        // do (KhachHang.n) thay vi chi luu ho_ten/email/sdt dang van ban roi ma
+        // khong lien ket duoc voi tai khoan da dang ky cua khach.
+        KhachHang khachHangDaChon = khachHangId != null ? khachHangRepository.findById(khachHangId).orElse(null) : null;
 
         NhanSu nvCheck = authentication == null ? null : nhanVienService.FindByemail(authentication.getName());
         boolean isAdmin = authentication != null && authentication.getAuthorities().stream()
@@ -2519,6 +2526,7 @@ public class NhanVienDatPhongController {
             dp.setEmail(email);
             dp.setSdt(sdt);
             dp.setMa_cccd(cccd.trim());
+            dp.setN(khachHangDaChon);
             dp.setNgaydatPhong(ngayNhan);
             dp.setNgaytraPhong(ngayTra);
             dp.setSonguoiLon(slNguoiLon);
@@ -2652,9 +2660,16 @@ public class NhanVienDatPhongController {
             @RequestParam(value = "dichVuIds", required = false) List<Integer> dichVuIds,
             @RequestParam(required = false) BigDecimal tienKhachTra,
             @RequestParam(required = false) String phuongThucThanhToan,
+            @RequestParam(required = false) Integer khachHangId,
             Authentication authentication) {
 
         Map<String, Object> result = new LinkedHashMap<>();
+
+        // Neu nhan vien chon 1 khach hang co san tu goi y (autocomplete) va KHONG
+        // sua tay ten/email/sdt sau do, gan thang don dat phong nay vao tai khoan
+        // do (KhachHang.n) thay vi chi luu ho_ten/email/sdt dang van ban roi ma
+        // khong lien ket duoc voi tai khoan da dang ky cua khach.
+        KhachHang khachHangDaChon = khachHangId != null ? khachHangRepository.findById(khachHangId).orElse(null) : null;
 
         NhanSu nvCheck = authentication == null ? null : nhanVienService.FindByemail(authentication.getName());
         boolean isAdmin = authentication != null && authentication.getAuthorities().stream()
@@ -2836,6 +2851,7 @@ public class NhanVienDatPhongController {
             dp.setEmail(email);
             dp.setSdt(sdt);
             dp.setMa_cccd(cccd.trim());
+            dp.setN(khachHangDaChon);
             dp.setNgaydatPhong(ngayNhan);
             dp.setNgaydatPhongThuc(ngayNhanThuc);
             dp.setNgaytraPhong(ngayTra);

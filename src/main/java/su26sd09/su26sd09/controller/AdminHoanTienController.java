@@ -37,6 +37,8 @@ public class AdminHoanTienController {
                 .filter(hd -> hd.getTrangThaiHoanTien() != null)
                 .filter(hd -> trangThaiHoanTien == null || trangThaiHoanTien.isEmpty()
                         || trangThaiHoanTien.equals(hd.getTrangThaiHoanTien()))
+                // Yeu cau moi nhat len dau - sap xep giam dan theo ID hoa don.
+                .sorted(java.util.Comparator.comparing(HoaDon::getId).reversed())
                 .toList());
         return "admin/hoan-tien-list";
     }

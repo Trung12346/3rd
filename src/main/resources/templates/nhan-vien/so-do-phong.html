@@ -4763,7 +4763,6 @@
         }
 
         function timKhachHangGoiY(tuKhoa) {
-            khachHangIdInput.value = '';
             if (!tuKhoa || tuKhoa.trim().length < 2) {
                 an_KhachHangGoiY();
                 return;
@@ -4779,11 +4778,26 @@
                 .catch(function () { /* loi mang: bo qua, khong chan nhap tay */ });
         }
 
+        /* Sau khi chon 1 goi y, id duoc gan vao sdpLichKhachHangId de backend
+         * biet dat phong nay gan voi tai khoan nao. Nhung neu nhan vien sua tay
+         * ten/email/sdt sau do (khong con chac chan la cung 1 nguoi/tai khoan
+         * nua), phai xoa id ngay lap tuc de tranh gan nham dat phong cho tai
+         * khoan cu. Rieng CCCD KHONG lam xoa id (nhan vien co the bo sung/sua
+         * CCCD luc lam thu tuc ma van la cung 1 khach hang).
+         */
+        function xoaKhachHangIdNeuDaChon() {
+            if (khachHangIdInput.value) khachHangIdInput.value = '';
+        }
+
         tenInput.addEventListener('input', function () {
+            xoaKhachHangIdNeuDaChon();
             var v = tenInput.value;
             if (suggestDebounceTimer) clearTimeout(suggestDebounceTimer);
             suggestDebounceTimer = setTimeout(function () { timKhachHangGoiY(v); }, 300);
         });
+
+        emailInput.addEventListener('input', xoaKhachHangIdNeuDaChon);
+        sdtInput.addEventListener('input', xoaKhachHangIdNeuDaChon);
 
         tenInput.addEventListener('keydown', function (e) {
             if (!suggestBox.classList.contains('open') || !suggestActiveItems.length) return;
@@ -5645,6 +5659,7 @@
             body.append('email', document.getElementById('sdpLichEmail').value || '');
             body.append('cccd', layCccdHienTai());
             body.append('sdt', document.getElementById('sdpLichSdt').value || '');
+            if (khachHangIdInput.value) body.append('khachHangId', khachHangIdInput.value);
             body.append('songuoiLon', soNguoiLon);
             body.append('sotreEm', soTreEm);
             body.append('khuyenMaiCode', document.getElementById('sdpLichKhuyenMai').value || '');

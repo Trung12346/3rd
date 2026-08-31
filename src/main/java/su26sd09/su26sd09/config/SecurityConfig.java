@@ -18,6 +18,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import su26sd09.su26sd09.repository.NhanVienRepo;
 import su26sd09.su26sd09.service.CustomerUserDetailsService;
 import su26sd09.su26sd09.service.EmployeeUserDetailsService;
@@ -40,6 +41,12 @@ public class SecurityConfig {
     @Order(1)
     public SecurityFilterChain employeeSecurityFilterChain(HttpSecurity http) throws Exception {
         http.securityMatcher("/nhan-su/**")
+                // Luu SecurityContext duoi 1 session attribute key RIENG cho khu vuc
+                // nhan vien, khac voi key mac dinh ma customerSecurityFilterChain dung.
+                // Ca 2 khu vuc van dung chung 1 HttpSession/JSESSIONID (khong can doi
+                // cookie), nhung vi doc/ghi 2 attribute khac nhau nen dang nhap ben
+                // nay se KHONG duoc cong nhan la da dang nhap ben khach (va nguoc lai).
+                .securityContext(context -> context.securityContextRepository(employeeSecurityContextRepository()))
                 .authenticationProvider(employeeAuthenticationProvider())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/nhan-su/login").permitAll()
@@ -81,7 +88,8 @@ public class SecurityConfig {
     @Bean
     @Order(2)
     public SecurityFilterChain customerSecurityFilterChain(HttpSecurity http) throws Exception {
-        http.authenticationProvider(customerAuthenticationProvider())
+        http.securityContext(context -> context.securityContextRepository(customerSecurityContextRepository()))
+                .authenticationProvider(customerAuthenticationProvider())
 //                .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                                 .requestMatchers("/login", "/api/auth/**", "/verify-email", "/home/**",
@@ -105,6 +113,31 @@ public class SecurityConfig {
                 session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED).invalidSessionUrl("/login"));
 
         return http.build();
+    }
+
+    /**
+     * SecurityContextRepository rieng cho khu vuc /nhan-su/** - luu SecurityContext
+     * duoi session attribute "NHAN_SU_SECURITY_CONTEXT" thay vi key mac dinh
+     * "SPRING_SECURITY_CONTEXT" (ma customerSecurityContextRepository dung), de
+     * dang nhap nhan vien khong bi cong nhan la da dang nhap ben trang khach.
+     */
+    @Bean
+    public HttpSessionSecurityContextRepository employeeSecurityContextRepository() {
+        HttpSessionSecurityContextRepository repo = new HttpSessionSecurityContextRepository();
+        repo.setSpringSecurityContextKey("NHAN_SU_SECURITY_CONTEXT");
+        return repo;
+    }
+
+    /**
+     * SecurityContextRepository rieng cho khu vuc khach hang (mien trong "/nhan-su/**"),
+     * dung key "KHACH_HANG_SECURITY_CONTEXT" rieng (khong dung key mac dinh nua) de
+     * dam bao doc lap hoan toan voi employeeSecurityContextRepository o tren.
+     */
+    @Bean
+    public HttpSessionSecurityContextRepository customerSecurityContextRepository() {
+        HttpSessionSecurityContextRepository repo = new HttpSessionSecurityContextRepository();
+        repo.setSpringSecurityContextKey("KHACH_HANG_SECURITY_CONTEXT");
+        return repo;
     }
 
     @Bean

@@ -32,7 +32,7 @@ public interface KhachHangRepository extends JpaRepository<KhachHang, Integer> {
             "AND (:trangThai IS NULL OR trang_thai = :trangThai) " +
             "AND (:tuNgay IS NULL OR ngay_tao >= :tuNgay) " +
             "AND (:denNgay IS NULL OR ngay_tao <= :denNgay) " +
-            "ORDER BY ngay_tao DESC",
+            "ORDER BY ma_khach_hang DESC",
             nativeQuery = true)
     public List<KhachHang> filterKhach(@Param("keyword") String keyword,
                                         @Param("trangThai") Boolean trangThai,

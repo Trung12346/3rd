@@ -340,12 +340,24 @@ header {
 /* ================= TRANG CHU ================= */
 .hero {
     height: 75vh;
-    /* Giu anh nen cu hoac ban co the thay anh tong xanh troi cho hop */
-    background: url('https://images.unsplash.com/photo-1542314831-c6a4d14d8c85?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80') center/cover no-repeat;
+    /* Mau nen du phong trong luc anh <img class="hero-bg-img"> chua tai xong
+       hoac neu chua dan URL vao. */
+    background: #1a1a1a;
     position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
+    overflow: hidden;
+}
+
+.hero-bg-img {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    z-index: 0;
 }
 
 .hero::before {
@@ -353,13 +365,14 @@ header {
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
     background: rgba(0, 0, 0, 0.35); /* Tang do dam lop phu mot chut */
+    z-index: 1;
 }
 
 .hero-text {
     position: relative;
     text-align: center;
     color: var(--white);
-    z-index: 1;
+    z-index: 2;
 }
 
 .hero-text h1 {
@@ -1791,7 +1804,7 @@ footer {
     left: 50%;
     bottom: 70px;
     transform: translateX(-50%);
-    z-index: 1;
+    z-index: 2;
     width: 26px;
     height: 42px;
     border: 2px solid rgba(255,255,255,0.65);

@@ -22,7 +22,7 @@ public interface LoaiPhongRepository extends JpaRepository<LoaiPhong, Integer> {
         where (:minGia is null or lp.giaCoBan >= :minGia)
         and (:maxGia is null or lp.giaCoBan <= :maxGia)
         and (:soKhach is null or lp.sucChuaToiDa >= :soKhach)
-        order by lp.tenLoai asc
+        order by lp.id desc
     """)
     List<LoaiPhong> searchLoaiPhong(
             @Param("minGia") BigDecimal minGia,
@@ -46,7 +46,7 @@ public interface LoaiPhongRepository extends JpaRepository<LoaiPhong, Integer> {
         and (:minGia is null or lp.giaCoBan >= :minGia)
         and (:maxGia is null or lp.giaCoBan <= :maxGia)
         and (:soKhach is null or lp.sucChuaToiDa >= :soKhach)
-        order by lp.tenLoai asc
+        order by lp.id desc
     """)
     Page<LoaiPhong> searchLoaiPhongPaged(
             @Param("keyword") String keyword,
@@ -67,7 +67,7 @@ public interface LoaiPhongRepository extends JpaRepository<LoaiPhong, Integer> {
         AND (:minGia IS NULL OR lp.gia_co_ban >= :minGia)
         AND (:maxGia IS NULL OR lp.gia_co_ban <= :maxGia)
         AND (:soKhach IS NULL OR lp.suc_chua_toi_da >= :soKhach)
-        ORDER BY lp.ten_loai ASC
+        ORDER BY lp.ma_loai_phong DESC
         OFFSET :offset ROWS FETCH NEXT :limit ROWS ONLY
     """, nativeQuery = true)
     List<LoaiPhong> searchLoaiPhongPagedNative(
