@@ -204,6 +204,9 @@
         .sdp-room-card__body { padding: 13px 14px 14px; }
 
         .sdp-room-card__top { display: flex; align-items: flex-start; justify-content: space-between; gap: 6px; }
+        .sdp-status-wrap { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; justify-content: flex-end; }
+        .sdp-don-id-badge { font-size: 11.5px; font-weight: 700; color: #6b7280; white-space: nowrap; }
+        .sdp-required-mark { color: #dc2626; }
         .sdp-room-card .so-phong { font-size: 17px; font-weight: 800; color: #1f2937; letter-spacing: -0.2px; }
         .sdp-room-card .loai-phong { font-size: 11.5px; color: #6b7280; margin-top: 1px; font-weight: 600; }
 
@@ -340,25 +343,18 @@
         .sdp-policy-backdrop.open { display: block; }
         .sdp-policy-modal {
             display: none; position: fixed; z-index: 4001; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            width: 420px; max-width: calc(100vw - 32px); background: #fff; border-radius: 16px;
+            width: 470px; max-width: calc(100vw - 32px); background: #fff; border-radius: 16px;
             box-shadow: 0 20px 50px rgba(15,23,42,0.25); overflow: hidden;
         }
         .sdp-policy-modal.open { display: block; }
         .sdp-policy-head {
             display: flex; align-items: center; gap: 10px; padding: 18px 20px;
-            background: linear-gradient(120deg, #f97316, #dc2626); color: #fff;
+            background: #dc2626; color: #fff;
         }
         .sdp-policy-head i { font-size: 18px; }
         .sdp-policy-head h3 { margin: 0; font-size: 15px; font-weight: 800; }
         .sdp-policy-body { padding: 18px 20px; }
         .sdp-policy-body p { margin: 0 0 12px; font-size: 13.5px; color: #374151; line-height: 1.5; }
-        .sdp-policy-amount {
-            display: flex; align-items: center; justify-content: space-between;
-            background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px;
-            padding: 10px 14px; margin-bottom: 12px;
-        }
-        .sdp-policy-amount span { font-size: 12.5px; color: #b91c1c; font-weight: 700; }
-        .sdp-policy-amount strong { font-size: 18px; color: #b91c1c; font-weight: 800; }
         .sdp-policy-note { font-size: 12px; color: #6b7280; margin-bottom: 0 !important; }
         .sdp-policy-actions { padding: 14px 20px 20px; display: flex; justify-content: flex-end; gap: 10px; }
 
@@ -1290,10 +1286,16 @@
                                         Standard
                                     </div>
                                 </div>
-                                <span class="sdp-status-pill">
-                                    <span class="dot"></span>
-                                    <span th:text="${nhanTrangThai[phong.maPhong]}">Trống</span>
-                                </span>
+                                <div class="sdp-status-wrap">
+                                    <span class="sdp-status-pill">
+                                        <span class="dot"></span>
+                                        <span th:text="${nhanTrangThai[phong.maPhong]}">Trống</span>
+                                    </span>
+                                    <span class="sdp-don-id-badge"
+                                          data-don-id-badge
+                                          th:if="${maDonDangSuDung[phong.maPhong]} != null"
+                                          th:text="'#' + ${maDonDangSuDung[phong.maPhong]}">#123</span>
+                                </div>
                             </div>
 
                             <div class="sdp-room-card__meta">
@@ -1545,17 +1547,19 @@
     </div>
     <div class="sdp-policy-body">
         <p id="sdpPolicyRule"></p>
-        <div class="sdp-policy-amount">
-            <span>Phụ thu</span>
-            <strong id="sdpPolicyAmount">0đ</strong>
-        </div>
-        <div class="sdp-policy-amount" id="sdpPolicyConLaiRow" style="display:none;">
-            <span>Còn lại (trước đó)</span>
-            <strong id="sdpPolicyConLai">0đ</strong>
-        </div>
-        <div class="sdp-policy-amount" id="sdpPolicyTongRow" style="display:none; background:#fff7ed; border-color:#fed7aa;">
-            <span style="color:#c2410c;">Tổng phải thu</span>
-            <strong id="sdpPolicyTong" style="color:#c2410c;">0đ</strong>
+        <div class="sdp-lich-summary" id="sdpPolicySummary" style="margin:0 0 12px;">
+            <div class="sdp-lich-summary-row">
+                <span id="sdpPolicyAmountLabel">Phụ thu</span>
+                <span id="sdpPolicyAmount">0đ</span>
+            </div>
+            <div class="sdp-lich-summary-row" id="sdpPolicyConLaiRow" style="display:none;">
+                <span>Còn lại (trước đó)</span>
+                <span id="sdpPolicyConLai">0đ</span>
+            </div>
+            <div class="sdp-lich-summary-row total" id="sdpPolicyTongRow" style="display:none;">
+                <span>Tổng phải thu</span>
+                <span id="sdpPolicyTong">0đ</span>
+            </div>
         </div>
         <p class="sdp-policy-note" id="sdpPolicyNote"></p>
         <!-- O nhap tien - dung LAI dung field/style voi "Tien khach tra" cua tinh
@@ -1678,14 +1682,16 @@
             <h4>Thông tin khách</h4>
             <div class="sdp-lich-grid">
                 <div class="sdp-lich-field sdp-lich-field-autocomplete">
-                    <label for="sdpLichTen">Tên khách</label>
-                    <input type="text" id="sdpLichTen" placeholder="Nguyễn Văn A" autocomplete="off">
+                    <label for="sdpLichTen">Tên khách <span class="sdp-required-mark">*</span></label>
+                    <input type="text" id="sdpLichTen" placeholder="Nguyễn Văn A" autocomplete="off" required>
                     <input type="hidden" id="sdpLichKhachHangId">
                     <div class="sdp-lich-suggest-box" id="sdpLichSuggestBox"></div>
+                    <div class="sdp-lich-field-error" id="sdpLichTenError"></div>
                 </div>
                 <div class="sdp-lich-field">
-                    <label for="sdpLichEmail">Email</label>
-                    <input type="email" id="sdpLichEmail" placeholder="email@vidu.com" autocomplete="off">
+                    <label for="sdpLichEmail">Email <span class="sdp-required-mark">*</span></label>
+                    <input type="email" id="sdpLichEmail" placeholder="email@vidu.com" autocomplete="off" required>
+                    <div class="sdp-lich-field-error" id="sdpLichEmailError"></div>
                 </div>
                 <div class="sdp-lich-field" id="sdpLichCccdGroup">
                     <label for="sdpLichCccd">CCCD</label>
@@ -1705,8 +1711,9 @@
                     <div class="sdp-lich-field-error" id="sdpLichGiayToError"></div>
                 </div>
                 <div class="sdp-lich-field">
-                    <label for="sdpLichSdt">Số điện thoại</label>
-                    <input type="tel" id="sdpLichSdt" placeholder="09xxxxxxxx" autocomplete="off">
+                    <label for="sdpLichSdt">Số điện thoại <span class="sdp-required-mark">*</span></label>
+                    <input type="tel" id="sdpLichSdt" placeholder="09xxxxxxxx" autocomplete="off" required>
+                    <div class="sdp-lich-field-error" id="sdpLichSdtError"></div>
                 </div>
                 <div class="sdp-lich-field">
                     <label for="sdpLichSoNguoiLon">Số người lớn</label>
@@ -1770,7 +1777,7 @@
                 <div class="sdp-lich-pay-methods">
                     <div class="sdp-lich-pay-method">
                         <input type="radio" name="sdpLichPhuongThuc" id="sdpLichPtThe" value="chuyen-khoan">
-                        <label for="sdpLichPtThe"><i class="fa-solid fa-credit-card"></i>Chuyển khoản</label>
+                        <label for="sdpLichPtThe"><i class="fa-solid fa-credit-card"></i>VNPay</label>
                     </div>
                     <div class="sdp-lich-pay-method">
                         <input type="radio" name="sdpLichPhuongThuc" id="sdpLichPtTienMat" value="tien-mat" checked>
@@ -2234,6 +2241,7 @@
             for (var i = 0; i < list.length; i++) {
                 var b = list[i];
                 if (parseDt(b.checkoutThuc)) continue; // da tra phong thuc te -> khong con la don hien tai
+                if (b.trangThai === 'Khach vang') continue; // no-show -> don da ket thuc, khong con la don hien tai
                 // Uu tien don khach dang thuc su o trong phong ("Da nhan phong") -
                 // vd truong hop tra phong muon: khach cu van dang o trong khi da
                 // co don ke tiep duoc tao san cho phong nay. Neu chua tim thay don
@@ -2382,7 +2390,7 @@
             document.getElementById('sdpPolicyRule').textContent = moTaChinhSach || '';
 
             var laHoanTien = !!(thongTinThuTien && thongTinThuTien.canHoanTien);
-            var nhanSoTienEl = document.querySelector('#sdpPolicyModal .sdp-policy-amount span');
+            var nhanSoTienEl = document.getElementById('sdpPolicyAmountLabel');
             if (nhanSoTienEl) nhanSoTienEl.textContent = laHoanTien ? 'Số tiền hoàn lại' : 'Phụ thu';
 
             document.getElementById('sdpPolicyAmount').textContent = fmtTien(soTien);
@@ -2422,7 +2430,7 @@
             policyModal.classList.add('open');
         }
 
-        function capNhatTrangThaiThePhong(card, trangThaiMoi) {
+        function capNhatTrangThaiThePhong(card, trangThaiMoi, donId) {
             card.setAttribute('data-trang-thai', trangThaiMoi);
             card.classList.remove('sdp-status-empty', 'sdp-status-inuse', 'sdp-status-cleaning', 'sdp-status-maintenance');
             var lopMoi = trangThaiMoi === 'Trống' ? 'sdp-status-empty'
@@ -2432,6 +2440,22 @@
             card.classList.add(lopMoi);
             var pill = card.querySelector('.sdp-status-pill span:last-child');
             if (pill) pill.textContent = trangThaiMoi;
+
+            // Cap nhat badge "#id" cua don dang su dung phong (chi hien khi
+            // phong dang o va co donId truyen vao).
+            var wrap = card.querySelector('.sdp-status-wrap') || (pill && pill.closest('.sdp-room-card__top'));
+            var badge = card.querySelector('[data-don-id-badge]');
+            if (trangThaiMoi === 'Đang sử dụng' && donId) {
+                if (!badge) {
+                    badge = document.createElement('span');
+                    badge.className = 'sdp-don-id-badge';
+                    badge.setAttribute('data-don-id-badge', '');
+                    if (wrap) wrap.appendChild(badge);
+                }
+                badge.textContent = '#' + donId;
+            } else if (badge) {
+                badge.remove();
+            }
         }
 
         function xuLyKhachNhanPhong(card, don) {
@@ -3474,7 +3498,7 @@
                     return;
                 }
                 don.trangThai = 'Da nhan phong'; // dong bo lai du lieu client-side (SDP_BOOKINGS)
-                capNhatTrangThaiThePhong(card, kq.trangThaiMoi);
+                capNhatTrangThaiThePhong(card, kq.trangThaiMoi, don.id);
                 staffToast('Nhận phòng thành công cho đơn #' + don.id + '.', 'success');
             }).catch(function () {
                 alert('Có lỗi xảy ra khi nhận phòng, vui lòng thử lại.');
@@ -3504,7 +3528,7 @@
                 don.trangThai = 'Da nhan phong';
                 (kq.maPhongDaNhan || []).forEach(function (maPhong) {
                     var thePhong = document.querySelector('.sdp-room-cell[data-ma-phong="' + maPhong + '"]');
-                    if (thePhong) capNhatTrangThaiThePhong(thePhong, kq.trangThaiMoi);
+                    if (thePhong) capNhatTrangThaiThePhong(thePhong, kq.trangThaiMoi, don.id);
                 });
                 staffToast('Nhận phòng cả đoàn thành công cho đơn #' + don.id + '.', 'success');
             }).catch(function () {
@@ -4759,6 +4783,7 @@
         var sumTienPhuThuEl = document.getElementById('sdpLichSumTienPhuThu');
         var sumPhuThuNoteEl = document.getElementById('sdpLichSumPhuThuNote');
         var currentKM = null;
+        var currentTongTruocVat = 0;
 
         /* ============ Goi y tai khoan khach hang co san (autocomplete o "Ten khach") ============
          * Ap dung chung cho ca 2 mode "quay" va "lich" vi dung chung 1 sidebar.
@@ -5299,11 +5324,68 @@
             return { ok: true };
         }
 
+        var sdpLichTenGroup = document.getElementById('sdpLichTen').closest('.sdp-lich-field');
+        var sdpLichTenError = document.getElementById('sdpLichTenError');
+        var sdpLichEmailGroup = document.getElementById('sdpLichEmail').closest('.sdp-lich-field');
+        var sdpLichEmailError = document.getElementById('sdpLichEmailError');
+        var sdpLichSdtGroup = document.getElementById('sdpLichSdt').closest('.sdp-lich-field');
+        var sdpLichSdtError = document.getElementById('sdpLichSdtError');
+
+        /** Bat buoc phai co Ten khach, Email va SDT truoc khi cho luu don (ap
+         *  dung cho ca "Len lich dat phong" va "Dat phong tai quay" vi ca 2
+         *  cung dung chung sidebar nay). */
+        function kiemTraThongTinKhach() {
+            clearError(sdpLichTenGroup, sdpLichTenError);
+            clearError(sdpLichEmailGroup, sdpLichEmailError);
+            clearError(sdpLichSdtGroup, sdpLichSdtError);
+
+            var ok = true;
+            var ten = (document.getElementById('sdpLichTen').value || '').trim();
+            if (!ten) {
+                showError(sdpLichTenGroup, sdpLichTenError, 'Vui lòng nhập tên khách.');
+                ok = false;
+            }
+            var email = (document.getElementById('sdpLichEmail').value || '').trim();
+            if (!email) {
+                showError(sdpLichEmailGroup, sdpLichEmailError, 'Vui lòng nhập email.');
+                ok = false;
+            } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                showError(sdpLichEmailGroup, sdpLichEmailError, 'Email không hợp lệ.');
+                ok = false;
+            }
+            var sdt = (document.getElementById('sdpLichSdt').value || '').trim();
+            if (!sdt) {
+                showError(sdpLichSdtGroup, sdpLichSdtError, 'Vui lòng nhập số điện thoại.');
+                ok = false;
+            } else if (!/^\d{8,12}$/.test(sdt.replace(/[\s.-]/g, ''))) {
+                showError(sdpLichSdtGroup, sdpLichSdtError, 'Số điện thoại không hợp lệ.');
+                ok = false;
+            }
+            return ok;
+        }
+
+        /** Ma khuyen mai da nhap (currentKM) nhung don chua dat toi thieu
+         *  dieuKien -> KHONG cho luu don (truoc day chi hien loi ma van cho
+         *  luu, khien don van duoc tao ma khong ap dung giam gia gay nham lan
+         *  cho nhan vien). */
+        function kiemTraKhuyenMai() {
+            if (!currentKM) return true;
+            var dieuKien = Number(currentKM.dieuKien || 0);
+            if (dieuKien > 0 && currentTongTruocVat < dieuKien) {
+                promoError.textContent = 'Đơn phải đạt tối thiểu ' + formatVND(dieuKien) + ' đ để áp dụng mã này. Vui lòng xóa mã hoặc thêm dịch vụ/đêm ở lại.';
+                promoErrorRow.style.display = 'flex';
+                return false;
+            }
+            return true;
+        }
+
         function kiemTraHopLe() {
             var ngay = kiemTraNgay();
             // Mode "quay": dung khung giay to thay cho o CCCD go tay.
             var giayToOk = currentMode === 'quay' ? kiemTraGiayToQuay().ok : kiemTraCccd().ok;
-            return ngay.ok && giayToOk;
+            var thongTinKhachOk = kiemTraThongTinKhach();
+            var khuyenMaiOk = kiemTraKhuyenMai();
+            return ngay.ok && giayToOk && thongTinKhachOk && khuyenMaiOk;
         }
 
         /** Lay CCCD se gui len server: mode "quay" lay tu so dinh danh cua nguoi
@@ -5358,6 +5440,9 @@
             clearError(datesRow, ngayError);
             clearError(cccdGroup, cccdError);
             clearError(quayGiayToGroup, quayGiayToError);
+            clearError(sdpLichTenGroup, sdpLichTenError);
+            clearError(sdpLichEmailGroup, sdpLichEmailError);
+            clearError(sdpLichSdtGroup, sdpLichSdtError);
             clearError(null, document.getElementById('sdpLichSoNguoiError'));
             quayGiayToPhong = null;
             if (quayGiayToBox) quayGiayToBox.innerHTML = '';
@@ -5542,6 +5627,7 @@
                 ? (Number(currentPhuThuSom.soTien) || 0) : 0;
 
             var tongTruocVat = tienPhong + tienDv + phuThu;
+            currentTongTruocVat = tongTruocVat;
 
             // ===== Ap dung khuyen mai (neu co ma hop le + du dieu kien) =====
             var tienGiam = 0;

@@ -1518,8 +1518,7 @@
             const moTaGiam = isPercent
                 ? ('Giam ' + gtri + '%')
                 : ('Giam ' + BookingValidate.formatVND(gtri));
-            promoInfoEl.textContent = (km.code || '') + ' - ' + moTaGiam +
-                (Number(km.dieuKien || 0) > 0 ? ' (ap dung cho don tu ' + BookingValidate.formatVND(km.dieuKien) + ')' : '');
+            promoInfoEl.textContent = (km.code || '') + ' - ' + moTaGiamz   ;
             promoInfoRowEl.style.display = 'flex';
         }
 

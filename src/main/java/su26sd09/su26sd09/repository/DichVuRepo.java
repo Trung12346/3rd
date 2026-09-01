@@ -16,6 +16,7 @@ public interface DichVuRepo extends JpaRepository<Dich_vu,Integer> {
             "     OR (:trangThai = 'active' AND d.hoatDong = true) " +
             "     OR (:trangThai = 'inactive' AND (d.hoatDong = false OR d.hoatDong IS NULL))) " +
             "AND (:loaiDichVu IS NULL OR :loaiDichVu = '' OR d.loaiDv = :loaiDichVu) " +
+            "AND (d.loaiDv IS NULL OR d.loaiDv <> 'Phu thu') " +
             "ORDER BY d.id DESC")
     List<Dich_vu> search(@Param("keyword") String keyword,
                          @Param("trangThai") String trangThai,

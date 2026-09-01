@@ -1439,7 +1439,7 @@ public class NhanVienDatPhongController {
                 result.put("soTien", soTien);
             }
             if (canThuTien) {
-                ghiNhanThanhToanTraPhong(maDatPhong, tongPhaiThu);
+                ghiNhanThanhToanTraPhong(maDatPhong, tongPhaiThu, authentication);
             }
         }
 
@@ -1563,7 +1563,7 @@ public class NhanVienDatPhongController {
             }
 
             if (canThuTien) {
-                ghiNhanThanhToanTraPhong(maDatPhong, tongPhaiThu);
+                ghiNhanThanhToanTraPhong(maDatPhong, tongPhaiThu, authentication);
             }
         }
 
@@ -1788,17 +1788,63 @@ public class NhanVienDatPhongController {
             return BigDecimal.ZERO;
         }
         HoaDon hd = hoaDonService.findByDatPhongId(maDatPhong);
-        if (hd == null) {
+        if (hd != null) {
+            return defaultMoney(hd.getTongTien()).subtract(defaultMoney(hd.getDaThanhToan()));
+        }
+        // Don chua tung co hoa don (vd nhan phong tai quay chua phat sinh hoa
+        // don) - KHONG duoc coi nhu "da tra du" (con lai = 0), phai tinh tam
+        // tong tien phai thu tu InvoicePricingService de con-lai hien thi va
+        // buoc thu-tien luc tra phong khop voi so tien thuc te khach con no.
+        DatPhong dp = datPhongService.findById(maDatPhong);
+        if (dp == null) {
             return BigDecimal.ZERO;
         }
-        return defaultMoney(hd.getTongTien()).subtract(defaultMoney(hd.getDaThanhToan()));
+        return defaultMoney(invoicePricingService.previewInvoice(maDatPhong, dp.getKm()).getTongTien());
     }
 
-    private void ghiNhanThanhToanTraPhong(Integer maDatPhong, BigDecimal soTienThu) {
+    /**
+     * Tra ve hoa don hien co cua don dat phong, hoac TAO MOI neu chua co
+     * (vd: don duoc dat/nhan phong tai quay nhung chua tung phat sinh hoa
+     * don truoc do). Truoc day cac noi goi ghiNhanThanhToanTraPhong() khi
+     * hd == null se im lang bo qua, khien tien thu tai buoc tra phong o So
+     * Do Phong KHONG duoc ghi vao hoa don/CSDL du giao dien da bao "da thu
+     * tien". Ham nay dam bao luon co 1 HoaDon that su truoc khi ghi nhan
+     * thanh toan, dung cong thuc chuan tu InvoicePricingService (giong het
+     * cach NhanVienCheckoutController#thuTien dang khoi tao hoa don tam).
+     */
+    private HoaDon layHoacTaoHoaDon(Integer maDatPhong, Authentication authentication) {
+        HoaDon hd = hoaDonService.findByDatPhongId(maDatPhong);
+        if (hd != null) {
+            return hd;
+        }
+        DatPhong dp = datPhongService.findById(maDatPhong);
+        if (dp == null) {
+            return null;
+        }
+        InvoicePricingResult gia = invoicePricingService.previewInvoice(maDatPhong, dp.getKm());
+
+        hd = new HoaDon();
+        hd.setD(dp);
+        hd.setDaThanhToan(BigDecimal.ZERO);
+        hd.setTienPhong(gia.getTienPhong());
+        hd.setTienDichVu(gia.getTienDichVu());
+        hd.setTienGiam(gia.getTienGiam());
+        hd.setTienVat(gia.getTienVat());
+        hd.setTongTien(gia.getTongTien());
+        hd.setK(dp.getKm());
+        if (authentication != null) {
+            hd.setN(nhanVienService.FindByemail(authentication.getName()));
+        }
+        hd.setNgayXuat(LocalDateTime.now());
+        hd.setGhiChu("Hóa đơn tự động khởi tạo lúc trả phòng (Sơ đồ phòng) cho đơn #" + maDatPhong);
+        return hoaDonService.saveWithPaymentStatusCheck(hd);
+    }
+
+    private void ghiNhanThanhToanTraPhong(Integer maDatPhong, BigDecimal soTienThu, Authentication authentication) {
         if (soTienThu == null || soTienThu.compareTo(BigDecimal.ZERO) <= 0) {
             return;
         }
-        HoaDon hd = hoaDonService.findByDatPhongId(maDatPhong);
+        HoaDon hd = layHoacTaoHoaDon(maDatPhong, authentication);
         if (hd == null) {
             return;
         }
@@ -1907,12 +1953,14 @@ public class NhanVienDatPhongController {
         }
 
         Map<Integer, Integer> soNguoiLonHienTai = new HashMap<>();
+        Map<Integer, Integer> maDonDangSuDung = new HashMap<>();
         for (Phong p : tatCaPhong) {
             if (!"Dang su dung".equals(p.getTrangThai())) continue;
             List<DatPhong> dsDangO = datPhongService.findUsingBookings(p.getMaPhong());
             if (dsDangO.isEmpty()) continue;
 
             DatPhong donDangO = dsDangO.get(0);
+            maDonDangSuDung.put(p.getMaPhong(), donDangO.getId());
             List<ChiTietDatPhong> ctdpList = chiTietDatPhongService.findByDatPhongId(donDangO.getId());
             ChiTietDatPhong ctCuaPhongNay = ctdpList.stream()
                     .filter(ct -> ct.getP() != null && ct.getP().getMaPhong() == p.getMaPhong())
@@ -1925,6 +1973,7 @@ public class NhanVienDatPhongController {
             soNguoiLonHienTai.put(p.getMaPhong(), dsGiayTo.size());
         }
         model.addAttribute("soNguoiLonHienTai", soNguoiLonHienTai);
+        model.addAttribute("maDonDangSuDung", maDonDangSuDung);
 
         Map<Integer, Integer> soPhongTheoDon = new HashMap<>();
         StringBuilder bkJson = new StringBuilder("{");
@@ -2006,10 +2055,11 @@ public class NhanVienDatPhongController {
         model.addAttribute("svrNowIso", LocalDateTime.now().toString());
         model.addAttribute("dichVuOptions", dichVuService.findAll().stream()
                 .filter(Dich_vu::isHoatDong)
+                .filter(dv -> !"Phu thu".equals(dv.getLoaiDv()))
                 .collect(Collectors.toList()));
 
         Set<String> sdpListTrangThaiHienThi = HuyDonConstants.DP_TRANG_THAI_HIEN_THI_BOOKING_MGMT.stream()
-                .filter(ts -> !"Da tra phong".equals(ts) && !"Da huy".equals(ts))
+                .filter(ts -> !"Da tra phong".equals(ts) && !"Da huy".equals(ts) && !"Khach vang".equals(ts))
                 .collect(Collectors.toSet());
         List<DatPhong> dsDatPhongList = datPhongService
                 .findAll(Sort.by(Sort.Order.desc("ngayTao"), Sort.Order.desc("id")))
@@ -2122,6 +2172,31 @@ public class NhanVienDatPhongController {
             result.put("loi", "Vui lòng nhập 9 hoặc 12 số CCCD/CMND hợp lệ.");
             return result;
         }
+        if (hoTen == null || hoTen.isBlank()) {
+            result.put("ok", false);
+            result.put("loi", "Tên khách không được để trống.");
+            return result;
+        }
+        if (email == null || email.isBlank()) {
+            result.put("ok", false);
+            result.put("loi", "Email không được để trống.");
+            return result;
+        }
+        if (!email.trim().matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")) {
+            result.put("ok", false);
+            result.put("loi", "Email không hợp lệ.");
+            return result;
+        }
+        if (sdt == null || sdt.isBlank()) {
+            result.put("ok", false);
+            result.put("loi", "Số điện thoại không được để trống.");
+            return result;
+        }
+        if (!sdt.trim().replaceAll("[\\s.-]", "").matches("\\d{8,12}")) {
+            result.put("ok", false);
+            result.put("loi", "Số điện thoại không hợp lệ.");
+            return result;
+        }
 
         if (maPhong == null) {
             result.put("ok", false);
@@ -2193,6 +2268,17 @@ public class NhanVienDatPhongController {
                 if (dv == null) continue;
                 dsDichVuHopLe.add(dv);
                 amountDv = amountDv.add(invoicePricingService.createServiceLineItemPrice(dv, 1));
+            }
+        }
+
+        if (km != null) {
+            BigDecimal dieuKienKm = km.getGiaToiThieuDuocGiam() == null ? BigDecimal.ZERO : km.getGiaToiThieuDuocGiam();
+            BigDecimal tongTruocGiamKm = amountPhong.add(amountDv);
+            if (dieuKienKm.compareTo(BigDecimal.ZERO) > 0 && tongTruocGiamKm.compareTo(dieuKienKm) < 0) {
+                result.put("ok", false);
+                result.put("loi", "Đơn phải đạt tối thiểu " + dieuKienKm.toPlainString()
+                        + " đ để áp dụng mã khuyến mại \"" + km.getPromoCode() + "\". Vui lòng bỏ mã hoặc thêm dịch vụ/đêm ở lại.");
+                return result;
             }
         }
 
@@ -2362,6 +2448,31 @@ public class NhanVienDatPhongController {
             result.put("loi", "Vui lòng nhập 9 hoặc 12 số CCCD/CMND hợp lệ.");
             return result;
         }
+        if (hoTen == null || hoTen.isBlank()) {
+            result.put("ok", false);
+            result.put("loi", "Tên khách không được để trống.");
+            return result;
+        }
+        if (email == null || email.isBlank()) {
+            result.put("ok", false);
+            result.put("loi", "Email không được để trống.");
+            return result;
+        }
+        if (!email.trim().matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")) {
+            result.put("ok", false);
+            result.put("loi", "Email không hợp lệ.");
+            return result;
+        }
+        if (sdt == null || sdt.isBlank()) {
+            result.put("ok", false);
+            result.put("loi", "Số điện thoại không được để trống.");
+            return result;
+        }
+        if (!sdt.trim().replaceAll("[\\s.-]", "").matches("\\d{8,12}")) {
+            result.put("ok", false);
+            result.put("loi", "Số điện thoại không hợp lệ.");
+            return result;
+        }
 
         if (maPhong == null) {
             result.put("ok", false);
@@ -2446,6 +2557,17 @@ public class NhanVienDatPhongController {
             }
         }
         amountDvTruoc = amountDvTruoc.add(soTienPhuThuSom);
+
+        if (km != null) {
+            BigDecimal dieuKienKm = km.getGiaToiThieuDuocGiam() == null ? BigDecimal.ZERO : km.getGiaToiThieuDuocGiam();
+            BigDecimal tongTruocGiamKm = amountPhongTruoc.add(amountDvTruoc);
+            if (dieuKienKm.compareTo(BigDecimal.ZERO) > 0 && tongTruocGiamKm.compareTo(dieuKienKm) < 0) {
+                result.put("ok", false);
+                result.put("loi", "Đơn phải đạt tối thiểu " + dieuKienKm.toPlainString()
+                        + " đ để áp dụng mã khuyến mại \"" + km.getPromoCode() + "\". Vui lòng bỏ mã hoặc thêm dịch vụ.");
+                return result;
+            }
+        }
 
         InvoicePricingResult giaTruocQuay = invoicePricingService.computeTotals(amountPhongTruoc, amountDvTruoc, km);
         BigDecimal tongCongTruoc = giaTruocQuay.getTongTien();
