@@ -144,8 +144,14 @@ public class AdminPhongController {
                     phongService.countGiaoDichChuaHoanTatByPhong(item.getMaPhong()) > 0);
         }
 
+        List<String> allSoPhong = new java.util.ArrayList<>();
+        for (Phong item : phongService.findAllPhongIncludingInactive()) {
+            allSoPhong.add(item.getSoPhong());
+        }
+
         model.addAttribute("phong", phong);
         model.addAttribute("phongs", phongs);
+        model.addAttribute("allSoPhong", allSoPhong);
         model.addAttribute("loaiPhongs", phongService.findAllLoai());
         model.addAttribute("tienNghis", phongService.findAllTienNghi());
         model.addAttribute("selectedTienNghiIds", selectedTienNghiIds);
