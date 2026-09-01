@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quản Lý Nhân Viên | Hotel</title>
+    <title>Quản Lý Khách Hàng | Hotel</title>
     <link rel="stylesheet" href="/style.css">
 </head>
 <body>
@@ -59,7 +59,12 @@
                     <input type="text" th:field="*{hoTen}" placeholder="VD: Nguyen Van A" >
                 </div>
 
-                <div class="admin-field">
+                <div class="admin-field" th:if="${khachHang.ma_khach_hang != null}">
+                    <label>Email</label>
+                    <input type="email" th:field="*{email}" placeholder="example@gmail.com" readonly>
+                </div>
+
+                <div class="admin-field" th:if="${khachHang.ma_khach_hang == null}">
                     <label>Email</label>
                     <input type="email" th:field="*{email}" placeholder="example@gmail.com" >
                 </div>
@@ -78,7 +83,15 @@
 
                 <div class="admin-field">
                     <label>So dien thoai</label>
-                    <input type="tel" th:field="*{soDienThoai}" placeholder="" pattern="[0-9]{10}">
+                    <input type="tel"
+                           th:field="*{soDienThoai}"
+                           placeholder="VD: 0912345678"
+                           pattern="[0-9]{10}"
+                           maxlength="10"
+                           inputmode="numeric"
+                           id="soDienThoaiInput"
+                           oninput="validatePhone(this)">
+                    <span id="soDienThoaiError" class="field-error" style="display:none; color:#d32f2f; font-size:12px;"></span>
                 </div>
 
                 <div class="admin-field" style="display: none">
@@ -194,7 +207,56 @@
 <footer>
     <p>&copy; 2026 Hotel. All rights reserved.</p>
 </footer>
+<script>
+    function validatePhone(input) {
+        // strip non-digits as user types
+        input.value = input.value.replace(/[^0-9]/g, '');
 
+        const errorEl = document.getElementById('soDienThoaiError');
+        const value = input.value;
+        const vnPhoneRegex = /^(0[3|5|7|8|9])[0-9]{8}$/; // Vietnamese mobile format
+
+        if (value.length === 0) {
+            errorEl.style.display = 'none';
+            input.setCustomValidity('');
+            input.style.borderColor = '';
+            return;
+        }
+
+        if (value.length !== 10) {
+            errorEl.textContent = 'Số điện thoại phải có đúng 10 chữ số.';
+            errorEl.style.display = 'inline';
+            input.setCustomValidity('Số điện thoại không hợp lệ');
+            input.style.borderColor = '#d32f2f';
+        } else if (!vnPhoneRegex.test(value)) {
+            errorEl.textContent = 'Số điện thoại không đúng định dạng (VD: 0912345678).';
+            errorEl.style.display = 'inline';
+            input.setCustomValidity('Số điện thoại không hợp lệ');
+            input.style.borderColor = '#d32f2f';
+        } else {
+            errorEl.style.display = 'none';
+            input.setCustomValidity('');
+            input.style.borderColor = '#2e7d32';
+        }
+    }
+
+    // Also validate on form submit to prevent bypass
+    document.addEventListener('DOMContentLoaded', function () {
+        const form = document.getElementById('soDienThoaiInput')?.closest('form');
+        if (form) {
+            form.addEventListener('submit', function (e) {
+                const phoneInput = document.getElementById('soDienThoaiInput');
+                if (phoneInput.value.length > 0) {
+                    validatePhone(phoneInput);
+                    if (!phoneInput.checkValidity()) {
+                        e.preventDefault();
+                        phoneInput.reportValidity();
+                    }
+                }
+            });
+        }
+    });
+</script>
 </body>
 
 </html>
