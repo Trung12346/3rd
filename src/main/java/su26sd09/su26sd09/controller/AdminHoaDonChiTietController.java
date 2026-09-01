@@ -70,8 +70,6 @@ public class AdminHoaDonChiTietController {
         }
 
         // Tinh tong phu thu check-in som / check-out muon tu cac dich vu co loaiDv = "Phu thu"
-        // (phan biet voi tongPhuThu o tren - day la phu phi phong). Day la dong tien rieng
-        // se hien thi tren hoa don de minh bach, nghiep vu penalty.
         BigDecimal tongPhuThuCheckInSom = BigDecimal.ZERO;
         BigDecimal tongDichVuThuong = BigDecimal.ZERO;
         for (Chi_tiet_dich_vu ctdv : dichVuList) {
@@ -88,6 +86,20 @@ public class AdminHoaDonChiTietController {
         BigDecimal daThanhToan = hoaDon.getDaThanhToan() != null ? hoaDon.getDaThanhToan() : BigDecimal.ZERO;
         BigDecimal conLai = tongTien.subtract(daThanhToan);
 
+        //  TÍNH TIỀN THỪA (nếu có) - lấy từ DatPhong.tienThuaDoDoiPhong
+        BigDecimal tienThua = BigDecimal.ZERO;
+        String trangThaiTienThua = null;
+        if (datPhong != null) {
+            tienThua = datPhong.getTienThuaDoDoiPhong() != null
+                    ? datPhong.getTienThuaDoDoiPhong()
+                    : BigDecimal.ZERO;
+            trangThaiTienThua = datPhong.getTrangThaiTienThua();
+        }
+
+        //  Nếu có tiền thừa và chưa được hoàn, hiển thị thông tin
+        boolean coTienThua = tienThua.compareTo(BigDecimal.ZERO) > 0
+                && !"Da tra du".equals(trangThaiTienThua);
+
         String trangThaiThanhToanLabel;
         String trangThaiThanhToanClass;
         if (daThanhToan.compareTo(BigDecimal.ZERO) <= 0) {
@@ -96,6 +108,15 @@ public class AdminHoaDonChiTietController {
         } else if (conLai.compareTo(BigDecimal.ZERO) > 0) {
             trangThaiThanhToanLabel = "Còn nợ";
             trangThaiThanhToanClass = "partial";
+        } else if (conLai.compareTo(BigDecimal.ZERO) < 0) {
+            //  Trường hợp trả thừa tiền
+            if (coTienThua) {
+                trangThaiThanhToanLabel = "Đã thanh toán đủ - Chờ hoàn tiền thừa";
+                trangThaiThanhToanClass = "warning";
+            } else {
+                trangThaiThanhToanLabel = "Đã thanh toán đủ";
+                trangThaiThanhToanClass = "active";
+            }
         } else {
             trangThaiThanhToanLabel = "Đã thanh toán đủ";
             trangThaiThanhToanClass = "active";
@@ -127,6 +148,9 @@ public class AdminHoaDonChiTietController {
         model.addAttribute("hoanTienList", hoanTienList);
         model.addAttribute("tongHoan", tongHoan);
         model.addAttribute("conLai", conLai);
+        model.addAttribute("tienThua", tienThua); //  Thêm tiền thừa vào model
+        model.addAttribute("coTienThua", coTienThua); //  Flag có tiền thừa chưa hoàn
+        model.addAttribute("trangThaiTienThua", trangThaiTienThua); //  Trạng thái tiền thừa
         model.addAttribute("tongPhuThu", tongPhuThu);
         model.addAttribute("tongPhuThuCheckInSom", tongPhuThuCheckInSom);
         model.addAttribute("tongDichVuThuong", tongDichVuThuong);

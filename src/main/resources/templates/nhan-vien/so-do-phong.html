@@ -15,7 +15,6 @@
 
         .sdp-shell { margin: 0 auto auto 100px !important; width: 92.5vw; max-width: 1900px; padding: 32px; }
 
-        /* Badge dem nguoc auto-refresh, goc tren phai man hinh */
         .sdp-refresh-badge {
             position: fixed; top: 16px; right: 20px; z-index: 900;
             display: flex; align-items: center; gap: 8px;
@@ -40,7 +39,6 @@
         .sdp-header h1 { color: #fff; font-size: 22px; font-weight: 800; margin: 0 0 4px; letter-spacing: -0.2px; }
         .sdp-header p { color: rgba(255,255,255,0.85); font-size: 12.5px; margin: 0; }
 
-        /* Status legend / summary mini-cards */
         .sdp-legend { display: flex; gap: 10px; flex-wrap: wrap; }
         .sdp-chip {
             display: flex; align-items: center; gap: 10px;
@@ -92,7 +90,6 @@
         }
         .sdp-list-cancel-btn:hover { background:#fadbd8; }
 
-        /* Modal: xác nhận hủy đơn (chính sách hoàn tiền) — dùng chung style với modal khách hàng */
         .sdp-cancel-modal-overlay {
             display:none; position:fixed; inset:0; background:rgba(15,23,42,0.45);
             z-index:1000; align-items:center; justify-content:center; padding:16px;
@@ -135,8 +132,6 @@
             padding:10px 12px; font-size:13px;
         }
 
-
-        /* Layout: side floor tabs + room grid + khach cho check-in (ben phai) */
         .sdp-layout {
             display: grid; grid-template-columns: 190px 1fr 360px; gap: 20px; align-items: start;
         }
@@ -154,7 +149,7 @@
             transition: background .15s, color .15s;
         }
         .sdp-floor-tab:last-child { margin-bottom: 0; }
-        .sdp-floor-tab:hover { background: #f0f9ff; color: var(--sky-dark, #2196c4); }
+        .sdp-floor-tab:hover { background: #f0f9ff; color: #2196c4; }
         .sdp-floor-tab.active {
             background: linear-gradient(120deg, #2196c4, #1d7fae); color: #fff;
             box-shadow: 0 4px 12px rgba(33,150,196,0.3);
@@ -191,7 +186,6 @@
         .sdp-room-card:hover { box-shadow: 0 10px 24px rgba(15,23,42,0.1); transform: translateY(-2px); }
         .sdp-room-card:active { transform: translateY(0); }
 
-        /* Highlight khi redirect tu trang danh sach don dat phong (?action=view). */
         .sdp-room-card.sdp-room-highlight {
             box-shadow: 0 0 0 3px #F59E0B, 0 8px 24px rgba(245,158,11,0.45);
             animation: sdpHighlightPulse 1.6s ease-in-out 2;
@@ -235,7 +229,6 @@
         .sdp-status-cleaning .sdp-status-pill { background: #fef3c7; color: #b45309; }
         .sdp-status-maintenance .sdp-status-pill { background: #fee2e2; color: #b91c1c; }
 
-        /* Check-in countdown / warning badge */
         .sdp-checkin-badge {
             display: none; align-items: center; gap: 6px;
             margin-top: 10px; padding: 6px 9px; border-radius: 8px;
@@ -259,16 +252,12 @@
             50% { box-shadow: 0 0 0 5px rgba(185,28,28,0.03); }
         }
 
-        /* Ghi chu ten nhan vien ve sinh dang duoc phan cong don phong nay
-           (hien thi ngay khi engine gan phong, khong can cho upload anh). */
         .sdp-ve-sinh-note {
             display: flex; align-items: center; gap: 6px; margin-top: 10px;
             padding: 6px 9px; border-radius: 8px; background: #f1f5f9; color: #475569;
             font-size: 11.5px; font-weight: 600; width: fit-content;
         }
 
-        /* Text nho "Xac nhan phong sach" tren the phong khi nhan vien ve sinh
-           da upload anh, cho le tan bam vao de mo modal xac nhan. */
         .sdp-xac-nhan-ve-sinh {
             display: flex; align-items: center; gap: 6px; margin-top: 10px;
             padding: 6px 9px; border-radius: 8px; background: #ecfdf5; color: #047857;
@@ -277,7 +266,6 @@
         .sdp-xac-nhan-ve-sinh:hover { background: #d1fae5; }
         .sdp-xac-nhan-ve-sinh i { font-size: 11px; }
 
-        /* Modal xac nhan phong sach */
         .sdp-vs-backdrop {
             display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.55); z-index: 1000;
             align-items: center; justify-content: center;
@@ -303,7 +291,6 @@
 
         .sdp-room-card { cursor: pointer; user-select: none; }
 
-        /* Context menu */
         .sdp-ctx-menu {
             position: fixed; z-index: 3000; min-width: 220px;
             background: #fff; border: 1px solid #e2e8f0; border-radius: 10px;
@@ -318,13 +305,12 @@
             color: #374151; cursor: pointer; white-space: nowrap;
         }
         .sdp-ctx-item i { width: 16px; text-align: center; color: #6b7280; font-size: 13px; }
-        .sdp-ctx-item:hover { background: #f0f9ff; color: var(--sky-dark, #2196c4); }
-        .sdp-ctx-item:hover i { color: var(--sky-dark, #2196c4); }
+        .sdp-ctx-item:hover { background: #f0f9ff; color: #2196c4; }
+        .sdp-ctx-item:hover i { color: #2196c4; }
         .sdp-ctx-item.danger:hover { background: #fef2f2; color: #b91c1c; }
         .sdp-ctx-item.danger:hover i { color: #b91c1c; }
         .sdp-ctx-sep { height: 1px; background: #eef1f5; margin: 5px 4px; }
 
-        /* Context menu: muc co submenu (vd "Yeu cau don dep" -> danh sach nhan vien) */
         .sdp-ctx-item.has-sub { justify-content: space-between; position: relative; }
         .sdp-ctx-item .sdp-ctx-item-left { display: flex; align-items: center; gap: 10px; }
         .sdp-ctx-item .sdp-ctx-caret { color: #9ca3af; font-size: 11px; }
@@ -341,14 +327,13 @@
             padding: 9px 12px; border-radius: 7px; font-size: 13.5px; font-weight: 600;
             color: #374151; cursor: pointer; white-space: nowrap;
         }
-        .sdp-ctx-sub-item:hover { background: #f0f9ff; color: var(--sky-dark, #2196c4); }
+        .sdp-ctx-sub-item:hover { background: #f0f9ff; color: #2196c4; }
         .sdp-ctx-sub-item .sdp-ctx-sub-tag {
             font-size: 10.5px; font-weight: 700; color: #d97706; background: #fef3c7;
             border-radius: 999px; padding: 2px 8px; white-space: nowrap;
         }
         .sdp-ctx-sub-empty { padding: 10px 12px; font-size: 12.5px; color: #9ca3af; }
 
-        /* Modal phu thu nhan phong som / tra phong muon */
         .sdp-policy-backdrop {
             display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.45); z-index: 4000;
         }
@@ -377,7 +362,6 @@
         .sdp-policy-note { font-size: 12px; color: #6b7280; margin-bottom: 0 !important; }
         .sdp-policy-actions { padding: 14px 20px 20px; display: flex; justify-content: flex-end; gap: 10px; }
 
-        /* Modal "Thêm giấy tờ" truoc khi nhan phong */
         .sdp-giayto-backdrop {
             display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.45); z-index: 4000;
         }
@@ -435,7 +419,6 @@
         }
         .sdp-giayto-doc-box .sdp-giayto-remove:hover { background: #fef2f2; }
 
-        /* Panel nhap chi tiet 1 document (mo khi bam vao box) */
         .sdp-giayto-fields-backdrop {
             display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.5); z-index: 4100;
         }
@@ -466,8 +449,6 @@
         .sdp-gt-checkbox { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #374151; margin-bottom: 12px; }
         .sdp-gt-checkbox input { width: 16px; height: 16px; }
 
-        /* ==== Validation tai cho (khong dung alert()) ==== */
-        /* Field don le trong panel nhap chi tiet giay to */
         .sdp-gt-field.has-error input[type="text"],
         .sdp-gt-field.has-error input[type="date"],
         .sdp-gt-field.has-error select {
@@ -475,7 +456,6 @@
         }
         .sdp-gt-field-error { color: #dc2626; font-size: 11px; margin-top: 5px; font-weight: 600; }
 
-        /* Box giay to (trong luoi theo phong) thieu thong tin bat buoc */
         .sdp-giayto-doc-box.has-error {
             border-color: #dc2626; background: #fef2f2; color: #b91c1c;
         }
@@ -486,19 +466,14 @@
             display: flex; align-items: center; justify-content: center; line-height: 1;
         }
 
-        /* Loi muc phong: sai so luong "nguoi dai dien" */
         .sdp-giayto-room-error {
             color: #dc2626; font-size: 11.5px; font-weight: 700; margin: -4px 0 10px;
         }
 
-        /* Nut "+ Them giay to" bi khoa vi da du tong so giay to theo suc chua */
         .sdp-giayto-add-box.disabled {
             opacity: .45; cursor: not-allowed; pointer-events: none;
         }
 
-        /* Khung sdp-giayto-room duoc nhung vao tung dp-form-row o sidebar "Xem don
-           hien tai" - can them khoang cach voi phan noi dung ben duoi (dp-form-row-body)
-           va 1 hang nut "Luu giay to phong nay" rieng cho tung phong. */
         .sdp-giayto-row-embed { margin: 12px 0 10px; background: #fbfcfe; }
         .sdp-giayto-row-footer {
             display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 12px;
@@ -511,11 +486,9 @@
         .sdp-giayto-row-save:hover:not(:disabled) { background: #163d54; }
         .sdp-giayto-row-save:disabled { opacity: .5; cursor: not-allowed; }
 
-        /* Banner tong so giay to / suc chua o dau modal */
         .sdp-gt-total-ok { color: rgba(255,255,255,.85); }
         .sdp-gt-total-error { color: #fecaca; font-weight: 700; }
 
-        /* Nut "Tiep tuc" bi khoa khi con loi chua sua */
         #sdpGiayToTiepTucBtn:disabled {
             opacity: .5; cursor: not-allowed; box-shadow: none;
         }
@@ -525,7 +498,6 @@
         }
         .sdp-ctx-backdrop.open { display: block; }
 
-        /* Room info sidebar (for "Xem thông tin phòng") */
         .sdp-info-sidebar {
             position: fixed; top: 0; right: -400px; width: 380px; height: 100vh;
             background: #fff; border-left: 1px solid #e2e8f0; z-index: 3100;
@@ -576,7 +548,6 @@
         }
         .sdp-info-backdrop.open { display: block; }
 
-        /* ============ Sidebar "Lên lịch đặt phòng" ============ */
         .sdp-lich-sidebar {
             position: fixed; top: 0; right: -460px; width: 440px; height: 100vh;
             background: #fff; border-left: 1px solid #e2e8f0; z-index: 3200;
@@ -612,7 +583,6 @@
             text-transform: uppercase; color: #94a3b8;
         }
 
-        /* Date range field, opens the calendar below it */
         .sdp-lich-dates {
             display: flex; border: 1px solid #dbe3ee; border-radius: 10px; overflow: hidden;
             background: #f8fafc;
@@ -629,8 +599,6 @@
         .sdp-lich-date-value { font-size: 14px; font-weight: 700; color: #1f2937; }
         .sdp-lich-date-value.placeholder { color: #9ca3af; font-weight: 600; }
 
-        /* Ngay nhan phong bi khoa cung = "Hom nay" (dung cho mode "Dat phong tai
-           quay": khach dang o quay nen khong the doi ngay nhan phong). */
         .sdp-lich-date-field.sdp-lich-date-fixed { cursor: default; background: #f1f9fc; }
         .sdp-lich-date-field.sdp-lich-date-fixed:hover { background: #f1f9fc; }
         .sdp-lich-date-field.sdp-lich-date-fixed .sdp-lich-date-value { color: #1d7fae; }
@@ -679,8 +647,6 @@
         }
         .sdp-lich-cal-wrap .fc-button:hover { background: #f0f9ff; border-color: #2196c4; color: #2196c4; }
 
-        /* Ngay phong nay da co lich dat (chi phong nay, khong phai ca loai phong):
-           gach cheo, khong the bam, giong het kieu the hien o trang khach (loai-phong-detail). */
         .sdp-lich-cal-wrap .drp-day-fully-booked .fc-daygrid-day-frame {
             background: repeating-linear-gradient(135deg, #f3f3f3, #f3f3f3 4px, #e6e6e6 4px, #e6e6e6 8px);
             color: #b5b5b5; cursor: not-allowed; pointer-events: none; border-radius: 4px;
@@ -700,7 +666,6 @@
             border: 1px solid #ddd;
         }
 
-        /* Thong bao loi validate (dong bo voi trang khach hang) */
         .sdp-lich-field-error {
             display: none; color: #c0392b; font-size: 11.5px; margin-top: 7px; font-weight: 600;
             line-height: 1.4;
@@ -710,7 +675,6 @@
         .sdp-lich-field.has-error input,
         .sdp-lich-field.has-error textarea { border-color: #e74c3c; background: #fdf3f2; }
 
-        /* Text inputs grid */
         .sdp-lich-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         .sdp-lich-grid.full { grid-template-columns: 1fr; }
         .sdp-lich-field label {
@@ -731,7 +695,6 @@
         }
         .sdp-lich-field textarea { resize: vertical; min-height: 64px; }
 
-        /* Dropdown goi y tai khoan khach hang co san (autocomplete o o "Ten khach") */
         .sdp-lich-field-autocomplete { position: relative; }
         .sdp-lich-suggest-box {
             display: none; position: absolute; left: 0; right: 0; top: 100%; margin-top: 4px;
@@ -749,7 +712,6 @@
         .sdp-lich-suggest-meta { font-size: 11.5px; color: #64748b; }
         .sdp-lich-suggest-empty { padding: 10px 12px; font-size: 12.5px; color: #94a3b8; }
 
-        /* Dịch vụ thêm - chip checkboxes */
         .sdp-lich-services { display: flex; flex-wrap: wrap; gap: 8px; }
         .sdp-lich-service-chip { position: relative; }
         .sdp-lich-service-chip input { position: absolute; opacity: 0; width: 0; height: 0; }
@@ -765,7 +727,6 @@
         }
         .sdp-lich-service-chip input:checked + span i { color: #2196c4; }
 
-        /* Tiền khách trả + phương thức */
         .sdp-lich-pay-row { display: flex; gap: 10px; align-items: flex-end; }
         .sdp-lich-pay-amount { flex: 1; }
         .sdp-lich-pay-methods { display: flex; gap: 8px; flex: none; align-items: center; }
@@ -796,7 +757,6 @@
         }
         .sdp-lich-btn-luu:hover { background: linear-gradient(120deg, #1d8fbb, #176a92); }
 
-        /* Tom tat gia (hien ngay tren nut Luu) */
         .sdp-lich-summary {
             margin: 0 22px 14px; padding: 12px 14px; background: #f8fafc;
             border: 1px solid #e5e7eb; border-radius: 10px; font-size: 13px;
@@ -813,7 +773,6 @@
             font-size: 11px; color: #94a3b8; margin-top: 6px;
         }
 
-        /* ============ Sidebar "Xem đơn hiện tại" (nhung /nhan-su/dat-phong/chi-tiet/{id}) ============ */
         .sdp-don-sidebar {
             position: fixed; top: 0; right: -900px; width: 860px; max-width: 92vw; height: 100vh;
             background: #fff; border-left: 1px solid #e2e8f0; z-index: 3200;
@@ -860,14 +819,9 @@
         .sdp-don-loading i { font-size: 22px; color: #2196c4; animation: sdpDonSpin 1s linear infinite; }
         @keyframes sdpDonSpin { to { transform: rotate(360deg); } }
 
-        /* ===== Override giao dien cua trang "chi-tiet-dat-phong" khi duoc nhung
-           vao sidebar nay: bo het khung/vien/box cua trang goc, chi giu lai text,
-           cac o nhap lieu va nut bam quan trong, style lai theo dung tinh than
-           cua sidebar "Lên lịch đặt phòng" (nen nhat, bo vien tron, khong doi). ===== */
         #sdpDonContent { padding: 18px 22px 26px; font-size: 13.5px; color: #1f2937; }
         #sdpDonContent .cdp-shell { width: 100%; max-width: 100%; margin: 0; padding: 0 !important; }
 
-        /* Bo toan bo khung/vien/nen/bong cua cac khoi "panel/card/box/section" cua trang goc */
         #sdpDonContent .cdp-panel,
         #sdpDonContent .cdp-header,
         #sdpDonContent [class*="panel"],
@@ -891,7 +845,6 @@
             border: none !important; box-shadow: none !important; background: transparent !important;
         }
 
-        /* Text field & cac o nhap lieu quan trong: dua ve dung style sdp-lich-field */
         #sdpDonContent label {
             display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 6px;
             text-transform: none !important; letter-spacing: 0 !important;
@@ -918,7 +871,6 @@
         #sdpDonContent input[type="checkbox"],
         #sdpDonContent input[type="radio"] { accent-color: #2196c4; }
 
-        /* Nut bam quan trong (submit / luu / thu tien / them dich vu...): style flat, dong bo mau */
         #sdpDonContent button,
         #sdpDonContent input[type="submit"] {
             border: none !important; border-radius: 10px !important; padding: 10px 16px !important;
@@ -943,8 +895,6 @@
         }
         #sdpDonContent button:disabled { opacity: .5; cursor: not-allowed; background: #f3f4f6 !important; color: #94a3b8 !important; }
 
-        /* Bo cms-topbar neu con sot lai, va dua summary-panel thanh 1 khoi full-width
-           o cuoi trang (thay vi sidebar sticky ben canh) sau khi da doi vi tri bang JS. */
         #sdpDonContent .cms-topbar-shell,
         #sdpDonContent .cms-topbar,
         #sdpDonContent #cms-sidebar-shell {
@@ -958,7 +908,6 @@
             margin-top: 20px !important;
         }
 
-        /* Dong bo them voi cac chi tiet vua chinh trong chi-tiet-dat-phong.html */
         #sdpDonContent .cdp-panel-title i { display: none; }
         #sdpDonContent .dp-form-row { border-bottom: 1px solid #eef2f6 !important; padding: 14px 0 !important; }
         #sdpDonContent .dp-form-row.is-selected { background: #f8fafc !important; }
@@ -988,7 +937,6 @@
             .kc-panel { position: static; max-height: none; }
         }
 
-        /* ============ Panel "Khách chờ check-in" (cột phải) ============ */
         .kc-panel {
             background: #fff;
             border: 1px solid #e2e8f0;
@@ -1100,7 +1048,6 @@
             line-height: 1.5;
         }
 
-        /* ==== Card ==== */
         .kc-card {
             background: #fff;
             border: 1px solid #e5e7eb;
@@ -1184,7 +1131,6 @@
             border-top: 1px dashed #e5e7eb;
         }
 
-        /* Status pill (text + dot) */
         .kc-status {
             display: inline-flex;
             align-items: center;
@@ -1207,7 +1153,6 @@
         .kc-status.kc-overdue { color: #b91c1c; }
         .kc-status.kc-overdue .dot { background: #ef4444; }
 
-        /* Countdown badge */
         .kc-countdown {
             font-size: 11.5px;
             font-weight: 800;
@@ -2353,6 +2298,9 @@
         var sdpCsrfTokenEl = document.getElementById('sdpCsrfToken');
 
         function goiApi(url, extraParams) {
+            console.log('=== GOI API:', url);
+            console.log('extraParams:', extraParams);
+
             var body = null, headers = { 'Accept': 'application/json' };
             if (sdpCsrfParamEl && sdpCsrfTokenEl) {
                 body = new URLSearchParams();
@@ -2367,6 +2315,7 @@
                 Object.keys(extraParams).forEach(function (k) {
                     if (extraParams[k] !== null && extraParams[k] !== undefined) {
                         body.append(k, extraParams[k]);
+                        console.log('=== PARAM:', k, '=', extraParams[k]);
                     }
                 });
             }
@@ -2431,6 +2380,11 @@
         function moModalPhuThu(tieuDe, moTaChinhSach, soTien, ghiChu, onXacNhan, thongTinThuTien) {
             document.getElementById('sdpPolicyTitle').textContent = tieuDe;
             document.getElementById('sdpPolicyRule').textContent = moTaChinhSach || '';
+
+            var laHoanTien = !!(thongTinThuTien && thongTinThuTien.canHoanTien);
+            var nhanSoTienEl = document.querySelector('#sdpPolicyModal .sdp-policy-amount span');
+            if (nhanSoTienEl) nhanSoTienEl.textContent = laHoanTien ? 'Số tiền hoàn lại' : 'Phụ thu';
+
             document.getElementById('sdpPolicyAmount').textContent = fmtTien(soTien);
             document.getElementById('sdpPolicyNote').textContent = ghiChu;
             policyOnXacNhan = typeof onXacNhan === 'function' ? onXacNhan : null;
@@ -2440,7 +2394,14 @@
 
             var tongPhaiThu = thongTinThuTien && Number(thongTinThuTien.tongPhaiThu) > 0
                 ? Number(thongTinThuTien.tongPhaiThu) : 0;
-            if (tongPhaiThu > 0) {
+
+            if (laHoanTien) {
+                policyRequiredAmount = null;
+                policyConLaiRow.style.display = 'none';
+                policyTongRow.style.display = 'none';
+                policyPayField.style.display = 'none';
+                policyOkBtn.textContent = 'Xác nhận hoàn tiền & trả phòng';
+            } else if (tongPhaiThu > 0) {
                 policyRequiredAmount = tongPhaiThu;
                 var conLai = Number((thongTinThuTien && thongTinThuTien.conLai) || 0);
                 policyConLaiEl.textContent = fmtTien(conLai);
@@ -3568,6 +3529,60 @@
         // trong modal) moi thuc su luu phu thu + ghi nhan thanh toan + doi trang
         // thai phong. tienKhachTra chi duoc gui kem khi xacNhan=true VA modal yeu
         // cau thu tien (canThuTien) - xem callback truyen vao moModalPhuThu.
+        // Endpoint rieng cho hoan tien - goi dung API xacNhanHoanTien da co san,
+        // thay vi goi lai thucHienTraPhong(xacNhan=true). Nhanh canHoanTien trong
+        // checkOutTuSoDoPhong CHI set trangThaiTienThua = "CHO_HOAN" chu khong
+        // bao gio hoan tat thanh "Da hoan du" - logic hoan tien that su nam o
+        // endpoint xacNhanHoanTien.
+        var CTX_URL_XAC_NHAN_HOAN_TIEN_API = /*[[@{/nhan-su/so-do-phong/xac-nhan-hoan-tien/}]]*/ '/nhan-su/so-do-phong/xac-nhan-hoan-tien/';
+
+        function thucHienXacNhanHoanTien(card, don, soTienHoan) {
+            console.log('=== THUC HIEN HOAN TIEN ===');
+            console.log('don.id:', don.id);
+            console.log('soTienHoan:', soTienHoan);
+
+            var url = CTX_URL_XAC_NHAN_HOAN_TIEN_API + don.id;
+            var extra = {};
+            if (soTienHoan !== undefined && soTienHoan !== null && soTienHoan > 0) {
+                extra.soTienHoan = soTienHoan;
+                console.log('=== TRUYEN soTienHoan:', soTienHoan);
+            } else {
+                console.warn('=== KHONG CO soTienHoan!');
+            }
+            goiApi(url, extra).then(function (kq) {
+                console.log('=== KET QUA HOAN TIEN:', kq);
+                if (!kq.ok) {
+                    alert(kq.loi || 'Khong the xac nhan hoan tien.');
+                    return;
+                }
+                don.trangThai = 'Da tra phong';
+                don.checkoutThuc = new Date().toISOString();
+                capNhatTrangThaiThePhong(card, kq.trangThaiMoi || 'Dang don');
+                staffToast(kq.message || ('Da hoan tien va tra phong thanh cong cho don #' + don.id + '.'), 'success');
+            }).catch(function (err) {
+                console.error('=== LOI HOAN TIEN:', err);
+                alert('Co loi xay ra khi xac nhan hoan tien, vui long thu lai.');
+            });
+        }
+
+        function thucHienXacNhanHoanTienNhom(don, maPhongList) {
+            goiApi(CTX_URL_XAC_NHAN_HOAN_TIEN_API + don.id).then(function (kq) {
+                if (!kq.ok) {
+                    alert(kq.loi || 'Không thể xác nhận hoàn tiền.');
+                    return;
+                }
+                don.trangThai = 'Da tra phong';
+                don.checkoutThuc = new Date().toISOString();
+                (maPhongList || []).forEach(function (maPhong) {
+                    var thePhong = document.querySelector('.sdp-room-cell[data-ma-phong="' + maPhong + '"]');
+                    if (thePhong) capNhatTrangThaiThePhong(thePhong, kq.trangThaiMoi || 'Đang dọn');
+                });
+                staffToast(kq.message || ('Đã hoàn tiền và trả phòng cả đoàn thành công cho đơn #' + don.id + '.'), 'success');
+            }).catch(function () {
+                alert('Có lỗi xảy ra khi xác nhận hoàn tiền, vui lòng thử lại.');
+            });
+        }
+
         function thucHienTraPhong(card, don, xacNhan, tienKhachTra) {
             var url = CTX_URL_CHECK_OUT_API + don.id + (xacNhan ? '?xacNhan=true' : '');
             var extra = (xacNhan && tienKhachTra !== null && tienKhachTra !== undefined)
@@ -3577,18 +3592,34 @@
                     alert(kq.loi || 'Không thể trả phòng.');
                     return;
                 }
-                if ((kq.viPham || kq.canThuTien) && !kq.daApDung) {
-                    var tieuDe = kq.viPham ? 'Vi phạm chính sách trả phòng muộn' : 'Đơn còn khoản chưa thanh toán';
-                    var ghiChu = kq.canThuTien
-                        ? 'Nhập đúng số tiền còn phải thu để xác nhận thu tiền và trả phòng cho đơn #' + don.id + '.'
-                        : 'Nhấn "Đã hiểu" để xác nhận trả phòng và ghi khoản phụ thu vào chi tiết dịch vụ của đơn #' + don.id + '.';
+                if ((kq.viPham || kq.canThuTien || kq.canHoanTien) && !kq.daApDung) {
+                    var tieuDe = kq.canHoanTien ? 'Hoàn tiền thừa cho khách'
+                        : kq.viPham ? 'Vi phạm chính sách trả phòng muộn'
+                            : 'Đơn còn khoản chưa thanh toán';
+                    var ghiChu = kq.canHoanTien
+                        ? 'Khách đã thanh toán dư ' + fmtTien(Math.abs(Number(kq.tongPhaiThu || 0))) + ' so với tổng tiền phải trả. Nhấn "Xác nhận hoàn tiền" để ghi nhận hoàn trả và trả phòng cho đơn #' + don.id + '.'
+                        : kq.canThuTien
+                            ? 'Nhập đúng số tiền còn phải thu để xác nhận thu tiền và trả phòng cho đơn #' + don.id + '.'
+                            : 'Nhấn "Đã hiểu" để xác nhận trả phòng và ghi khoản phụ thu vào chi tiết dịch vụ của đơn #' + don.id + '.';
                     moModalPhuThu(
                         tieuDe,
                         kq.moTaChinhSach,
-                        kq.soTien,
+                        kq.canHoanTien ? Math.abs(Number(kq.tongPhaiThu || 0)) : kq.soTien,
                         ghiChu,
-                        function (soTienNhap) { thucHienTraPhong(card, don, true, soTienNhap); },
-                        { conLai: kq.soTienConLai, tongPhaiThu: kq.tongPhaiThu }
+                        function (soTienNhap) {
+                            console.log('=== CALLBACK MO MODAL ===');
+                            console.log('kq.canHoanTien:', kq.canHoanTien);
+                            console.log('kq.tongPhaiThu:', kq.tongPhaiThu);
+
+                            if (kq.canHoanTien) {
+                                var soTienHoan = Math.abs(Number(kq.tongPhaiThu || 0));
+                                console.log('=== SO TIEN HOAN:', soTienHoan);
+                                thucHienXacNhanHoanTien(card, don, soTienHoan);
+                            } else {
+                                thucHienTraPhong(card, don, true, soTienNhap);
+                            }
+                        },
+                        { conLai: kq.soTienConLai, tongPhaiThu: kq.tongPhaiThu, canHoanTien: kq.canHoanTien }
                     );
                     return;
                 }
@@ -3621,18 +3652,38 @@
                     alert(kq.loi || 'Không thể trả phòng cả đoàn.');
                     return;
                 }
-                if ((kq.viPham || kq.canThuTien) && !kq.daApDung) {
-                    var tieuDe = kq.viPham ? 'Vi phạm chính sách trả phòng muộn (cả đoàn)' : 'Đơn còn khoản chưa thanh toán (cả đoàn)';
-                    var ghiChu = kq.canThuTien
-                        ? 'Nhập đúng số tiền còn phải thu để xác nhận thu tiền và trả phòng cho cả đoàn của đơn #' + don.id + '.'
-                        : 'Nhấn "Đã hiểu" để xác nhận trả phòng cho cả đoàn và ghi khoản phụ thu vào chi tiết dịch vụ của đơn #' + don.id + '.';
+                if ((kq.viPham || kq.canThuTien || kq.canHoanTien) && !kq.daApDung) {
+                    var tieuDe = kq.canHoanTien ? 'Hoàn tiền thừa cho khách (cả đoàn)'
+                        : kq.viPham ? 'Vi phạm chính sách trả phòng muộn (cả đoàn)'
+                            : 'Đơn còn khoản chưa thanh toán (cả đoàn)';
+                    var ghiChu = kq.canHoanTien
+                        ? 'Khách đã thanh toán dư ' + fmtTien(Math.abs(Number(kq.tongPhaiThu || 0))) + ' so với tổng tiền phải trả (áp dụng cho cả đoàn). Nhấn "Xác nhận hoàn tiền" để ghi nhận hoàn trả và trả phòng cho đơn #' + don.id + '.'
+                        : kq.canThuTien
+                            ? 'Nhập đúng số tiền còn phải thu để xác nhận thu tiền và trả phòng cho cả đoàn của đơn #' + don.id + '.'
+                            : 'Nhấn "Đã hiểu" để xác nhận trả phòng cho cả đoàn và ghi khoản phụ thu vào chi tiết dịch vụ của đơn #' + don.id + '.';
+                    // Lay san danh sach ma phong cua ca doan tu SDP_BOOKINGS de dung
+                    // cho nhanh canHoanTien (backend xacNhanHoanTien chi tra ve
+                    // trangThaiMoi chung, khong co maPhongDaTra nhu checkOutNhom).
+                    var maPhongCuaDon = [];
+                    Object.keys(SDP_BOOKINGS || {}).forEach(function (mp) {
+                        var list = SDP_BOOKINGS[mp] || [];
+                        if (list.some(function (b) { return b.id === don.id; })) {
+                            maPhongCuaDon.push(mp);
+                        }
+                    });
                     moModalPhuThu(
                         tieuDe,
                         kq.moTaChinhSach,
-                        kq.soTien,
+                        kq.canHoanTien ? Math.abs(Number(kq.tongPhaiThu || 0)) : kq.soTien,
                         ghiChu,
-                        function (soTienNhap) { thucHienTraPhongNhom(card, don, true, soTienNhap); },
-                        { conLai: kq.soTienConLai, tongPhaiThu: kq.tongPhaiThu }
+                        function (soTienNhap) {
+                            if (kq.canHoanTien) {
+                                thucHienXacNhanHoanTienNhom(don, maPhongCuaDon);
+                            } else {
+                                thucHienTraPhongNhom(card, don, true, soTienNhap);
+                            }
+                        },
+                        { conLai: kq.soTienConLai, tongPhaiThu: kq.tongPhaiThu, canHoanTien: kq.canHoanTien }
                     );
                     return;
                 }

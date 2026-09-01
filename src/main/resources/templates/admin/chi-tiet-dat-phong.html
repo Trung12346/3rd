@@ -13,7 +13,12 @@
         *, *::before, *::after { box-sizing: border-box; }
         body { background: #f4f7fa; }
         .cdp-shell { width: 100%; max-width: 100%; margin: 0; padding: 32px 4% 80px; }
-
+        .sum-row.sum-con-lai.da-du span:last-child {
+            color: #15803d;
+        }
+        .sum-row.sum-con-lai .sum-label-tiethua {
+            color: #c2410c;
+        }
         @media (min-width: 1700px) {
             .cdp-shell { padding: 32px 6% 80px; }
         }
@@ -1120,8 +1125,8 @@
                     </div>
 
                     <!-- Còn lại -->
-                    <div class="sum-row sum-con-lai">
-                        <span>Còn lại</span>
+                    <div class="sum-row sum-con-lai" id="sumConLaiRow">
+                        <span id="sumConLaiLabel">Còn thiếu</span>
                         <span id="sumConLai">đ 0</span>
                     </div>
 
@@ -1603,10 +1608,30 @@
             const daThanhToan = Number(window.__daThanhToanDb || 0);
             const conLai = Math.round(tongCong) - Math.round(daThanhToan);
             document.getElementById('sumDaThanhToan').textContent = 'đ ' + BookingValidate.formatVND(daThanhToan).replace(' VND', '');
+
             const sumConLaiEl = document.getElementById('sumConLai');
-            const sumConLaiRowEl = sumConLaiEl.closest('.sum-con-lai');
-            sumConLaiEl.textContent = (conLai < 0 ? '- đ ' : 'đ ') + BookingValidate.formatVND(Math.abs(conLai)).replace(' VND', '');
-            if (sumConLaiRowEl) sumConLaiRowEl.classList.toggle('da-du', conLai <= 0);
+            const sumConLaiRowEl = document.getElementById('sumConLaiRow');
+            const sumConLaiLabelEl = document.getElementById('sumConLaiLabel');
+
+            if (conLai > 0) {
+                // Còn thiếu
+                sumConLaiLabelEl.textContent = 'Còn thiếu';
+                sumConLaiEl.textContent = 'đ ' + BookingValidate.formatVND(conLai).replace(' VND', '');
+                sumConLaiEl.style.color = '#dc2626';
+                sumConLaiRowEl.classList.remove('da-du');
+            } else if (conLai < 0) {
+                // Tiền thừa
+                sumConLaiLabelEl.textContent = 'Tiền thừa';
+                sumConLaiEl.textContent = 'đ ' + BookingValidate.formatVND(Math.abs(conLai)).replace(' VND', '');
+                sumConLaiEl.style.color = '#c2410c';
+                sumConLaiRowEl.classList.remove('da-du');
+            } else {
+                // Đã thanh toán đủ
+                sumConLaiLabelEl.textContent = 'Còn lại';
+                sumConLaiEl.textContent = 'đ 0';
+                sumConLaiEl.style.color = '#15803d';
+                sumConLaiRowEl.classList.add('da-du');
+            }
 
             document.getElementById('h-tien-phong').value = Math.round(tienPhong);
             document.getElementById('h-tien-dv').value = Math.round(tienDvVaPhuThu);

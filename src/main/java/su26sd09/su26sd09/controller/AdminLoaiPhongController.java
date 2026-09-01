@@ -156,7 +156,7 @@ public class AdminLoaiPhongController {
 
         Pageable pageable = PageRequest.of(Math.max(page, 0), size);
         Page<LoaiPhong> result = repo.searchLoaiPhongPagedNative(
-                keywordValue, minGia, maxGia, soKhachValue, pageable
+                keywordValue, minGia, maxGia, soKhachValue, pageable    
         );
 
         System.out.println("Total results: " + result.getTotalElements());

@@ -1,12 +1,12 @@
 {
-  "13" : {
-    "maPhong" : 13,
-    "soPhong" : "107",
+  "23" : {
+    "maPhong" : 23,
+    "soPhong" : "105",
     "maNhanVien" : 4,
     "tenNhanVien" : "Nguyễn Văn Cao",
     "trangThai" : "DA_GAN",
     "duongDanAnh" : null,
-    "thoiGianGan" : "2026-08-30T11:18:03.622725800",
+    "thoiGianGan" : "2026-09-01T10:41:57.722926700",
     "thoiGianUpload" : null
   }
 }

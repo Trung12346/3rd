@@ -355,38 +355,45 @@
     <!-- Còn lại + badge -->
     <div class="grand-box"
          th:with="conLai = ${hoaDon.tongTien != null and hoaDon.daThanhToan != null
-             ? hoaDon.tongTien.subtract(hoaDon.daThanhToan)
-             : null}">
-        <span class="grand-label">Còn lại phải thu</span>
+         ? hoaDon.tongTien.subtract(hoaDon.daThanhToan)
+         : null}">
+
+        <!-- Nếu conLai > 0: Còn thiếu -->
+        <span class="grand-label" th:if="${conLai != null and conLai.compareTo(T(java.math.BigDecimal).ZERO) > 0}">
+        Còn thiếu
+    </span>
+        <!-- Nếu conLai < 0: Tiền thừa -->
+        <span class="grand-label" th:if="${conLai != null and conLai.compareTo(T(java.math.BigDecimal).ZERO) < 0}">
+        Tiền thừa
+    </span>
+        <!-- Nếu conLai == 0: Đã thanh toán đủ -->
+        <span class="grand-label" th:if="${conLai == null or conLai.compareTo(T(java.math.BigDecimal).ZERO) == 0}">
+        Đã thanh toán đủ
+    </span>
+
         <span class="grand-right">
-            <span class="grand-amount"
-                  th:text="${conLai != null
-                      ? #numbers.formatDecimal(conLai, 0, 'COMMA', 0, 'POINT') + ' VNĐ'
-                      : '--- VNĐ'}">
-                0 VNĐ
-            </span>
-            <!-- Đã thanh toán đủ -->
-            <span class="badge-paid"
-                  th:if="${conLai != null and conLai.compareTo(T(java.math.BigDecimal).ZERO) &lt;= 0}">
-                ĐÃ THANH TOÁN ĐỦ
-            </span>
-            <!-- Còn nợ một phần -->
-            <span class="badge-partial"
-                  th:if="${conLai != null
-                      and conLai.compareTo(T(java.math.BigDecimal).ZERO) > 0
-                      and hoaDon.daThanhToan != null
-                      and hoaDon.daThanhToan.compareTo(T(java.math.BigDecimal).ZERO) > 0}">
-                CÒN NỢ
-            </span>
-            <!-- Chưa thanh toán gì -->
-            <span class="badge-unpaid"
-                  th:if="${conLai != null
-                      and conLai.compareTo(T(java.math.BigDecimal).ZERO) > 0
-                      and (hoaDon.daThanhToan == null
-                           or hoaDon.daThanhToan.compareTo(T(java.math.BigDecimal).ZERO) == 0)}">
-                CHƯA THANH TOÁN
-            </span>
+        <!-- Hiển thị số tiền (luôn dương) -->
+        <span class="grand-amount"
+              th:text="${conLai != null
+                  ? #numbers.formatDecimal(conLai.abs(), 0, 'COMMA', 0, 'POINT') + ' VNĐ'
+                  : '0 VNĐ'}">
+            0 VNĐ
         </span>
+
+            <!-- Badge trạng thái -->
+        <span class="badge-partial"
+              th:if="${conLai != null and conLai.compareTo(T(java.math.BigDecimal).ZERO) > 0}">
+            CÒN THIẾU
+        </span>
+        <span class="badge-paid"
+              th:if="${conLai != null and conLai.compareTo(T(java.math.BigDecimal).ZERO) == 0}">
+            ĐÃ THANH TOÁN ĐỦ
+        </span>
+        <span class="badge-unpaid"
+              th:if="${conLai != null and conLai.compareTo(T(java.math.BigDecimal).ZERO) < 0}">
+            TRẢ THỪA
+        </span>
+    </span>
     </div>
 
     <!-- ══ GHI CHÚ ══ -->

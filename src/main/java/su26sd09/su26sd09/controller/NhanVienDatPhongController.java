@@ -154,21 +154,12 @@ public class NhanVienDatPhongController {
             @RequestParam(defaultValue = "10") int size,
             Model model) {
 
-        // Sort theo ngayTao desc (đơn vừa tạo lên đầu) thay vì theo id desc,
-        // vì id có thể bị lủng do sequence/rollback còn ngayTao phản ánh đúng
-        // thứ tự thời gian tạo đơn.
         Sort sort = Sort.by(Sort.Order.desc("ngayTao"), Sort.Order.desc("id"));
         Pageable pageable = PageRequest.of(page, size, sort);
-        // Lấy tất cả, lọc bỏ các đơn "Chua thanh toan" rồi mới paging — đảm bảo
-        // trang quản lý đơn đặt phòng của nhân viên chỉ hiển thị đơn đã có
-        // trạng thái nghiệp vụ hợp lệ.
         List<DatPhong> allFiltered = datPhongService.findAll(sort).stream()
                 .filter(dp -> HuyDonConstants.DP_TRANG_THAI_HIEN_THI_BOOKING_MGMT.contains(dp.getTrangThai()))
                 .collect(Collectors.toList());
 
-        // Đếm số đơn "Cho xac nhan" / "Da xac nhan" đã quá giờ nhận > 1 ngày
-        // để hiển thị toast cảnh báo vàng 10s trên trang quản lý đơn.
-        // KHÔNG tự động hủy — nhân viên tự xử lý.
         LocalDateTime nowForToast = LocalDateTime.now();
         LocalDateTime nguongTreToast = nowForToast.minusDays(HuyDonConstants.CANH_BAO_TRE_SONGAY);
         long soDonTreCanhBao = datPhongService.findAll().stream()
@@ -182,7 +173,7 @@ public class NhanVienDatPhongController {
         List<DatPhong> datPhongs = allFiltered.subList(fromIndex, toIndex);
         Page<DatPhong> datPhongPage = new PageImpl<>(datPhongs, pageable, total);
 
-        Map<Integer, List<  ChiTietDatPhong>> mapCtdp = new HashMap<>();
+        Map<Integer, List<ChiTietDatPhong>> mapCtdp = new HashMap<>();
         Map<Integer, List<Phong>> phongTheoDon = new HashMap<>();
         for (DatPhong dp : datPhongs) {
             mapCtdp.put(dp.getId(), chiTietDatPhongService.findByDatPhongId(dp.getId()));
@@ -221,8 +212,6 @@ public class NhanVienDatPhongController {
         boolean isEmbed = embed != null && embed;
         DatPhong datPhong = datPhongService.findById(id);
         if (datPhong == null) {
-            // Che do embed (popup trong so-do-phong): tra 404 HTML thay vi redirect,
-            // tranh JS parse nham noi dung trang khac.
             if (isEmbed) {
                 response.setStatus(HttpServletResponse.SC_NOT_FOUND);
                 model.addAttribute("error", "Khong tim thay don dat phong #" + id);
@@ -240,7 +229,6 @@ public class NhanVienDatPhongController {
 
         List<ChiTietDatPhong> chiTietDatPhongList = chiTietDatPhongService.findByDatPhongId(id);
 
-        // Tinh tong phu phi ngoai gio tu cac phong trong don
         BigDecimal tongPhuThu = BigDecimal.ZERO;
         for (ChiTietDatPhong ct : chiTietDatPhongList) {
             if (ct != null && ct.getPhuPhi() != null && ct.getPhuPhi().signum() > 0) {
@@ -248,7 +236,6 @@ public class NhanVienDatPhongController {
             }
         }
 
-        // ===== Tong hoa don "thuc te" dung de tinh Con no (xem tinhTongTienThucTe) =====
         BigDecimal tongTienThucTe = tinhTongTienThucTe(id, hoaDon, chiTietDatPhongList, tongPhuThu);
         BigDecimal daThanhToanHd = (hoaDon != null && hoaDon.getDaThanhToan() != null)
                 ? hoaDon.getDaThanhToan() : BigDecimal.ZERO;
@@ -258,10 +245,7 @@ public class NhanVienDatPhongController {
         model.addAttribute("conNoThucTe", conNoThucTe);
         model.addAttribute("daThanhToanHd", daThanhToanHd);
 
-        // ===== Data cho form đổi phòng =====
-        // Lấy tất cả phòng active để render danh sách phòng khả dụng trong form đổi phòng.
         List<Phong> tatCaPhong = phongService.findAllPhong();
-        // Lấy danh sách phòng mà chính đơn này đang dùng — sẽ bị loại ra khỏi danh sách chọn phòng mới.
         List<Integer> phongDangDungTrongDon = new ArrayList<>();
         for (ChiTietDatPhong ct : chiTietDatPhongList) {
             if (ct != null && ct.getP() != null) {
@@ -270,9 +254,7 @@ public class NhanVienDatPhongController {
         }
         model.addAttribute("phongAvailableList", tatCaPhong);
         model.addAttribute("phongDangDungTrongDon", phongDangDungTrongDon);
-        // CCCD/giay to cua khach dai dien tung phong (thu thap luc check-in), dung de
-        // hien thi trong panel "Doi Phong" — KHONG dung datPhong.ma_cccd (do la ma
-        // dung de doi soat chong gian lan cho CA don, khong gan voi tung phong).
+
         Map<Integer, String> cccdPhongMap = new HashMap<>();
         for (ChiTietDatPhong ct : chiTietDatPhongList) {
             if (ct != null) {
@@ -282,14 +264,6 @@ public class NhanVienDatPhongController {
         model.addAttribute("cccdPhongMap", cccdPhongMap);
         model.addAttribute("roomStatusJson", "[" + phongService.buildRoomStatusJson(tatCaPhong) + "]");
 
-        // ===== Du lieu lich cac phong dang dung trong don (cho calendar chon
-        // ngay nhan/tra o panel "Thong Tin Luu Tru"): cung cau truc voi
-        // bookingsByRoomJson cua so-do-phong (maPhong -> danh sach don dang/da
-        // giu cho phong do), de tai su dung y het logic RoomAvailabilityCalendar
-        // + kiem tra overlap ben so-do-phong.html. Diem khac duy nhat: khi kiem
-        // tra overlap, JS se LOAI TRU chinh don dang xem (id === datPhong.id)
-        // khoi danh sach khoa, vi doi ngay cho chinh no khong the coi la "trung
-        // lich voi chinh no".
         StringBuilder donBkJson = new StringBuilder("{");
         boolean firstDonRoom = true;
         for (Integer maPhong : phongDangDungTrongDon) {
@@ -311,12 +285,12 @@ public class NhanVienDatPhongController {
         }
         donBkJson.append("}");
         model.addAttribute("bookingsByRoomJson", donBkJson.toString());
-        // Số đêm để hiển thị chênh lệch trong form đổi phòng
+
         long soDem = Math.max(1, ChronoUnit.DAYS.between(
                 datPhong.getNgaydatPhong().toLocalDate(),
                 datPhong.getNgaytraPhong().toLocalDate()));
         model.addAttribute("soDem", soDem);
-        // Cho phép đổi phòng: trạng thái đơn thuộc nhóm này + hóa đơn chưa xuất PDF
+
         boolean choPhepDoiPhong = "Yeu cau dat phong".equals(datPhong.getTrangThai())
                 || "Cho xac nhan".equals(datPhong.getTrangThai())
                 || "Da xac nhan".equals(datPhong.getTrangThai())
@@ -325,19 +299,9 @@ public class NhanVienDatPhongController {
 
         model.addAttribute("datPhong", datPhong);
         model.addAttribute("chiTietDatPhongList", chiTietDatPhongList);
-        // Tinh san loai dich vu (THUONG / PHAT_SINH / PHU_THU) cho moi dong
-        // chi_tiet_dich_vu, truyen qua Map<id, loai>. Ly do: Thymeleaf inline
-        // expression [[${...}]] khong parse duoc nested ternary phuc tap (3 nhanh),
-        // nen khong the tinh loai ngay trong template. Lay loai phia controller
-        // dam bao template chi dung mot expression don gian [[${loaiDichVuMap[ct.id]}]].
+
         List<su26sd09.su26sd09.entity.Chi_tiet_dich_vu> ctdvList = ctdvService.findByDatPhongId(id);
         Map<Integer, String> loaiDichVuMap = new HashMap<>();
-        // Gia don vi hien thi cho tung dong dich vu: LUON uu tien chi_tiet_dich_vu.donGia
-        // (gia thuc te da chot luc dat/them dich vu, khong doi dù bang gia dich_vu goc
-        // thay doi sau do), chia lai cho soluong de ra don gia/1 don vi (donGia dang luu
-        // la THANH TIEN ca dong = gia*soluong, xem capNhatDichVuDatPhong()). Tinh o day
-        // (Java, BigDecimal.divide co RoundingMode) de tranh ArithmeticException khi
-        // chia khong het (vi du 100000/3) neu tinh truc tiep trong Thymeleaf SpEL.
         Map<Integer, BigDecimal> giaDonViMap = new HashMap<>();
         for (su26sd09.su26sd09.entity.Chi_tiet_dich_vu ct : ctdvList) {
             String loai = "THUONG";
@@ -352,24 +316,14 @@ public class NhanVienDatPhongController {
                     loai = "PHU_THU";
                 }
             }
-            // DEBUG tam thoi: in ra console de xac nhan runtime co map dung loai
-            System.out.println("[DEBUG-NVDPC] don#" + id + " ct.id=" + ct.getId()
-                    + " dv.ten=" + dvTen + " dv.loaiDv=" + dvLoai
-                    + " donGia=" + ct.getDonGia() + " => loai=" + loai);
             loaiDichVuMap.put(ct.getId(), loai);
 
             int soLuong = (ct.getSoluong() != null && ct.getSoluong() > 0) ? ct.getSoluong() : 1;
-            // Luon lay gia tu chi_tiet_dich_vu.don_gia (KHONG fallback ve dich_vu.gia nua,
-            // vi dich_vu.gia la gia goc trong danh muc, co the da thay doi/khong dung voi
-            // gia thuc te da chot luc dat/them dich vu). Neu don_gia null (du lieu thieu) thi
-            // hien thi 0 de de phat hien, thay vi lay nham gia catalog gay sai lech.
             BigDecimal giaDonVi = (ct.getDonGia() != null)
                     ? ct.getDonGia().divide(BigDecimal.valueOf(soLuong), 0, RoundingMode.HALF_UP)
                     : BigDecimal.ZERO;
             giaDonViMap.put(ct.getId(), giaDonVi);
         }
-        System.out.println("[DEBUG-NVDPC] don#" + id + " ctdvList.size=" + ctdvList.size()
-                + " loaiDichVuMap.size=" + loaiDichVuMap.size() + " map=" + loaiDichVuMap);
         model.addAttribute("chiTietDichVuList", ctdvList);
         model.addAttribute("loaiDichVuMap", loaiDichVuMap);
         model.addAttribute("giaDonViMap", giaDonViMap);
@@ -377,7 +331,6 @@ public class NhanVienDatPhongController {
         model.addAttribute("kmJson", buildKhuyenMaiJson());
         model.addAttribute("tongPhuThu", tongPhuThu);
 
-        // ===== Chinh sach no-show: han check-in hieu luc (mac dinh hoac da gia han) =====
         boolean apDungKhachVang = HuyDonConstants.DP_TRANG_THAI_AP_DUNG_KHACH_VANG.contains(datPhong.getTrangThai());
         model.addAttribute("apDungChinhSachKhachVang", apDungKhachVang);
         if (apDungKhachVang) {
@@ -389,12 +342,6 @@ public class NhanVienDatPhongController {
         return "nhan-vien/chi-tiet-dat-phong";
     }
 
-    /**
-     * Nhan vien gia han moc check-in cua 1 don (chinh sach no-show), thuong dung khi
-     * khach goi dien xin den nhan phong tre hon moc mac dinh (12:00 ngay hom sau
-     * ngay_nhan_phong). Ghi vao cache file (CheckInExpirationCacheService), scheduler
-     * xu ly Khach vang se doc lai moc nay o lan quet tiep theo.
-     */
     @PostMapping("/dat-phong/chi-tiet/{id}/gia-han-checkin")
     public String giaHanCheckIn(@PathVariable Integer id,
                                 @RequestParam("hanCheckInMoi") @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm") LocalDateTime hanCheckInMoi,
@@ -427,38 +374,13 @@ public class NhanVienDatPhongController {
         return "redirect:/nhan-su/dat-phong/chi-tiet/" + id;
     }
 
-    /**
-     * Tinh tong hoa don "thuc te" (dung de tinh Con no / gioi han so tien duoc thu)
-     * cho mot don dat phong.
-     *
-     * hoaDon.tongTien duoc luu trong DB tu lan "Cap nhat" gan nhat va co the CHUA
-     * bao gom phu phi gio nhan/tra moi phat sinh (vd: doi gio nhan/tra, check-in
-     * tre...) neu nhan vien chua bam "Luu Thay Doi" lai. Neu cu dung thang
-     * hoaDon.tongTien de tinh "Con no" thi so lieu se bi lech voi cot "Tom Tat
-     * Chi Phi" (cot nay luon tinh lai phu phi theo gio nhan/tra hien tai), khien
-     * nhan vien thay "da thu du" nhung backend van tu choi vi thieu tien.
-     *
-     * Ham nay tinh lai tong tien "ky vong" (tien phong + tien dich vu + VAT -
-     * giam gia + phu phi gio nhan/tra) va lay gia tri LON HON giua no va
-     * hoaDon.tongTien, de tranh cong don 2 lan phu phi trong truong hop
-     * hoaDon.tongTien da duoc cap nhat co san.
-     */
     private BigDecimal tinhTongTienThucTe(Integer datPhongId, HoaDon hoaDon,
                                           List<ChiTietDatPhong> chiTietDatPhongList,
                                           BigDecimal tongPhuThu) {
-        // VIEW: doc lai tu bang trung gian va tinh bang cong thuc CHUAN dung
-        // chung voi moi luong khac (xem InvoicePricingService) - VAT tren gia
-        // SAU giam. tongPhuThu la phu phi CHUA duoc luu vao chi_tiet_dat_phong
-        // (vd doi gio nhan/tra chua bam Luu) nen cong them rieng ben ngoai.
         InvoicePricingResult gia = invoicePricingService.previewInvoice(
                 datPhongId, hoaDon != null ? hoaDon.getK() : null);
-        BigDecimal tongTienKyVong = gia.getTongTien()
+        return gia.getTongTien()
                 .add(tongPhuThu == null ? BigDecimal.ZERO : tongPhuThu);
-
-        BigDecimal tongTienDaLuu = (hoaDon != null && hoaDon.getTongTien() != null)
-                ? hoaDon.getTongTien() : BigDecimal.ZERO;
-
-        return tongTienDaLuu.max(tongTienKyVong);
     }
 
     @PostMapping("/dat-phong/chi-tiet/{id}/update")
@@ -553,7 +475,6 @@ public class NhanVienDatPhongController {
                 null, null, null, allParams);
     }
 
-    /** Phiên bản mở rộng: validate cả dịch vụ thường + dịch vụ phát sinh. */
     private List<String> validateChiTietDatPhong(LocalDateTime ngayNhan, LocalDateTime ngayTra,
                                                  Integer nguoiLon, Integer treEm,
                                                  List<Integer> dichVuIds,
@@ -571,7 +492,6 @@ public class NhanVienDatPhongController {
         if (treEm == null || treEm < 0) {
             errors.add("So tre em khong duoc am.");
         }
-        // Validate dịch vụ phát sinh: nếu có tên thì bắt buộc đơn giá > 0 và ghi chú không rỗng
         if (phatSinhTenList != null && phatSinhDonGiaList != null) {
             int soPhatSinh = phatSinhTenList.size();
             for (int i = 0; i < soPhatSinh; i++) {
@@ -601,10 +521,6 @@ public class NhanVienDatPhongController {
         capNhatDichVuDatPhong(datPhong, dichVuIds, null, null, null, null, null, allParams);
     }
 
-    /** Phiên bản mở rộng: lưu cả dịch vụ thường + dịch vụ phát sinh.
-     *  - Dịch vụ thường: dùng giá cố định từ catalog dich_vu.
-     *  - Dịch vụ phát sinh: tự tạo/cập nhật 1 row master Dich_vu (loaiDichVu=PHAT_SINH) theo (tên + đơn giá)
-     *    rồi gắn vào chi_tiet_dich_vu. Trùng tên + đơn giá sẽ dùng lại cùng 1 row master để thống kê "Lượt sử dụng" chính xác. */
     private void capNhatDichVuDatPhong(DatPhong datPhong, List<Integer> dichVuIds,
                                        List<String> phatSinhTenList,
                                        List<String> phatSinhDonGiaList,
@@ -614,7 +530,6 @@ public class NhanVienDatPhongController {
                                        Map<String, String> allParams) {
         ctdvService.deleteByDatPhongId(datPhong.getId());
 
-        // ===== 1) Dịch vụ THƯỜNG (catalog có sẵn) =====
         if (dichVuIds != null) {
             for (Integer maDichVu : dichVuIds) {
                 Dich_vu dichVu = dichVuService.findById(maDichVu);
@@ -630,13 +545,11 @@ public class NhanVienDatPhongController {
                 chiTiet.setDv(dichVu);
                 chiTiet.setSoluong(soLuong);
                 chiTiet.setNgay_su_dung(ngaySuDung);
-                // NEW: dich vu duoc gan vao don lan dau -> lay don gia truc tiep tu Dich_vu.
                 chiTiet.setDonGia(invoicePricingService.createServiceLineItemPrice(dichVu, soLuong));
                 ctdvService.save(chiTiet);
             }
         }
 
-        // ===== 2) Dịch vụ PHÁT SINH (nhập tay, master tự tạo/cập nhật theo tên + đơn giá) =====
         if (phatSinhTenList == null || phatSinhTenList.isEmpty()) {
             return;
         }
@@ -658,14 +571,13 @@ public class NhanVienDatPhongController {
             try {
                 donGia = (donGiaStr == null || donGiaStr.isBlank()) ? null : new BigDecimal(donGiaStr);
             } catch (NumberFormatException ex) {
-                continue; // validate đã chặn trước, an toàn thì skip
+                continue;
             }
             if (donGia == null || donGia.signum() <= 0) continue;
 
             int soLuong = parseIntOrDefault(soLuongStr, 1);
             LocalDateTime ngaySuDung = parseDateTimeOrNow(ngayStr);
 
-            // Tìm dịch vụ phát sinh đã có (cùng tên + cùng đơn giá) — nếu có thì dùng lại
             Dich_vu dichVuPhatSinh = dichVuService.findPhatSinhTheoTenVaGia(ten, donGia)
                     .orElseGet(() -> dichVuService.taoDichVuPhatSinhMoi(ten, donGia));
 
@@ -674,8 +586,8 @@ public class NhanVienDatPhongController {
             chiTiet.setDv(dichVuPhatSinh);
             chiTiet.setSoluong(soLuong);
             chiTiet.setNgay_su_dung(ngaySuDung);
-            chiTiet.setDonGia(donGia.multiply(BigDecimal.valueOf(soLuong)));
-            chiTiet.setGhichu(ghiChu); // ghi chú lý do cụ thể lưu ở line item
+            chiTiet.setDonGia(invoicePricingService.createServiceLineItemPrice(dichVuPhatSinh, soLuong));
+            chiTiet.setGhichu(ghiChu);
             ctdvService.save(chiTiet);
         }
     }
@@ -684,7 +596,7 @@ public class NhanVienDatPhongController {
                                     BigDecimal tienGiam, BigDecimal tienVat, BigDecimal tongCong, KhuyenMai km) {
         HoaDon hoaDon = hoaDonService.findByDatPhongId(maDatPhong);
         if (hoaDon == null) {
-            return; // chưa có hóa đơn thì chưa cần làm gì, hóa đơn sẽ được tạo ở bước thanh toán lần đầu
+            return;
         }
 
         hoaDon.setK(km);
@@ -693,12 +605,7 @@ public class NhanVienDatPhongController {
         hoaDon.setTienGiam(defaultMoney(tienGiam));
         hoaDon.setTienVat(defaultMoney(tienVat));
         hoaDon.setTongTien(defaultMoney(tongCong));
-        // thông qua endpoint /thu-tien (thanh toán thật, tiền mặt hoặc VNPay).
         hoaDon.setNgayCapNhat(LocalDateTime.now());
-        // Dùng helper để tự động đồng bộ trangThai:
-        // - "Da thanh toan" nếu đã trả đủ.
-        // - "Cho thanh toan" nếu tổng tiền vừa tăng lên vượt quá daThanhToan.
-        // - Không động vào "Da xuat".
         hoaDonService.saveWithPaymentStatusCheck(hoaDon);
     }
 
@@ -739,7 +646,6 @@ public class NhanVienDatPhongController {
         return sb.toString();
     }
 
-
     @GetMapping("/dat-phong/search")
     public String searchDatPhong(
             @RequestParam(required = false) Integer maDatPhong,
@@ -767,18 +673,11 @@ public class NhanVienDatPhongController {
                         ngayTaoTu, ngayTaoDen, ngayCapNhatTu, ngayCapNhatDen,
                         maTraCuu
                 ).stream()
-                // Ẩn các đơn "Chua thanh toan" — chỉ hiển thị đơn đã có trạng thái
-                // nghiệp vụ hợp lệ trên trang quản lý đơn đặt phòng nhân viên.
-                // Ngoại lệ: khi tra cứu chính xác theo "ma tra cuu", phải trả về cả đơn
-                // "Chua thanh toan" (đơn của khách vãng lai đặt từ giỏ nhưng chưa thanh toán).
                 .filter(dp ->
                         (maTraCuu != null && !maTraCuu.trim().isEmpty())
                                 || HuyDonConstants.DP_TRANG_THAI_HIEN_THI_BOOKING_MGMT.contains(dp.getTrangThai()))
                 .collect(Collectors.toList());
 
-        // Đếm số đơn trễ > 1 ngày (chưa nhận phòng) để hiện toast cảnh báo.
-        // Tính trên TOÀN BỘ đơn (không phụ thuộc filter search) vì đây là cảnh báo
-        // tổng quan — nhân viên cần biết ngay cả khi đang lọc đơn khác.
         LocalDateTime nowForToastSearch = LocalDateTime.now();
         LocalDateTime nguongTreToastSearch = nowForToastSearch.minusDays(HuyDonConstants.CANH_BAO_TRE_SONGAY);
         long soDonTreCanhBao = datPhongService.findAll().stream()
@@ -831,7 +730,6 @@ public class NhanVienDatPhongController {
             @RequestParam(required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime gioKhachTaiQuay,
             @RequestParam(required = false, defaultValue = "0") BigDecimal phuPhiTre,
-            // Them dich vu (chon tu dropdown trong form check-in)
             @RequestParam(required = false) Integer maDichVuThem,
             @RequestParam(required = false, defaultValue = "1") Integer soLuongDichVuThem,
             @RequestParam(defaultValue = "0") int page,
@@ -850,8 +748,6 @@ public class NhanVienDatPhongController {
             return "redirect:/nhan-su/dat-phong?page=" + page + "&size=" + size;
         }
 
-        // Forced redirect sang trang check-out khi chuyen sang "Da tra phong"
-        // de nhan vien phai chot tien va giai phong phong theo dung quy trinh.
         if ("Da tra phong".equals(trangThai)) {
             return "redirect:/nhan-su/checkout/" + id;
         }
@@ -868,7 +764,6 @@ public class NhanVienDatPhongController {
                 id,
                 "Chuyen trang thai don #" + id + " sang \"" + trangThai + "\"");
 
-        // Đồng bộ trạng thái TẤT CẢ phòng trong đơn theo trạng thái đơn mới
         List<ChiTietDatPhong> ctdpList = chiTietDatPhongService.findByDatPhongId(id);
 
         if ("Da nhan phong".equals(trangThai)) {
@@ -879,9 +774,6 @@ public class NhanVienDatPhongController {
                 phongService.save1(p);
             }
 
-            // Cộng phụ phí check-in trễ (nếu có) vào ĐÚNG 1 ChiTietDatPhong
-            // (phòng đầu tiên trong danh sách). Không cộng dồn / không chia đều
-            // — phụ phí chỉ tính 1 lần cho cả đơn, theo yêu cầu của user.
             if (phuPhiTre != null && phuPhiTre.signum() > 0 && !ctdpList.isEmpty()) {
                 ChiTietDatPhong first = ctdpList.get(0);
                 BigDecimal current = first.getPhuPhi() == null ? BigDecimal.ZERO : first.getPhuPhi();
@@ -903,9 +795,6 @@ public class NhanVienDatPhongController {
             }
         }
 
-        // Them dich vu (neu co) — dropdown "Them dich vu" trong form check-in.
-        // Ap dung cho moi trang thai (khong chi "Da nhan phong") de nhan vien
-        // co the bo sung dich vu phat sinh bat ky khi nao can.
         String themDichVuMsg = null;
         if (maDichVuThem != null && maDichVuThem > 0) {
             Dich_vu dichVu = dichVuService.findById(maDichVuThem);
@@ -916,7 +805,6 @@ public class NhanVienDatPhongController {
                 chiTiet.setDv(dichVu);
                 chiTiet.setSoluong(sl);
                 chiTiet.setNgay_su_dung(LocalDateTime.now());
-                // NEW: dich vu duoc gan vao don lan dau -> lay don gia truc tiep tu Dich_vu.
                 chiTiet.setDonGia(invoicePricingService.createServiceLineItemPrice(dichVu, sl));
                 ctdvService.save(chiTiet);
                 themDichVuMsg = "Đã thêm " + sl + " x " + dichVu.getTen_dich_vu() + " vào đơn.";
@@ -942,20 +830,8 @@ public class NhanVienDatPhongController {
         return "redirect:/nhan-su/dat-phong?page=" + page + "&size=" + size;
     }
 
-    /* ===================== YEU CAU DAT PHONG (KHACH ONLINE) ===================== */
-
-    /**
-     * Trang quan ly cac yeu cau dat phong moi tu khach online (trangThai = "Yeu cau dat phong").
-     * Nhan vien vao day de:
-     *   - Xem danh sach yeu cau cho xac nhan
-     *   - Click vao tung yeu cau de xem chi tiet, check CCCD, check suc chua
-     *   - Bam "Xac nhan yeu cau" de chuyen sang trangThai = "Cho xac nhan" (don di vao luong thanh toan)
-     *
-     * Trang tu dong reload bang polling 5 giay (JS o template yeu-cau-dat-phong.html).
-     */
     @GetMapping("/yeu-cau-dat-phong")
     public String quanLyYeuCauDatPhong(Model model) {
-        // Lay tat ca yeu cau, sap xep theo ngayTao giam dan (moi nhat len dau)
         List<DatPhong> dsYeuCau = datPhongService.findAll().stream()
                 .filter(dp -> su26sd09.su26sd09.constants.HuyDonConstants.DP_YEU_CAU_DAT_PHONG
                         .equals(dp.getTrangThai()))
@@ -963,13 +839,11 @@ public class NhanVienDatPhongController {
                         java.util.Comparator.nullsLast(java.util.Comparator.reverseOrder())))
                 .collect(Collectors.toList());
 
-        // Build danh sach chi tiet kem thong tin phong + thoi gian cho
         List<Map<String, Object>> yeuCauList = new ArrayList<>();
         for (DatPhong dp : dsYeuCau) {
             Map<String, Object> item = new LinkedHashMap<>();
             item.put("datPhong", dp);
             item.put("chiTiet", chiTietDatPhongService.findByDatPhongId(dp.getId()));
-            // Tinh so giay da cho de hien thi "X phut truoc" / "X gio truoc"
             if (dp.getNgayTao() != null) {
                 long secondsWaiting = java.time.temporal.ChronoUnit.SECONDS
                         .between(dp.getNgayTao(), LocalDateTime.now());
@@ -983,11 +857,6 @@ public class NhanVienDatPhongController {
         return "nhan-vien/yeu-cau-dat-phong";
     }
 
-    /**
-     * API dem so luong yeu cau dat phong dang cho xu ly.
-     * Su dung cho badge sidebar + auto-reload trang yeu-cau-dat-phong.
-     * Polling moi 5 giay tu JS.
-     */
     @GetMapping("/api/yeu-cau/dat-phong/count")
     @ResponseBody
     public java.util.Map<String, Object> countYeuCauDatPhong() {
@@ -1001,14 +870,6 @@ public class NhanVienDatPhongController {
         return resp;
     }
 
-    /**
-     * Trang chi tiet yeu cau dat phong.
-     * Hien thi day du thong tin khach + CCCD + cac phong da he thong tu chon + canh bao suc chua.
-     * Nhan vien co the:
-     *   - Bam "Xac nhan yeu cau" -> POST /xac-nhan-yeu-cau/{id}
-     *   - Doi phong (neu muon) qua form doi-phong (endpoint da co)
-     *   - Huy yeu cau neu khong the dap ung
-     */
     @GetMapping("/yeu-cau-dat-phong/chi-tiet/{id}")
     public String chiTietYeuCau(@PathVariable Integer id, Model model, RedirectAttributes redirectAttributes) {
         DatPhong datPhong = datPhongService.findById(id);
@@ -1017,7 +878,6 @@ public class NhanVienDatPhongController {
             return "redirect:/nhan-su/yeu-cau-dat-phong";
         }
 
-        // Tinh canh bao suc chua: neu tong nguoi > tong suc chua cua cac phong da gan
         List<ChiTietDatPhong> chiTietList = chiTietDatPhongService.findByDatPhongId(id);
         int tongSucChua = chiTietList.stream()
                 .filter(ct -> ct.getP() != null && ct.getP().getLoaiPhong() != null)
@@ -1027,22 +887,17 @@ public class NhanVienDatPhongController {
                 + (datPhong.getSotreEm() != 0 ? datPhong.getSotreEm() : 0);
         boolean canhBaoSucChua = tongNguoi > tongSucChua;
 
-        // Lay thong tin dich vu + hoa don + lich su thanh toan
         List<Chi_tiet_dich_vu> dichVuList = ctdvService.findByDatPhongId(id);
         HoaDon hoaDon = hoaDonService.findByDatPhongId(id);
         List<ThanhToan> lichSuThanhToan = new ArrayList<>();
         if (hoaDon != null) {
             lichSuThanhToan = thanhToanService.findAllByHoaDonId(hoaDon.getId());
         }
-        // KM + gia KM
         KhuyenMai khuyenMai = datPhong.getKm();
 
-        // Lay tat ca phong (de form doi phong hoat dong neu muon)
         List<Phong> tatCaPhong = phongService.findAllPhong();
 
-        // Build booking guards cho form doi phong (gioi han theo khoang ngay cua don)
         Map<Integer, RoomBookingGuardDTO> bookingGuardByPhong = phongService.buildRoomGuards(tatCaPhong);
-        // JSON cho JS doi phong (tranh overlap khoang ngay voi don khac)
         ObjectMapper mapper = new ObjectMapper()
                 .registerModule(new com.fasterxml.jackson.datatype.jsr310.JavaTimeModule())
                 .disable(com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
@@ -1065,7 +920,6 @@ public class NhanVienDatPhongController {
             }
         }
 
-        // Thoi gian da cho (giay)
         long secondsWaiting = 0;
         if (datPhong.getNgayTao() != null) {
             secondsWaiting = java.time.temporal.ChronoUnit.SECONDS
@@ -1093,11 +947,6 @@ public class NhanVienDatPhongController {
         return "nhan-vien/yeu-cau-chi-tiet";
     }
 
-    /**
-     * Nhan vien xac nhan yeu cau dat phong tu khach online.
-     * Doi trangThai tu "Yeu cau dat phong" -> "Cho xac nhan" (don di vao luong thanh toan).
-     * Validate CCCD phai co (neu khong co thi khong cho xac nhan).
-     */
     @PostMapping("/dat-phong/xac-nhan-yeu-cau/{id}")
     public String xacNhanYeuCau(@PathVariable Integer id, Authentication authentication, RedirectAttributes redirectAttributes) {
         DatPhong dp = datPhongService.findById(id);
@@ -1116,15 +965,10 @@ public class NhanVienDatPhongController {
             return "redirect:/nhan-su/yeu-cau-dat-phong/chi-tiet/" + id;
         }
 
-        // Model MOI: NV xac nhan yeu cau chi dua don vao luong thanh toan
-        // ("Cho xac nhan"). Don CHI chuyen sang "Da xac nhan" tu dong khi
-        // hoa don duoc thanh toan DU 100% (xem HoaDonService#saveWithPaymentStatusCheck).
-        // Khong con buoc NV bam xac nhan thu cong de "chot" don nhu model cu.
         dp.setTrangThai(su26sd09.su26sd09.constants.HuyDonConstants.DP_CHO_XAC_NHAN);
         dp.setNgayCapNhat(LocalDateTime.now());
         datPhongService.save(dp);
 
-        // Gui email cho khach biet yeu cau da duoc NV xac nhan (async)
         try {
             bookingEmailService.guiEmailXacNhanYeuCau(id);
         } catch (Exception ex) {
@@ -1142,10 +986,6 @@ public class NhanVienDatPhongController {
         return "redirect:/nhan-su/dat-phong/chi-tiet/" + id;
     }
 
-    /**
-     * Huy yeu cau dat phong (nhan vien tu choi khach online).
-     * Set trangThai = "Da huy" (gia lap "cancel" vi chua qua luong thanh toan).
-     */
     @PostMapping("/dat-phong/huy-yeu-cau/{id}")
     public String huyYeuCau(@PathVariable Integer id, Authentication authentication, RedirectAttributes redirectAttributes) {
         DatPhong dp = datPhongService.findById(id);
@@ -1159,7 +999,6 @@ public class NhanVienDatPhongController {
             return "redirect:/nhan-su/yeu-cau-dat-phong";
         }
 
-        // Giai phong phong da gan (neu co) de tra ve trang thai "Trong"
         List<ChiTietDatPhong> ctdpList = chiTietDatPhongService.findByDatPhongId(id);
         for (ChiTietDatPhong ct : ctdpList) {
             if (ct != null && ct.getP() != null) {
@@ -1193,7 +1032,6 @@ public class NhanVienDatPhongController {
             Authentication auth,
             RedirectAttributes redirectAttributes) {
 
-        // Bước 1: dùng chung luồng với admin: tạo yêu cầu hủy + set "Cho xu ly"
         KetQuaHuyDonDTO ketQua = huyDonService.huyDon(id);
 
         lichSuHoatDongService.ghiLogAn(auth,
@@ -1203,9 +1041,6 @@ public class NhanVienDatPhongController {
                 "Huy don dat phong #" + id + ": " + ketQua.getThongBao());
 
         if (ketQua.isCanHoanTien()) {
-            // Bước 2: NV chọn sẵn phương thức hoàn (Tien Mat / Chuyen Khoan) ngay trong modal
-            // Huỷ phòng => tự động xác nhận hoàn tiền luôn (tái sử dụng HuyDonService.xacNhanHoanTien),
-            // không cần thao tác thủ công thêm ở trang Hoàn tiền nữa.
             String pt = (phuongThucHoan == null || phuongThucHoan.isBlank())
                     ? HuyDonConstants.PT_TIEN_MAT
                     : phuongThucHoan.trim();
@@ -1214,11 +1049,11 @@ public class NhanVienDatPhongController {
             huyDonService.xacNhanHoanTien(
                     ketQua.getHoaDonId(),
                     pt,
-                    null,   // maGiaoDichHoan: không có (tiền mặt/chuyển khoản thủ công, không qua VNPay)
-                    null,   // stkNhanHoan
-                    null,   // tenNganHang
+                    null,
+                    null,
+                    null,
                     "Tu dong xac nhan hoan tien khi Huy phong (nhan vien)",
-                    null,   // soTienHoanNhap: null -> dùng đúng số tiền hệ thống đã tính theo rule
+                    null,
                     nvXuLy);
 
             redirectAttributes.addFlashAttribute("thongBao",
@@ -1230,28 +1065,8 @@ public class NhanVienDatPhongController {
         return "redirect:/nhan-su/dat-phong?page=" + page + "&size=" + size;
     }
 
-    /**
-     * Trang "Đơn đặt phòng" — sơ đồ phòng dạng lưới, chia theo tab tầng bên cạnh.
-     * Đây là bản dựng lại giao diện (theo tham chiếu sơ đồ phòng), CHỈ tập trung
-     * vào phần hiển thị trạng thái phòng hiện tại, không phụ thuộc vào các trạng
-     * thái cũ trong entity Phong (Trong/Dang su dung/Da dat truoc...).
-     * 4 trạng thái hiển thị: Trống, Đang sử dụng, Đang dọn, Bảo trì.
-     */
-    /**
-     * Nhận phòng (check-in) trực tiếp từ Sơ đồ phòng.
-     * - Chỉ cho phép khi phòng đang ở trạng thái hiển thị "Trống".
-     * - Áp dụng chính sách nhận phòng sớm: nếu vi phạm và CHƯA xác nhận (xacNhan=false),
-     *   CHỈ trả về thông tin phụ thu để hiển thị modal cảnh báo — KHÔNG lưu chi_tiet_dich_vu
-     *   phụ thu, KHÔNG cập nhật trạng thái phòng/đơn (daApDung=false).
-     * - Nếu không vi phạm, hoặc vi phạm nhưng đã xác nhận (xacNhan=true, người dùng bấm
-     *   "Đã hiểu"): tự tạo 1 chi_tiet_dich_vu phụ thu (ghi_chu = "check-in som") gắn vào
-     *   đơn đặt phòng (nếu vi phạm) và chuyển trạng thái phòng sang "Đang sử dụng"
-     *   (daApDung=true).
-     */
-    /**
-     * Danh sach phong (moi phong = 1 section) cua 1 don dat phong, dung de ve
-     * modal "Them giay to" truoc khi thuc su nhan phong o So do phong.
-     */
+    // ==================== CHECK-IN / CHECK-OUT / SƠ ĐỒ PHÒNG ====================
+
     @GetMapping("/so-do-phong/check-in/{maDatPhong}/giay-to-info")
     @ResponseBody
     public Map<String, Object> giayToInfoTuSoDoPhong(@PathVariable int maDatPhong) {
@@ -1304,11 +1119,6 @@ public class NhanVienDatPhongController {
         return result;
     }
 
-    /**
-     * Luu (ghi de) danh sach giay to (CCCD / Ho chieu) cho cac phong cua 1 don
-     * dat phong. Duoc goi tu modal "Them giay to" TRUOC khi bam nut xac nhan
-     * nhan phong that su (checkInTuSoDoPhong).
-     */
     @PostMapping("/so-do-phong/check-in/{maDatPhong}/giay-to")
     @ResponseBody
     public Map<String, Object> luuGiayToTuSoDoPhong(@PathVariable int maDatPhong,
@@ -1333,15 +1143,9 @@ public class NhanVienDatPhongController {
             return result;
         }
 
-        // Cac ma_chi_tiet hop le thuoc dung don nay (tranh ghi nham sang don khac).
         List<Integer> chiTietHopLe = chiTietDatPhongService.findByDatPhongId(maDatPhong)
                 .stream().map(ChiTietDatPhong::getId).collect(Collectors.toList());
 
-        // Day la API "ghi de": voi tung phong (ma_chi_tiet) co mat trong danh sach
-        // gui len, xoa het giay to CU cua phong do truoc khi luu lai danh sach MOI.
-        // Nho vay API co the goi lai nhieu lan an toan (vd: nhan vien sua/luu lai
-        // giay to cua 1 phong tu khung sdp-giayto-room o sidebar "Xem don hien tai")
-        // ma khong bi nhan doi ban ghi cu.
         Set<Integer> chiTietDaGuiLen = danhSach.stream()
                 .map(su26sd09.su26sd09.dto.GiayToCheckInDTO::getChiTietId)
                 .filter(id -> id != null && chiTietHopLe.contains(id))
@@ -1424,7 +1228,6 @@ public class NhanVienDatPhongController {
                 : BigDecimal.ZERO;
 
         if (viPham && !xacNhan) {
-            // Chi xem truoc: chua dung backend de cap nhat trang thai phong/don.
             result.put("ok", true);
             result.put("viPham", true);
             result.put("daApDung", false);
@@ -1438,8 +1241,6 @@ public class NhanVienDatPhongController {
             result.put("soTien", soTien);
         }
 
-        // Cap nhat gio nhan phong THUC TE ve thoi diem khach bam "Khach nhan phong",
-        // dong thoi chuyen trang thai don sang "Da nhan phong".
         dp.setNgaydatPhongThuc(now);
         dp.setTrangThai("Da nhan phong");
         datPhongService.save(dp);
@@ -1464,21 +1265,6 @@ public class NhanVienDatPhongController {
         return result;
     }
 
-    /**
-     * Nhận phòng (check-in) CẢ ĐOÀN — dùng cho đơn đặt nhiều phòng cùng lúc.
-     * Vì cả đoàn dùng chung 1 trạng thái đơn, KHÔNG cho phép nhận phòng từng
-     * phòng riêng lẻ trong trường hợp này: bấm "Cả đoàn khách nhận phòng" sẽ
-     * nhận TẤT CẢ các phòng được gán cho đơn cùng một lúc.
-     * - Chỉ cho phép khi TẤT CẢ các phòng của đơn đang ở trạng thái hiển thị
-     *   "Trống" (nếu có phòng nào không "Trống", từ chối và nêu rõ phòng nào).
-     * - Áp dụng chính sách nhận phòng sớm 1 LẦN cho cả đơn (dựa theo giờ nhận
-     *   phòng đã đặt chung của đơn — dp.getNgaydatPhong()), phụ thu tính RIÊNG
-     *   theo giá từng phòng rồi cộng lại thành 1 khoản duy nhất.
-     * - Nếu vi phạm và CHƯA xác nhận (xacNhan=false): chỉ trả về tổng phụ thu
-     *   xem trước, KHÔNG cập nhật trạng thái phòng/đơn (daApDung=false).
-     * - Nếu không vi phạm, hoặc đã xác nhận: ghi 1 chi_tiet_dich_vu phụ thu (nếu
-     *   có) và chuyển TẤT CẢ phòng của đơn sang "Đang sử dụng".
-     */
     @PostMapping("/so-do-phong/check-in-nhom/{maDatPhong}")
     @ResponseBody
     public Map<String, Object> checkInNhomTuSoDoPhong(@PathVariable int maDatPhong,
@@ -1575,15 +1361,6 @@ public class NhanVienDatPhongController {
         return result;
     }
 
-    /**
-     * - Áp dụng chính sách trả phòng muộn: nếu vi phạm và CHƯA xác nhận (xacNhan=false),
-     *   CHỈ trả về thông tin phụ thu để hiển thị modal cảnh báo — KHÔNG lưu chi_tiet_dich_vu
-     *   phụ thu, KHÔNG cập nhật trạng thái phòng/đơn (daApDung=false).
-     * - Nếu không vi phạm, hoặc vi phạm nhưng đã xác nhận (xacNhan=true, người dùng bấm
-     *   "Đã hiểu"): tự tạo 1 chi_tiet_dich_vu phụ thu (ghi_chu = "check-out muon") gắn vào
-     *   đơn đặt phòng (nếu vi phạm), chuyển trạng thái phòng sang "Đang dọn" và đơn sang
-     *   "Da tra phong" (daApDung=true).
-     */
     @PostMapping("/so-do-phong/check-out/{maDatPhong}")
     @ResponseBody
     public Map<String, Object> checkOutTuSoDoPhong(@PathVariable int maDatPhong,
@@ -1622,24 +1399,16 @@ public class NhanVienDatPhongController {
                    : phong.getGiaMoiDem().multiply(kq.tyLe).setScale(0, RoundingMode.HALF_UP))
                 : BigDecimal.ZERO;
 
-        // Khoan con no CU (hoa don da co truoc do nhung chua thanh toan het, vd:
-        // dich vu phat sinh trong luc luu tru) CONG voi khoan phu thu tra phong
-        // muon SAP phat sinh (neu vi pham) -> day la tong so tien nhan vien PHAI
-        // thu du truoc khi duoc phep tra phong. Neu > 0, khong duoc tra phong
-        // ngay ma phai hien modal yeu cau nhap dung so tien nay truoc.
         BigDecimal conLaiCu = tinhConLaiHienTai(maDatPhong);
         BigDecimal tongPhaiThu = conLaiCu.add(soTien);
         boolean canThuTien = tongPhaiThu.compareTo(BigDecimal.ZERO) > 0;
+        boolean canHoanTien = tongPhaiThu.compareTo(BigDecimal.ZERO) < 0;
 
-        if ((viPham || canThuTien) && !xacNhan) {
-            // Chi xem truoc: chua dung backend de cap nhat trang thai phong/don,
-            // CHUA tao chi_tiet_dich_vu phu thu (viec nay chi thuc hien SAU khi
-            // nhan vien nhap DUNG tong so tien phai thu va xac nhan - xem khoi
-            // ben duoi). Tra ve du du lieu de FE hien thi khung tom tat + o nhap
-            // tien (giong het co che cua "Đặt phòng tại quầy").
+        if ((viPham || canThuTien || canHoanTien) && !xacNhan) {
             result.put("ok", true);
             result.put("viPham", viPham);
             result.put("canThuTien", canThuTien);
+            result.put("canHoanTien", canHoanTien);
             result.put("daApDung", false);
             result.put("soTien", soTien);
             result.put("soTienConLai", conLaiCu);
@@ -1649,9 +1418,6 @@ public class NhanVienDatPhongController {
         }
 
         if (canThuTien) {
-            // Bat buoc nhan vien nhap DUNG so tien con phai thu - CUNG co che voi
-            // "Đặt phòng tại quầy" (xem datPhongTaiQuayTuSoDoPhong): khong cho
-            // phep trả phòng nếu khách chưa thanh toán đủ 100% khoản còn lại.
             if (tienKhachTra == null || tienKhachTra.compareTo(tongPhaiThu) != 0) {
                 result.put("ok", false);
                 result.put("loi", "Số tiền nhập (" + (tienKhachTra == null ? "trống" : tienKhachTra)
@@ -1661,16 +1427,20 @@ public class NhanVienDatPhongController {
             }
         }
 
-        if (viPham) {
-            luuChiTietDichVuPhuThu(dp, "check-out muon", soTien);
-            result.put("soTien", soTien);
-        }
-
-        if (canThuTien) {
-            // Ghi nhan khoan thu (con lai cu + phu thu tra phong muon vua tao o
-            // tren, neu co) vao hoa_don TRUOC KHI phat sinh su kien check-out
-            // that su (doi trang thai phong/don ben duoi).
-            ghiNhanThanhToanTraPhong(maDatPhong, tongPhaiThu);
+        // XỬ LÝ HOÀN TIỀN: Nếu canHoanTien = true, không cần nhập tiền, chỉ cần xác nhận
+        if (canHoanTien) {
+            //  LƯU SỐ TIỀN THỪA VÀO DATPHONG (KHÔNG SET VỀ 0)
+            dp.setTienThuaDoDoiPhong(tongPhaiThu.abs()); // tongPhaiThu đang là số âm, lấy giá trị tuyệt đối
+            dp.setTrangThaiTienThua("CHO_HOAN");
+        } else {
+            // Trường hợp thu tiền
+            if (viPham) {
+                luuChiTietDichVuPhuThu(dp, "check-out muon", soTien);
+                result.put("soTien", soTien);
+            }
+            if (canThuTien) {
+                ghiNhanThanhToanTraPhong(maDatPhong, tongPhaiThu);
+            }
         }
 
         dp.setTrangThai("Da tra phong");
@@ -1681,37 +1451,24 @@ public class NhanVienDatPhongController {
         phong.setNgayCapNhat(now);
         phongService.save1(phong);
 
+        // SỬA LỖI: dùng tongPhaiThu.abs() thay vì Math.abs()
         lichSuHoatDongService.ghiLogAn(authentication,
                 su26sd09.su26sd09.constants.LichSuHoatDongConstants.HD_CHECK_OUT,
                 su26sd09.su26sd09.constants.LichSuHoatDongConstants.DT_DAT_PHONG,
                 maDatPhong,
                 "Tra phong " + phong.getSoPhong() + " cho don #" + maDatPhong
-                        + (viPham ? (" (phu thu tra muon " + soTien.toPlainString() + " VND)") : ""));
+                        + (viPham ? (" (phu thu tra muon " + soTien.toPlainString() + " VND)") : "")
+                        + (canHoanTien ? (" (hoan tien thua " + tongPhaiThu.abs().toPlainString() + " VND)") : ""));
 
         result.put("ok", true);
         result.put("viPham", viPham);
         result.put("daApDung", true);
+        result.put("canHoanTien", canHoanTien);
         result.put("moTaChinhSach", kq.moTa);
         result.put("trangThaiMoi", "Đang dọn");
         return result;
     }
 
-    /**
-     * Trả phòng (check-out) CẢ ĐOÀN — dùng cho đơn đặt nhiều phòng cùng lúc.
-     * Vì cả đoàn dùng chung 1 trạng thái đơn, KHÔNG cho phép trả phòng từng
-     * phòng riêng lẻ trong trường hợp này: bấm "Cả đoàn khách trả phòng" sẽ
-     * trả TẤT CẢ các phòng được gán cho đơn cùng một lúc.
-     * - Chỉ cho phép khi TẤT CẢ các phòng của đơn đang ở trạng thái hiển thị
-     *   "Đang sử dụng" VÀ đơn đang ở trạng thái "Da nhan phong" (nếu có phòng
-     *   nào không hợp lệ, từ chối và nêu rõ phòng nào).
-     * - Áp dụng chính sách trả phòng muộn 1 LẦN cho cả đơn (dựa theo giờ trả
-     *   phòng đã đặt chung của đơn — dp.getNgaytraPhong()), phụ thu tính RIÊNG
-     *   theo giá từng phòng rồi cộng lại thành 1 khoản duy nhất.
-     * - Nếu vi phạm và CHƯA xác nhận (xacNhan=false): chỉ trả về tổng phụ thu
-     *   xem trước, KHÔNG cập nhật trạng thái phòng/đơn (daApDung=false).
-     * - Nếu không vi phạm, hoặc đã xác nhận: ghi 1 chi_tiet_dich_vu phụ thu (nếu
-     *   có), chuyển TẤT CẢ phòng của đơn sang "Đang dọn" và đơn sang "Da tra phong".
-     */
     @PostMapping("/so-do-phong/check-out-nhom/{maDatPhong}")
     @ResponseBody
     public Map<String, Object> checkOutNhomTuSoDoPhong(@PathVariable int maDatPhong,
@@ -1766,17 +1523,16 @@ public class NhanVienDatPhongController {
             }
         }
 
-        // Xem giai thich tuong tu o checkOutTuSoDoPhong (ban le 1 phong): cong
-        // don no cu (neu co) voi phu thu tra phong muon SAP phat sinh cho ca
-        // doan de ra tong so tien PHAI thu du truoc khi duoc phep tra phong.
         BigDecimal conLaiCu = tinhConLaiHienTai(maDatPhong);
         BigDecimal tongPhaiThu = conLaiCu.add(tongPhuThu);
         boolean canThuTien = tongPhaiThu.compareTo(BigDecimal.ZERO) > 0;
+        boolean canHoanTien = tongPhaiThu.compareTo(BigDecimal.ZERO) < 0;
 
-        if ((viPham || canThuTien) && !xacNhan) {
+        if ((viPham || canThuTien || canHoanTien) && !xacNhan) {
             result.put("ok", true);
             result.put("viPham", viPham);
             result.put("canThuTien", canThuTien);
+            result.put("canHoanTien", canHoanTien);
             result.put("daApDung", false);
             result.put("soTien", tongPhuThu);
             result.put("soTienConLai", conLaiCu);
@@ -1795,13 +1551,20 @@ public class NhanVienDatPhongController {
             }
         }
 
-        if (viPham) {
-            luuChiTietDichVuPhuThu(dp, "check-out muon", tongPhuThu);
-            result.put("soTien", tongPhuThu);
-        }
+        // 🔥 XỬ LÝ HOÀN TIỀN CHO CẢ ĐOÀN
+        if (canHoanTien) {
+            //  LƯU SỐ TIỀN THỪA VÀO DATPHONG (KHÔNG SET VỀ 0)
+            dp.setTienThuaDoDoiPhong(tongPhaiThu.abs()); // tongPhaiThu đang là số âm, lấy giá trị tuyệt đối
+            dp.setTrangThaiTienThua("CHO_HOAN");
+        } else {
+            if (viPham) {
+                luuChiTietDichVuPhuThu(dp, "check-out muon", tongPhuThu);
+                result.put("soTien", tongPhuThu);
+            }
 
-        if (canThuTien) {
-            ghiNhanThanhToanTraPhong(maDatPhong, tongPhaiThu);
+            if (canThuTien) {
+                ghiNhanThanhToanTraPhong(maDatPhong, tongPhaiThu);
+            }
         }
 
         dp.setTrangThai("Da tra phong");
@@ -1821,33 +1584,132 @@ public class NhanVienDatPhongController {
                 su26sd09.su26sd09.constants.LichSuHoatDongConstants.DT_DAT_PHONG,
                 maDatPhong,
                 "Tra phong ca doan (" + dsPhong.size() + " phong) cho don #" + maDatPhong
-                        + (viPham ? (" (phu thu tra muon " + tongPhuThu.toPlainString() + " VND)") : ""));
+                        + (viPham ? (" (phu thu tra muon " + tongPhuThu.toPlainString() + " VND)") : "")
+                        + (canHoanTien ? (" (hoan tien thua " + tongPhaiThu.abs().toPlainString() + " VND)") : ""));
 
         result.put("ok", true);
         result.put("viPham", viPham);
         result.put("daApDung", true);
+        result.put("canHoanTien", canHoanTien);
         result.put("moTaChinhSach", kq.moTa);
         result.put("trangThaiMoi", "Đang dọn");
         result.put("maPhongDaTra", maPhongDaTra);
         return result;
     }
 
-    /** Kết quả tính phụ thu: tỷ lệ áp dụng (0 - 1) trên giá 1 đêm + mô tả chính sách. */
+    @PostMapping("/so-do-phong/xac-nhan-hoan-tien/{maDatPhong}")
+    @ResponseBody
+    @Transactional
+    public Map<String, Object> xacNhanHoanTien(@PathVariable Integer maDatPhong,
+                                               @RequestParam(required = false) BigDecimal soTienHoan,
+                                               Authentication authentication) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        DatPhong dp = datPhongService.findById(maDatPhong);
+        if (dp == null) {
+            result.put("ok", false);
+            result.put("loi", "Khong tim thay don dat phong #" + maDatPhong);
+            return result;
+        }
+        System.out.println("=== xacNhanHoanTien START ===");
+        System.out.println("maDatPhong: " + maDatPhong);
+        System.out.println("soTienHoan tu frontend: " + soTienHoan);
+        System.out.println("authentication: " + (authentication != null ? authentication.getName() : "null"));
+
+        // LUON lay nhan vien xu ly
+        NhanSu nhanVienXuLy = null;
+        if (authentication != null) {
+            nhanVienXuLy = nhanVienService.FindByemail(authentication.getName());
+        }
+        if (nhanVienXuLy == null) {
+            nhanVienXuLy = nhanVienService.findLeTanDangHoatDongMacDinh();
+        }
+        if (nhanVienXuLy == null) {
+            nhanVienXuLy = nhanVienService.findAll().stream()
+                    .filter(nv -> "ADMIN".equals(nv.getVaitro()) || "ROLE_ADMIN".equals(nv.getVaitro()))
+                    .findFirst()
+                    .orElse(null);
+        }
+        if (nhanVienXuLy == null) {
+            result.put("ok", false);
+            result.put("loi", "Khong tim thay nhan vien xu ly.");
+            return result;
+        }
+
+        // ✅ LAY SO TIEN THUA: ƯU TIÊN TỪ FRONTEND, NẾU NULL THÌ LẤY TỪ DB
+        BigDecimal soTienThua = soTienHoan != null ? soTienHoan : dp.getTienThuaDoDoiPhong();
+        if (soTienThua == null) {
+            soTienThua = BigDecimal.ZERO;
+        }
+        System.out.println("soTienThua: " + soTienThua);
+
+        // 1. Cap nhat trang thai don
+        dp.setTienThuaDoDoiPhong(BigDecimal.ZERO);
+        dp.setTrangThaiTienThua("Da hoan du");
+        dp.setTrangThai("Da tra phong");
+        dp.setNgaytraPhongThuc(LocalDateTime.now());
+        dp.setNgayCapNhat(LocalDateTime.now());
+        datPhongService.save(dp);
+
+        // 2. Giai phong phong
+        List<Phong> dsPhong = datPhongService.findPhongByDatPhongId(maDatPhong);
+        if (dsPhong != null && !dsPhong.isEmpty()) {
+            for (Phong p : dsPhong) {
+                p.setTrangThai("Dang don");
+                p.setNgayCapNhat(LocalDateTime.now());
+                phongService.save1(p);
+            }
+        }
+
+        // 3. Cap nhat hoa don va tao thanh toan hoan tien
+        HoaDon hd = hoaDonService.findByDatPhongId(maDatPhong);
+        if (hd != null) {
+            hd.setTrangThai("Da thanh toan");
+            hd.setTrangThaiHoanTien("Da hoan du");
+            hd.setNgayCapNhat(LocalDateTime.now());
+
+            // TAO BAN GHI HOAN TIEN
+            if (soTienThua.compareTo(BigDecimal.ZERO) > 0) {
+                ThanhToan tt = new ThanhToan();
+                tt.setH(hd);
+                tt.setPhuongThuc("Tien Mat");
+                tt.setSoTien(soTienThua);
+                tt.setLoaiGiaoDich("Hoan tien");
+                tt.setTrangThai("Thanh cong");
+                tt.setNgaythanhToan(LocalDateTime.now());
+                tt.setGichu("Hoan tien thua cho don #" + maDatPhong + " - So tien: " + soTienThua.toPlainString() + " VND");
+                tt.setNv(nhanVienXuLy);
+
+                // LUU THANH TOAN
+                thanhToanService.save(tt);
+
+                // Cap nhat daHoanTra tren hoa don
+                BigDecimal daHoanTraCu = hd.getDaHoanTra() != null ? hd.getDaHoanTra() : BigDecimal.ZERO;
+                hd.setDaHoanTra(daHoanTraCu.add(soTienThua));
+            }
+
+            hoaDonService.save(hd);
+        }
+
+        // 4. Ghi lich su
+        lichSuHoatDongService.ghiLogAn(authentication,
+                "HOAN_TIEN_TRA_PHONG",
+                "DatPhong",
+                maDatPhong,
+                "Xac nhan hoan tien thua " + soTienThua.toPlainString() + " VND va tra phong cho don #" + maDatPhong);
+
+        result.put("ok", true);
+        result.put("message", "Da hoan tien thua " + soTienThua.toPlainString() + " VND va xac nhan tra phong thanh cong.");
+        result.put("trangThaiMoi", "Dang don");
+        result.put("soTienHoan", soTienThua);
+        return result;
+    }
+
     private static final class KetQuaPhuThu {
         final BigDecimal tyLe;
         final String moTa;
         KetQuaPhuThu(BigDecimal tyLe, String moTa) { this.tyLe = tyLe; this.moTa = moTa; }
     }
 
-    /**
-     * Chính sách nhận phòng sớm — tính theo SỐ GIỜ nhận phòng trước thời điểm
-     * check-in đã đặt của chính đơn đó (ngaydatPhong), không còn theo giờ cố định
-     * trong ngày:
-     *  - từ 7 giờ trở lên trước giờ check-in đã đặt  -> 100% giá 1 đêm
-     *  - từ 4 giờ đến dưới 7 giờ trước giờ check-in   -> 50%  giá 1 đêm
-     *  - từ 1 giờ đến dưới 4 giờ trước giờ check-in   -> 30%  giá 1 đêm
-     *  - dưới 1 giờ trước (kể cả đúng giờ/sau giờ)    -> không phụ thu
-     */
     private KetQuaPhuThu tinhPhuThuNhanSom(LocalDateTime thoiDiemNhan, LocalDateTime gioCheckInDaDat) {
         if (gioCheckInDaDat == null) {
             return new KetQuaPhuThu(BigDecimal.ZERO, "Đơn chưa có giờ nhận phòng đã đặt — không phụ thu.");
@@ -1866,15 +1728,6 @@ public class NhanVienDatPhongController {
         return new KetQuaPhuThu(BigDecimal.ZERO, "Nhận phòng dưới 1 giờ trước giờ check-in đã đặt (hoặc đúng/sau giờ) — không phụ thu.");
     }
 
-    /**
-     * Chính sách trả phòng muộn — tính theo SỐ GIỜ trả phòng sau thời điểm
-     * check-out đã đặt của chính đơn đó (ngaytraPhong), không còn theo giờ cố
-     * định trong ngày:
-     *  - từ 5 giờ trở lên sau giờ check-out đã đặt   -> 100% giá 1 đêm
-     *  - từ 3 giờ đến dưới 5 giờ sau giờ check-out    -> 50%  giá 1 đêm
-     *  - trên 0 giờ đến dưới 3 giờ sau giờ check-out  -> 30%  giá 1 đêm
-     *  - đúng giờ hoặc trước giờ check-out đã đặt     -> không phụ thu
-     */
     private KetQuaPhuThu tinhPhuThuTraMuon(LocalDateTime thoiDiemTra, LocalDateTime gioCheckOutDaDat) {
         if (gioCheckOutDaDat == null) {
             return new KetQuaPhuThu(BigDecimal.ZERO, "Đơn chưa có giờ trả phòng đã đặt — không phụ thu.");
@@ -1893,8 +1746,6 @@ public class NhanVienDatPhongController {
         return new KetQuaPhuThu(BigDecimal.ZERO, "Trả phòng đúng giờ hoặc trước giờ check-out đã đặt — không phụ thu.");
     }
 
-    /** Tạo 1 dòng chi_tiet_dich_vu phụ thu, gắn vào 1 dịch vụ "Phụ thu nhận/trả phòng" MỚI
-     *  (tạo mới moi lan, mang dung gia phu thu thuc te cua lan nay - xem taoMoiDichVuPhuThu). */
     private void luuChiTietDichVuPhuThu(DatPhong dp, String ghiChu, BigDecimal donGia) {
         String tenDv = "check-in som".equals(ghiChu) ? "Phụ thu nhận phòng sớm" : "Phụ thu trả phòng muộn";
         Dich_vu dv = taoMoiDichVuPhuThu(tenDv, donGia);
@@ -1908,33 +1759,18 @@ public class NhanVienDatPhongController {
         ctdv.setDonGia(donGia);
         ctdvService.save(ctdv);
 
-        // Chi_tiet_dich_vu phu thu vua tao lam tang tong tien dich vu cua don ->
-        // phai cong don vao hoa_don tuong ung, neu khong hoa don se bi lech so
-        // voi thuc te (thieu khoan phu thu nay).
         capNhatHoaDonSauKhiThemPhuThu(dp.getId(), donGia);
     }
 
-    /** Dong bo lai hoa_don cua don dat phong sau khi vua them 1 dong chi_tiet_dich_vu
-     *  phu thu (nhan phong som / tra phong muon), neu don da co hoa don.
-     *  <p>
-     *  Uy quyen toan bo viec tinh lai cho {@link HoaDonService#dongBoTienDichVuTuChiTiet}
-     *  - ham do doc LAI tu chi_tiet_dich_vu (tong don_gia) roi ghi de tienDichVu/tienVat/
-     *  tongTien cua hoa don, thay vi chi cong don thu cong vao tongTien nhu truoc day
-     *  (cach cu bo sot tienDichVu, lam hoa don hien thi it hon tong don_gia thuc te
-     *  trong chi_tiet_dich_vu). Dung saveWithPaymentStatusCheck ben trong de tu dong
-     *  dong bo lai trangThai (vd: tu "Da thanh toan" chuyen ve "Cho thanh toan" khi
-     *  tong tien tang len). */
     private void capNhatHoaDonSauKhiThemPhuThu(Integer maDatPhong, BigDecimal soTienPhuThu) {
         if (soTienPhuThu == null || soTienPhuThu.compareTo(BigDecimal.ZERO) <= 0) {
             return;
         }
         HoaDon hoaDonDaLuu = hoaDonService.dongBoTienDichVuTuChiTiet(maDatPhong);
         if (hoaDonDaLuu == null) {
-            return; // chua co hoa don thi thoi, se duoc tinh o buoc thanh toan/chot so sau
+            return;
         }
 
-        // Phu thu vua cong lam tang cong no -> gui email kem QR de khach thanh
-        // toan ngay phan con lai, khong can doi den luc tra phong moi biet.
         BigDecimal conLai = defaultMoney(hoaDonDaLuu.getTongTien()).subtract(defaultMoney(hoaDonDaLuu.getDaThanhToan()));
         if (conLai.compareTo(BigDecimal.ZERO) > 0) {
             bookingEmailService.guiEmailYeuCauThanhToan(
@@ -1947,12 +1783,6 @@ public class NhanVienDatPhongController {
         }
     }
 
-    /**
-     * So tien con no CU cua don dat phong (tong_tien - da_thanh_toan cua hoa_don
-     * hien tai, neu da co hoa don) - dung de bat buoc nhan vien thu du TRUOC khi
-     * cho phep tra phong (xem checkOutTuSoDoPhong / checkOutNhomTuSoDoPhong).
-     * Tra ve 0 neu chua co hoa don hoac da thanh toan du/du.
-     */
     private BigDecimal tinhConLaiHienTai(Integer maDatPhong) {
         if (maDatPhong == null) {
             return BigDecimal.ZERO;
@@ -1961,20 +1791,9 @@ public class NhanVienDatPhongController {
         if (hd == null) {
             return BigDecimal.ZERO;
         }
-        BigDecimal conLai = defaultMoney(hd.getTongTien()).subtract(defaultMoney(hd.getDaThanhToan()));
-        return conLai.compareTo(BigDecimal.ZERO) > 0 ? conLai : BigDecimal.ZERO;
+        return defaultMoney(hd.getTongTien()).subtract(defaultMoney(hd.getDaThanhToan()));
     }
 
-    /**
-     * Ghi nhan 1 khoan thu tien mat luc tra phong (Sơ đồ phòng) - dung khi nhan
-     * vien vua nhap DUNG so tien con phai thu (con no cu + phu thu tra phong
-     * muon, neu co) va bam xac nhan trong modal chinh sach. PHAI goi SAU KHI da
-     * luuChiTietDichVuPhuThu (neu co vi pham) de hoa_don da duoc dong bo tong
-     * tien moi nhat truoc khi cong khoan da thu vao daThanhToan - tranh sai lech.
-     * Khong lam gi neu don chua co hoa don (khong the xay ra thuc te vi
-     * canThuTien chi > 0 khi da co hoa don voi conLai > 0, hoac vua duoc dong bo
-     * boi luuChiTietDichVuPhuThu ben tren).
-     */
     private void ghiNhanThanhToanTraPhong(Integer maDatPhong, BigDecimal soTienThu) {
         if (soTienThu == null || soTienThu.compareTo(BigDecimal.ZERO) <= 0) {
             return;
@@ -2002,16 +1821,6 @@ public class NhanVienDatPhongController {
         return String.format("%,.0f", tien.doubleValue()) + " VND";
     }
 
-    /**
-     * Tao 1 dong Dich_vu MOI cho MOI LAN phat sinh phu thu nhan phong som / tra
-     * phong muon, thay vi dung chung 1 dich vu "placeholder" voi gia = 0 cho tat
-     * ca cac lan (cach cu: timHoacTaoDichVuPhuThu tim theo ten roi tai su dung,
-     * gia luon la 0 vi chi tao 1 lan duy nhat luc dau). Voi cach moi, dich_vu.gia
-     * duoc gan DUNG bang so tien phu thu thuc te cua lan nay (donGia), nen moi
-     * dong chi_tiet_dich_vu deu tro toi 1 dich_vu rieng phan anh dung gia tri cua
-     * no - khong con tinh trang gia catalog = 0 (dv gia) trong khi chi_tiet_dich_vu
-     * moi la noi luu gia dung.
-     */
     private Dich_vu taoMoiDichVuPhuThu(String ten, BigDecimal donGia) {
         Dich_vu dv = new Dich_vu();
         dv.setTen_dich_vu(ten);
@@ -2022,13 +1831,6 @@ public class NhanVienDatPhongController {
         return dichVuService.save(dv);
     }
 
-    /**
-     * Goi y tai khoan khach hang (dropdown autocomplete) khi nhan vien go ten
-     * khach o sidebar "Dat phong tai quay" / "Len lich dat phong" tren So do
-     * phong. Chi tim theo ho ten (khach vang lai khong co tai khoan se khong
-     * xuat hien) - chon 1 goi y se tu dien ten/email/sdt ben phia client.
-     * Gioi han ket qua tra ve de tranh dropdown qua dai.
-     */
     @GetMapping("/so-do-phong/khach-hang/goi-y")
     @ResponseBody
     public List<Map<String, Object>> goiYKhachHang(@RequestParam(required = false) String q) {
@@ -2048,14 +1850,6 @@ public class NhanVienDatPhongController {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Goi y giay to cu (dropdown autocomplete) khi nhan vien go "So dinh danh"
-     * trong panel "Thong tin giay to" tren So do phong. Tim theo so dinh danh
-     * BAT DAU BANG tu khoa (khong tim theo ten - tranh goi y nham nguoi trung
-     * ten khac so), lay 8 ket qua moi nhat. Chon 1 goi y se tu dien toan bo
-     * cac truong con lai (ho ten, ngay sinh, que quan, noi cu tru...) tu giay
-     * to da luu do phia client.
-     */
     @GetMapping("/so-do-phong/giay-to/goi-y")
     @ResponseBody
     public List<Map<String, Object>> goiYGiayTo(@RequestParam(required = false) String q) {
@@ -2084,9 +1878,6 @@ public class NhanVienDatPhongController {
                 .collect(Collectors.toList());
     }
 
-    // Trang rieng hien QR thanh toan chuyen khoan cho don vua "Len lich dat
-    // phong" tu So Do Phong - mo o TAB MOI thay vi popup modal, dung chung
-    // endpoint "/thanh-toan/pool" nhu QR gui qua email (xem BookingEmailService).
     @GetMapping("/so-do-phong/thanh-toan-qr/{maDatPhong}")
     public String thanhToanQr(@PathVariable Integer maDatPhong, Model model) {
         model.addAttribute("maDatPhong", maDatPhong);
@@ -2115,11 +1906,6 @@ public class NhanVienDatPhongController {
             demTrangThai.merge(hienThi, 1L, Long::sum);
         }
 
-        // So khach THUC TE cua tung phong dang "Dang su dung", tinh tu giay_to
-        // (CCCD/ho chieu) da thu thap luc check-in cho DUNG chi_tiet_dat_phong cua
-        // phong do trong don dang giu phong: 1 giay_to = 1 khach (khong loc theo
-        // tuoi). Phong khong co giay_to nao (chua thu thap / chua check-in xong)
-        // thi khong hien so lieu nay (fallback ve suc chua).
         Map<Integer, Integer> soNguoiLonHienTai = new HashMap<>();
         for (Phong p : tatCaPhong) {
             if (!"Dang su dung".equals(p.getTrangThai())) continue;
@@ -2140,10 +1926,7 @@ public class NhanVienDatPhongController {
         }
         model.addAttribute("soNguoiLonHienTai", soNguoiLonHienTai);
 
-        // Danh sách đơn đặt phòng (còn hiệu lực / liên quan) của từng phòng, dùng cho
-        // menu chuột phải: xác định "Đặt phòng ngay", "Xem đơn hiện tại", "Khách nhận
-        // phòng" ... dựa theo khoảng [ngaydatPhong, ngaytraPhong) của từng đơn.
-        Map<Integer, Integer> soPhongTheoDon = new HashMap<>(); // cache: maDatPhong -> so phong trong don (tranh query lap lai)
+        Map<Integer, Integer> soPhongTheoDon = new HashMap<>();
         StringBuilder bkJson = new StringBuilder("{");
         boolean firstRoom = true;
         for (Phong p : tatCaPhong) {
@@ -2171,8 +1954,6 @@ public class NhanVienDatPhongController {
         }
         bkJson.append("}");
 
-        // JSON chi tiết đầy đủ từng phòng (dùng cho sidebar "Xem thông tin phòng"):
-        // thông tin phòng, loại phòng, tiện nghi, mô tả, thời gian tạo/cập nhật.
         java.time.format.DateTimeFormatter fmtNgay = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
         StringBuilder infoJson = new StringBuilder("{");
         boolean firstInfo = true;
@@ -2214,10 +1995,6 @@ public class NhanVienDatPhongController {
         infoJson.append("}");
 
         model.addAttribute("roomInfoJson", infoJson.toString());
-
-        // Danh sach khuyen mai dang hoat dong (JSON), dung cho JS xem truoc gia
-        // ngay tren sidebar "Dat phong tai quay" / "Len lich dat phong" khi nhan
-        // vien nhap ma khuyen mai — cung 1 helper voi trang "Chi tiet dat phong".
         model.addAttribute("kmJson", buildKhuyenMaiJson());
 
         model.addAttribute("theoTang", theoTang);
@@ -2227,15 +2004,10 @@ public class NhanVienDatPhongController {
         model.addAttribute("tongSoPhong", tatCaPhong.size());
         model.addAttribute("bookingsByRoomJson", bkJson.toString());
         model.addAttribute("svrNowIso", LocalDateTime.now().toString());
-        // Danh sach dich vu dang hoat dong, dung cho form "Len lich dat phong" (sidebar).
         model.addAttribute("dichVuOptions", dichVuService.findAll().stream()
                 .filter(Dich_vu::isHoatDong)
                 .collect(Collectors.toList()));
 
-        // ===== Chế độ xem thay thế: Danh sách đơn đặt phòng (dat_phong) =====
-        // Chỉ hiển thị dạng bảng, dùng chung select box với "Sơ đồ phòng" ở đầu
-        // trang. Chỉ hiển thị đơn "sắp tới" và "đang ở" — loại bỏ đơn đã trả phòng
-        // (Da tra phong) và đã hủy hẳn (Da huy) khỏi danh sách này.
         Set<String> sdpListTrangThaiHienThi = HuyDonConstants.DP_TRANG_THAI_HIEN_THI_BOOKING_MGMT.stream()
                 .filter(ts -> !"Da tra phong".equals(ts) && !"Da huy".equals(ts))
                 .collect(Collectors.toSet());
@@ -2251,12 +2023,7 @@ public class NhanVienDatPhongController {
         model.addAttribute("dsDatPhongList", dsDatPhongList);
         model.addAttribute("phongTheoDonSoDo", phongTheoDonSoDo);
 
-        // Phong dang cho lễ tân xac nhan da don sach (nhan vien ve sinh da
-        // upload anh, chua duoc xac nhan) - dung de hien text "Xac nhan phong
-        // sach" tren the phong o so do phong.
         Map<Integer, Boolean> phongChoXacNhanVeSinh = new HashMap<>();
-        // Phong dang duoc phan cong cho nhan vien ve sinh (DA_GAN hoac DA_UPLOAD)
-        // - dung de hien ten nhan vien phu trach ngay tren the phong o so do phong.
         Map<Integer, String> phongVeSinhTenNhanVien = new HashMap<>();
         for (su26sd09.su26sd09.dto.PhongVeSinhAssignment a : janitorCacheService.getAll()) {
             if (su26sd09.su26sd09.dto.PhongVeSinhAssignment.DA_UPLOAD.equals(a.getTrangThai())) {
@@ -2267,10 +2034,6 @@ public class NhanVienDatPhongController {
         model.addAttribute("phongChoXacNhanVeSinh", phongChoXacNhanVeSinh);
         model.addAttribute("phongVeSinhTenNhanVien", phongVeSinhTenNhanVien);
 
-        // ===== Panel bên phải: "Khách chờ check-in" =====
-        // Lấy đơn status (Cho xac nhan / Da xac nhan) chưa nhận phòng, có
-        // ngaydatPhong trong khoảng [now - 24h, now + 7 ngày] để bao gồm cả
-        // đơn đã trễ hẹn trong 24h qua. Build JSON cho JS render countdown.
         LocalDateTime now = LocalDateTime.now();
         List<DatPhong> dsSapCheckIn = datPhongService.findUpcomingCheckIns(
                 now.minusHours(24), now.plusDays(7));
@@ -2284,7 +2047,6 @@ public class NhanVienDatPhongController {
             if (ten == null || ten.isBlank()) ten = "Chưa rõ tên";
             int soKhach = dp.getSonguoiLon() + dp.getSotreEm();
 
-            // Lấy nhãn phòng kiểu "P101, P102" (gioi han 3 phong de khong vuot card)
             List<Phong> phongCuaDon = datPhongService.findPhongByDatPhongId(dp.getId());
             String phongLabel = phongCuaDon.stream()
                     .map(p -> "P" + p.getSoPhong())
@@ -2306,23 +2068,8 @@ public class NhanVienDatPhongController {
         return "nhan-vien/so-do-phong";
     }
 
-    /**
-     * Xu ly submit sidebar "Len lich dat phong" o trang So Do Phong (dat truoc/tai
-     * cho 1 phong cu the, khac voi /dat-phong-quay/submit vi khong gioi han chi
-     * "dang o quay").
-     * <p>
-     * Thanh toan: chi chap nhan DUNG 1 trong 2 truong hop - tra du 100% tongCong
-     * hoac khong tra dong nao (0); KHONG chap nhan tra mot phan/dat coc lung
-     * chung. Tra du 100% -> DatPhong.trangThai = "Da xac nhan"; khong tra gi ->
-     * DatPhong.trangThai = "Yeu cau dat phong".
-     * <p>
-     * Ve dich vu them (checkbox trong sidebar): UI hien tai KHONG co truong chon
-     * "ngay su dung" rieng cho tung dich vu (chi co 1 khoang [checkin, checkout]
-     * chung cho ca don), nen ta dien mot moc thoi gian nam GIUA checkin/checkout
-     * lam gia tri filler cho chi_tiet_dich_vu.ngay_su_dung de khong vi pham rang
-     * buoc NOT NULL / cac kiem tra logic khac dua tren cot nay, ma khong can gia
-     * lap them mot "ngay su dung dich vu" that su (UI khong thu thap thong tin do).
-     */
+    // ==================== LEN LICH DAT PHONG / DAT TAI QUAY ====================
+
     @PostMapping("/so-do-phong/len-lich")
     @ResponseBody
     public Map<String, Object> lenLichDatPhongTuSoDoPhong(
@@ -2345,10 +2092,6 @@ public class NhanVienDatPhongController {
 
         Map<String, Object> result = new LinkedHashMap<>();
 
-        // Neu nhan vien chon 1 khach hang co san tu goi y (autocomplete) va KHONG
-        // sua tay ten/email/sdt sau do, gan thang don dat phong nay vao tai khoan
-        // do (KhachHang.n) thay vi chi luu ho_ten/email/sdt dang van ban roi ma
-        // khong lien ket duoc voi tai khoan da dang ky cua khach.
         KhachHang khachHangDaChon = khachHangId != null ? khachHangRepository.findById(khachHangId).orElse(null) : null;
 
         NhanSu nvCheck = authentication == null ? null : nhanVienService.FindByemail(authentication.getName());
@@ -2438,26 +2181,10 @@ public class NhanVienDatPhongController {
             }
         }
 
-        // ===== Tinh truoc TOAN BO gia tien (khong luu gi ca) de doi chieu voi
-        // so tien nhan vien nhap (tienKhachTra) TRUOC KHI tao don. Neu khong
-        // khop, phai bao loi va KHONG duoc tao DatPhong/ChiTietDatPhong/HoaDon
-        // nao het (xem yeu cau: chi duoc tien hanh tao don khi so tien nhap
-        // dung bang gia phai thu).
-        //
-        // Cach tinh gia phai GIONG HET luong khach tu dat (xem ThanhToanController
-        // / PhongController#tinhTienGiam): ChiTietDatPhong.giaKhiDat luon la gia
-        // GOC (chua giam gia) = giaMoiDem * soDem + phu phi ngoai gio; KM duoc ap
-        // dung tren TONG (phong + dich vu) NHU MOT KHOAN TIEN GIAM RIENG (co kiem
-        // tra gia toi thieu duoc giam), ROI moi tinh VAT 10% tren phan da giam -
-        // KHONG duoc bake giam gia thang vao don gia phong nhu truoc (se lam
-        // hoaDon.tienGiam bi sai/luon = 0 va giaKhiDat khong con dung nghia goc
-        // nhu moi noi khac trong he thong).
         long soDem = Math.max(1, ChronoUnit.DAYS.between(ngayNhan.toLocalDate(), ngayTra.toLocalDate()));
         BigDecimal phuPhiNgoaiGio = phongService.calculateExtraFeeFor(maPhong, ngayNhan, ngayTra);
-        // NEW: phong duoc gan vao don lan dau -> lay gia truc tiep tu Phong.
         BigDecimal amountPhong = invoicePricingService.createRoomLineItemPrice(phong, ngayNhan, ngayTra, phuPhiNgoaiGio);
 
-        // Gom danh sach dich vu hop le (+ tong tien dich vu) TRUOC, chua luu DB.
         List<Dich_vu> dsDichVuHopLe = new ArrayList<>();
         BigDecimal amountDv = BigDecimal.ZERO;
         if (dichVuIds != null) {
@@ -2465,26 +2192,15 @@ public class NhanVienDatPhongController {
                 Dich_vu dv = dichVuService.findById(maDichVu);
                 if (dv == null) continue;
                 dsDichVuHopLe.add(dv);
-                // NEW: dich vu duoc gan vao don lan dau -> lay don gia truc tiep tu Dich_vu.
                 amountDv = amountDv.add(invoicePricingService.createServiceLineItemPrice(dv, 1));
             }
         }
 
-        // Chua co gi duoc luu vao chi_tiet_dat_phong/chi_tiet_dich_vu nen dung
-        // computeTotals() voi cac tong da tinh bang gia NEW o tren (thay vi
-        // previewInvoice(), von can mot maDatPhong da ton tai trong DB).
         InvoicePricingResult giaTruoc = invoicePricingService.computeTotals(amountPhong, amountDv, km);
         BigDecimal tienGiam = giaTruoc.getTienGiam();
         BigDecimal tienVat = giaTruoc.getTienVat();
         BigDecimal tongCong = giaTruoc.getTongTien();
 
-        // Day la lich dat truoc (chua nhan phong ngay): chi chap nhan DUNG 1
-        // trong 2 truong hop - tra du 100% (tongCong) hoac khong tra dong nao
-        // (0) - khong cho tra mot phan/dat coc lung chung o giua. Trang thai don
-        // duoc quyet dinh dua vao viec da tra du hay chua:
-        //  - Tra du 100% ngay -> "Da xac nhan" (coi nhu da chac chan giu phong).
-        //  - Chua tra gi (0)  -> "Yeu cau dat phong" (moi la yeu cau, cho khach
-        //    thanh toan sau thi moi chinh thuc xac nhan).
         BigDecimal daThu = tienKhachTra != null ? tienKhachTra : BigDecimal.ZERO;
         boolean laDaTraDu = daThu.compareTo(tongCong) == 0;
         boolean laChuaTraGi = daThu.compareTo(BigDecimal.ZERO) == 0;
@@ -2496,24 +2212,8 @@ public class NhanVienDatPhongController {
             return result;
         }
 
-        // FIX (race condition): buoc kiem tra "phong con trong khong"
-        // (findMaPhongDaKhoaTrongKhoang) va buoc THUC SU GHI ChiTietDatPhong
-        // (danh dau phong da bi giu cho) phai la MOT THAO TAC NGUYEN TU (atomic),
-        // neu khong 2 nhan vien (hoac 1 nhan vien + 1 khach dang tu dat online)
-        // co the cung luc kiem tra thay phong con trong roi cung tao don cho
-        // CUNG mot phong/khoang ngay (double-booking). Gop lai kiem tra +
-        // ghi vao chung 1 khoi synchronized(phongService) - dung chung 1 khoa/
-        // monitor voi PhongService#assignRoomsForType() (synchronized instance
-        // method) va voi diem tao dat phong tu dong cua khach
-        // (PhongController#createBookingFromDraft) va voi diem "Dat phong tai
-        // quay" ben duoi, de ca 3 diem tao dat phong nay loai tru lan nhau.
         DatPhong savedDp;
         synchronized (phongService) {
-            // Overlap dung chinh xac cung 1 luat voi lich phong hien thi tren So Do
-            // Phong (nua-mo [checkin, checkout)) thay vi tin vao trangThai tuc thoi
-            // cua phong. Kiem tra LAI ngay tai day (thay vi chi kiem tra truoc do o
-            // ngoai khoi synchronized) de dam bao khong co request nao khac kip
-            // chen vao giua luc kiem tra va luc ghi.
             java.util.Set<Integer> maPhongDaKhoa = phongService.findMaPhongDaKhoaTrongKhoang(ngayNhan, ngayTra);
             if (maPhongDaKhoa.contains(maPhong)) {
                 result.put("ok", false);
@@ -2532,9 +2232,6 @@ public class NhanVienDatPhongController {
             dp.setSonguoiLon(slNguoiLon);
             dp.setSotreEm(slTreEm);
             dp.setYeuCauThem(ghiChu);
-            // Da tra du 100% -> coi nhu da chac chan, danh dau "Da xac nhan" ngay
-            // (khac voi luong khach tu dat online phai qua "Cho xac nhan"). Chua tra
-            // gi -> chi la mot yeu cau giu cho, danh dau "Yeu cau dat phong".
             dp.setTrangThai(laDaTraDu ? "Da xac nhan" : "Yeu cau dat phong");
             dp.setNgayTao(LocalDateTime.now());
             dp.setKm(km);
@@ -2551,17 +2248,6 @@ public class NhanVienDatPhongController {
             chiTietDatPhongService.save(ctdp);
         }
 
-        // Don duoc len lich (dat truoc) tu So Do Phong -> KHONG thay doi
-        // Phong.trangThai o day. O model hien tai, kha dung cua phong duoc xet
-        // theo chong lan khoang ngay thuc su (findMaPhongDaKhoaTrongKhoang), chu
-        // khong con dua vao trangThai tuc thoi cua phong nua - vi vay khong con
-        // trang thai "Da dat truoc" cho phong trong model moi. Phong chi chuyen
-        // sang "Dang su dung" khi nhan vien thuc su CHECK-IN cho khach (xem
-        // updateTrangThai/"Da nhan phong" o tren), khac voi "Dat phong ngay"
-        // (/dat-phong-quay) la luong nhan phong tuc thi.
-
-        // Filler cho ngay_su_dung: chinh giua khoang [ngayNhan, ngayTra] - xem javadoc
-        // dau ham. KHONG dai dien cho ngay khach thuc su dung dich vu.
         long tongPhut = java.time.Duration.between(ngayNhan, ngayTra).toMinutes();
         LocalDateTime ngaySuDungFiller = ngayNhan.plusMinutes(tongPhut / 2);
 
@@ -2570,7 +2256,6 @@ public class NhanVienDatPhongController {
             ct.setDatPhong(savedDp);
             ct.setDv(dv);
             ct.setSoluong(1);
-            // NEW: dich vu duoc gan vao don lan dau -> lay don gia truc tiep tu Dich_vu.
             ct.setDonGia(invoicePricingService.createServiceLineItemPrice(dv, 1));
             ct.setNgay_su_dung(ngaySuDungFiller);
             ctdvService.save(ct);
@@ -2601,8 +2286,6 @@ public class NhanVienDatPhongController {
             thanhToanService.save(tt);
         }
 
-        // Bao dat phong vua duoc len lich (tao) tu So Do Phong. Neu con no, gui kem
-        // QR de khach thanh toan phan con lai qua /thanh-toan/pool.
         BigDecimal conLai = defaultMoney(hoaDonDaLuu.getTongTien()).subtract(defaultMoney(hoaDonDaLuu.getDaThanhToan()));
         if (conLai.compareTo(BigDecimal.ZERO) > 0) {
             bookingEmailService.guiEmailYeuCauThanhToan(
@@ -2627,22 +2310,6 @@ public class NhanVienDatPhongController {
         return result;
     }
 
-    /**
-     * Xu ly submit sidebar "Dat phong tai quay" o trang So Do Phong (mo tu cung
-     * menu chuot phai voi "Len lich dat phong", tai su dung y het giao dien/JS,
-     * chi khac cho ma nay la khach DANG O QUAY nen duoc NHAN PHONG NGAY LAP TUC
-     * thay vi chi giu cho (khac voi lenLichDatPhongTuSoDoPhong o cho:
-     *  - Bat buoc checkin = HOM NAY (khach dang truoc mat, khong the dat cho
-     *    tuong lai qua luong nay - dung "Len lich dat phong" cho truong hop do).
-     *  - DatPhong.trangThai = "Da nhan phong" va Phong.trangThai = "Dang su dung"
-     *    ngay khi luu thanh cong, giong ket qua cuoi cung cua /dat-phong-quay
-     *    (trang "Dat Phong Tai Quay" rieng) nhung ap dung cho DUNG 1 phong dang
-     *    thao tac tren So Do Phong.
-     *  - BAT BUOC thu du 100% tongCong truoc khi tao don/cho nhan phong (khac
-     *    voi "Len lich dat phong" chi chap nhan tra du 100% hoac 0, khong bat
-     *    buoc phai co tien ngay) - vi khach dang o
-     *    ngay truoc mat va duoc nhan phong ngay lap tuc, khong hop ly de con no.
-     */
     @PostMapping("/so-do-phong/dat-tai-quay")
     @ResponseBody
     public Map<String, Object> datPhongTaiQuayTuSoDoPhong(
@@ -2665,10 +2332,6 @@ public class NhanVienDatPhongController {
 
         Map<String, Object> result = new LinkedHashMap<>();
 
-        // Neu nhan vien chon 1 khach hang co san tu goi y (autocomplete) va KHONG
-        // sua tay ten/email/sdt sau do, gan thang don dat phong nay vao tai khoan
-        // do (KhachHang.n) thay vi chi luu ho_ten/email/sdt dang van ban roi ma
-        // khong lien ket duoc voi tai khoan da dang ky cua khach.
         KhachHang khachHangDaChon = khachHangId != null ? khachHangRepository.findById(khachHangId).orElse(null) : null;
 
         NhanSu nvCheck = authentication == null ? null : nhanVienService.FindByemail(authentication.getName());
@@ -2723,8 +2386,6 @@ public class NhanVienDatPhongController {
             return result;
         }
         LocalDate homNay = LocalDate.now();
-        // Khac voi "Len lich dat phong": dat tai quay bat buoc nhan phong NGAY HOM
-        // NAY vi khach dang co mat truc tiep, khong duoc chon ngay trong tuong lai.
         if (!checkin.isEqual(homNay)) {
             result.put("ok", false);
             result.put("loi", "Đặt phòng tại quầy chỉ áp dụng khi khách nhận phòng ngay hôm nay.");
@@ -2751,23 +2412,10 @@ public class NhanVienDatPhongController {
             return result;
         }
 
-        // "Dat phong tai quay" = khach nhan phong NGAY LAP TUC, nhung ngay_nhan_phong
-        // van phai luu GIO CHUAN (14:00, giong het "Len lich dat phong") de dong bo
-        // voi cach he thong dinh nghia "gio nhan phong theo hop dong" o moi noi khac
-        // (tinh so dem, khoa lich phong so-do-phong...). Gio THUC TE khach nhan
-        // phong (bay gio) phai luu rieng vao ngay_nhan_phong_thuc - truoc day bi bo
-        // sot hoan toan (khong set), lam mat dau vet thoi diem check-in thuc te.
         LocalDateTime ngayNhan = checkin.atTime(14, 0);
         LocalDateTime ngayNhanThuc = LocalDateTime.now();
         LocalDateTime ngayTra = checkout.atTime(12, 0);
 
-        // Ap dung CUNG chinh sach phu thu nhan phong som nhu tinh nang "Khach nhan
-        // phong" o So Do Phong: khach dang co mat truc tiep tai quay va nhan phong
-        // NGAY, neu thoi diem hien tai truoc gio nhan phong chuan (14:00 hom nay)
-        // qua muc quy dinh thi tinh phu thu, cong luon vao hoa don tao ra ngay luc
-        // dat phong (khac voi luong check-in binh thuong phai xac nhan rieng vi o
-        // day khach da thanh toan du 100% ngay tai quay, khong con buoc xac nhan
-        // rieng nua).
         KetQuaPhuThu kqPhuThuSom = tinhPhuThuNhanSom(ngayNhanThuc, ngayNhan);
         boolean viPhamNhanSom = kqPhuThuSom.tyLe.compareTo(BigDecimal.ZERO) > 0;
         BigDecimal soTienPhuThuSom = viPhamNhanSom
@@ -2785,18 +2433,8 @@ public class NhanVienDatPhongController {
             }
         }
 
-        // ===== Tinh truoc TOAN BO gia tien (khong luu gi ca) de doi chieu voi so
-        // tien nhan vien nhap (tienKhachTra) TRUOC KHI tao don - CUNG CONG THUC
-        // voi luong khach tu dat (ThanhToanController/PhongController#tinhTienGiam):
-        // ChiTietDatPhong.giaKhiDat la gia GOC (chua giam), KM la mot khoan giam
-        // rieng tren TONG (phong + dich vu) co kiem tra gia toi thieu duoc giam,
-        // VAT 10% tinh tren phan da giam. Khac biet duy nhat voi "Len lich dat
-        // phong" la o day BAT BUOC thu du 100% ngay luc nay (khach dang dung
-        // ngay tai quay va duoc nhan phong tuc thi), khong duoc de no lai roi
-        // moi cho check-in.
         long soDemTruoc = Math.max(1, ChronoUnit.DAYS.between(ngayNhan.toLocalDate(), ngayTra.toLocalDate()));
         BigDecimal phuPhiNgoaiGioTruoc = phongService.calculateExtraFeeFor(maPhong, ngayNhan, ngayTra);
-        // NEW: phong duoc gan vao don lan dau -> lay gia truc tiep tu Phong.
         BigDecimal amountPhongTruoc = invoicePricingService.createRoomLineItemPrice(phong, ngayNhan, ngayTra, phuPhiNgoaiGioTruoc);
 
         BigDecimal amountDvTruoc = BigDecimal.ZERO;
@@ -2804,20 +2442,12 @@ public class NhanVienDatPhongController {
             for (Integer maDichVu : dichVuIds) {
                 Dich_vu dv = dichVuService.findById(maDichVu);
                 if (dv == null) continue;
-                // NEW: dich vu duoc gan vao don lan dau -> lay don gia truc tiep tu Dich_vu.
                 amountDvTruoc = amountDvTruoc.add(invoicePricingService.createServiceLineItemPrice(dv, 1));
             }
         }
-        // Phu thu nhan phong som (neu vi pham chinh sach) duoc tinh nhu 1 khoan
-        // "dich vu" phat sinh, giong het cach luuChiTietDichVuPhuThu dang lam o
-        // luong check-in tu So Do Phong, de dong bo cong thuc tinh tong tien.
         amountDvTruoc = amountDvTruoc.add(soTienPhuThuSom);
 
-        // Chua co gi duoc luu vao chi_tiet_dat_phong/chi_tiet_dich_vu nen dung
-        // computeTotals() voi cac tong da tinh bang gia NEW o tren.
         InvoicePricingResult giaTruocQuay = invoicePricingService.computeTotals(amountPhongTruoc, amountDvTruoc, km);
-        BigDecimal tienGiamTruoc = giaTruocQuay.getTienGiam();
-        BigDecimal tienVatTruoc = giaTruocQuay.getTienVat();
         BigDecimal tongCongTruoc = giaTruocQuay.getTongTien();
 
         if (tienKhachTra == null || tienKhachTra.compareTo(tongCongTruoc) != 0) {
@@ -2828,13 +2458,6 @@ public class NhanVienDatPhongController {
             return result;
         }
 
-        // FIX (race condition): giong het luu y o lenLichDatPhongTuSoDoPhong() -
-        // gop kiem tra "phong con trong khong" + ghi ChiTietDatPhong (va cap nhat
-        // Phong.trangThai) vao CHUNG 1 khoi synchronized(phongService) de loai
-        // tru lan nhau voi TAT CA cac diem tao dat phong khac (khach tu dat,
-        // "Len lich dat phong") dang cung khoa tren phongService - tranh 2 nguoi
-        // (vd 2 nhan vien, hoac 1 nhan vien + 1 khach dang tu dat online) cung
-        // giu duoc CUNG mot phong cho khoang ngay trung nhau.
         DatPhong savedDp;
         BigDecimal giaApDung;
         BigDecimal phuPhiNgoaiGio;
@@ -2858,8 +2481,6 @@ public class NhanVienDatPhongController {
             dp.setSonguoiLon(slNguoiLon);
             dp.setSotreEm(slTreEm);
             dp.setYeuCauThem(ghiChu);
-            // Dat tai quay = khach nhan phong ngay lap tuc, khac voi "Len lich dat
-            // phong" (chi "Da xac nhan", cho check-in sau).
             dp.setTrangThai("Da nhan phong");
             dp.setNgayTao(LocalDateTime.now());
             dp.setKm(km);
@@ -2867,13 +2488,8 @@ public class NhanVienDatPhongController {
 
             savedDp = datPhongService.save(dp);
 
-            // Gia phong GOC (chua giam) X so dem + phu phi ngoai gio - giong het cach
-            // tinh o buoc kiem tra ben tren va cach ChiTietDatPhong.giaKhiDat duoc
-            // luu o moi noi khac trong he thong (luon la gia GOC, KHONG bake giam
-            // gia vao don gia).
             long soDem = Math.max(1, ChronoUnit.DAYS.between(ngayNhan.toLocalDate(), ngayTra.toLocalDate()));
             phuPhiNgoaiGio = phongService.calculateExtraFeeFor(maPhong, ngayNhan, ngayTra);
-            // NEW: phong duoc gan vao don lan dau -> lay gia truc tiep tu Phong.
             giaApDung = invoicePricingService.createRoomLineItemPrice(phong, ngayNhan, ngayTra, BigDecimal.ZERO);
 
             ChiTietDatPhong ctdp = new ChiTietDatPhong();
@@ -2884,8 +2500,6 @@ public class NhanVienDatPhongController {
             ctdp.setPhuPhi(phuPhiNgoaiGio);
             chiTietDatPhongService.save(ctdp);
 
-            // Phong chuyen thang sang "Dang su dung" (nhan phong tuc thi), khac voi
-            // "Len lich dat phong" chi chuyen sang "Da dat truoc".
             phong.setTrangThai("Dang su dung");
             phongService.save1(phong);
         }
@@ -2901,7 +2515,6 @@ public class NhanVienDatPhongController {
                 Dich_vu dv = dichVuService.findById(maDichVu);
                 if (dv == null) continue;
 
-                // NEW: dich vu duoc gan vao don lan dau -> lay don gia truc tiep tu Dich_vu.
                 BigDecimal thanhTien = invoicePricingService.createServiceLineItemPrice(dv, 1);
                 Chi_tiet_dich_vu ct = new Chi_tiet_dich_vu();
                 ct.setDatPhong(savedDp);
@@ -2915,11 +2528,6 @@ public class NhanVienDatPhongController {
             }
         }
 
-        // Ghi nhan khoan phu thu nhan phong som (neu vi pham) thanh 1 dong
-        // chi_tiet_dich_vu gan vao dich vu "Phụ thu nhận phòng sớm" (tu tao neu
-        // chua co) - CUNG mot cach lam voi luuChiTietDichVuPhuThu o luong check-in
-        // binh thuong, de khoan phu thu nay hien thi dong bo o moi noi khac trong
-        // he thong (chi tiet dat phong, hoa don...).
         if (viPhamNhanSom) {
             Dich_vu dvPhuThuSom = taoMoiDichVuPhuThu("Phụ thu nhận phòng sớm", soTienPhuThuSom);
             Chi_tiet_dich_vu ctPhuThuSom = new Chi_tiet_dich_vu();
@@ -2934,17 +2542,11 @@ public class NhanVienDatPhongController {
             amountDv = amountDv.add(soTienPhuThuSom);
         }
 
-        // Tat ca cac dong da duoc luu vao chi_tiet_dat_phong/chi_tiet_dich_vu o
-        // tren -> tinh lai + luu hoa don qua UPDATE_EXISTING (recalculateInvoice)
-        // ngay ben duoi thay vi tu tinh KM/VAT rieng o day.
         InvoicePricingResult giaSau = invoicePricingService.computeTotals(amountPhong, amountDv, km);
         BigDecimal tienGiam = giaSau.getTienGiam();
         BigDecimal tienVat = giaSau.getTienVat();
         BigDecimal tongCong = giaSau.getTongTien();
 
-        // Da xac nhan tienKhachTra == tongCongTruoc o buoc kiem tra ben tren (va
-        // cach tinh o day giong het, tongCong phai bang tongCongTruoc), nen
-        // khach da tra du 100% - khong con truong hop no lai nhu truoc.
         BigDecimal daThu = tienKhachTra;
 
         HoaDon hd = new HoaDon();
@@ -2972,10 +2574,6 @@ public class NhanVienDatPhongController {
             thanhToanService.save(tt);
         }
 
-        // Khong con truong hop no lai o luong nay nua (da bat buoc thu du 100%
-        // truoc khi tao don o buoc kiem tra ben tren), nen khong can gui email
-        // nhac thanh toan phan con lai nhu truoc.
-
         lichSuHoatDongService.ghiLog(nhanVienXuLy,
                 su26sd09.su26sd09.constants.LichSuHoatDongConstants.HD_DAT_PHONG_TAI_QUAY,
                 su26sd09.su26sd09.constants.LichSuHoatDongConstants.DT_DAT_PHONG,
@@ -2994,13 +2592,6 @@ public class NhanVienDatPhongController {
         return result;
     }
 
-    /**
-     * Xem truoc khoan phu thu nhan phong som (neu co) cho tinh nang "Đặt phòng
-     * tại quầy" o So Do Phong, dung CUNG cong thuc voi tinh nang "Khách nhận
-     * phòng" (tinhPhuThuNhanSom): so sanh thoi diem hien tai voi gio nhan phong
-     * chuan 14:00 hom nay. Dung de FE hien thi dong "Phụ thu" trong phan Tom tat
-     * gia TRUOC khi nhan vien bam Dat phong tai quay (khong ghi gi vao DB).
-     */
     @GetMapping("/so-do-phong/dat-tai-quay/phu-thu-som")
     @ResponseBody
     public Map<String, Object> xemTruocPhuThuNhanSomTaiQuay(@RequestParam Integer maPhong) {
@@ -3028,10 +2619,8 @@ public class NhanVienDatPhongController {
         return result;
     }
 
-    /**
-     * Chuyển 1 phòng sang trạng thái "Bảo trì" (dùng cho menu chuột phải ở Sơ đồ
-     * phòng). Chỉ đổi trạng thái hiển thị, KHÔNG đổi cờ hoạt động của phòng.
-     */
+    // ==================== BAO TRI / KET THUC BAO TRI ====================
+
     @PostMapping("/so-do-phong/bao-tri/{maPhong}")
     public String batDauBaoTri(@PathVariable int maPhong, RedirectAttributes redirectAttributes) {
         Phong p = phongService.findById(maPhong);
@@ -3045,9 +2634,6 @@ public class NhanVienDatPhongController {
         return "redirect:/nhan-su/so-do-phong";
     }
 
-    /**
-     * Kết thúc bảo trì, đưa phòng về trạng thái "Trống".
-     */
     @PostMapping("/so-do-phong/ket-thuc-bao-tri/{maPhong}")
     public String ketThucBaoTri(@PathVariable int maPhong, RedirectAttributes redirectAttributes) {
         Phong p = phongService.findById(maPhong);
@@ -3061,13 +2647,8 @@ public class NhanVienDatPhongController {
         return "redirect:/nhan-su/so-do-phong";
     }
 
-    /**
-     * Quy đổi trạng thái nội bộ của Phong (đang dùng cho nghiệp vụ đặt phòng) sang
-     * 1 trong 4 trạng thái hiển thị của Sơ đồ phòng. Phòng ngưng hoạt động luôn
-     * hiển thị "Bảo trì"; phòng có trạng thái nhắc tới "don"/"dọn" hiển thị
-     * "Đang dọn"; các phòng đang được giữ/sử dụng hiển thị "Đang sử dụng";
-     * còn lại mặc định "Trống".
-     */
+    // ==================== UTILITY ====================
+
     private String suyRaTrangThaiHienThi(Phong p) {
         if (!p.isHoatDong()) {
             return "Bảo trì";
@@ -3094,6 +2675,29 @@ public class NhanVienDatPhongController {
         }
     }
 
+    private String escapeJson(String s) {
+        if (s == null) return "";
+        StringBuilder out = new StringBuilder(s.length() + 8);
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            switch (c) {
+                case '"':  out.append("\\\""); break;
+                case '\\': out.append("\\\\"); break;
+                case '\b': out.append("\\b"); break;
+                case '\f': out.append("\\f"); break;
+                case '\n': out.append("\\n"); break;
+                case '\r': out.append("\\r"); break;
+                case '\t': out.append("\\t"); break;
+                default:
+                    if (c < 0x20) out.append(String.format("\\u%04x", (int) c));
+                    else out.append(c);
+            }
+        }
+        return out.toString();
+    }
+
+    // ==================== DAT PHONG QUAY (LE TAN) ====================
+
     @GetMapping("/dat-phong-quay")
     public String NvDatPhongQuay(Model model, Authentication authentication){
         boolean isAdmin = authentication.getAuthorities().stream()
@@ -3102,14 +2706,12 @@ public class NhanVienDatPhongController {
         if (!isAdmin) {
             NhanSu nv = nhanVienService.FindByemail(authentication.getName());
             if (!nhanVienService.laLeTanDangHoatDong(nv)) {
-                return "redirect:/home"; //TODO: THEM URL DASHBOARD VAO DAY
+                return "redirect:/home";
             }
         }
 
         List<KhuyenMai> kmList = khuyenMaiService.findAllActive().collect(Collectors.toList());
 
-        // Hiển thị TẤT CẢ phòng (kể cả "Dang su dung") để có thể đặt trước cho khách,
-        // kèm thông tin các khoảng đang bị giữ chỗ để nhân viên biết phòng nào đang trống/khi nào trống.
         List<Phong> tatCaPhong = phongService.findAllPhong();
         Map<Integer, RoomBookingGuardDTO> roomGuards = phongService.buildRoomGuards(tatCaPhong);
 
@@ -3118,7 +2720,6 @@ public class NhanVienDatPhongController {
         model.addAttribute("dichVuList", dichVuService.findAll());
         model.addAttribute("khuyenMaiList", kmList);
 
-        // Tự build JSON để tránh phụ thuộc Jackson 3 (List<Map> đôi khi serialize rỗng không rõ nguyên nhân)
         StringBuilder sb = new StringBuilder("[");
         for (int i = 0; i < kmList.size(); i++) {
             KhuyenMai km = kmList.get(i);
@@ -3133,16 +2734,12 @@ public class NhanVienDatPhongController {
         sb.append("]");
         model.addAttribute("kmJson", sb.toString());
 
-        // JSON riêng cho danh sách phòng kèm TOÀN BỘ khoảng ngày đang bị giữ chỗ (không chỉ 1 đơn
-        // "gần nhất" như trước), dùng để JS tìm kiếm phòng theo thời gian nhận phòng mong muốn
-        // (input datetime-local) và validate overlap chính xác với từng đơn.
         StringBuilder rb = new StringBuilder("[");
         for (int i = 0; i < tatCaPhong.size(); i++) {
             Phong p = tatCaPhong.get(i);
             RoomBookingGuardDTO guard = roomGuards.get(p.getMaPhong());
             String trangThaiDon = guard != null ? guard.getTrangThaiDonGanNhat() : null;
 
-            // Build mảng con "khoaLich": danh sách toàn bộ khoảng đang giữ chỗ của phòng này
             StringBuilder khoaLichArr = new StringBuilder("[");
             if (guard != null) {
                 List<su26sd09.su26sd09.dto.KhoangNgayBiKhoaDTO> danhSach = guard.getDanhSachKhoaLich();
@@ -3170,27 +2767,6 @@ public class NhanVienDatPhongController {
         model.addAttribute("roomStatusJson", rb.toString());
 
         return "nhan-vien/dat-phong-quay";
-    }
-
-    private static String escapeJson(String s) {
-        if (s == null) return "";
-        StringBuilder out = new StringBuilder(s.length() + 8);
-        for (int i = 0; i < s.length(); i++) {
-            char c = s.charAt(i);
-            switch (c) {
-                case '"':  out.append("\\\""); break;
-                case '\\': out.append("\\\\"); break;
-                case '\b': out.append("\\b"); break;
-                case '\f': out.append("\\f"); break;
-                case '\n': out.append("\\n"); break;
-                case '\r': out.append("\\r"); break;
-                case '\t': out.append("\\t"); break;
-                default:
-                    if (c < 0x20) out.append(String.format("\\u%04x", (int) c));
-                    else out.append(c);
-            }
-        }
-        return out.toString();
     }
 
     @PostMapping("/dat-phong-quay/submit")
@@ -3225,7 +2801,7 @@ public class NhanVienDatPhongController {
 
         if (!isAdmin && !nhanVienService.laLeTanDangHoatDong(nvCheck)) {
             System.out.println("khong khop bo phan");
-            return "redirect:/home"; //TODO: THEM URL DASHBOARD VAO DAY
+            return "redirect:/home";
         }
 
         if (maCccd == null || maCccd.isEmpty()) {
@@ -3239,7 +2815,7 @@ public class NhanVienDatPhongController {
         int TongNguoi = songuoiLon + sotreEm;
         int sucChua = 0;
         for(Integer i : maPhongList){
-            sucChua +=phongService.findPhongById(i).getLoaiPhong().sucChuaToiDa;
+            sucChua += phongService.findPhongById(i).getLoaiPhong().sucChuaToiDa;
         }
         if(TongNguoi > sucChua){
             redirectAttributes.addFlashAttribute("error",  "Số lượng người vượt quá Sức Chứa phòng");
@@ -3258,7 +2834,6 @@ public class NhanVienDatPhongController {
         dp.setYeuCauThem(yeuCauThem);
         dp.setTrangThai("Da nhan phong");
         dp.setNgayTao(LocalDateTime.now());
-
 
         if (maKhuyenMai != null) {
             KhuyenMai km = khuyenMaiService.findbyId(maKhuyenMai);
@@ -3279,8 +2854,6 @@ public class NhanVienDatPhongController {
             if (phong == null) {
                 continue;
             }
-            // Cho phép đặt cả phòng "Dang su dung" (đặt trước cho khách sắp tới),
-            // miễn là guard cho biết phòng vẫn coTheDat (không bị khóa hẳn).
             RoomBookingGuardDTO guard = phongService.buildRoomGuardFor(maPhong);
             if (guard == null || !guard.isCoTheDat()) {
                 continue;
@@ -3291,10 +2864,6 @@ public class NhanVienDatPhongController {
             ctdp.setGiaMoiDem(phong.getGiaMoiDem());
 
             BigDecimal phuPhiNgoaiGio = phongService.calculateExtraFeeFor(phong.getMaPhong(), ngayNhanCt, ngayTraCt);
-            // NEW: phong duoc gan vao don lan dau -> lay gia GOC (chua giam) truc
-            // tiep tu Phong. KM se duoc ap dung nhu MOT KHOAN GIAM RIENG tren TONG
-            // (phong + dich vu) ben duoi, KHONG bake thang vao don gia nhu truoc,
-            // de dong bo voi cac luong tao don khac trong file nay.
             BigDecimal giaApDung = invoicePricingService.createRoomLineItemPrice(
                     phong, ngayNhanCt, ngayTraCt, BigDecimal.ZERO);
 
@@ -3318,7 +2887,6 @@ public class NhanVienDatPhongController {
                 String slStr = allParams.get("soLuong_" + maDichVu);
                 int sl = (slStr != null && !slStr.isBlank()) ? Integer.parseInt(slStr) : 1;
 
-                // NEW: dich vu duoc gan vao don lan dau -> lay don gia truc tiep tu Dich_vu.
                 BigDecimal thanhTien = invoicePricingService.createServiceLineItemPrice(dv, sl);
 
                 Chi_tiet_dich_vu ct = new Chi_tiet_dich_vu();
@@ -3333,10 +2901,6 @@ public class NhanVienDatPhongController {
             }
         }
 
-        // Tat ca cac dong da duoc luu vao chi_tiet_dat_phong/chi_tiet_dich_vu o
-        // tren -> tinh KM (khoan giam rieng) + VAT-tren-gia-SAU-giam bang cong
-        // thuc CHUAN dung chung (xem InvoicePricingService), thay vi bake giam
-        // gia vao don gia phong va bo qua giam gia cho dich vu nhu truoc.
         InvoicePricingResult gia = invoicePricingService.computeTotals(amountPhong, amountDv, kmDon);
         BigDecimal tienGiam = gia.getTienGiam();
         BigDecimal tienVat = gia.getTienVat();
@@ -3376,17 +2940,8 @@ public class NhanVienDatPhongController {
         return "redirect:/nhan-su/dat-phong";
     }
 
-    /**
-     * Xử lý đổi phòng từ form trong trang chi tiết đơn đặt phòng (nhân viên).
-     * Mirror đầy đủ logic với AdminDatPhongController.doPhong — cùng validate,
-     * cùng cập nhật ChiTietDatPhong + Phong.trangThai + HoaDon.
-     *
-     * Body:
-     *   - ctdpIds: List<Integer> — id các ChiTietDatPhong muốn đổi
-     *   - newRoomIds: List<Integer> — phòng mới tương ứng (cùng index)
-     *   - newCccds: List<String> — CCCD mới (để trống = giữ nguyên)
-     *   - lyDoDoi: String — lý do đổi phòng (bắt buộc)
-     */
+    // ==================== DOI PHONG ====================
+
     @PostMapping("/dat-phong/chi-tiet/{id}/doi-phong")
     @Transactional
     public String doPhong(@PathVariable Integer id,
@@ -3402,9 +2957,6 @@ public class NhanVienDatPhongController {
             redirectAttributes.addFlashAttribute("error", "Khong tim thay don dat phong #" + id);
             return "redirect:/nhan-su/dat-phong";
         }
-        // Validate trạng thái đơn - cho phep doi phong o cac trang thai:
-        //   - "Yeu cau dat phong" (NV doi truoc khi xac nhan yeu cau)
-        //   - "Cho xac nhan", "Da xac nhan", "Da nhan phong" (flow binh thuong)
         String trangThai = datPhong.getTrangThai();
         boolean choPhepDoi =
                 "Yeu cau dat phong".equals(trangThai)
@@ -3416,18 +2968,15 @@ public class NhanVienDatPhongController {
                     "Trang thai don '" + trangThai + "' khong cho phep doi phong.");
             return fromCheckin ? "redirect:/nhan-su/check-in?id=" + id : "redirect:/nhan-su/dat-phong/chi-tiet/" + id;
         }
-        // Hóa đơn đã xuất PDF -> không cho sửa
         if (hoaDonService.isDaXuat(id)) {
             redirectAttributes.addFlashAttribute("error",
                     "Hoa don cua don dat phong #" + id + " da duoc xuat PDF, khong the doi phong.");
             return fromCheckin ? "redirect:/nhan-su/check-in?id=" + id : "redirect:/nhan-su/dat-phong/chi-tiet/" + id;
         }
-        // Lý do bắt buộc
         if (lyDoDoi == null || lyDoDoi.trim().length() < 5) {
             redirectAttributes.addFlashAttribute("error", "Ly do doi phong phai co it nhat 5 ky tu.");
             return fromCheckin ? "redirect:/nhan-su/check-in?id=" + id : "redirect:/nhan-su/dat-phong/chi-tiet/" + id;
         }
-        // Phải tick ít nhất 1 dòng và danh sách phòng mới khớp độ dài
         if (ctdpIds == null || ctdpIds.isEmpty()) {
             redirectAttributes.addFlashAttribute("error", "Vui long chon it nhat 1 phong de doi.");
             return fromCheckin ? "redirect:/nhan-su/check-in?id=" + id : "redirect:/nhan-su/dat-phong/chi-tiet/" + id;
@@ -3437,12 +2986,10 @@ public class NhanVienDatPhongController {
             return fromCheckin ? "redirect:/nhan-su/check-in?id=" + id : "redirect:/nhan-su/dat-phong/chi-tiet/" + id;
         }
 
-        // Số đêm giữ nguyên (khoảng ngày đơn không đổi)
         long soDem = Math.max(1, ChronoUnit.DAYS.between(
                 datPhong.getNgaydatPhong().toLocalDate(),
                 datPhong.getNgaytraPhong().toLocalDate()));
 
-        // Gom CCCD mới theo index
         Map<Integer, String> cccdMoiTheoIndex = new HashMap<>();
         if (newCccds != null) {
             for (int i = 0; i < newCccds.size(); i++) {
@@ -3476,36 +3023,28 @@ public class NhanVienDatPhongController {
                 loiTheoDong.add("Phong moi #" + newRoomId + " khong ton tai hoac da ngung hoat dong.");
                 continue;
             }
-            // Check overlap khoang ngay voi don khac dang giu phong moi (Cho xac nhan /
-            // Da xac nhan / Da nhan phong). Ham hasBookingNotCheckout() chi check Da nhan
-            // phong nen bi "lot" cac don Cho/Da xac nhan — phai dung helper overlap moi.
             StringBuilder overlapErr = new StringBuilder();
             if (coOverlapPhongMoi(phongMoi.getMaPhong(), id,
                     datPhong.getNgaydatPhong(), datPhong.getNgaytraPhong(), overlapErr)) {
                 loiTheoDong.add(overlapErr.toString());
                 continue;
             }
-            // Lưu giá cũ để tính chênh lệch
             BigDecimal giaKhiDatCu = ct.getGiaKhiDat() != null ? ct.getGiaKhiDat() : BigDecimal.ZERO;
             BigDecimal phuPhiCu = ct.getPhuPhi() != null ? ct.getPhuPhi() : BigDecimal.ZERO;
 
-            // Lưu phòng cũ để cập nhật trạng thái phòng sau
             Phong phongCu = ct.getP();
 
-            // Tính giá mới
             BigDecimal giaMoiDemMoi = phongMoi.getGiaMoiDem();
             BigDecimal giaKhiDatMoi = giaMoiDemMoi.multiply(BigDecimal.valueOf(soDem));
             BigDecimal phuPhiMoi = phongService.calculateExtraFeeFor(
                     phongMoi.getMaPhong(), datPhong.getNgaydatPhong(), datPhong.getNgaytraPhong());
 
-            // Cập nhật ChiTietDatPhong
             ct.setP(phongMoi);
             ct.setGiaMoiDem(giaMoiDemMoi);
             ct.setGiaKhiDat(giaKhiDatMoi);
             ct.setPhuPhi(phuPhiMoi);
             chiTietDatPhongService.save(ct);
 
-            // Cập nhật trạng thái phòng cũ: nếu còn đơn khác giữ -> "Da dat truoc", ngược lại -> "Trong"
             if (phongCu != null) {
                 if (datPhongService.hasBookingNotCheckout(phongCu.getMaPhong(), id)) {
                     phongCu.setTrangThai("Da dat truoc");
@@ -3514,7 +3053,6 @@ public class NhanVienDatPhongController {
                 }
                 phongService.save1(phongCu);
             }
-            // Cập nhật trạng thái phòng mới
             if ("Da nhan phong".equals(trangThai)) {
                 phongMoi.setTrangThai("Dang su dung");
             } else {
@@ -3522,7 +3060,6 @@ public class NhanVienDatPhongController {
             }
             phongService.save1(phongMoi);
 
-            // Tính chênh lệch: phần chênh giữa tổng tiền phòng (tiền phòng + phụ phí) mới và cũ
             BigDecimal chenhPhong = giaKhiDatMoi.subtract(giaKhiDatCu);
             BigDecimal chenhPhuPhi = phuPhiMoi.subtract(phuPhiCu);
             chenhLechTong = chenhLechTong.add(chenhPhong).add(chenhPhuPhi);
@@ -3536,7 +3073,6 @@ public class NhanVienDatPhongController {
             return fromCheckin ? "redirect:/nhan-su/check-in?id=" + id : "redirect:/nhan-su/dat-phong/chi-tiet/" + id;
         }
 
-        // Cập nhật hóa đơn (nếu có)
         if (chenhLechTong.signum() != 0) {
             HoaDon hd = hoaDonService.findByDatPhongId(id);
             if (hd != null) {
@@ -3564,28 +3100,15 @@ public class NhanVienDatPhongController {
         redirectAttributes.addFlashAttribute("thanhCongCapNhat",
                 "Da doi thanh cong " + soPhongDoi + " phong. Chenh lech: " + chenhLechStr + ". Ly do: " + lyDoDoi.trim());
 
-        // Nếu đổi phòng từ trang check-in, redirect về check-in, ngược lại về chi tiết
         if (fromCheckin) {
             return "redirect:/nhan-su/check-in?id=" + id;
         }
-        // Neu don dang o trang thai "Yeu cau dat phong" -> redirect ve trang chi tiet yeu cau
         if ("Yeu cau dat phong".equals(trangThai)) {
             return "redirect:/nhan-su/yeu-cau-dat-phong/chi-tiet/" + id;
         }
         return "redirect:/nhan-su/dat-phong/chi-tiet/" + id;
     }
 
-    /**
-     * Kiem tra khoang ngay [ngayDat, ngayTra) cua don dang doi co bi giao (overlap)
-     * voi bat ky don nao khac dang giu phong moi khong. Tra ve true neu overlap,
-     * dong thoi ghi thong bao loi vao errorOut (de hien thi trong loiTheoDong).
-     *
-     * So sanh voi TAT CA cac don con hieu luc (Cho xac nhan / Da xac nhan /
-     * Da nhan phong) chu khong chi Da nhan phong nhu hasBookingNotCheckout().
-     * Bo qua don hien tai (maDatPhongHienTai) de tranh tu overlap voi chinh minh.
-     *
-     * Logic overlap: aStart < bEnd && aEnd > bStart.
-     */
     private boolean coOverlapPhongMoi(int maPhong, int maDatPhongHienTai,
                                       LocalDateTime ngayDat, LocalDateTime ngayTra,
                                       StringBuilder errorOut) {
@@ -3593,7 +3116,6 @@ public class NhanVienDatPhongController {
         if (bookings == null || bookings.isEmpty()) return false;
         for (DatPhong dp : bookings) {
             if (dp == null || dp.getId() == maDatPhongHienTai) continue;
-            // Chi xet cac trang thai dang giu phong that su (Da tra phong da giai phong)
             String tt = dp.getTrangThai();
             if (!"Yeu cau dat phong".equals(tt) && !"Cho xac nhan".equals(tt) && !"Da xac nhan".equals(tt) && !"Da nhan phong".equals(tt)) {
                 continue;
@@ -3615,6 +3137,8 @@ public class NhanVienDatPhongController {
         }
         return false;
     }
+
+    // ==================== CAP NHAT KHACH HANG / THU TIEN ====================
 
     @PostMapping("/dat-phong/chi-tiet/{id}/khach-hang")
     public String capNhatKhachHang(@PathVariable Integer id,
@@ -3661,6 +3185,7 @@ public class NhanVienDatPhongController {
         redirectAttributes.addFlashAttribute("thanhCongCapNhat", "Cap nhat thong tin khach hang thanh cong.");
         return "redirect:/nhan-su/dat-phong/chi-tiet/" + id;
     }
+
     @PostMapping("/dat-phong/chi-tiet/{id}/thu-tien")
     public String thuTien(@PathVariable Integer id, @RequestParam BigDecimal soTien,
                           @RequestParam("phuongThuc") String phuongthuc, HttpServletRequest request,
@@ -3692,8 +3217,6 @@ public class NhanVienDatPhongController {
             redirectAttributes.addFlashAttribute("error","Số tiền vượt quá số tiền còn thiếu");
             return "redirect:/nhan-su/dat-phong/chi-tiet/"+id;
         }
-        // Dam bao hoa don phan anh dung tong tien thuc te (bao gom phu phi) truoc
-        // khi ghi nhan khoan thu, de lan sau tinh "Con no" khong bi cong don phu phi.
         if (hd.getTongTien() == null || hd.getTongTien().compareTo(tongTienThucTeThu) < 0) {
             hd.setTongTien(tongTienThucTeThu);
         }
@@ -3723,11 +3246,10 @@ public class NhanVienDatPhongController {
 
         redirectAttributes.addFlashAttribute("success", "Đã thu " + soTien + " VND tiền mặt.");
         return "redirect:/nhan-su/dat-phong/chi-tiet/" + id;
-
     }
 
-    /* ===================== CHECK-IN (NHAN VIEN) ===================== */
-    // Y nguyen AdminDatPhongController.checkinDp — chi khac return template path.
+    // ==================== CHECK-IN (NHAN VIEN) ====================
+
     @GetMapping({"/dat-phong/{id}/check-in", "/dat-phong/check-in"})
     public String checkinDp(@PathVariable(value = "id", required = false) Integer id,
                             @RequestParam(value = "ngay", required = false)
@@ -3739,7 +3261,6 @@ public class NhanVienDatPhongController {
                             Model model,
                             RedirectAttributes redirectAttributes) {
 
-        // Nếu có ?thang=YYYY-MM thì override lựa chọn tháng hiện tại
         LocalDate thangDiChuyen = parseThangParam(thangRaw);
         LocalDate ngayChonSauCung = (thangDiChuyen != null) ? thangDiChuyen : ngayChon;
 
@@ -3760,7 +3281,6 @@ public class NhanVienDatPhongController {
         return "nhan-vien/check-in";
     }
 
-    /** Parse ?thang=YYYY-MM trên URL. Trả về null nếu chuỗi rỗng / sai định dạng (fallback về tháng hiện tại). */
     private LocalDate parseThangParam(String thangRaw) {
         if (thangRaw == null || thangRaw.isBlank()) return null;
         try {
@@ -3771,7 +3291,6 @@ public class NhanVienDatPhongController {
         }
     }
 
-    /** Build tháng trước / tháng sau dạng chuỗi YYYY-MM để gắn vào URL của nút điều hướng. */
     private String thangLienKe(LocalDate thangHienThi, int delta) {
         if (thangHienThi == null) return null;
         YearMonth ym = YearMonth.from(thangHienThi).plusMonths(delta);
@@ -3784,24 +3303,19 @@ public class NhanVienDatPhongController {
         LocalDateTime thangHienThi = thangNgay.withDayOfMonth(1).atTime(LocalTime.now());
         boolean dangLocKhoangNgay = tuNgayRaw != null && !tuNgayRaw.isBlank();
 
-        // tuNgay/denNgay: khoang loc don cho DANH SACH
         LocalDate tuNgay;
         LocalDate denNgay;
         if (dangLocKhoangNgay) {
             tuNgay = LocalDate.parse(tuNgayRaw);
             denNgay = LocalDate.parse(denNgayRaw);
         } else if (ngayChon != null) {
-            // User da click 1 ngay tren lich -> chi loc don co ngaydatPhong = ngay do
             tuNgay = ngayChon;
             denNgay = ngayChon;
         } else {
-            // Mac dinh: hien thi toan bo thang hien tai (khong co ngay click)
             tuNgay = thangNgay.withDayOfMonth(1);
             denNgay = thangNgay.withDayOfMonth(thangNgay.lengthOfMonth());
         }
 
-        // Khoang ngay cho DAI NGAY (lich): luon la toan bo thang hien tai de nguoi
-        // dung co the chon sang ngay khac ma khong mat luoi.
         LocalDate tuNgayLich = thangNgay.withDayOfMonth(1);
         LocalDate denNgayLich = thangNgay.withDayOfMonth(thangNgay.lengthOfMonth());
 
@@ -3829,8 +3343,6 @@ public class NhanVienDatPhongController {
 
         List<Map<String, Object>> dsNgayTrongThang = new ArrayList<>();
         LocalDate homNay = LocalDate.now();
-        // Luon duyet theo tuNgayLich..denNgayLich (toan bo thang) de khong mat luoi
-        // khi user da click 1 ngay bat ky.
         for (LocalDate d = tuNgayLich; !d.isAfter(denNgayLich); d = d.plusDays(1)) {
             LocalDate finalD = d;
             long soDon = datPhongService.findAll().stream()
@@ -3858,7 +3370,6 @@ public class NhanVienDatPhongController {
         model.addAttribute("dangLocKhoangNgay", dangLocKhoangNgay);
         model.addAttribute("tuNgay", tuNgayRaw);
         model.addAttribute("denNgay", denNgayRaw);
-        // Hai nút điều hướng tháng (chỉ dùng khi đang ở chế độ "Xem theo tháng")
         model.addAttribute("thangTruoc", thangLienKe(thangNgay, -1));
         model.addAttribute("thangSau", thangLienKe(thangNgay, 1));
     }
@@ -3874,10 +3385,6 @@ public class NhanVienDatPhongController {
                                 ? ct.getP().getLoaiPhong().getTenLoai() : "Chưa xác định",
                         LinkedHashMap::new, Collectors.toList()));
 
-        // Phong nao dang bi khoa lich (chong lan ngay) voi dung khoang luu tru cua don
-        // nay [ngaydatPhong, ngaytraPhong) (gio nhan 14:00 / tra 11:00 da duoc ap dung
-        // luc tao don). Dung de xet phong nao THUC SU co the doi sang, thay vi chi
-        // nhin trang thai tuc thoi (trangThai) cua phong.
         java.util.Set<Integer> maPhongDaKhoaLich = phongService.findMaPhongDaKhoaTrongKhoang(
                 dp.getNgaydatPhong(), dp.getNgaytraPhong());
 
@@ -3894,8 +3401,6 @@ public class NhanVienDatPhongController {
                         List<PhongTheoLoaiDTO> dsPhong = new ArrayList<>();
                         for (Phong p : phongService.findPhongTheoLoai(lp.getId())) {
                             if (p.getMaPhong() == pDaGan.getMaPhong()) continue;
-                            // Kha dung theo chong lan ngay thuc su, khong con dua vao
-                            // trangThai tuc thoi cua phong nua.
                             boolean khaDung = !maPhongDaKhoaLich.contains(p.getMaPhong());
                             dsPhong.add(new PhongTheoLoaiDTO(
                                     p.getMaPhong(), p.getSoPhong(), p.getSoTang(),
@@ -3908,7 +3413,6 @@ public class NhanVienDatPhongController {
                     }
                 }
 
-                // Lấy danh sách tiện nghi của phòng
                 List<TienNghi> tienNghiList = new ArrayList<>();
                 if (pDaGan != null) {
                     tienNghiList = tienNghiPhongRepository.findByPhongMaPhong(pDaGan.getMaPhong())
@@ -3952,10 +3456,8 @@ public class NhanVienDatPhongController {
         model.addAttribute("gioKhachTaiQuay", LocalDateTime.now());
         model.addAttribute("nhomYeuCauPhong", nhomYeuCauPhong);
         model.addAttribute("chiTietDichVuList", dichVuList);
-        // 2 list dich vu: thuong + phat sinh — cho combobox 2 tab
         model.addAttribute("dichVuOptionsThuong", dichVuService.findActiveThuong());
         model.addAttribute("dichVuOptionsPhatSinh", dichVuService.findActivePhatSinh());
-        // Giu lai de tuong thich nguoc (trang khac co the dang dung)
         model.addAttribute("dichVuOptions", dichVuService.findActivePhatSinh());
         model.addAttribute("tomTat", tomTat);
     }

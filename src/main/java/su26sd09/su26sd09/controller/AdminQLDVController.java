@@ -23,7 +23,7 @@ public class AdminQLDVController {
     @GetMapping("")
     public String index(
             @RequestParam(name = "keyword", defaultValue = "") String keyword,
-            @RequestParam(name = "trangThai", defaultValue = "") String trangThai,
+            @RequestParam(name = "trangThai", defaultValue = "active") String trangThai,
             @RequestParam(name = "loaiDichVu",defaultValue = "") String LoaiDichVu,
             Model model) {
         Dich_vu dv = new Dich_vu();
@@ -37,7 +37,7 @@ public class AdminQLDVController {
     public String edit(
             @PathVariable("id") Integer id,
             @RequestParam(name = "keyword", defaultValue = "") String keyword,
-            @RequestParam(name = "trangThai", defaultValue = "") String trangThai,
+            @RequestParam(name = "trangThai", defaultValue = "active") String trangThai,
             @RequestParam(name = "loaiDichVu" , defaultValue = "") String loaiDichVu,
             Model model,
             RedirectAttributes redirectAttributes

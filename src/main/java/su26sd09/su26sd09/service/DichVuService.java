@@ -57,7 +57,11 @@ public class DichVuService {
     }
 
     public void deleteById(Integer id){
-        dichVuRepo.deleteById(id);
+        Dich_vu dv = findById(id);
+        if (dv != null) {
+            dv.setHoatDong(false);
+            dichVuRepo.save(dv);
+        }
     }
 
     public long countAll(){

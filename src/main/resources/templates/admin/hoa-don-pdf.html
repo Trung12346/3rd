@@ -407,14 +407,43 @@
                 <span class="summary-label">Đã thanh toán</span>
                 <span class="summary-value" th:text="${#numbers.formatDecimal(hoaDon.daThanhToan, 0, 'COMMA', 0, 'POINT')} + ' VND'"></span>
             </div>
-            <div class="summary-row remaining" th:classappend="${conLai.signum() <= 0} ? 'settled'">
-                <span class="summary-label">Còn lại</span>
-                <span class="summary-value" th:text="${#numbers.formatDecimal(conLai, 0, 'COMMA', 0, 'POINT')} + ' VND'"></span>
+
+            <!-- ===== CÒN THIẾU / TIỀN THỪA ===== -->
+            <!-- Trường hợp 1: Còn thiếu (conLai > 0) -->
+            <div th:if="${conLai != null and conLai.signum() > 0}">
+                <div class="summary-row remaining">
+                    <span class="summary-label">Còn thiếu</span>
+                    <span class="summary-value" th:text="${#numbers.formatDecimal(conLai, 0, 'COMMA', 0, 'POINT')} + ' VND'"></span>
+                </div>
             </div>
-            <div class="summary-row" th:if="${tongHoan != null and tongHoan.signum() > 0}" style="background:#fff7e6;">
-                <span class="summary-label" style="color:#c2410c;">↩ Hoàn trả khách</span>
-                <span class="summary-value" style="color:#c2410c;"
-                      th:text="'- ' + ${#numbers.formatDecimal(tongHoan, 0, 'COMMA', 0, 'POINT')} + ' VND'"></span>
+
+            <!-- Trường hợp 2: Tiền thừa (conLai < 0) -->
+            <div th:if="${conLai != null and conLai.signum() < 0}">
+                <!-- Tiền thừa -->
+                <div class="summary-row phuthu">
+                    <span class="summary-label" style="color:#c2410c;">Tiền thừa</span>
+                    <span class="summary-value" style="color:#c2410c;"
+                          th:text="${#numbers.formatDecimal(conLai.abs(), 0, 'COMMA', 0, 'POINT')} + ' VND'"></span>
+                </div>
+                <!-- Đã hoàn trả khách (nếu đã hoàn) -->
+                <div class="summary-row" th:if="${tongHoan != null and tongHoan.signum() > 0}" style="background:#e8f5e9;">
+                    <span class="summary-label" style="color:#059669;">✓ Đã hoàn trả khách</span>
+                    <span class="summary-value" style="color:#059669;"
+                          th:text="${#numbers.formatDecimal(tongHoan, 0, 'COMMA', 0, 'POINT')} + ' VND'"></span>
+                </div>
+                <!-- Chờ hoàn trả (nếu chưa hoàn) -->
+                <div class="summary-row" th:if="${tongHoan == null or tongHoan.signum() == 0}" style="background:#fff7e6;">
+                    <span class="summary-label" style="color:#c2410c;">⏳ Chờ hoàn trả</span>
+                    <span class="summary-value" style="color:#c2410c;">Chưa xử lý</span>
+                </div>
+            </div>
+
+            <!-- Trường hợp 3: Đã thanh toán đủ (conLai == 0) -->
+            <div th:if="${conLai == null or conLai.signum() == 0}">
+                <div class="summary-row remaining settled">
+                    <span class="summary-label">Đã thanh toán đủ</span>
+                    <span class="summary-value">0 VND</span>
+                </div>
             </div>
         </div>
 
