@@ -104,13 +104,19 @@ public class LoaiPhongController {
 
         List<Phong> phongs = phongService.findPhongTheoLoai(id);
 
-        // Tien nghi cua loai phong = hop (khong trung) tien nghi cua tat ca
-        // phong vat ly thuoc loai nay, vi bang tien_nghi_phong map theo Phong.
-        LinkedHashSet<String> tienNghiSet = new LinkedHashSet<>();
+        // Tien nghi thiet yeu cua loai phong = giao (chi giu tien nghi xuat hien
+        // o TAT CA) tien nghi cua cac phong vat ly thuoc loai nay, vi bang
+        // tien_nghi_phong map theo Phong.
+        LinkedHashSet<String> tienNghiSet = null;
         for (Phong p : phongs) {
-            tienNghiSet.addAll(phongService.findTenTienNghiByPhong(p.getMaPhong()));
+            List<String> tenTienNghi = phongService.findTenTienNghiByPhong(p.getMaPhong());
+            if (tienNghiSet == null) {
+                tienNghiSet = new LinkedHashSet<>(tenTienNghi);
+            } else {
+                tienNghiSet.retainAll(tenTienNghi);
+            }
         }
-        List<String> tienNghi = new ArrayList<>(tienNghiSet);
+        List<String> tienNghi = tienNghiSet == null ? new ArrayList<>() : new ArrayList<>(tienNghiSet);
 
         // Danh gia cua loai phong = gop danh gia DA DUYET cua tat ca phong thuoc
         // loai nay. Tai su dung nguyen he thong danh gia cua trang /phong/{id}
