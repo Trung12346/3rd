@@ -243,6 +243,11 @@ public interface ThongKeRepo extends JpaRepository<HoaDon, Integer> {
      * tren tong hoa don (vi hoa don co the chua duoc thu du).
      * KHONG bao gom cac don "Chua thanh toan"/"Cho thanh toan" (chua co giao dich thanh cong)
      * va se duoc tru phan da hoan tien qua {@link #getRefundedAmount}.
+     *
+     * LUU Y: mot so noi trong code tao ThanhToan thu tien nhung khong goi setLoaiGiaoDich(...),
+     * nen loai_giao_dich co the la NULL cho cac giao dich thu tien hop le. De an toan, dieu kien
+     * duoi day chap nhan ca NULL lan 'Thu tien', va CHU DONG loai tru 'Hoan tien' (thay vi doi hoi
+     * dung bang 'Thu tien') de khong bo sot doanh thu that su da thu.
      */
     @Query(value = """
         SELECT COALESCE(SUM(
@@ -252,7 +257,7 @@ public interface ThongKeRepo extends JpaRepository<HoaDon, Integer> {
         FROM thanh_toan tt
         JOIN hoa_don hd ON tt.ma_hoa_don = hd.ma_hoa_don
         WHERE tt.trang_thai = N'Thanh cong'
-          AND tt.loai_giao_dich = N'Thu tien'
+          AND (tt.loai_giao_dich IS NULL OR tt.loai_giao_dich <> N'Hoan tien')
           AND tt.ngay_thanh_toan >= :start AND tt.ngay_thanh_toan < DATEADD(day, 1, :end)
         """, nativeQuery = true)
     public Double getActualRevenueCollected(@Param("start") LocalDate start, @Param("end") LocalDate end);
