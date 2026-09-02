@@ -457,8 +457,8 @@
             <input type="hidden" th:field="*{maPhong}">
 
             <!-- Trạng Thái & Hoạt Động không cho sửa trên form -> luôn mặc định "Trống" / "Có" -->
-            <input type="hidden" name="trangThai" value="Trong">
-            <input type="hidden" name="hoatDong" value="true">
+            <input type="hidden" th:field="*{trangThai}">
+            <input type="hidden" th:field="*{hoatDong}">
 
             <div class="admin-grid">
 
@@ -480,19 +480,20 @@
                     <input type="number" th:field="*{soTang}" id="soTangInput" min="1" placeholder="VD: 2" required>
                 </div>
 
-                <div class="admin-field">
+                <div class="admin-field"
+                     th:with="doDaiTang=${phong.soTang != null ? #strings.length(#numbers.formatInteger(phong.soTang,1,'NONE')) : 1}">
                     <label>Số Phòng</label>
                     <div style="display:flex; gap:8px;">
                         <input type="text" id="soPhongPrefix" readonly
                                style="width:64px; text-align:center; background:#f0f0f0; color: var(--text-gray);"
                                title="Chữ số đầu = số tầng"
-                               th:value="${phong.soPhong != null and #strings.length(phong.soPhong) > 0 ? phong.soPhong.substring(0,1) : ''}">
+                               th:value="${phong.soPhong != null and #strings.length(phong.soPhong) >= doDaiTang ? phong.soPhong.substring(0, doDaiTang) : phong.soPhong}">
                         <input type="text" id="soPhongSuffix"
                                placeholder="VD: 01" required
                                th:readonly="${phong.maPhong == 0}"
                                th:classappend="${phong.maPhong == 0} ? 'so-phong-auto' : ''"
                                th:title="${phong.maPhong == 0} ? 'Số phòng được tự động tăng dần từ phòng cuối cùng' : ''"
-                               th:value="${phong.soPhong != null and #strings.length(phong.soPhong) > 1 ? phong.soPhong.substring(1) : ''}">
+                               th:value="${phong.soPhong != null and #strings.length(phong.soPhong) > doDaiTang ? phong.soPhong.substring(doDaiTang) : ''}">
                     </div>
                     <input type="hidden" name="soPhong" id="soPhongHidden" th:value="${phong.soPhong}">
                 </div>
@@ -707,17 +708,22 @@
         // Che do tao moi: chua co maPhong (0/rong) -> so phong duoc tinh tu dong
         var laCheDoTaoMoi = !maPhongInput || !maPhongInput.value || maPhongInput.value === '0';
 
-        // Danh sach tat ca so phong hien co (ke ca phong ngung hoat dong), do server tra ve
-        var tatCaSoPhong = /*[[${allSoPhong}]]*/ [];
+        // Danh sach tat ca phong hien co (ke ca phong ngung hoat dong), kem tang thuc te,
+        // do server tra ve. Khong doan tang tu chuoi so phong nua, vi tien to co the
+        // trung nhau (vd tang "10" la tien to chuoi cua phong tang 1: "101").
+        var tatCaPhongTheoTang = /*[[${allSoPhongTheoTang}]]*/ [];
 
-        // Tim phan hau to (chuoi so) tiep theo cho mot tien to (chu so dau) cho truoc,
-        // bang cach lay hau to lon nhat trong cac phong cung tien to va +1.
+        // Tim phan hau to (chuoi so) tiep theo cho mot tang cho truoc,
+        // bang cach lay hau to lon nhat trong cac phong CUNG TANG (so sanh bang tang thuc, khong doan tu chuoi) va +1.
         function tinhHauToTiepTheo(tienTo) {
+            var tangSo = parseInt(tienTo, 10);
             var hauToMax = 0;
             var doDaiHauTo = 2;
-            (tatCaSoPhong || []).forEach(function (sp) {
-                if (!sp || sp.charAt(0) !== tienTo) { return; }
-                var hauTo = sp.substring(1);
+            (tatCaPhongTheoTang || []).forEach(function (item) {
+                if (!item || !item.soPhong || item.soTang !== tangSo) { return; }
+                var sp = item.soPhong;
+                if (sp.indexOf(tienTo) !== 0) { return; }
+                var hauTo = sp.substring(tienTo.length);
                 var so = parseInt(hauTo, 10);
                 if (!isNaN(so) && so >= hauToMax) {
                     hauToMax = so;
@@ -750,7 +756,7 @@
         // ===== CHU SO DAU CUA SO PHONG PHU THUOC SO TANG =====
         function capNhatSoPhong() {
             var tang = (soTangInput.value || '').trim();
-            var chuSoDau = tang.length > 0 ? tang.charAt(0) : '';
+            var chuSoDau = tang; // dung ca so tang lam tien to, khong chi lay ky tu dau (loi voi tang >= 10)
             soPhongPrefix.value = chuSoDau;
 
             if (laCheDoTaoMoi) {

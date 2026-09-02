@@ -85,10 +85,20 @@ public class AdminPhongController {
             RedirectAttributes redirectAttributes
     ) {
         // Trang thai & Hoat dong khong con cho chinh sua tren form (an di) ->
-        // luon ep ve mac dinh "Trong" / "Co" o phia server, khong phu thuoc
-        // vao gia tri client gui len.
-        phong.setTrangThai("Trong");
-        phong.setHoatDong(true);
+        // ep o phia server, khong phu thuoc vao gia tri client gui len.
+        // - Tao moi (maPhong == 0): mac dinh "Trong" / hoat dong = true.
+        // - Cap nhat (maPhong != 0): giu nguyen trang_thai va hoat_dong hien tai trong DB,
+        //   khong duoc reset ve "Trong" / Co.
+        if (phong.getMaPhong() == 0) {
+            phong.setTrangThai("Trong");
+            phong.setHoatDong(true);
+        } else {
+            Phong existing = phongService.findById(phong.getMaPhong());
+            if (existing != null) {
+                phong.setTrangThai(existing.getTrangThai());
+                phong.setHoatDong(existing.isHoatDong());
+            }
+        }
 
         for (Phong p : phongService.findAllPhongIncludingInactive()){
             if (p.getSoPhong().equals(phong.getSoPhong()) && p.getMaPhong() != phong.getMaPhong()){
@@ -144,14 +154,19 @@ public class AdminPhongController {
                     phongService.countGiaoDichChuaHoanTatByPhong(item.getMaPhong()) > 0);
         }
 
-        List<String> allSoPhong = new java.util.ArrayList<>();
+        // Ghep so phong voi tang thuc te cua no (khong doan tang tu chuoi so phong,
+        // vi tien to co the trung nhau, vd tang "10" la tien to chuoi cua phong tang 1: "101").
+        List<Map<String, Object>> allSoPhongTheoTang = new java.util.ArrayList<>();
         for (Phong item : phongService.findAllPhongIncludingInactive()) {
-            allSoPhong.add(item.getSoPhong());
+            Map<String, Object> entry = new HashMap<>();
+            entry.put("soTang", item.getSoTang());
+            entry.put("soPhong", item.getSoPhong());
+            allSoPhongTheoTang.add(entry);
         }
 
         model.addAttribute("phong", phong);
         model.addAttribute("phongs", phongs);
-        model.addAttribute("allSoPhong", allSoPhong);
+        model.addAttribute("allSoPhongTheoTang", allSoPhongTheoTang);
         model.addAttribute("loaiPhongs", phongService.findAllLoai());
         model.addAttribute("tienNghis", phongService.findAllTienNghi());
         model.addAttribute("selectedTienNghiIds", selectedTienNghiIds);
