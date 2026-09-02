@@ -134,8 +134,12 @@
 
         /* ---- Popup canh bao CCCD khong khop (thay cho confirm() mac dinh) ---- */
         .sdp-cccd-warn-overlay {
+            /* Popup nay co the duoc mo TU BEN TRONG modal "Giay to tuy than cua
+               khach" (sdp-giayto-modal, z-index 4001) khi bam "Tiep tuc nhan
+               phong" ma CCCD khong khop - phai luon noi len tren cung, cao hon
+               tat ca cac modal/panel khac trong trang de khong bi che khuat. */
             display:none; position:fixed; inset:0; background:rgba(15,23,42,0.5);
-            z-index:1200; align-items:center; justify-content:center; padding:16px;
+            z-index:4300; align-items:center; justify-content:center; padding:16px;
         }
         .sdp-cccd-warn-overlay.open { display:flex; }
         .sdp-cccd-warn-box {

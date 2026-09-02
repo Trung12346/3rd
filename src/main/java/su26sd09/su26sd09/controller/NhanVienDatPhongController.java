@@ -1231,8 +1231,8 @@ public class NhanVienDatPhongController {
 
                         result.put("canhBaoCccd", true);
                         result.put("canhBaoCccdMessage",
-                                "So CCCD/CMND luc dat phong khong khop voi giay to check-in cua khach. "
-                                        + "Vui long kiem tra lai truoc khi tiep tuc.");
+                                "Số CCCD/CMND lúc đặt phòng không khớp với giấy tờ check-in của khách." +
+                                "Vui lòng kiểm tra lại trước khi tiếp tục.");
                     }
                 }
             }
