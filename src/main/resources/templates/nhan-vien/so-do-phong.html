@@ -2349,6 +2349,7 @@
             var t = nowTick();
             for (var i = 0; i < list.length; i++) {
                 var b = list[i];
+                if (b.trangThai !== 'Da xac nhan') continue; // chi hien nut nhan phong khi don DA XAC NHAN
                 var ci = parseDt(b.checkin);
                 var co = parseDt(b.checkout);
                 if (!ci) continue;

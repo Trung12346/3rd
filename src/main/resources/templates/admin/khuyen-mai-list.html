@@ -58,21 +58,21 @@
                     <input type="number" th:field="*{giatriGiam}" min="1" step="any"  required>
                 </div>
                 <div class="admin-field">
-                    <label>giá tối thiểu có thể giảm</label>
+                    <label>Giá tối thiểu có thể giảm</label>
                     <input type="text" inputmode="numeric" class="money-input" th:field="*{giaToiThieuDuocGiam}" required>
                 </div>
                 <div class="admin-field">
                     <label>Ngày bắt đầu</label>
-                    <input type="date" th:field="*{ngayBatDau}">
+                    <input type="date" th:field="*{ngayBatDau}" th:readonly="${khuyenMai.id > 0}">
                 </div>
                 <div class="admin-field">
                     <label>Ngày kết thúc</label>
-                    <input type="date" th:field="*{ngayKetThuc}">
+                    <input type="date" th:field="*{ngayKetThuc}" th:readonly="${khuyenMai.id > 0}">
                 </div>
 
-                <div class="admin-field" th:if="${khuyenMai.id != 0}">
+                <div class="admin-field" style="display: none;">
                     <label>hoạt động</label>
-                    <input type="text" th:value="${khuyenMai.hoatDong == true ? 'hoat dong' : 'khong hoat dong'}">
+                    <input type="text" th:value="${khuyenMai.hoatDong == true ? 1 : 0}">
                 </div>
 
                 <div class="admin-field full">
@@ -203,12 +203,12 @@
                         <div class="row-actions">
                             <a class="admin-btn small outline"
                                th:href="@{/nhan-su/admin/khuyen-mai/edit/{id}(id=${km.id})}">Sửa</a>
-                            <form th:action="@{/nhan-su/admin/khuyen-mai/lock-or-unlock/{id}(id=${km.id})}"
-                                  method="post">
-                                <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
-                                <button type="submit" class="admin-btn small outline" th:if="${km.hoatDong == false}">mở khóa</button>
-                                <button type="submit" class="admin-btn small danger" th:if="${km.hoatDong == true}"> khóa</button>
-                            </form>
+<!--                            <form th:action="@{/nhan-su/admin/khuyen-mai/lock-or-unlock/{id}(id=${km.id})}"-->
+<!--                                  method="post">-->
+<!--                                <input type="hidden" th:if="${_csrf != null}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">-->
+<!--                                <button type="submit" class="admin-btn small outline" th:if="${km.hoatDong == false}">mở khóa</button>-->
+<!--                                <button type="submit" class="admin-btn small danger" th:if="${km.hoatDong == true}"> khóa</button>-->
+<!--                            </form>-->
                             <a class="admin-btn small danger"
                                th:href="@{/nhan-su/admin/khuyen-mai/delete/{id}(id=${km.id})}">xóa khuyến mãi</a>
                         </div>

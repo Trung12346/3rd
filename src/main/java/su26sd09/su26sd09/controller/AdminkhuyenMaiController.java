@@ -1,6 +1,7 @@
 package su26sd09.su26sd09.controller;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cglib.core.Local;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -78,21 +79,61 @@ public class AdminkhuyenMaiController {
 
 
     @PostMapping("/lock-or-unlock/{id}")
-    public  String deleteKhuyenMai(@PathVariable("id") int id, Principal p, RedirectAttributes redirect){
+    public String lockOrUnlock(
+            @PathVariable("id") int id,
+            RedirectAttributes redirect) {
 
         KhuyenMai km = repo.findbyId(id);
-        if ((km.ngayKetThuc.equals(LocalDate.now()) || km.ngayBatDau.isAfter(LocalDate.now())) && km.hoatDong == false){
-            redirect.addFlashAttribute("error","trạng thái không hợp lệ với mốc ngày chỉ định ");
-            return "redirect:/nhan-su/admin/khuyen-mai";
-        }
-        String logError = repo.ValidUpdateKhuyenMai(km);
-        if (!logError.equalsIgnoreCase("null") && !logError.equalsIgnoreCase("")){
-            redirect.addFlashAttribute("error",logError);
-            return "redirect:/nhan-su/admin/khuyen-mai";
-        }
-        km.setHoatDong(!km.hoatDong);
 
+        if (km == null) {
+            redirect.addFlashAttribute("error", "Không tìm thấy khuyến mãi");
+            return "redirect:/nhan-su/admin/khuyen-mai";
+        }
+
+        LocalDate today = LocalDate.now();
+
+        // Đang KHÓA -> muốn MỞ KHÓA
+        if (!km.hoatDong) {
+
+            // Chỉ được mở khi:
+            // today >= ngày bắt đầu
+            // và today <= ngày kết thúc
+            boolean thoiGianHopLe =
+                    !today.isBefore(km.ngayBatDau)
+                            && !today.isAfter(km.ngayKetThuc);
+
+            if (!thoiGianHopLe) {
+                redirect.addFlashAttribute(
+                        "error",
+                        "Không thể mở khóa khuyến mãi vì thời gian hiện tại không hợp lệ"
+                );
+
+                return "redirect:/nhan-su/admin/khuyen-mai";
+            }
+        }
+
+        // Nếu đang MỞ -> KHÓA
+        // luôn cho phép khóa, không cần kiểm tra thời gian
+
+        String logError = repo.ValidUpdateKhuyenMai(km);
+
+        if (logError != null
+                && !logError.trim().isEmpty()
+                && !"null".equalsIgnoreCase(logError)) {
+
+            redirect.addFlashAttribute("error", logError);
+            return "redirect:/nhan-su/admin/khuyen-mai";
+        }
+
+        km.setHoatDong(!km.hoatDong);
         repo.save(km);
+
+        redirect.addFlashAttribute(
+                "success",
+                km.hoatDong
+                        ? "Mở khóa khuyến mãi thành công"
+                        : "Khóa khuyến mãi thành công"
+        );
 
         return "redirect:/nhan-su/admin/khuyen-mai";
     }
@@ -113,7 +154,7 @@ public class AdminkhuyenMaiController {
             redirect.addFlashAttribute("error","giá trị giảm phải lớn hơn 0");
             return "redirect:/nhan-su/admin/khuyen-mai";
         }
-        if (m.ngayBatDau.isBefore(LocalDate.now()) && m.ngayKetThuc.isAfter(LocalDate.now())){
+        if ((m.ngayBatDau.isBefore(LocalDate.now()) || m.ngayBatDau.equals(LocalDate.now())) && m.ngayKetThuc.isAfter(LocalDate.now())){
             m.setHoatDong(true);
         }else{
             m.setHoatDong(false);
