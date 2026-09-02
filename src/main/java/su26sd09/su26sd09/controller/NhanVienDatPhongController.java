@@ -1908,6 +1908,8 @@ public class NhanVienDatPhongController {
         if (hd == null) {
             return;
         }
+        BigDecimal daThanhToanTruoc = defaultMoney(hd.getDaThanhToan());
+
         ThanhToan tt = new ThanhToan();
         tt.setH(hd);
         tt.setPhuongThuc("Tien Mat");
@@ -1917,9 +1919,25 @@ public class NhanVienDatPhongController {
         tt.setGichu("Thu tien luc tra phong tai So Do Phong (gom con lai truoc do + phu thu tra phong muon neu co), ma don: " + maDatPhong);
         thanhToanService.save(tt);
 
-        hd.setDaThanhToan(defaultMoney(hd.getDaThanhToan()).add(soTienThu));
+        hd.setDaThanhToan(daThanhToanTruoc.add(soTienThu));
         hd.setNgayCapNhat(LocalDateTime.now());
         hoaDonService.saveWithPaymentStatusCheck(hd);
+
+        // GHI LOG LICH SU HOAT DONG - THU TIEN LUC TRA PHONG TAI SO DO PHONG
+        String ghiChuLog = String.format(
+                "[THU TIỀN LÚC TRẢ PHÒNG] Đơn đặt phòng #%d - Nhân viên thu %s VND bằng Tiền Mặt "
+                        + "(gồm số tiền còn lại trước đó + phụ thu trả muộn nếu có). "
+                        + "Đã thanh toán trước: %s VND -> Sau khi thu: %s VND.",
+                maDatPhong,
+                soTienThu.toPlainString(),
+                daThanhToanTruoc.toPlainString(),
+                hd.getDaThanhToan().toPlainString());
+
+        lichSuHoatDongService.ghiLogAn(authentication,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.HD_THU_TIEN,
+                su26sd09.su26sd09.constants.LichSuHoatDongConstants.DT_HOA_DON,
+                maDatPhong,
+                ghiChuLog);
     }
 
     private String formatTienPhuThu(BigDecimal tien) {
@@ -3398,12 +3416,12 @@ public class NhanVienDatPhongController {
     @PostMapping("/dat-phong/chi-tiet/{id}/thu-tien")
     public String thuTien(@PathVariable Integer id, @RequestParam BigDecimal soTien,
                           @RequestParam("phuongThuc") String phuongthuc, HttpServletRequest request,
-                          Authentication authentication, RedirectAttributes redirectAttributes){
+                          Authentication authentication, RedirectAttributes redirectAttributes) {
         HoaDon hd = hoaDonService.findByDatPhongId(id);
         DatPhong dp = datPhongService.findById(id);
-        if(hd == null&&dp==null){
-            redirectAttributes.addFlashAttribute("error","don dat phong chua co hd");
-            return "redirect:/nhan-su/dat-phong/chi-tiet/"+id;
+        if (hd == null && dp == null) {
+            redirectAttributes.addFlashAttribute("error", "don dat phong chua co hd");
+            return "redirect:/nhan-su/dat-phong/chi-tiet/" + id;
         }
         if (hoaDonService.isDaXuat(id)) {
             redirectAttributes.addFlashAttribute("error",
@@ -3420,19 +3438,19 @@ public class NhanVienDatPhongController {
         }
         BigDecimal tongTienThucTeThu = tinhTongTienThucTe(id, hd, chiTietDatPhongListThu, tongPhuThuThu);
 
-        BigDecimal daThanhToan = hd.getDaThanhToan() ==null ? BigDecimal.ZERO : hd.getDaThanhToan();
+        BigDecimal daThanhToan = hd.getDaThanhToan() == null ? BigDecimal.ZERO : hd.getDaThanhToan();
         BigDecimal conNo = tongTienThucTeThu.subtract(daThanhToan);
-        if(soTien.compareTo(conNo) > 0){
-            redirectAttributes.addFlashAttribute("error","Số tiền vượt quá số tiền còn thiếu");
-            return "redirect:/nhan-su/dat-phong/chi-tiet/"+id;
+        if (soTien.compareTo(conNo) > 0) {
+            redirectAttributes.addFlashAttribute("error", "Số tiền vượt quá số tiền còn thiếu");
+            return "redirect:/nhan-su/dat-phong/chi-tiet/" + id;
         }
         if (hd.getTongTien() == null || hd.getTongTien().compareTo(tongTienThucTeThu) < 0) {
             hd.setTongTien(tongTienThucTeThu);
         }
-        if("Chuyen Khoan".equalsIgnoreCase(phuongthuc)){
-            String baseUrl = request.getScheme() + "://"+request.getServerName() + ":"+request.getServerPort();
-            String vnPayUrl = vnpayService.createOrder(soTien.longValue(),id,"ThuThemDichVu",baseUrl);
-            return "redirect:"+vnPayUrl;
+        if ("Chuyen Khoan".equalsIgnoreCase(phuongthuc)) {
+            String baseUrl = request.getScheme() + "://" + request.getServerName() + ":" + request.getServerPort();
+            String vnPayUrl = vnpayService.createOrder(soTien.longValue(), id, "ThuThemDichVu", baseUrl);
+            return "redirect:" + vnPayUrl;
         }
         ThanhToan tt = new ThanhToan();
         tt.setH(hd);
@@ -3447,11 +3465,18 @@ public class NhanVienDatPhongController {
         hd.setNgayCapNhat(LocalDateTime.now());
         hoaDonService.saveWithPaymentStatusCheck(hd);
 
+        //  GHI LOG LỊCH SỬ HOẠT ĐỘNG - THU TIỀN CÒN THIẾU
+        String ghiChuLog = "Thu tiền còn thiếu cho đơn #" + id
+                + " - Số tiền: " + soTien.toPlainString() + " VND"
+                + " - Phương thức: " + phuongthuc
+                + " - Số tiền còn nợ trước khi thu: " + conNo.toPlainString() + " VND"
+                + " - Số tiền còn nợ sau khi thu: " + conNo.subtract(soTien).toPlainString() + " VND";
+
         lichSuHoatDongService.ghiLogAn(authentication,
                 su26sd09.su26sd09.constants.LichSuHoatDongConstants.HD_THU_TIEN,
                 su26sd09.su26sd09.constants.LichSuHoatDongConstants.DT_HOA_DON,
                 id,
-                "Thu " + soTien.toPlainString() + " VND tien mat dich vu phat sinh, don #" + id);
+                ghiChuLog);
 
         redirectAttributes.addFlashAttribute("success", "Đã thu " + soTien + " VND tiền mặt.");
         return "redirect:/nhan-su/dat-phong/chi-tiet/" + id;

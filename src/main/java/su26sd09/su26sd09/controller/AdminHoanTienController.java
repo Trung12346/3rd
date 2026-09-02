@@ -29,17 +29,42 @@ public class AdminHoanTienController {
     @Autowired LichSuHoatDongService lichSuHoatDongService;
 
     private static final String SESSION_KEY_REFUND_DRAFT = "refundDraft_";
-
+    
     @GetMapping
     public String danhSach(@RequestParam(required = false) String trangThaiHoanTien,
+                           @RequestParam(defaultValue = "0") int page,
                            Model model) {
-        model.addAttribute("dsHoaDon", hoaDonService.findAll().stream()
+
+        final int PAGE_SIZE = 7;
+
+        var dsLoc = hoaDonService.findAll().stream()
                 .filter(hd -> hd.getTrangThaiHoanTien() != null)
                 .filter(hd -> trangThaiHoanTien == null || trangThaiHoanTien.isEmpty()
                         || trangThaiHoanTien.equals(hd.getTrangThaiHoanTien()))
                 // Yeu cau moi nhat len dau - sap xep giam dan theo ID hoa don.
                 .sorted(java.util.Comparator.comparing(HoaDon::getId).reversed())
-                .toList());
+                .toList();
+
+        int totalItems = dsLoc.size();
+        int totalPages = (int) Math.ceil((double) totalItems / PAGE_SIZE);
+        if (totalPages == 0) totalPages = 1;
+
+        // Chan page vuot bien
+        if (page < 0) page = 0;
+        if (page > totalPages - 1) page = totalPages - 1;
+
+        int fromIndex = page * PAGE_SIZE;
+        int toIndex = Math.min(fromIndex + PAGE_SIZE, totalItems);
+        var dsTrang = fromIndex >= toIndex
+                ? java.util.List.<HoaDon>of()
+                : dsLoc.subList(fromIndex, toIndex);
+
+        model.addAttribute("dsHoaDon", dsTrang);
+        model.addAttribute("trangThaiHoanTien", trangThaiHoanTien);
+        model.addAttribute("currentPage", page);
+        model.addAttribute("totalPages", totalPages);
+        model.addAttribute("totalItems", totalItems);
+
         return "admin/hoan-tien-list";
     }
 

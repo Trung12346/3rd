@@ -15,11 +15,26 @@
             text-transform: uppercase;
             letter-spacing: .03em;
         }
-        .refund-badge.cho-xu-ly { background: #FEF3C7; color: #92400E; border: 1px solid #F59E0B; }
-        .refund-badge.da-hoan   { background: #DCFCE7; color: #166534; border: 1px solid #22C55E; }
-        .refund-badge.tu-choi   { background: #FEE2E2; color: #991B1B; border: 1px solid #EF4444; }
+        .refund-badge.cho-xu-ly      { background: #FEF3C7; color: #92400E; border: 1px solid #F59E0B; }
+        .refund-badge.da-hoan        { background: #DCFCE7; color: #166534; border: 1px solid #22C55E; }
+        .refund-badge.da-hoan-du     { background: #DBEAFE; color: #1E40AF; border: 1px solid #3B82F6; }
+        .refund-badge.huy-khong-hoan { background: #F3F4F6; color: #374151; border: 1px solid #9CA3AF; }
+        .refund-badge.tu-choi        { background: #FEE2E2; color: #991B1B; border: 1px solid #EF4444; }
         .refund-money { font-weight: 700; color: var(--sky-primary); }
         .refund-tyle { font-size: 12px; color: #6b7280; }
+
+        .admin-pagination {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+        .page-link.active {
+            background: var(--sky-primary);
+            color: #fff;
+            border-color: var(--sky-primary);
+        }
     </style>
 </head>
 <body>
@@ -72,6 +87,8 @@
                         <option value="" th:selected="${trangThaiHoanTien == null or trangThaiHoanTien == ''}">-- Tất cả --</option>
                         <option value="Cho xu ly" th:selected="${trangThaiHoanTien == 'Cho xu ly'}">Chờ xử lý</option>
                         <option value="Da hoan" th:selected="${trangThaiHoanTien == 'Da hoan'}">Đã hoàn</option>
+                        <option value="Da hoan du" th:selected="${trangThaiHoanTien == 'Da hoan du'}">Đã hoàn đủ</option>
+                        <option value="Huy khong hoan" th:selected="${trangThaiHoanTien == 'Huy khong hoan'}">Hủy không hoàn</option>
                         <option value="Tu choi" th:selected="${trangThaiHoanTien == 'Tu choi'}">Từ chối</option>
                     </select>
                 </div>
@@ -130,12 +147,28 @@
                         #temporals.format(hd.ngayYeuCauHoan,'dd/MM/yyyy HH:mm') : '-'}">
                     </td>
 
+                    <!--
+                        Ánh xạ đầy đủ trạng thái hoàn tiền -> class CSS + nhãn hiển thị:
+                        Cho xu ly       -> cho-xu-ly      -> Chờ xử lý
+                        Da hoan         -> da-hoan         -> Đã hoàn
+                        Da hoan du      -> da-hoan-du      -> Đã hoàn đủ
+                        Huy khong hoan  -> huy-khong-hoan  -> Hủy không hoàn
+                        (còn lại, vd Tu choi) -> tu-choi   -> Từ chối
+                    -->
                     <td>
                         <span class="refund-badge"
-                              th:classappend="${hd.trangThaiHoanTien == 'Cho xu ly' ? 'cho-xu-ly' :
-                                                (hd.trangThaiHoanTien == 'Da hoan' ? 'da-hoan' : 'tu-choi')}"
-                              th:text="${hd.trangThaiHoanTien == 'Cho xu ly' ? 'Chờ xử lý' :
-                                         (hd.trangThaiHoanTien == 'Da hoan' ? 'Đã hoàn' : 'Từ chối')}">
+                              th:classappend="${
+                                  hd.trangThaiHoanTien == 'Cho xu ly' ? 'cho-xu-ly' :
+                                  (hd.trangThaiHoanTien == 'Da hoan' ? 'da-hoan' :
+                                  (hd.trangThaiHoanTien == 'Da hoan du' ? 'da-hoan-du' :
+                                  (hd.trangThaiHoanTien == 'Huy khong hoan' ? 'huy-khong-hoan' :
+                                  'tu-choi')))}"
+                              th:text="${
+                                  hd.trangThaiHoanTien == 'Cho xu ly' ? 'Chờ xử lý' :
+                                  (hd.trangThaiHoanTien == 'Da hoan' ? 'Đã hoàn' :
+                                  (hd.trangThaiHoanTien == 'Da hoan du' ? 'Đã hoàn đủ' :
+                                  (hd.trangThaiHoanTien == 'Huy khong hoan' ? 'Hủy không hoàn' :
+                                  'Từ chối')))}">
                         </span>
                     </td>
 
@@ -151,6 +184,28 @@
                 </tr>
                 </tbody>
             </table>
+        </div>
+
+        <div class="admin-pagination" th:if="${totalPages > 1}">
+            <a th:if="${currentPage > 0}"
+               th:href="@{/nhan-su/admin/hoan-tien(page=${currentPage - 1}, trangThaiHoanTien=${trangThaiHoanTien})}"
+               class="admin-btn small outline">&laquo; Trước</a>
+
+            <span th:each="i : ${#numbers.sequence(0, totalPages - 1)}">
+                <a th:href="@{/nhan-su/admin/hoan-tien(page=${i}, trangThaiHoanTien=${trangThaiHoanTien})}"
+                   th:text="${i + 1}"
+                   th:classappend="${i == currentPage} ? ' active'"
+                   class="admin-btn small outline page-link"></a>
+            </span>
+
+            <a th:if="${currentPage < totalPages - 1}"
+               th:href="@{/nhan-su/admin/hoan-tien(page=${currentPage + 1}, trangThaiHoanTien=${trangThaiHoanTien})}"
+               class="admin-btn small outline">Sau &raquo;</a>
+
+            <span class="refund-tyle" style="margin-left:10px;">
+                Trang <span th:text="${currentPage + 1}"></span>/<span th:text="${totalPages}"></span>
+                (<span th:text="${totalItems}"></span> yêu cầu)
+            </span>
         </div>
     </section>
 </main>

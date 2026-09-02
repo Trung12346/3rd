@@ -18,6 +18,7 @@
         }
         .refund-badge.cho-xu-ly { background: #FEF3C7; color: #92400E; border: 1px solid #F59E0B; }
         .refund-badge.da-hoan   { background: #DCFCE7; color: #166534; border: 1px solid #22C55E; }
+        .refund-badge.da-hoan-du { background: #DBEAFE; color: #1E40AF; border: 1px solid #3B82F6; }
         .refund-badge.tu-choi   { background: #FEE2E2; color: #991B1B; border: 1px solid #EF4444; }
         .refund-badge.huy-khong-hoan { background: #E0E7FF; color: #3730A3; border: 1px solid #6366F1; }
 
@@ -267,15 +268,21 @@
             <div class="refund-row">
                 <span>Trạng thái hoàn tiền</span>
                 <span>
-                    <span class="refund-badge"
-                          th:classappend="${hoaDon.trangThaiHoanTien == 'Cho xu ly' ? 'cho-xu-ly' :
-                                            (hoaDon.trangThaiHoanTien == 'Da hoan' ? 'da-hoan' :
-                                            (hoaDon.trangThaiHoanTien == 'Huy khong hoan' ? 'huy-khong-hoan' : 'tu-choi'))}"
-                          th:text="${hoaDon.trangThaiHoanTien == 'Cho xu ly' ? 'Chờ xử lý' :
-                                     (hoaDon.trangThaiHoanTien == 'Da hoan' ? 'Đã hoàn' :
-                                     (hoaDon.trangThaiHoanTien == 'Huy khong hoan' ? 'Hủy không hoàn' : 'Từ chối'))}">
-                    </span>
-                </span>
+        <span class="refund-badge"
+              th:classappend="${
+                  hoaDon.trangThaiHoanTien == 'Cho xu ly' ? 'cho-xu-ly' :
+                  (hoaDon.trangThaiHoanTien == 'Da hoan' ? 'da-hoan' :
+                  (hoaDon.trangThaiHoanTien == 'Da hoan du' ? 'da-hoan-du' :
+                  (hoaDon.trangThaiHoanTien == 'Huy khong hoan' ? 'huy-khong-hoan' :
+                  'tu-choi')))}"
+              th:text="${
+                  hoaDon.trangThaiHoanTien == 'Cho xu ly' ? 'Chờ xử lý' :
+                  (hoaDon.trangThaiHoanTien == 'Da hoan' ? 'Đã hoàn' :
+                  (hoaDon.trangThaiHoanTien == 'Da hoan du' ? 'Đã hoàn đủ' :
+                  (hoaDon.trangThaiHoanTien == 'Huy khong hoan' ? 'Hủy không hoàn' :
+                  'Từ chối')))}">
+        </span>
+    </span>
             </div>
             <div class="refund-row total">
                 <span>Số tiền cần hoàn</span>
@@ -355,13 +362,13 @@
                     <label>Giá hoàn tiền (VND) <span style="color:#dc2626;">*</span></label>
                     <input type="text" inputmode="numeric" class="money-input" name="soTienHoanNhap" id="soTienHoanNhap"
                            th:value="${hoaDon.soTienHoan != null ? hoaDon.soTienHoan : 0}"
-                           th:readonly="${hoaDon.tyLeHoan == null or hoaDon.tyLeHoan.signum() != 0}"
+                           readonly
                            th:required="${hoaDon.tyLeHoan == null or hoaDon.tyLeHoan.signum() != 0}">
                     <small class="form-hint"
                            th:text="${hoaDon.tyLeHoan != null and hoaDon.tyLeHoan.signum() == 0}
                                     ? 'Đơn không có khoản hoàn — số tiền hiển thị để đối chiếu.'
-                                    : 'Đã được hệ thống tính sẵn theo tỷ lệ. Có thể chỉnh nếu cần.'">
-                        Đã được hệ thống tính sẵn theo tỷ lệ. Có thể chỉnh nếu cần.
+                                    : 'Đã được hệ thống tính sẵn theo tỷ lệ. Không thể chỉnh sửa.'">
+                        Đã được hệ thống tính sẵn theo tỷ lệ. Không thể chỉnh sửa.
                     </small>
                 </div>
                 <div class="admin-field">
