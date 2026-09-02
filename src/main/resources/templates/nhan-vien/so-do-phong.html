@@ -132,6 +132,41 @@
             padding:10px 12px; font-size:13px;
         }
 
+        /* ---- Popup canh bao CCCD khong khop (thay cho confirm() mac dinh) ---- */
+        .sdp-cccd-warn-overlay {
+            display:none; position:fixed; inset:0; background:rgba(15,23,42,0.5);
+            z-index:1200; align-items:center; justify-content:center; padding:16px;
+        }
+        .sdp-cccd-warn-overlay.open { display:flex; }
+        .sdp-cccd-warn-box {
+            background:#fff; border-radius:16px; max-width:440px; width:100%;
+            box-shadow:0 24px 60px rgba(15,23,42,0.3); overflow:hidden;
+            animation: sdpCccdWarnPop .18s ease-out;
+        }
+        @keyframes sdpCccdWarnPop {
+            from { opacity:0; transform:scale(.96) translateY(6px); }
+            to   { opacity:1; transform:scale(1) translateY(0); }
+        }
+        .sdp-cccd-warn-icon {
+            width:52px; height:52px; border-radius:50%; background:#fff7ed;
+            border:1px solid #fed7aa; display:flex; align-items:center; justify-content:center;
+            font-size:24px; color:#ea580c; margin:24px auto 0;
+        }
+        .sdp-cccd-warn-body { padding:14px 26px 6px; text-align:center; }
+        .sdp-cccd-warn-body h3 { margin:0 0 8px; font-size:16px; color:#1f2937; }
+        .sdp-cccd-warn-body p {
+            margin:0; font-size:13.5px; line-height:1.55; color:#475569;
+        }
+        .sdp-cccd-warn-msg {
+            display:block; margin-top:10px; padding:10px 12px; border-radius:8px;
+            background:#fff7ed; border:1px solid #fed7aa; color:#9a3412;
+            font-size:13px; text-align:left; font-weight:600;
+        }
+        .sdp-cccd-warn-footer {
+            display:flex; gap:10px; padding:22px 26px 24px;
+        }
+        .sdp-cccd-warn-footer button { flex:1; }
+
         .sdp-layout {
             display: grid; grid-template-columns: 190px 1fr 360px; gap: 20px; align-items: start;
         }
@@ -1607,6 +1642,23 @@
     </div>
 </div>
 
+<!-- Popup canh bao CCCD/CMND khong khop khi nhan phong 1 phong 1 nguoi
+     (thay cho confirm() mac dinh cua trinh duyet) -->
+<div class="sdp-cccd-warn-overlay" id="sdpCccdWarnOverlay" role="dialog" aria-modal="true" aria-labelledby="sdpCccdWarnTitle">
+    <div class="sdp-cccd-warn-box">
+        <div class="sdp-cccd-warn-icon">&#9888;</div>
+        <div class="sdp-cccd-warn-body">
+            <h3 id="sdpCccdWarnTitle">Số giấy tờ không khớp</h3>
+            <p>Số CCCD/CMND lúc đặt phòng khác với giấy tờ khách xuất trình khi check-in.</p>
+            <span class="sdp-cccd-warn-msg" id="sdpCccdWarnMsg"></span>
+        </div>
+        <div class="sdp-cccd-warn-footer">
+            <button type="button" class="sdp-btn-secondary" id="sdpCccdWarnCancelBtn">Hủy, kiểm tra lại</button>
+            <button type="button" class="sdp-btn-danger" id="sdpCccdWarnOkBtn">Vẫn tiếp tục nhận phòng</button>
+        </div>
+    </div>
+</div>
+
 <!-- Panel nhap chi tiet 1 giay to (mo khi bam vao 1 Document box) -->
 <div class="sdp-giayto-fields-backdrop" id="sdpGiayToFieldsBackdrop"></div>
 <div class="sdp-giayto-fields-panel" id="sdpGiayToFieldsPanel" role="dialog" aria-modal="true">
@@ -2829,6 +2881,44 @@
             return tt;
         }
 
+        /**
+         * Popup canh bao "so CCCD/CMND khong khop" khi nhan phong 1 phong 1
+         * nguoi - thay cho confirm() mac dinh cua trinh duyet.
+         * Tra ve Promise<boolean>: resolve(true) neu nhan vien bam "Van tiep
+         * tuc nhan phong", resolve(false) neu bam "Huy, kiem tra lai" / Esc /
+         * click ra ngoai.
+         */
+        function sdpShowCccdWarnPopup(message) {
+            return new Promise(function (resolve) {
+                var overlay = document.getElementById('sdpCccdWarnOverlay');
+                var msgEl = document.getElementById('sdpCccdWarnMsg');
+                var okBtn = document.getElementById('sdpCccdWarnOkBtn');
+                var cancelBtn = document.getElementById('sdpCccdWarnCancelBtn');
+
+                msgEl.textContent = message || 'Số CCCD/CMND lúc đặt phòng không khớp với giấy tờ check-in.';
+                overlay.classList.add('open');
+
+                function cleanup(result) {
+                    overlay.classList.remove('open');
+                    okBtn.removeEventListener('click', onOk);
+                    cancelBtn.removeEventListener('click', onCancel);
+                    overlay.removeEventListener('click', onOverlayClick);
+                    document.removeEventListener('keydown', onKeydown);
+                    resolve(result);
+                }
+                function onOk() { cleanup(true); }
+                function onCancel() { cleanup(false); }
+                function onOverlayClick(e) { if (e.target === overlay) cleanup(false); }
+                function onKeydown(e) { if (e.key === 'Escape') cleanup(false); }
+
+                okBtn.addEventListener('click', onOk);
+                cancelBtn.addEventListener('click', onCancel);
+                overlay.addEventListener('click', onOverlayClick);
+                document.addEventListener('keydown', onKeydown);
+                okBtn.focus();
+            });
+        }
+
         document.getElementById('sdpGiayToTiepTucBtn').addEventListener('click', function () {
             if (!giayToState) return;
 
@@ -2874,6 +2964,19 @@
                 .then(function (kq) {
                     if (!kq.ok) {
                         alert(kq.loi || 'Không thể lưu giấy tờ.');
+                        return;
+                    }
+                    if (kq.canhBaoCccd) {
+                        sdpShowCccdWarnPopup(kq.canhBaoCccdMessage).then(function (tiepTuc) {
+                            if (!tiepTuc) return; // nhan vien huy - giay to van da duoc luu, chi dung lai o buoc nhan phong
+                            var laNhom = giayToState.laNhom;
+                            dongModalGiayTo();
+                            if (laNhom) {
+                                thucHienNhanPhongNhom(card, don, false);
+                            } else {
+                                thucHienNhanPhong(card, don, false); // tiep tuc flow nhan phong nhu cu
+                            }
+                        });
                         return;
                     }
                     var laNhom = giayToState.laNhom;
@@ -3210,6 +3313,36 @@
         // nhau: NEU CHUA HOP LE THI KHONG CHO LUU.
         var sdpRowGiayToPhongs = {}; // chiTietId -> { chiTietId, sucChua, docs: [...] }
         var sdpRowGiayToDonId = null;
+        var sdpRowGiayToSoNguoiLon = 0; // so nguoi lon cua CA DON - gioi han TONG so giay to co the them (giong modal check-in)
+
+        function tongSoGiayToDaNhapChoDon() {
+            var tong = 0;
+            Object.keys(sdpRowGiayToPhongs).forEach(function (id) {
+                tong += sdpRowGiayToPhongs[id].docs.length;
+            });
+            return tong;
+        }
+
+        // Them/xoa giay to o 1 phong lam thay doi TONG so giay to ca don, nen nut
+        // "Thêm giấy tờ" o CAC HANG KHAC cung phai duoc cap nhat lai trang thai
+        // disabled (khong can ve lai toan bo khung, chi doi class + title).
+        function capNhatTatCaAddBoxTheoSoNguoiLon() {
+            var tongSoGiayToCaDon = tongSoGiayToDaNhapChoDon();
+            Object.keys(sdpRowGiayToPhongs).forEach(function (chiTietId) {
+                var phong = sdpRowGiayToPhongs[chiTietId];
+                var container = donContent.querySelector('[data-sdp-giayto-row="' + chiTietId + '"]');
+                if (!container) return;
+                var addBox = container.querySelector('.sdp-giayto-add-box');
+                if (!addBox) return;
+                var daDuPhong = !!(phong.sucChua && phong.docs.length >= phong.sucChua);
+                var daDuNguoiLon = !!(sdpRowGiayToSoNguoiLon && tongSoGiayToCaDon >= sdpRowGiayToSoNguoiLon);
+                var daDu = daDuPhong || daDuNguoiLon;
+                addBox.classList.toggle('disabled', daDu);
+                addBox.title = daDuNguoiLon
+                    ? ('Đã đủ số giấy tờ theo số người lớn của đơn (' + sdpRowGiayToSoNguoiLon + ').')
+                    : (daDuPhong ? 'Đã đủ số giấy tờ theo sức chứa phòng.' : '');
+            });
+        }
 
         function taiGiayToChoCacHangCuaDon(donId) {
             var rows = donContent.querySelectorAll('.dp-form-row[data-ct-id]');
@@ -3217,6 +3350,7 @@
 
             sdpRowGiayToDonId = donId;
             sdpRowGiayToPhongs = {};
+            sdpRowGiayToSoNguoiLon = 0;
 
             fetch(CTX_URL_CHECK_IN_API + donId + CTX_URL_GIAYTO_INFO_SUFFIX, { headers: { 'Accept': 'application/json' } })
                 .then(function (res) { return res.json(); })
@@ -3224,11 +3358,14 @@
                     if (!kq.ok) return;
                     var theoChiTiet = {};
                     (kq.phongs || []).forEach(function (p) { theoChiTiet[p.chiTietId] = p; });
+                    sdpRowGiayToSoNguoiLon = kq.soNguoiLon || 0;
 
+                    // Buoc 1: dung TAT CA phong truoc, de khi ve giao dien co the tinh
+                    // TONG so giay to cua CA DON (khong chi rieng hang dang duyet).
                     rows.forEach(function (row) {
                         var chiTietId = parseInt(row.getAttribute('data-ct-id'), 10);
                         var p = theoChiTiet[chiTietId];
-                        var phong = {
+                        sdpRowGiayToPhongs[chiTietId] = {
                             chiTietId: chiTietId,
                             sucChua: p ? (p.sucChua || 0) : 0,
                             docs: (p && p.giayTo ? p.giayTo : []).map(function (g) {
@@ -3236,8 +3373,11 @@
                                 return g;
                             })
                         };
-                        sdpRowGiayToPhongs[chiTietId] = phong;
+                    });
 
+                    // Buoc 2: tao khung + ve giao dien cho tung hang.
+                    rows.forEach(function (row) {
+                        var chiTietId = parseInt(row.getAttribute('data-ct-id'), 10);
                         var head = row.querySelector('.dp-form-row-head');
                         if (!head || row.querySelector('[data-sdp-giayto-row]')) return;
                         var box = document.createElement('div');
@@ -3257,6 +3397,11 @@
             var phong = sdpRowGiayToPhongs[chiTietId];
             if (!phong) return;
             if (phong.sucChua && phong.docs.length >= phong.sucChua) {
+                capNhatTrangThaiLoiGiayToRow(chiTietId);
+                return;
+            }
+            // Chan them khi TONG so giay to da nhap (ca don) >= so nguoi lon cua don.
+            if (sdpRowGiayToSoNguoiLon && tongSoGiayToDaNhapChoDon() >= sdpRowGiayToSoNguoiLon) {
                 capNhatTrangThaiLoiGiayToRow(chiTietId);
                 return;
             }
@@ -3383,10 +3528,18 @@
 
             var addBox = container.querySelector('.sdp-giayto-add-box');
             if (addBox) {
-                var daDu = !!(phong.sucChua && phong.docs.length >= phong.sucChua);
+                var daDuPhong = !!(phong.sucChua && phong.docs.length >= phong.sucChua);
+                var tongSoGiayToCaDon = tongSoGiayToDaNhapChoDon();
+                var daDuNguoiLon = !!(sdpRowGiayToSoNguoiLon && tongSoGiayToCaDon >= sdpRowGiayToSoNguoiLon);
+                var daDu = daDuPhong || daDuNguoiLon;
                 addBox.classList.toggle('disabled', daDu);
-                addBox.title = daDu ? 'Đã đủ số giấy tờ theo sức chứa phòng.' : '';
+                addBox.title = daDuNguoiLon
+                    ? ('Đã đủ số giấy tờ theo số người lớn của đơn (' + sdpRowGiayToSoNguoiLon + ').')
+                    : (daDuPhong ? 'Đã đủ số giấy tờ theo sức chứa phòng.' : '');
             }
+            // Dong bo lai trang thai disabled cua nut "Thêm giấy tờ" o CAC HANG KHAC,
+            // vi gioi han la theo TONG so giay to ca don (khong chi rieng hang nay).
+            capNhatTatCaAddBoxTheoSoNguoiLon();
 
             var saveBtn = container.querySelector('.sdp-giayto-row-save');
             if (saveBtn) {
@@ -3463,7 +3616,12 @@
                         statusEl.textContent = 'Đã lưu lúc ' + new Date().toLocaleTimeString('vi-VN');
                     }
                     capNhatTrangThaiLoiGiayToRow(chiTietId);
-                    staffToast('Đã lưu giấy tờ thành công.', 'success');
+                    if (kq.canhBaoCccd) {
+                        // 'info' = xanh duong: chi la canh bao doi soat, khong phai loi (toast chua co bien the 'warning')
+                        staffToast(kq.canhBaoCccdMessage || 'Số CCCD/CMND lúc đặt phòng không khớp với giấy tờ check-in.', 'info', 6000);
+                    } else {
+                        staffToast('Đã lưu giấy tờ thành công.', 'success');
+                    }
                 })
                 .catch(function () {
                     if (statusEl) {
@@ -6027,7 +6185,8 @@
         var SELECTOR_DANG_MO = [
             '.sdp-vs-backdrop.open', '.sdp-ctx-menu.open', '.sdp-ctx-backdrop.open',
             '.sdp-policy-modal.open', '.sdp-giayto-modal.open', '.sdp-giayto-fields-panel.open',
-            '.sdp-info-sidebar.open', '.sdp-lich-sidebar.open', '.sdp-don-sidebar.open'
+            '.sdp-info-sidebar.open', '.sdp-lich-sidebar.open', '.sdp-don-sidebar.open',
+            '.sdp-cccd-warn-overlay.open'
         ].join(', ');
 
         // Mot so modal khac (vd modal huy don) khong dung class .open ma bat/tat

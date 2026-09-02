@@ -55,7 +55,7 @@
 
 
                 <div class="admin-field">
-                    <label>Ho ten</label>
+                    <label>Họ tên</label>
                     <input type="text" th:field="*{hoTen}" placeholder="VD: Nguyen Van A" >
                 </div>
 
@@ -70,7 +70,7 @@
                 </div>
 
                 <div class="admin-field">
-                    <label>Mat khau</label>
+                    <label>Mật khẩu</label>
                     <input type="password"
                            name="matKhauMoi"
                            placeholder="Nhap khi them moi hoac muon doi">
@@ -82,7 +82,7 @@
                        th:type="hidden" th:if="${ma_khach_hang != null}">
 
                 <div class="admin-field">
-                    <label>So dien thoai</label>
+                    <label>Số điện thoại</label>
                     <input type="tel"
                            th:field="*{soDienThoai}"
                            placeholder="VD: 0912345678"
@@ -95,7 +95,7 @@
                 </div>
 
                 <div class="admin-field" style="display: none">
-                    <label>Vai tro</label>
+                    <label>Vai trò</label>
                     <select th:field="*{vaiTro}" hidden>
                         <option value="">-- Chon vai tro --</option>
                         <option th:each="vt : ${vaiTros}"
@@ -107,7 +107,7 @@
                 </div>
 
                 <div class="admin-field" th:if="${khachHang.ma_khach_hang != null}">
-                    <label>Trang thai</label>
+                    <label>Trạng thái</label>
                     <select th:field="*{trangThai}">
                         <option th:value="true">Hoat dong</option>
                         <option th:value="false">Khoa</option>
@@ -115,7 +115,7 @@
                 </div>
 
                 <div class="admin-field full">
-                    <label>Dia chi</label>
+                    <label>Địa chỉ</label>
                     <textarea th:field="*{diaChi}" placeholder="So nha, duong, tinh/TP..."></textarea>
                 </div>
             </div>

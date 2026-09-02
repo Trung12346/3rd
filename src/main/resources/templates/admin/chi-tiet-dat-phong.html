@@ -86,6 +86,9 @@
         .cdp-date-field { flex: 1; padding: 10px 12px; cursor: pointer; transition: background .15s; }
         .cdp-date-field:first-child { border-right: 1px solid #dbe3ee; }
         .cdp-date-field:hover, .cdp-date-field.active { background: #eef6fc; }
+        .cdp-date-field.cdp-readonly { cursor: not-allowed; pointer-events: none; opacity: .85; }
+        .cdp-date-field.cdp-readonly:hover { background: transparent; }
+        .stay-gio-grid input[type="time"]:disabled { background: #f3f4f6; color: #6b7280; cursor: not-allowed; }
         .cdp-date-field label {
             display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700;
             color: #64748b; text-transform: uppercase; letter-spacing: .02em; margin-bottom: 3px;
@@ -628,9 +631,9 @@
                     <input type="text" name="maCccd" th:value="${datPhong.ma_cccd}"
                            th:readonly="${hoaDonDaXuat}">
                 </div>
-                <p style="grid-column:1 / -1; font-size:12px; color:#94a3b8; margin:0;">
-                    Họ tên / email / SĐT thuộc tài khoản khách — sửa ở đây sẽ áp dụng cho toàn bộ tài khoản, ảnh hưởng cả các đơn khác của khách này.
-                </p>
+<!--                <p style="grid-column:1 / -1; font-size:12px; color:#94a3b8; margin:0;">-->
+<!--                    Họ tên / email / SĐT thuộc tài khoản khách — sửa ở đây sẽ áp dụng cho toàn bộ tài khoản, ảnh hưởng cả các đơn khác của khách này.-->
+<!--                </p>-->
             </th:block>
 
             <button type="submit" class="btn-thu-tien" style="grid-column:1 / -1; justify-self:start;"
@@ -892,18 +895,18 @@
                         <div class="stay-field">
                             <label>Ngày nhận / trả phòng</label>
                             <div class="cdp-dates" id="cdpDatesRow">
-                                <div class="cdp-date-field" data-field="checkin" id="cdpCheckinField">
+                                <div class="cdp-date-field cdp-readonly" data-field="checkin" id="cdpCheckinField">
                                     <label><i class="fa-regular fa-calendar"></i> Nhận phòng</label>
                                     <span class="cdp-date-value placeholder" id="cdpCheckinDisplay">Chọn ngày</span>
                                 </div>
-                                <div class="cdp-date-field" data-field="checkout" id="cdpCheckoutField">
+                                <div class="cdp-date-field cdp-readonly" data-field="checkout" id="cdpCheckoutField">
                                     <label><i class="fa-regular fa-calendar"></i> Trả phòng</label>
                                     <span class="cdp-date-value placeholder" id="cdpCheckoutDisplay">Chọn ngày</span>
                                 </div>
                             </div>
                             <div class="cdp-field-error" id="cdpNgayError"></div>
 
-                            <div class="cdp-cal-wrap" id="cdpCalWrap">
+                            <div class="cdp-cal-wrap" id="cdpCalWrap" style="display:none;">
                                 <div class="cdp-cal-legend">
                                     Chọn ngày <strong>nhận phòng</strong>, sau đó chọn ngày <strong>trả phòng</strong>
                                     <span class="cdp-cal-legend-booked">
@@ -921,11 +924,11 @@
                         <div class="stay-gio-grid">
                             <div class="stay-field">
                                 <label>Giờ nhận phòng</label>
-                                <input type="time" id="gioNhan">
+                                <input type="time" id="gioNhan" readonly>
                             </div>
                             <div class="stay-field">
                                 <label>Giờ trả phòng</label>
-                                <input type="time" id="gioTra">
+                                <input type="time" id="gioTra" readonly>
                             </div>
                         </div>
 
@@ -955,7 +958,8 @@
                             <span class="cdp-panel-sub" th:text="${chiTietDatPhongList != null ? #lists.size(chiTietDatPhongList) : 0} + ' phòng'">1 phòng</span>
                         </div>
                         <div th:each="ct : ${chiTietDatPhongList}" class="room-row"
-                             th:attr="data-gia=${ct.p != null ? ct.p.giaMoiDem : 0}, data-ma-phong=${ct.p != null ? ct.p.maPhong : 0}">
+                             th:attr="data-gia=${ct.p != null ? ct.p.giaMoiDem : 0}, data-ma-phong=${ct.p != null ? ct.p.maPhong : 0},
+                                      data-suc-chua=${ct.p != null and ct.p.loaiPhong != null and ct.p.loaiPhong.sucChuaToiDa != null ? ct.p.loaiPhong.sucChuaToiDa : 0}">
                             <div>
                                 <div class="room-name"
                                      th:text="'Phòng ' + (${ct.p != null ? ct.p.soPhong : ''}) + ' - ' + (${ct.p != null and ct.p.loaiPhong != null ? ct.p.loaiPhong.tenLoai : ''})">
@@ -1203,6 +1207,32 @@
         const giaCacPhong = Array.from(document.querySelectorAll('.room-row'))
             .map(el => parseFloat(el.dataset.gia) || 0);
         const tongGiaMoiDem = giaCacPhong.reduce((a, b) => a + b, 0);
+
+        // Gioi han "Nguoi lon" theo TONG suc chua toi da cua cac phong da dat,
+        // va "Tre em" toi da 1 (giong quy tac o cac form dat/doi phong khac).
+        (function () {
+            const tongSucChua = Array.from(document.querySelectorAll('.room-row'))
+                .map(el => parseInt(el.dataset.sucChua, 10) || 0)
+                .reduce((a, b) => a + b, 0);
+            const nguoiLonEl = document.getElementById('nguoiLon');
+            const treEmEl = document.getElementById('treEm');
+
+            if (nguoiLonEl && tongSucChua > 0) {
+                nguoiLonEl.max = tongSucChua;
+                if (parseInt(nguoiLonEl.value, 10) > tongSucChua) nguoiLonEl.value = tongSucChua;
+                nguoiLonEl.addEventListener('input', function () {
+                    if (parseInt(nguoiLonEl.value, 10) > tongSucChua) nguoiLonEl.value = tongSucChua;
+                });
+            }
+
+            if (treEmEl) {
+                treEmEl.max = 1;
+                if (parseInt(treEmEl.value, 10) > 1) treEmEl.value = 1;
+                treEmEl.addEventListener('input', function () {
+                    if (parseInt(treEmEl.value, 10) > 1) treEmEl.value = 1;
+                });
+            }
+        })();
 
         const ngayNhanEl = document.getElementById('ngayNhan');
         const ngayTraEl  = document.getElementById('ngayTra');
@@ -2120,8 +2150,9 @@
                 checkoutField.classList.toggle('active', willOpen);
                 if (willOpen) requestAnimationFrame(function () { picker.refresh(); });
             }
-            checkinField.addEventListener('click', toggleCalendar);
-            checkoutField.addEventListener('click', toggleCalendar);
+            // Ngay nhan/tra phong la readonly: khong cho mo lich de chinh sua
+            // checkinField.addEventListener('click', toggleCalendar);
+            // checkoutField.addEventListener('click', toggleCalendar);
             var calClearBtn = document.getElementById('cdpCalClear');
             var calApplyBtn = document.getElementById('cdpCalApply');
             if (calClearBtn) calClearBtn.addEventListener('click', function () { picker.reset(); capNhatHiddenTuPicker(); clearError(); });
@@ -2129,6 +2160,15 @@
 
             if (gioNhanEl) gioNhanEl.addEventListener('change', capNhatHiddenTuPicker);
             if (gioTraEl) gioTraEl.addEventListener('change', capNhatHiddenTuPicker);
+
+            // Gio nhan/tra readonly: input[type=time] khong chan duoc thao tac chi bang thuoc tinh
+            // readonly, nen chan them phim tat va click chuot de dam bao khong the chinh sua.
+            [gioNhanEl, gioTraEl].forEach(function (el) {
+                if (!el) return;
+                el.addEventListener('keydown', function (e) { e.preventDefault(); });
+                el.addEventListener('mousedown', function (e) { e.preventDefault(); el.blur(); });
+                el.addEventListener('wheel', function (e) { e.preventDefault(); }, { passive: false });
+            });
 
             (function initTuGiaTriHienCo() {
                 var dt1 = splitDateTime(ngayNhanHidden.value);

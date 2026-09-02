@@ -252,13 +252,26 @@ public class AdminDatPhongController {
         model.addAttribute("daThanhToanHd", daThanhToanHd);
 
         List<Phong> tatCaPhong = phongService.findAllPhong();
+        // Chi hien cac phong con TRONG thuc su trong dung khoang ngay o cua
+        // don nay (dung chung "room availability engine" voi
+        // searchLoaiPhongKhaDung()/assignRoomsForType() ben PhongService,
+        // dua tren chong lan lich qua findMaPhongDaKhoaTrongKhoang), thay vi
+        // liet ke toan bo phong dang hoat dong nhu truoc.
+        List<Phong> phongAvailableList = tatCaPhong;
+        if (datPhong.getNgaydatPhong() != null && datPhong.getNgaytraPhong() != null) {
+            Set<Integer> maPhongDaKhoaLich = phongService.findMaPhongDaKhoaTrongKhoang(
+                    datPhong.getNgaydatPhong(), datPhong.getNgaytraPhong());
+            phongAvailableList = tatCaPhong.stream()
+                    .filter(p -> !maPhongDaKhoaLich.contains(p.getMaPhong()))
+                    .collect(Collectors.toList());
+        }
         List<Integer> phongDangDungTrongDon = new ArrayList<>();
         for (ChiTietDatPhong ct : chiTietDatPhongList) {
             if (ct != null && ct.getP() != null) {
                 phongDangDungTrongDon.add(ct.getP().getMaPhong());
             }
         }
-        model.addAttribute("phongAvailableList", tatCaPhong);
+        model.addAttribute("phongAvailableList", phongAvailableList);
         model.addAttribute("phongDangDungTrongDon", phongDangDungTrongDon);
 
         Map<Integer, String> cccdPhongMap = new HashMap<>();

@@ -246,13 +246,26 @@ public class NhanVienDatPhongController {
         model.addAttribute("daThanhToanHd", daThanhToanHd);
 
         List<Phong> tatCaPhong = phongService.findAllPhong();
+        // Chi hien cac phong con TRONG thuc su trong dung khoang ngay o cua
+        // don nay (dung chung "room availability engine" voi
+        // searchLoaiPhongKhaDung()/assignRoomsForType() ben PhongService,
+        // dua tren chong lan lich qua findMaPhongDaKhoaTrongKhoang), thay vi
+        // liet ke toan bo phong dang hoat dong nhu truoc.
+        List<Phong> phongAvailableList = tatCaPhong;
+        if (datPhong.getNgaydatPhong() != null && datPhong.getNgaytraPhong() != null) {
+            Set<Integer> maPhongDaKhoaLich = phongService.findMaPhongDaKhoaTrongKhoang(
+                    datPhong.getNgaydatPhong(), datPhong.getNgaytraPhong());
+            phongAvailableList = tatCaPhong.stream()
+                    .filter(p -> !maPhongDaKhoaLich.contains(p.getMaPhong()))
+                    .collect(Collectors.toList());
+        }
         List<Integer> phongDangDungTrongDon = new ArrayList<>();
         for (ChiTietDatPhong ct : chiTietDatPhongList) {
             if (ct != null && ct.getP() != null) {
                 phongDangDungTrongDon.add(ct.getP().getMaPhong());
             }
         }
-        model.addAttribute("phongAvailableList", tatCaPhong);
+        model.addAttribute("phongAvailableList", phongAvailableList);
         model.addAttribute("phongDangDungTrongDon", phongDangDungTrongDon);
 
         Map<Integer, String> cccdPhongMap = new HashMap<>();
@@ -1122,7 +1135,8 @@ public class NhanVienDatPhongController {
     @PostMapping("/so-do-phong/check-in/{maDatPhong}/giay-to")
     @ResponseBody
     public Map<String, Object> luuGiayToTuSoDoPhong(@PathVariable int maDatPhong,
-                                                    @RequestParam(name = "data") String dataJson) {
+                                                    @RequestParam(name = "data") String dataJson,
+                                                    Authentication authentication) {
         Map<String, Object> result = new LinkedHashMap<>();
         DatPhong dp = datPhongService.findById(maDatPhong);
         if (dp == null) {
@@ -1178,6 +1192,52 @@ public class NhanVienDatPhongController {
             entity.setNgayCap(gt.getNgayCap());
             entity.setQuocGiaCapPhat(gt.getQuocGiaCapPhat());
             giayToRepo.save(entity);
+        }
+
+        // ===== Canh bao doi soat CCCD (KHONG chan check-in) =====
+        // Chi so sanh khi don la 1 nguoi lon, 1 phong (de tranh nham lan khi
+        // nguoi dat khong phai la khach o - vd: dat ho, dat qua dai ly...),
+        // va giay to dai dien la CCCD (khong ap dung cho ho chieu/nuoc ngoai).
+        // Day CHI la canh bao + ghi log, khong chan luu giay to / check-in,
+        // vi ma_cccd tren DatPhong chi la du lieu nguoi dat tu khai (khong
+        // xac thuc that) nen khong du tin cay de chan cung.
+        try {
+            if (dp.getSonguoiLon() == 1 && chiTietHopLe.size() == 1
+                    && dp.getMa_cccd() != null && !dp.getMa_cccd().isBlank()) {
+                Integer chiTietId = chiTietHopLe.get(0);
+                List<GiayTo> dsGiayToPhong = giayToRepo.findByChiTietDatPhong_Id(chiTietId);
+                GiayTo daiDien = dsGiayToPhong.stream()
+                        .filter(gt -> Boolean.TRUE.equals(gt.getCoDaiDien())
+                                && "CCCD".equalsIgnoreCase(gt.getLoaiGiayTo()))
+                        .findFirst()
+                        .orElse(dsGiayToPhong.stream()
+                                .filter(gt -> "CCCD".equalsIgnoreCase(gt.getLoaiGiayTo()))
+                                .findFirst()
+                                .orElse(null));
+
+                if (daiDien != null && daiDien.getSoDinhDanh() != null && !daiDien.getSoDinhDanh().isBlank()) {
+                    String maCccdDatPhong = dp.getMa_cccd().trim();
+                    String soDinhDanhGiayTo = daiDien.getSoDinhDanh().trim();
+                    if (!maCccdDatPhong.equalsIgnoreCase(soDinhDanhGiayTo)) {
+                        String ghiChu = "Canh bao doi soat CCCD: so CCCD luc dat phong (\"" + maCccdDatPhong
+                                + "\") khong khop voi so CCCD giay to check-in cua khach dai dien (\""
+                                + soDinhDanhGiayTo + "\") - don #" + maDatPhong
+                                + ", phong (chi_tiet_dat_phong #" + chiTietId + ").";
+
+                        lichSuHoatDongService.ghiLogAn(authentication,
+                                su26sd09.su26sd09.constants.LichSuHoatDongConstants.HD_CHECK_IN,
+                                su26sd09.su26sd09.constants.LichSuHoatDongConstants.DT_DAT_PHONG,
+                                maDatPhong, ghiChu);
+
+                        result.put("canhBaoCccd", true);
+                        result.put("canhBaoCccdMessage",
+                                "So CCCD/CMND luc dat phong khong khop voi giay to check-in cua khach. "
+                                        + "Vui long kiem tra lai truoc khi tiep tuc.");
+                    }
+                }
+            }
+        } catch (Exception ignored) {
+            // Canh bao chi la nghiep vu phu tro, khong duoc lam hong luong luu giay to chinh.
         }
 
         result.put("ok", true);
