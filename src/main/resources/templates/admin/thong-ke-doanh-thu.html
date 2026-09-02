@@ -842,6 +842,30 @@
         </div>
     </section>
 
+    <!-- ===== PHU THU ===== -->
+    <section class="admin-panel">
+        <h2>Phụ Thu</h2>
+        <p class="section-subtitle">Các khoản phụ thu (trả phòng muộn, dọn bàn thêm, ...).</p>
+        <div class="admin-table-wrap">
+            <table class="admin-table">
+                <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Loại Phụ Thu</th>
+                    <th>Số Lượng</th>
+                    <th>Doanh Thu</th>
+                    <th>Tỷ Trọng</th>
+                </tr>
+                </thead>
+                <tbody id="phuThuBody">
+                <tr>
+                    <td colspan="5"><div class="empty-state">Đang tải dữ liệu...</div></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
     <!-- ===== TOP KHACH HANG ===== -->
     <section class="admin-panel">
         <h2>Top 10 Khách Hàng Chi Tiêu Nhiều Nhất</h2>
@@ -914,6 +938,28 @@
                         `).join('');
                 } catch (e) {
                     topDichVuEl.innerHTML = '<tr><td colspan="5"><div class="empty-state">Không thể tải dữ liệu.</div></td></tr>';
+                }
+
+                // ----- Phu thu -----
+                const phuThuEl = document.getElementById('phuThuBody');
+                try {
+                    const phuThu = await fetch(`/nhan-su/admin/thong-ke/phu-thu?tuNgay=${tuNgay}&denNgay=${denNgay}`).then(r => r.json());
+                    phuThuEl.innerHTML = (!phuThu || phuThu.length === 0)
+                        ? '<tr><td colspan="5"><div class="empty-state">Chưa có khoản phụ thu nào trong khoảng thời gian này.</div></td></tr>'
+                        : phuThu.map((r, i) => `
+                            <tr>
+                                <td>${rankBadge(i)}</td>
+                                <td><strong>${r[0]}</strong></td>
+                                <td>${r[1]}</td>
+                                <td>${formatVND(r[2])}</td>
+                                <td class="share-cell">
+                                    <div class="share-bar-wrap"><div class="share-bar" style="width:${r[3]}%"></div></div>
+                                    <span class="share-pct">${formatPercent(r[3])}</span>
+                                </td>
+                            </tr>
+                        `).join('');
+                } catch (e) {
+                    phuThuEl.innerHTML = '<tr><td colspan="5"><div class="empty-state">Không thể tải dữ liệu.</div></td></tr>';
                 }
 
                 // ----- Top khach hang -----

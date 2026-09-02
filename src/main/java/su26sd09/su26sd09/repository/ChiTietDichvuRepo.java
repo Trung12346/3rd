@@ -27,7 +27,12 @@ public interface ChiTietDichvuRepo extends JpaRepository<Chi_tiet_dich_vu,Intege
     @Query("SELECT COALESCE(SUM(c.donGia * c.soluong), 0) FROM Chi_tiet_dich_vu c")
     BigDecimal tongTienDichVu();
 
-    @Query("SELECT c.dv.id, SUM(c.soluong) FROM Chi_tiet_dich_vu c WHERE c.dv IS NOT NULL GROUP BY c.dv.id ORDER BY SUM(c.soluong) DESC")
+    // Loai tru dich vu loai "Phu thu" (phu phi) khoi thong ke - chi tinh dich vu thuc su
+    // de xac dinh "dich vu duoc su dung nhieu nhat", tranh phu thu (VD: tra phong muon,
+    // don ban them...) lan at cac dich vu that.
+    @Query("SELECT c.dv.id, SUM(c.soluong) FROM Chi_tiet_dich_vu c " +
+            "WHERE c.dv IS NOT NULL AND (c.dv.loaiDv IS NULL OR c.dv.loaiDv <> 'Phu thu') " +
+            "GROUP BY c.dv.id ORDER BY SUM(c.soluong) DESC")
     List<Object[]> thongKeSoLuongTheoDichVu();
 
 }

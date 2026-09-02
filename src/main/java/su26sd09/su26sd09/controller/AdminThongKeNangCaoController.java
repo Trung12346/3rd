@@ -50,6 +50,15 @@ public class AdminThongKeNangCaoController {
         return ResponseEntity.ok(tks.getTopDichVu(tuNgay, denNgay));
     }
 
+    /** Card rieng cho phu thu (tra phong muon, don ban them, ...) - tach khoi Top dich vu. */
+    @GetMapping("/phu-thu")
+    public ResponseEntity<List<Object[]>> phuThu(
+            @RequestParam("tuNgay") LocalDate tuNgay,
+            @RequestParam("denNgay") LocalDate denNgay
+    ) {
+        return ResponseEntity.ok(tks.getPhuThu(tuNgay, denNgay));
+    }
+
     @GetMapping("/top-khach-hang")
     public ResponseEntity<List<Object[]>> topKhachHang(
             @RequestParam("tuNgay") LocalDate tuNgay,

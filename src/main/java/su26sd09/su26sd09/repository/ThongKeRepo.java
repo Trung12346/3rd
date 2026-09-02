@@ -195,6 +195,9 @@ public interface ThongKeRepo extends JpaRepository<HoaDon, Integer> {
         """, nativeQuery = true)
     public Double getTongDoanhThuPhongChiTiet(@Param("start") LocalDate start, @Param("end") LocalDate end);
 
+    // Loai tru dich vu loai "Phu thu" khoi Top dich vu theo doanh thu, de ty trong % cua tung
+    // dich vu duoc tinh tren nen doanh thu dich vu THAT (khong bi phu thu lam sai lech).
+    // Phu thu duoc tach rieng qua {@link #getPhuThuTheoLoai} / {@link #getTongDoanhThuPhuThu}.
     @Query(value = """
         SELECT TOP 10
             dv.ten_dich_vu,
@@ -204,6 +207,7 @@ public interface ThongKeRepo extends JpaRepository<HoaDon, Integer> {
         JOIN dich_vu dv  ON ct.ma_dich_vu = dv.ma_dich_vu
         JOIN dat_phong d ON ct.ma_dat_phong = d.ma_dat_phong
         WHERE d.ngay_tao >= :start AND d.ngay_tao < DATEADD(day, 1, :end)
+          AND (dv.loai_dich_vu IS NULL OR dv.loai_dich_vu <> N'Phu thu')
         GROUP BY dv.ten_dich_vu
         ORDER BY SUM(ct.so_luong * ct.don_gia) DESC
         """, nativeQuery = true)
@@ -212,10 +216,43 @@ public interface ThongKeRepo extends JpaRepository<HoaDon, Integer> {
     @Query(value = """
         SELECT COALESCE(SUM(ct.so_luong * ct.don_gia), 0)
         FROM chi_tiet_dich_vu ct
+        JOIN dich_vu dv  ON ct.ma_dich_vu = dv.ma_dich_vu
         JOIN dat_phong d ON ct.ma_dat_phong = d.ma_dat_phong
         WHERE d.ngay_tao >= :start AND d.ngay_tao < DATEADD(day, 1, :end)
+          AND (dv.loai_dich_vu IS NULL OR dv.loai_dich_vu <> N'Phu thu')
         """, nativeQuery = true)
     public Double getTongDoanhThuDichVuChiTiet(@Param("start") LocalDate start, @Param("end") LocalDate end);
+
+    /**
+     * Phu thu (VD: tra phong muon, don ban them...) theo tung loai, tach rieng khoi Top dich vu
+     * de khong lam sai lech ty trong doanh thu cua cac dich vu that.
+     * Moi hang: [ten_dich_vu, so_luong, doanh_thu]
+     */
+    @Query(value = """
+        SELECT
+            dv.ten_dich_vu,
+            SUM(ct.so_luong)               AS so_luong,
+            SUM(ct.so_luong * ct.don_gia)  AS doanh_thu
+        FROM chi_tiet_dich_vu ct
+        JOIN dich_vu dv  ON ct.ma_dich_vu = dv.ma_dich_vu
+        JOIN dat_phong d ON ct.ma_dat_phong = d.ma_dat_phong
+        WHERE d.ngay_tao >= :start AND d.ngay_tao < DATEADD(day, 1, :end)
+          AND dv.loai_dich_vu = N'Phu thu'
+        GROUP BY dv.ten_dich_vu
+        ORDER BY SUM(ct.so_luong * ct.don_gia) DESC
+        """, nativeQuery = true)
+    public List<Object[]> getPhuThuTheoLoai(@Param("start") LocalDate start, @Param("end") LocalDate end);
+
+    /** Tong doanh thu phu thu trong ky - dung lam mau so tinh ty trong % cho card Phu thu. */
+    @Query(value = """
+        SELECT COALESCE(SUM(ct.so_luong * ct.don_gia), 0)
+        FROM chi_tiet_dich_vu ct
+        JOIN dich_vu dv  ON ct.ma_dich_vu = dv.ma_dich_vu
+        JOIN dat_phong d ON ct.ma_dat_phong = d.ma_dat_phong
+        WHERE d.ngay_tao >= :start AND d.ngay_tao < DATEADD(day, 1, :end)
+          AND dv.loai_dich_vu = N'Phu thu'
+        """, nativeQuery = true)
+    public Double getTongDoanhThuPhuThu(@Param("start") LocalDate start, @Param("end") LocalDate end);
 
     /** Top khach hang theo chi tieu ghi nhan (hoa don, VAT-excluded) - xem {@link #getTotalRevenue}. */
     @Query(value = """

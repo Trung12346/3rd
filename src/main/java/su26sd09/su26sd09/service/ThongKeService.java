@@ -130,6 +130,24 @@ public class ThongKeService {
     }
 
     /**
+     * Phu thu (tra phong muon, don ban them, ...) - tach rieng khoi Top dich vu, kem ty trong %
+     * tren tong phu thu trong ky (khong lien quan ty trong dich vu that o getTopDichVu).
+     * Moi hang: [ten_dich_vu, so_luong, doanh_thu, ty_trong_pct]
+     */
+    public List<Object[]> getPhuThu(LocalDate tuNgay, LocalDate denNgay) {
+        List<Object[]> rows = tkr.getPhuThuTheoLoai(tuNgay, denNgay);
+        Double tongRaw = tkr.getTongDoanhThuPhuThu(tuNgay, denNgay);
+        double tong = (tongRaw == null || tongRaw == 0) ? 0 : tongRaw;
+        List<Object[]> result = new ArrayList<>();
+        for (Object[] r : rows) {
+            double doanhThu = toDouble(r[2]);
+            double tyTrong = tong == 0 ? 0 : doanhThu / tong * 100d;
+            result.add(new Object[]{r[0], r[1], doanhThu, tyTrong});
+        }
+        return result;
+    }
+
+    /**
      * Top 10 khach hang chi tieu nhieu nhat trong ky, kem ty trong % tren tong doanh thu (hoa don) trong ky.
      * Moi hang: [ho_ten, email, so_lan_dat, tong_chi_tieu, ty_trong_pct]
      */
