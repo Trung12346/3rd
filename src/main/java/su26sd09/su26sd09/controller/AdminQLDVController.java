@@ -23,11 +23,18 @@ public class AdminQLDVController {
     @GetMapping("")
     public String index(
             @RequestParam(name = "keyword", defaultValue = "") String keyword,
-            @RequestParam(name = "trangThai", defaultValue = "active") String trangThai,
+            @RequestParam(name = "trangThai", required = false) String trangThai,
             @RequestParam(name = "loaiDichVu",defaultValue = "") String LoaiDichVu,
             Model model) {
         Dich_vu dv = new Dich_vu();
         dv.setHoatDong(true);
+
+        // Chỉ áp dụng mặc định "active" khi KHÔNG có tham số trangThai trên URL
+        // (ví dụ: mới vào trang lần đầu). Nếu người dùng bấm "Tất cả" thì trangThai=""
+        // được gửi lên rõ ràng và phải giữ nguyên, không ép về "active".
+        if (trangThai == null) {
+            trangThai = "active";
+        }
 
         loadFormAndList(model, dv, keyword, trangThai, LoaiDichVu,"Thêm dịch vụ");
         return "admin/dich-vu-list";
@@ -37,11 +44,14 @@ public class AdminQLDVController {
     public String edit(
             @PathVariable("id") Integer id,
             @RequestParam(name = "keyword", defaultValue = "") String keyword,
-            @RequestParam(name = "trangThai", defaultValue = "active") String trangThai,
+            @RequestParam(name = "trangThai", required = false) String trangThai,
             @RequestParam(name = "loaiDichVu" , defaultValue = "") String loaiDichVu,
             Model model,
             RedirectAttributes redirectAttributes
     ) {
+        if (trangThai == null) {
+            trangThai = "active";
+        }
         Dich_vu dv = dichVuService.findById(id);
         if (dv == null) {
             redirectAttributes.addFlashAttribute("error", "Không tìm thấy dịch vụ");

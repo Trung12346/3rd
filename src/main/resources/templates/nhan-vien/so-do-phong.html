@@ -748,19 +748,35 @@
         .sdp-lich-suggest-empty { padding: 10px 12px; font-size: 12.5px; color: #94a3b8; }
 
         .sdp-lich-services { display: flex; flex-wrap: wrap; gap: 8px; }
-        .sdp-lich-service-chip { position: relative; }
-        .sdp-lich-service-chip input { position: absolute; opacity: 0; width: 0; height: 0; }
-        .sdp-lich-service-chip span {
-            display: inline-flex; align-items: center; gap: 6px;
-            border: 1px solid #dbe3ee; border-radius: 999px; padding: 7px 13px;
-            font-size: 12.5px; font-weight: 600; color: #475569; cursor: pointer;
+        .sdp-lich-service-chip {
+            position: relative; display: inline-flex; align-items: center; gap: 4px;
+            border: 1px solid #dbe3ee; border-radius: 999px; padding: 3px;
             transition: background .15s, border-color .15s, color .15s;
         }
-        .sdp-lich-service-chip span i { font-size: 11px; color: #94a3b8; }
-        .sdp-lich-service-chip input:checked + span {
+        .sdp-lich-service-main {
+            display: inline-flex; align-items: center; gap: 6px;
+            border-radius: 999px; padding: 4px 10px;
+            font-size: 12.5px; font-weight: 600; color: #475569; cursor: pointer;
+            user-select: none;
+        }
+        .sdp-lich-service-main i { font-size: 11px; color: #94a3b8; }
+        .sdp-lich-service-chip.selected {
             background: #eaf6fb; border-color: #2196c4; color: #1d7fae;
         }
-        .sdp-lich-service-chip input:checked + span i { color: #2196c4; }
+        .sdp-lich-service-chip.selected .sdp-lich-service-main { color: #1d7fae; }
+        .sdp-lich-service-chip.selected .sdp-lich-service-main i { color: #2196c4; }
+        .sdp-lich-service-qty {
+            display: inline-flex; align-items: center; justify-content: center;
+            min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px;
+            background: #2196c4; color: #fff; font-size: 10.5px; font-weight: 700;
+        }
+        .sdp-lich-service-remove {
+            display: none; align-items: center; justify-content: center;
+            width: 20px; height: 20px; margin-left: 2px; border: none; border-radius: 50%;
+            background: #fff; color: #94a3b8; font-size: 14px; line-height: 1; cursor: pointer;
+            transition: background .15s, color .15s;
+        }
+        .sdp-lich-service-remove:hover { background: #fde8e8; color: #dc2626; }
 
         .sdp-lich-pay-row { display: flex; gap: 10px; align-items: flex-end; }
         .sdp-lich-pay-amount { flex: 1; }
@@ -1810,12 +1826,20 @@
                  con dung gia tri chip cung nhu truoc, de dam bao dich vu chon o day
                  khop dung voi ma_dich_vu that su khi luu xuong chi_tiet_dich_vu. -->
             <div class="sdp-lich-services" id="sdpLichServicesWrap">
-                <label class="sdp-lich-service-chip" th:each="dv : ${dichVuOptions}">
-                    <input type="checkbox" th:value="${dv.id}" th:attr="data-gia=${dv.gia}">
-                    <span><i class="fa-solid fa-concierge-bell"></i>
+                <!-- Moi dich vu la 1 chip co the bam NHIEU LAN de tang so luong
+                     (data-id + data-gia dung de tinh tien va gui len BE). Bam
+                     vao nut "x" se bo chon toan bo (ve lai so luong 0). Trang
+                     thai so luong duoc JS quan ly rieng (sdpLichDichVuQty),
+                     khong con dung checkbox nhu truoc. -->
+                <div class="sdp-lich-service-chip" th:each="dv : ${dichVuOptions}"
+                     th:attr="data-id=${dv.id},data-gia=${dv.gia}">
+                    <span class="sdp-lich-service-main">
+                        <i class="fa-solid fa-concierge-bell"></i>
                         <span th:text="${dv.ten_dich_vu}">Dịch vụ</span>
+                        <span class="sdp-lich-service-qty" style="display:none;">x1</span>
                     </span>
-                </label>
+                    <button type="button" class="sdp-lich-service-remove" title="Bỏ chọn dịch vụ này" style="display:none;">&times;</button>
+                </div>
                 <p th:if="${dichVuOptions == null or #lists.isEmpty(dichVuOptions)}"
                    style="grid-column:1/-1; font-size:12.5px; color:#94a3b8; margin:0;">
                     Chưa có dịch vụ nào đang hoạt động.
@@ -4702,6 +4726,31 @@
         var CTX_URL_KHACH_HANG_GOI_Y = /*[[@{/nhan-su/so-do-phong/khach-hang/goi-y}]]*/ '/nhan-su/so-do-phong/khach-hang/goi-y';
         var VN_MONTHS = ['Th1', 'Th2', 'Th3', 'Th4', 'Th5', 'Th6', 'Th7', 'Th8', 'Th9', 'Th10', 'Th11', 'Th12'];
 
+        // Trang thai so luong dich vu them da chon: { maDichVu(string) -> soLuong }.
+        // Dung chung cho ca 2 mode "Len lich dat phong" va "Dat phong tai quay"
+        // vi 2 mode dung chung 1 sidebar. Bam vao chip se +1, bam nut "x" se
+        // xoa het (ve 0) - xem renderDichVuChips() va listener tren sdpLichServicesWrap.
+        var sdpLichDichVuQty = {};
+
+        function renderDichVuChips() {
+            Array.prototype.slice.call(document.querySelectorAll('#sdpLichServicesWrap .sdp-lich-service-chip')).forEach(function (chip) {
+                var id = chip.getAttribute('data-id');
+                var qty = sdpLichDichVuQty[id] || 0;
+                var qtyEl = chip.querySelector('.sdp-lich-service-qty');
+                var removeBtn = chip.querySelector('.sdp-lich-service-remove');
+                if (qty > 0) {
+                    chip.classList.add('selected');
+                    qtyEl.style.display = '';
+                    qtyEl.textContent = 'x' + qty;
+                    removeBtn.style.display = 'inline-flex';
+                } else {
+                    chip.classList.remove('selected');
+                    qtyEl.style.display = 'none';
+                    removeBtn.style.display = 'none';
+                }
+            });
+        }
+
         function formatDisplay(d) {
             return d.getDate() + ' ' + VN_MONTHS[d.getMonth()] + ', ' + d.getFullYear();
         }
@@ -5619,6 +5668,8 @@
             // trang thai khong vi pham moi khi mo lai sidebar (dung/moi phong).
             currentPhuThuSom = { viPham: false, soTien: 0, moTa: '' };
             dungTheoDoiPhuThuSom();
+            sdpLichDichVuQty = {};
+            renderDichVuChips();
             tinhTongTienLenLich();
         }
 
@@ -5776,8 +5827,13 @@
             var tienPhong = soDem > 0 ? (currentGiaMoiDem || 0) * soDem : 0;
 
             var tienDv = 0;
-            Array.prototype.slice.call(form.querySelectorAll('.sdp-lich-service-chip input:checked'))
-                .forEach(function (el) { tienDv += parseFloat(el.getAttribute('data-gia')) || 0; });
+            Object.keys(sdpLichDichVuQty).forEach(function (id) {
+                var qty = sdpLichDichVuQty[id];
+                if (!qty) return;
+                var chip = form.querySelector('.sdp-lich-service-chip[data-id="' + id + '"]');
+                var gia = chip ? (parseFloat(chip.getAttribute('data-gia')) || 0) : 0;
+                tienDv += gia * qty;
+            });
 
             // Phu thu nhan phong som: chi ap dung o mode "quay" (Dat phong tai
             // quay), lay tu currentPhuThuSom (xem lamMoiPhuThuSom). Cong vao truoc
@@ -5835,9 +5891,24 @@
             vatEl.textContent = 'đ ' + Math.round(vat).toLocaleString('en-US');
             tongCongEl.textContent = 'đ ' + Math.round(tongCong).toLocaleString('en-US');
         }
-        form.querySelectorAll('.sdp-lich-service-chip input').forEach(function (el) {
-            el.addEventListener('change', tinhTongTienLenLich);
-        });
+        // Bam vao phan ten/icon cua chip => +1 so luong dich vu do. Bam nut "x"
+        // => bo chon het (ve 0). Dung event delegation vi cac chip khong doi
+        // (render tu server 1 lan), khong can gan lai listener sau moi lan click.
+        var sdpLichServicesWrapEl = document.getElementById('sdpLichServicesWrap');
+        if (sdpLichServicesWrapEl) {
+            sdpLichServicesWrapEl.addEventListener('click', function (e) {
+                var chip = e.target.closest('.sdp-lich-service-chip');
+                if (!chip) return;
+                var id = chip.getAttribute('data-id');
+                if (e.target.closest('.sdp-lich-service-remove')) {
+                    delete sdpLichDichVuQty[id];
+                } else {
+                    sdpLichDichVuQty[id] = (sdpLichDichVuQty[id] || 0) + 1;
+                }
+                renderDichVuChips();
+                tinhTongTienLenLich();
+            });
+        }
         promoInput.addEventListener('input', function () { apDungKhuyenMaiLenLich(); tinhTongTienLenLich(); });
         promoInput.addEventListener('change', function () { apDungKhuyenMaiLenLich(); tinhTongTienLenLich(); });
         promoInput.addEventListener('blur', function () { apDungKhuyenMaiLenLich(); tinhTongTienLenLich(); });
@@ -5946,8 +6017,16 @@
                 return;
             }
 
-            var dichVuIds = Array.prototype.slice.call(form.querySelectorAll('.sdp-lich-service-chip input:checked'))
-                .map(function (el) { return el.value; });
+            // Gui lap lai id dich vu theo dung so luong da chon (vd chon 3 lan
+            // dich vu #5 => push 3 lan '5') de BE tao du so dong Chi_tiet_dich_vu
+            // tuong ung (xem capNhatDichVuDatPhong / vong lap "for (Dich_vu dv :
+            // dsDichVuHopLe)" o Controller - moi phan tu trong list la 1 dong,
+            // khong co truong so luong rieng nen phai lap id).
+            var dichVuIds = [];
+            Object.keys(sdpLichDichVuQty).forEach(function (id) {
+                var qty = sdpLichDichVuQty[id] || 0;
+                for (var i = 0; i < qty; i++) dichVuIds.push(id);
+            });
             var phuongThuc = form.querySelector('input[name="sdpLichPhuongThuc"]:checked');
 
             var body = new URLSearchParams();

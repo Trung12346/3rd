@@ -30,6 +30,7 @@
                     <input type="password" id="mat_khau_hash" name="password" placeholder="Nhập mật khẩu" required>
                 </div>
                 <span class="field-error" th:if="${error == 'true'}">Email hoặc mật khẩu không chính xác.</span>
+                <span class="field-error" th:if="${error == 'disabled'}">Tài khoản của bạn đã bị vô hiệu hóa. Vui lòng liên hệ khách sạn để được hỗ trợ.</span>
                 <button type="submit" class="btn-submit">Đăng Nhập</button>
             </form>
 

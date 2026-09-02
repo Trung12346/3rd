@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.CachingUserDetailsService;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -18,6 +19,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import su26sd09.su26sd09.repository.NhanVienRepo;
 import su26sd09.su26sd09.service.CustomerUserDetailsService;
@@ -78,7 +80,7 @@ public class SecurityConfig {
                             }
 
                         }))
-                        .failureUrl("/nhan-su/login?error=true")
+                        .failureHandler(loginFailureHandler("/nhan-su/login"))
                         .permitAll()
                 ).sessionManagement(session ->
                 session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED).invalidSessionUrl("/nhan-su/login"));
@@ -107,12 +109,27 @@ public class SecurityConfig {
                         .loginPage("/login")
                         .loginProcessingUrl("/login")
                         .defaultSuccessUrl("/home", true)
-                        .failureUrl("/login?error=true")
+                        .failureHandler(loginFailureHandler("/login"))
                         .permitAll()
                 ).sessionManagement(session ->
                 session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED).invalidSessionUrl("/login"));
 
         return http.build();
+    }
+
+    /**
+     * Tao AuthenticationFailureHandler dung chung cho 1 trang login cu the:
+     * phan biet tai khoan bi VO HIEU HOA (DisabledException - nem ra tu
+     * DaoAuthenticationProvider khi UserDetails.isEnabled() == false, xem
+     * EmployeeUserDetailsService/CustomerUserDetailsService) voi cac loi dang
+     * nhap khac (sai email/mat khau -> BadCredentialsException), de hien thi
+     * thong bao khac nhau ben login.html (?error=disabled vs ?error=true).
+     */
+    private AuthenticationFailureHandler loginFailureHandler(String loginPage) {
+        return (request, response, exception) -> {
+            String errorParam = (exception instanceof DisabledException) ? "disabled" : "true";
+            response.sendRedirect(loginPage + "?error=" + errorParam);
+        };
     }
 
     /**

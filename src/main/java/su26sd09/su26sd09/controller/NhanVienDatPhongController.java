@@ -2320,15 +2320,24 @@ public class NhanVienDatPhongController {
         BigDecimal phuPhiNgoaiGio = phongService.calculateExtraFeeFor(maPhong, ngayNhan, ngayTra);
         BigDecimal amountPhong = invoicePricingService.createRoomLineItemPrice(phong, ngayNhan, ngayTra, phuPhiNgoaiGio);
 
-        List<Dich_vu> dsDichVuHopLe = new ArrayList<>();
-        BigDecimal amountDv = BigDecimal.ZERO;
+        // Gom nhom theo maDichVu (dung LinkedHashMap de giu thu tu chon dau
+        // tien) - danh sach dichVuIds co the co id lap lai (nguoi dung bam
+        // cung 1 dich vu nhieu lan tren so-do-phong), moi id lap lai tuong
+        // ung 1 don vi so luong, gop lai thanh 1 dong voi so_luong = so lan lap.
+        Map<Integer, Integer> soLuongTheoDichVu = new LinkedHashMap<>();
         if (dichVuIds != null) {
             for (Integer maDichVu : dichVuIds) {
-                Dich_vu dv = dichVuService.findById(maDichVu);
-                if (dv == null) continue;
-                dsDichVuHopLe.add(dv);
-                amountDv = amountDv.add(invoicePricingService.createServiceLineItemPrice(dv, 1));
+                if (maDichVu == null) continue;
+                soLuongTheoDichVu.merge(maDichVu, 1, Integer::sum);
             }
+        }
+        Map<Integer, Dich_vu> dsDichVuHopLe = new LinkedHashMap<>();
+        BigDecimal amountDv = BigDecimal.ZERO;
+        for (Map.Entry<Integer, Integer> e : soLuongTheoDichVu.entrySet()) {
+            Dich_vu dv = dichVuService.findById(e.getKey());
+            if (dv == null) continue;
+            dsDichVuHopLe.put(e.getKey(), dv);
+            amountDv = amountDv.add(invoicePricingService.createServiceLineItemPrice(dv, e.getValue()));
         }
 
         if (km != null) {
@@ -2397,12 +2406,14 @@ public class NhanVienDatPhongController {
         long tongPhut = java.time.Duration.between(ngayNhan, ngayTra).toMinutes();
         LocalDateTime ngaySuDungFiller = ngayNhan.plusMinutes(tongPhut / 2);
 
-        for (Dich_vu dv : dsDichVuHopLe) {
+        for (Map.Entry<Integer, Dich_vu> e : dsDichVuHopLe.entrySet()) {
+            Dich_vu dv = e.getValue();
+            int soLuong = soLuongTheoDichVu.getOrDefault(e.getKey(), 1);
             Chi_tiet_dich_vu ct = new Chi_tiet_dich_vu();
             ct.setDatPhong(savedDp);
             ct.setDv(dv);
-            ct.setSoluong(1);
-            ct.setDonGia(invoicePricingService.createServiceLineItemPrice(dv, 1));
+            ct.setSoluong(soLuong);
+            ct.setDonGia(invoicePricingService.createServiceLineItemPrice(dv, soLuong));
             ct.setNgay_su_dung(ngaySuDungFiller);
             ctdvService.save(ct);
         }
@@ -2608,13 +2619,21 @@ public class NhanVienDatPhongController {
         BigDecimal phuPhiNgoaiGioTruoc = phongService.calculateExtraFeeFor(maPhong, ngayNhan, ngayTra);
         BigDecimal amountPhongTruoc = invoicePricingService.createRoomLineItemPrice(phong, ngayNhan, ngayTra, phuPhiNgoaiGioTruoc);
 
-        BigDecimal amountDvTruoc = BigDecimal.ZERO;
+        // Gom theo maDichVu truoc khi tinh gia xem truoc (giu dung cong thuc
+        // gia*soLuong cho tung dich vu, tranh cong don le tung don vi roi lam
+        // tron nhieu lan gay sai so lam tron nho).
+        Map<Integer, Integer> soLuongTheoDichVuTruoc = new LinkedHashMap<>();
         if (dichVuIds != null) {
             for (Integer maDichVu : dichVuIds) {
-                Dich_vu dv = dichVuService.findById(maDichVu);
-                if (dv == null) continue;
-                amountDvTruoc = amountDvTruoc.add(invoicePricingService.createServiceLineItemPrice(dv, 1));
+                if (maDichVu == null) continue;
+                soLuongTheoDichVuTruoc.merge(maDichVu, 1, Integer::sum);
             }
+        }
+        BigDecimal amountDvTruoc = BigDecimal.ZERO;
+        for (Map.Entry<Integer, Integer> e : soLuongTheoDichVuTruoc.entrySet()) {
+            Dich_vu dv = dichVuService.findById(e.getKey());
+            if (dv == null) continue;
+            amountDvTruoc = amountDvTruoc.add(invoicePricingService.createServiceLineItemPrice(dv, e.getValue()));
         }
         amountDvTruoc = amountDvTruoc.add(soTienPhuThuSom);
 
@@ -2692,22 +2711,30 @@ public class NhanVienDatPhongController {
         long tongPhut = java.time.Duration.between(ngayNhan, ngayTra).toMinutes();
         LocalDateTime ngaySuDungFiller = ngayNhan.plusMinutes(tongPhut / 2);
 
+        // Gom theo maDichVu (giong tinh xem truoc o tren) truoc khi luu xuong
+        // Chi_tiet_dich_vu, moi dich vu chi 1 dong voi so_luong = so lan chon.
+        Map<Integer, Integer> soLuongTheoDichVu = new LinkedHashMap<>();
         if (dichVuIds != null) {
             for (Integer maDichVu : dichVuIds) {
-                Dich_vu dv = dichVuService.findById(maDichVu);
-                if (dv == null) continue;
-
-                BigDecimal thanhTien = invoicePricingService.createServiceLineItemPrice(dv, 1);
-                Chi_tiet_dich_vu ct = new Chi_tiet_dich_vu();
-                ct.setDatPhong(savedDp);
-                ct.setDv(dv);
-                ct.setSoluong(1);
-                ct.setDonGia(thanhTien);
-                ct.setNgay_su_dung(ngaySuDungFiller);
-                ctdvService.save(ct);
-
-                amountDv = amountDv.add(thanhTien);
+                if (maDichVu == null) continue;
+                soLuongTheoDichVu.merge(maDichVu, 1, Integer::sum);
             }
+        }
+        for (Map.Entry<Integer, Integer> e : soLuongTheoDichVu.entrySet()) {
+            Dich_vu dv = dichVuService.findById(e.getKey());
+            if (dv == null) continue;
+
+            int soLuong = e.getValue();
+            BigDecimal thanhTien = invoicePricingService.createServiceLineItemPrice(dv, soLuong);
+            Chi_tiet_dich_vu ct = new Chi_tiet_dich_vu();
+            ct.setDatPhong(savedDp);
+            ct.setDv(dv);
+            ct.setSoluong(soLuong);
+            ct.setDonGia(thanhTien);
+            ct.setNgay_su_dung(ngaySuDungFiller);
+            ctdvService.save(ct);
+
+            amountDv = amountDv.add(thanhTien);
         }
 
         if (viPhamNhanSom) {
